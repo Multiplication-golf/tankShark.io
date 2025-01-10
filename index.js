@@ -24,16 +24,22 @@ let bullet_intervals = [];
 let hidden_broswers = [];
 let messages = [];
 let teamlist = [];
+let playersjoined = [];
+let userbase = [];
+let food_squares_ = [];
+/* warning very senstive*/
+let purge_limit = 5;
 let ColorUpgrades = [
   "#f54242",
   "#fa8050",
   "#fab350",
   "#fcf25b",
-  "#57f75c", //
+  "#57f75c",
   "#42fcf6",
   "#5181fc",
   "#5c14f7",
 ];
+
 const levels = {
   0: 15,
   1: 28,
@@ -137,6 +143,10 @@ const levels = {
   99: 486614,
   100: 501480,
 };
+fs.readFile("users.json", function (err, data) {
+  if (err) throw err;
+  userbase = data;
+});
 const tankmeta = {
   basic: {
     "size-m": 1,
@@ -913,6 +923,18 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
   food_squares.push(fooditem);
 }
 
+food_squares.forEach((shape, index) => {
+  if (
+    isNaN(shape.x) ||
+    isNaN(shape.y) ||
+    shape.size <= 0 ||
+    !shape.vertices ||
+    shape.vertices.some((v) => isNaN(v.x) || isNaN(v.y))
+  ) {
+    console.error("Malformed shape detected:", index, shape);
+  }
+});
+
 for (let i = 0; i < getRandomInt(50, 75); i++) {
   let x = getRandomInt(-1000, 1000);
   let y = getRandomInt(-1000, 1000);
@@ -1135,6 +1157,32 @@ wss.on("connection", (socket) => {
       }
       if (leader_board.shown[10]) {
         if (0 > leader_board.shown[10].score) {
+          if (data.userid) {
+            var _player = userbase.find((_player) => {
+              return _player.id === data.userid
+            })
+            if (score__$ >= 50000000) {
+              badge = "/badges/10.png";
+            } else if (score__$ >= 25000000) {
+              badge = "/badges/9.png";
+            } else if (score__$ >= 10000000) {
+              badge = "/badges/8.png";
+            } else if (score__$ >= 5000000) {
+              badge = "/badges/7.png";
+            } else if (score__$ >= 2500000) {
+              badge = "/badges/6.png";
+            } else if (score__$ >= 1000000) {
+              badge = "/badges/5.png";
+            } else if (score__$ >= 500000) {
+              badge = "/badges/4.png";
+            } else if (score__$ >= 250000) {
+              badge = "/badges/3.png";
+            } else if (score__$ >= 100000) {
+              badge = "/badges/2.png";
+            } else if (score__$ >= 50000) {
+              badge = "/badges/1.png";
+            }
+          }
           leader_board.shown.push({
             id: data.id,
             score: 0,
@@ -1149,7 +1197,38 @@ wss.on("connection", (socket) => {
           };
         }
       }
-      emit("boardUpdate", leader_board.shown);
+      console.log(leader_board.shown);
+      emit("boardUpdate", {
+        leader_board: leader_board.shown,
+      });
+      let statecycle = 0;
+      let state = "start";
+      var start = setInterval(() => {
+        try {
+          statecycle += 1;
+          players[data.id].state = data.state;
+          let _data = {
+            state: state,
+            statecycle: statecycle,
+            playerID: data.id,
+          };
+          emit("statechangeUpdate", _data, socket);
+        } catch {
+          start = null;
+        }
+      }, 50);
+
+      setTimeout(() => {
+        start = null;
+        state = "normal";
+        let _data = { state: state, statecycle: statecycle, playerID: data.id };
+        players[data.id].state = data.state;
+        emit("statechangeUpdate", _data, socket);
+        setTimeout(() => {
+          players[data.id].state = _data.state;
+          emit("statechangeUpdate", _data, socket);
+        }, 300);
+      }, 6000);
 
       return;
     }
@@ -1274,7 +1353,7 @@ wss.on("connection", (socket) => {
         emit("playerJoinedTeam", { id: player.id, teamId: null });
       });
       teamlist.splice(teamlist.indexOf(MYteam, 1));
-      let public_teams = []
+      let public_teams = [];
       teamlist.forEach((team) => {
         if (!team.private) {
           public_teams.push(team);
@@ -1283,7 +1362,7 @@ wss.on("connection", (socket) => {
       emit("pubteamlist", public_teams);
       return;
     }
-    
+
     if (type === "kickplayer") {
       let MYteam = teamlist.find((team) => {
         return team.teamID === players[data.id].team;
@@ -1297,7 +1376,7 @@ wss.on("connection", (socket) => {
         1
       );
       emit("playerJoinedTeam", { id: data.id, teamId: null });
-      let public_teams = []
+      let public_teams = [];
       teamlist.forEach((team) => {
         if (!team.private) {
           public_teams.push(team);
@@ -1630,6 +1709,7 @@ wss.on("connection", (socket) => {
               }
             });
             rearrange();
+            console.log(leader_board.shown);
             emit("boardUpdate", {
               leader_board: leader_board.shown,
             });
@@ -2552,6 +2632,14 @@ wss.on("connection", (socket) => {
       return;
     }
 
+    if (type === "MouseAway") {
+      players[data.id].mousestate = "held";
+    }
+
+    if (type === "MousestateUpdate") {
+      players[data.id].mousestate = "up";
+    }
+
     if (type === "playerDied") {
       players = Object.entries(players).reduce((newPlayers, [key, value]) => {
         if (key !== data.id) {
@@ -2599,7 +2687,9 @@ wss.on("connection", (socket) => {
           (__index__) => __index__.id !== connection.playerId
         );
         console.log(leader_board.shown);
-        emit("boardUpdate", leader_board.shown);
+        emit("boardUpdate", {
+          leader_board: leader_board.shown,
+        });
       } catch (e) {
         console.log(e);
       }
@@ -2626,7 +2716,9 @@ wss.on("connection", (socket) => {
       leader_board.hidden = leader_board.hidden.filter(
         (__index__) => __index__.id !== connection.playerId
       );
-      emit("boardUpdate", leader_board.shown);
+      emit("boardUpdate", {
+        leader_board: leader_board.shown,
+      });
     } catch (e) {
       console.log(e);
     }
@@ -2695,8 +2787,14 @@ setInterval(() => {
           bullet.y;
         let angle = Math.atan2(dy, dx);
         bullet.angle = angle;
+        if (players[bullet.id]?.mousestate === "held") {
+          bullet.angle = -angle;
+        }
       } catch (e) {
         // delet bad bullets
+        if (players[bullet.id]) {
+          emit("dronekilled", { droneID: bullet.id });
+        }
         console.log(e);
         return false;
       }
@@ -2829,9 +2927,9 @@ setInterval(() => {
       var distance = MathHypotenuse(player.x - bullet.x, player.y - bullet.y);
       let player40 = player.size * 40;
       var sameTeam =
-        players[bullet.id].team === players[playerId].team &&
-        players[bullet.id].team !== null &&
-        players[playerId].team !== null;
+        players[bullet.id]?.team === players[playerId]?.team &&
+        players[bullet.id]?.team !== null &&
+        players[playerId]?.team !== null;
       if (player.state !== "start" && !sameTeam) {
         let bulletsize = bullet.size;
 
@@ -2890,7 +2988,9 @@ setInterval(() => {
                   );
                 }
               });
-              emit("boardUpdate", leader_board.shown);
+              emit("boardUpdate", {
+                leader_board: leader_board.shown,
+              });
             } catch (e) {
               console.log(e);
             }
@@ -3264,10 +3364,21 @@ setInterval(() => {
     } else {
       item.angle += 0.5;
     }
-    if (item.angle > 360) {
+    if (item.angle >= 360) {
       item.angle = 0;
     }
     angle += speed;
+    if (
+      isNaN(item.x) ||
+      item.x == null ||
+      isNaN(item.y) ||
+      item.y == null ||
+      item.size <= 0 ||
+      !item.vertices ||
+      item.vertices.some((v) => isNaN(v.x) || isNaN(v.y))
+    ) {
+      console.error("Malformed shape detected:", index, item);
+    }
     if (item.type === "square") {
       const rawvertices = calculateSquareVertices(
         item.x,
@@ -3655,7 +3766,7 @@ setInterval(() => {
               type: type,
               health: health_max,
               maxhealth: health_max,
-              size: size,
+              size: 50,
               angle: getRandomInt(0, 180),
               x: x,
               y: y,
@@ -3775,6 +3886,7 @@ setInterval(() => {
         }
         bullet.bullet_distance -=
           (bullet.size * 40) / bullet.bullet_pentration + bullet.size * 3 + 40;
+        console.log(bullet.bullet_pentration, bullet.size);
 
         bullet.bullet_distance -= 1; // for drones
         if (
@@ -3811,7 +3923,6 @@ setInterval(() => {
   emit("bulletUpdate", bullets);
   smartemit("FoodUpdate", food_squares);
 }, UPDATE_INTERVAL);
-
 function emit(type, data) {
   const message = JSON.stringify({ type, data });
   connections.forEach((conn) => {
