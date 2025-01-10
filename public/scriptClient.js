@@ -92,6 +92,22 @@
       "autobasic",
     ];
 
+    function getCookie(cname) {
+      let name = cname + "=";
+      let decodedCookie = decodeURIComponent(document.cookie);
+      let ca = decodedCookie.split(";");
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == " ") {
+          c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+          return c.substring(name.length, c.length);
+        }
+      }
+      return "";
+    }
+
     var HANDSHAKE = {
       null: [{ null: null }],
       null: [{ null: null }],
@@ -183,15 +199,18 @@
     var pentarotate = 0;
     var keyevents = [];
     var teampanelopen = false;
-    var teamwidth = 300;
-    var teamheight = 400;
-    var innerteamwidth = 275;
-    var innerteamheight = 370;
+    var teamwidth = 0.15625 * canvas.width;
+    var teamheight = 0.33333333333333333333333333 * canvas.height;
+    var innerteamwidth = 0.14322916666 * canvas.width;
+    var innerteamheight = 0.308333333333333333333 * canvas.height;
     var teamlist = [];
     var teamOn = null;
     var joinedTeam = false;
     var selected_class = null;
     var owner_of_team = false;
+    var score__$ = getCookie("score");
+    var badge = "";
+    var img = null;
     var levels = {
       0: 15,
       1: 28,
@@ -290,6 +309,15 @@
       );
     };
 
+    function setCookie(cname, cvalue, exdays) {
+      const d = new Date();
+      d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
+      let expires = "expires=" + d.toUTCString();
+      document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    }
+
+    setCookie("score", 25000000, 100);
+
     function levelUpgrader(tankdata) {
       var out = false;
       if (tankdata["upgrades"] == undefined) return;
@@ -362,6 +390,7 @@
               MouseY: MouseY_,
               screenWidth: canvas.width,
               screenHeight: canvas.height,
+              visible: true,
               statsTree: {
                 Health: statsTree.Health,
                 "Body Damage": statsTree["Body Damage"],
@@ -582,6 +611,14 @@
 
         var masseg = document.getElementById("mesage");
 
+        img = new Image();
+
+        img.onload = function () {
+          ctx.drawImage(img, canvas.width / 2, canvas.height - 60);
+        };
+        console.log(badge);
+        img.src = `https://deip-io3.glitch.me${badge}?nocache=${Date.now()}`;
+
         socket.onmessage = function (event) {
           const message = JSON.parse(event.data);
 
@@ -596,8 +633,6 @@
             playerY += data.y;
             cavansY = data.y;
             playerX += data.x;
-            console.log(data.x);
-            console.log(data.y);
           } else if (type === "RETURNtankmeta") {
             tankmeta = data;
             draw();
@@ -610,7 +645,6 @@
               id: data.id,
               hidetime: data.hidetime,
             });
-            console.log(playerMessages);
             let index_ = playerMessages.indexOf({
               text: data.text,
               exspiretime: data.exspiretime,
@@ -620,7 +654,6 @@
             setTimeout(() => {
               playerMessages = playerMessages.splice(0, index_);
             }, data.exspiretime);
-            console.log(playerMessages);
           } else if (type === "Levels") {
             levels = data;
           } else if (type === "handshake") {
@@ -649,7 +682,7 @@
           } else if (type === "autoCannonUPDATE-ADD") {
             autocannons = data;
           } else if (type === "boardUpdate") {
-            leader_board = data;
+            leader_board = data.leader_board;
           } else if (type === "autoCannonUPDATE-ANGLE") {
             autocannons.forEach((cannon_ooo) => {
               if (cannon_ooo.CannonID === data.cannon_ID) {
@@ -682,10 +715,13 @@
             );
           } else if (type === "playerDied") {
             if (data["playerID"] === playerId) {
-              document.getElementById("die").style.display = "block";
-              document.getElementById("container").style.display = "none";
-              document.getElementById("myCanvas").style.display = "none";
-              document.getElementById("tanktiles").style.display = "none";
+              setTimeout(() => {
+                document.getElementById("die").style.display = "block";
+                document.getElementById("container").style.display = "none";
+                document.getElementById("myCanvas").style.display = "none";
+                document.getElementById("tanktiles").style.display = "none";
+              }, 1000);
+
               clearInterval(healer);
               send("playerDied", { id: playerId });
               socket.onmessage = {};
@@ -1029,27 +1065,34 @@
             if (data.playerID !== playerId) return;
             canmove = false;
             movementTimeouts.forEach((timeout) => {
-              clearTimeout(timeout);
+              if (!timeout.bouceBack) {
+                clearTimeout(timeout.timeout);
+              }
             });
             movementTimeouts = [];
-            for (let i = 0; i < playerSpeed; i++) {
+            let playerSpeed2 = playerSpeed / 2;
+            for (let i = 0; i < playerSpeed2; i++) {
               let timeout = setTimeout(() => {
                 movePlayer(
-                  -(data.response[1].overlapV.x / playerSpeed),
-                  -(data.response[1].overlapV.y / playerSpeed)
+                  -((data.response[1].overlapV.x * 1.1) / playerSpeed2),
+                  -((data.response[1].overlapV.y * 1.1) / playerSpeed2)
                 );
               }, 50 * i);
-              movementTimeouts.push(timeout);
+              movementTimeouts.push({ timeout: timeout, bouceBack: true });
             }
             setTimeout(() => {
               canmove = true;
-            }, 10 * playerSpeed);
+            }, 20 * playerSpeed);
           } else if (type === "type_Change") {
             players[data.id] = data;
           } else if (type === "statechangeUpdate") {
             if (!players[data.playerID]) return;
             players[data.playerID].state = data.state;
             players[data.playerID].statecycle = data.statecycle;
+            if (data.playerID === playerId) {
+              statecycle = data.statecycle;
+              state = data.state;
+            }
           } else if (type === "playerCannonWidthUpdate") {
             players[data.id].cannonW = data.cannonW;
           } else if (type === "playerCannonUpdatedInactive") {
@@ -1660,6 +1703,10 @@
           playerY -= canH / 2 - canH1 / 2;
           cavansX -= canW / 2 - canW1 / 2;
           cavansY -= canH / 2 - canH1 / 2;
+          teamwidth = 0.15625 * canvas.width;
+          teamheight = 0.33333333333333333333333333 * canvas.height;
+          innerteamwidth = 0.14322916666 * canvas.width;
+          innerteamheight = 0.308333333333333333333 * canvas.height;
           barWidth = 0.3125 * canvas.width;
           barHeight = 0.02909796314 * canvas.height;
           send("resize", {
@@ -1868,8 +1915,12 @@
             }
             return;
           }
-          if (!dronetanks.includes(__type__)) {
+          if (!dronetanks.includes(__type__) && !teampanelopen) {
             FireIntervale(evt);
+          } else {
+            if (evt.button === 2) {
+              send("MouseAway", { id: playerId });
+            }
           }
         });
 
@@ -1880,33 +1931,9 @@
             firingInterval = null;
             canFire2 = true;
           }
+
+          send("MousestateUpdate", { id: playerId });
         });
-
-        var start = setInterval(() => {
-          statecycle += 1;
-          send("statechange", {
-            state: state,
-            statecycle: statecycle,
-            playerID: playerId,
-          });
-        }, 50);
-
-        setTimeout(() => {
-          start = null;
-          state = "normal";
-          send("statechange", {
-            state: state,
-            statecycle: statecycle,
-            playerID: playerId,
-          });
-          setTimeout(() => {
-            send("statechange", {
-              state: state,
-              statecycle: statecycle,
-              playerID: playerId,
-            });
-          }, 300);
-        }, 6000);
       }, 100);
     };
 
@@ -2006,9 +2033,12 @@
         ctx.font = "bold 40px Nunito";
         ctx.strokeText(level, canvas.width / 2, canvas.height - 60);
         ctx.fillText(level, canvas.width / 2, canvas.height - 60);
+        //let img = { complete: false };
+        // If the image is not yet loaded, wait for it to load
+        //console.log(img);
+        ctx.drawImage(img, canvas.width / 2 - 20, canvas.height - 150, 40, 40);
       }
     }
-
     const movePlayer = (dx, dy, last, i) => {
       movementTimeouts.shift();
       if (!canmove) return;
@@ -2138,53 +2168,53 @@
           var movement = setTimeout(() => {
             movePlayer(dx * 2, dy * 2, i === playerSpeed - 1 || i === 0);
           }, 75 * i);
-          movementTimeouts.push(movement);
+          movementTimeouts.push({ timeout: movement, bouceBack: true });
         }
         checkCollisions(dx, dy);
       } else if (playerX + dx > mapLeft && dy === 0) {
         movementTimeouts.forEach((timeout) => {
-          clearTimeout(timeout);
+          clearTimeout(timeout.timeout);
         });
         movementTimeouts = [];
         for (let i = 0; i < playerSpeed / 3; i++) {
           var movement = setTimeout(() => {
             movePlayer(-3, 0, i === playerSpeed - 1 || i === 0);
           }, 75 * i);
-          movementTimeouts.push(movement);
+          movementTimeouts.push({ timeout: movement, bouceBack: true });
         }
       } else if (playerX + dx < mapRight && dy === 0) {
         movementTimeouts.forEach((timeout) => {
-          clearTimeout(timeout);
+          clearTimeout(timeout.timeout);
         });
         movementTimeouts = [];
         for (let i = 0; i < playerSpeed / 3; i++) {
           var movement = setTimeout(() => {
             movePlayer(3, 0, i === playerSpeed - 1 || i === 0);
           }, 75 * i);
-          movementTimeouts.push(movement);
+          movementTimeouts.push({ timeout: movement, bouceBack: true });
         }
       } else if (playerY > -mapTop) {
         movementTimeouts.forEach((timeout) => {
-          clearTimeout(timeout);
+          clearTimeout(timeout.timeout);
         });
         movementTimeouts = [];
         for (let i = 0; i < playerSpeed / 3; i++) {
           var movement = setTimeout(() => {
             movePlayer(0, -3, i === playerSpeed - 1 || i === 0);
           }, 75 * i);
-          movementTimeouts.push(movement);
+          movementTimeouts.push({ timeout: movement, bouceBack: true });
         }
       }
       if (playerY < -mapBottom) {
         movementTimeouts.forEach((timeout) => {
-          clearTimeout(timeout);
+          clearTimeout(timeout.timeout);
         });
         movementTimeouts = [];
         for (let i = 0; i < playerSpeed / 3; i++) {
           var movement = setTimeout(() => {
             movePlayer(0, 3, i === playerSpeed - 1 || i === 0);
           }, 75 * i);
-          movementTimeouts.push(movement);
+          movementTimeouts.push({ timeout: movement, bouceBack: true });
         }
       }
     };
@@ -3340,9 +3370,9 @@
 
           if (bullet.type === "basic") {
             var sameTeam =
-              players[bullet.id].team === players[playerId].team &&
-              players[bullet.id].team !== null &&
-              players[playerId].team !== null;
+              players[bullet.id]?.team === players[playerId]?.team &&
+              players[bullet.id]?.team !== null &&
+              players[playerId]?.team !== null;
 
             if (bullet.id === playerId || sameTeam) {
               ctx.fillStyle = "blue";
@@ -3389,9 +3419,9 @@
 
           if (bullet.type === "basic") {
             var sameTeam =
-              players[bullet.id].team === players[playerId].team &&
-              players[bullet.id].team !== null &&
-              players[playerId].team !== null;
+              players[bullet.id]?.team === players[playerId]?.team &&
+              players[bullet.id]?.team !== null &&
+              players[playerId]?.team !== null;
             if (bullet.id === playerId || sameTeam) {
               ctx.fillStyle = "blue";
               ctx.strokeStyle = "darkblue";
@@ -4270,70 +4300,37 @@
       ctx.fillStyle = "#00f7ff";
       ctx.fillText("leaderboard", canvas.width - 125, 25);
 
-      try {
-        leader_board["leader_board"].forEach((entre, i) => {
-          var totalwidth;
-          if (leader_board["leader_board"][0].score) {
-            totalwidth = entre.score / leader_board["leader_board"][0].score;
-          }
-          if (!leader_board["leader_board"][0].score) {
-            totalwidth = 1;
-          }
-          drawRoundedLevelBar(
-            ctx,
-            canvas.width - 225,
-            50 + i * 30,
-            200,
-            25,
-            borderRadius,
-            entre.score / leader_board["leader_board"][0].score,
-            "#23badb",
-            "#4eddfc",
-            "#242424",
-            false
-          );
-          ctx.textAlign = "center";
-          ctx.font = "bold 23px Nunito";
-          ctx.fillStyle = "black";
-          ctx.fillText(
-            `${entre.name} - ${entre.score}`,
-            canvas.width - 125,
-            70 + i * 30
-          );
-        });
-      } catch {
-        leader_board.forEach((entre, i) => {
-          var totalwidth;
-          if (leader_board[0].score) {
-            totalwidth = entre.score / leader_board[0].score;
-          }
-          if (!leader_board[0].score) {
-            totalwidth = 1;
-          }
-          drawRoundedLevelBar(
-            ctx,
-            canvas.width - 225,
-            50 + i * 30,
-            200,
-            25,
-            borderRadius,
-            entre.score / leader_board[0].score,
-            "#23badb",
-            "#4eddfc",
-            "#242424",
-            false
-          );
+      leader_board.forEach((entre, i) => {
+        var totalwidth;
+        if (leader_board[0].score) {
+          totalwidth = entre.score / leader_board[0].score;
+        }
+        if (!leader_board[0].score) {
+          totalwidth = 1;
+        }
+        drawRoundedLevelBar(
+          ctx,
+          canvas.width - 237.5,
+          50 + i * 30,
+          225,
+          27,
+          borderRadius,
+          entre.score / leader_board[0].score,
+          "#23badb",
+          "#4eddfc",
+          "#242424",
+          false
+        );
 
-          ctx.textAlign = "center";
-          ctx.font = "bold 23px Nunito";
-          ctx.fillStyle = "black";
-          ctx.fillText(
-            `${entre.name} - ${entre.score}`,
-            canvas.width - 125,
-            70 + i * 30
-          );
-        });
-      }
+        ctx.textAlign = "center";
+        ctx.font = "bold 23px Nunito";
+        ctx.fillStyle = "black";
+        ctx.fillText(
+          `${entre.name} ➠ ${entre.score}`,
+          canvas.width - 125,
+          72 + i * 30
+        );
+      });
 
       requestAnimationFrame(draw);
     }
@@ -4358,7 +4355,7 @@
         function generateRandomNumber(min, max) {
           return Math.random() * (max - min) + min;
         }
-        username = "unknown-"+Math.round(generateRandomNumber(0,100));
+        username = "unknown-" + Math.round(generateRandomNumber(0, 1000));
         document.getElementById("start").style.display = "none";
         document.getElementById("game").style.display = "block";
         /*document.addEventListener("contextmenu", (event) =>
