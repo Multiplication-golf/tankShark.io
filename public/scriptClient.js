@@ -178,6 +178,7 @@
     var typeindex = 0;
     var canFire = true;
     var canFire2 = true;
+    var canKeyPress = true;
     var firingInterval = null;
     var movementTimeouts = [];
     var canW = canvas.width;
@@ -210,6 +211,7 @@
     var owner_of_team = false;
     var userId = getCookie("userId");
     var prescore = -1;
+    var setprogress = 0;
     var badge = "";
     var img = null;
     var levels = {
@@ -270,6 +272,12 @@
       "Bullet Reload": 1,
       Speed: 1,
     };
+    function waitpls() {
+      setTimeout(() => {
+        canKeyPress = true;
+      }, 300);
+      canKeyPress = false
+    }
 
     function getMousePos(canvas, evt) {
       const rect = boundrectcanvas;
@@ -530,18 +538,10 @@
     let levelpro = [];
     function levelHANDLER() {
       let tonextlevel = levels[level] - levels[level - 1];
-      let setprogress =
+      setprogress =
         (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
       setprogress =
         setprogress === 0 || Number.isNaN(setprogress) ? 1 : setprogress;
-      for (let i = 0; i < 10; i++) {
-        console.log(i, setprogress);
-        setTimeout(() => {
-          progress += (setprogress - progress) / (setprogress * 10);
-          console.log(progress);
-        }, 25 * i);
-        levelpro.push(progress);
-      }
       if (score / levels[level] >= 1) {
         upgradePoints += 1;
         // Add transition property
@@ -551,31 +551,16 @@
         level += 1;
         let tonextlevel = levels[level] - levels[level - 1];
         progress = 0;
-        let setprogress =
+        setprogress =
           (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
-        console.log(setprogress * 10);
-        for (let i = 0; i < 10; i++) {
-          console.log(i);
-          setTimeout(() => {
-            progress += (setprogress - progress) / (setprogress * 10);
-            console.log(progress);
-          }, 25 * i);
-        }
         playerSize += playerSize * 0.005;
         while (score / levels[level] >= 1) {
           level += 1;
           upgradePoints += 1;
           playerSize += playerSize * 0.005;
           progress = 0;
-          let setprogress =
+          setprogress =
             (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
-          for (let i = 0; i < 10; i++) {
-            console.log(i);
-            setTimeout(() => {
-              progress += (setprogress - progress) / (setprogress * 10);
-              console.log(progress);
-            }, 25 * i);
-          }
           let tankdata = tankmeta[__type__];
           levelUpgrader(tankdata);
         }
@@ -2298,150 +2283,113 @@
           handleMovement(-1, 0);
         } else if (keysPressed["ArrowRight"] || keysPressed["d"]) {
           handleMovement(1, 0);
-        } else if (keysPressed["-"]) {
-          FOV -= 0.1;
-        } else if (keysPressed["1"]) {
-          if (statsTree["Health"] < maxUP && upgradePoints > 0) {
-            statsTree["Health"] += 1;
-            upgradePoints -= 1;
-            send("statUpgrade", {
-              Upgradetype: "Health",
-              UpgradeLevel: 1,
-              id: playerId,
-            });
-          }
-        } else if (keysPressed["2"]) {
-          if (statsTree["Body Damage"] < maxUP && upgradePoints > 0) {
-            statsTree["Body Damage"] += 1;
-            upgradePoints -= 1;
-            send("statUpgrade", {
-              Upgradetype: "Body Damage",
-              UpgradeLevel: 1,
-              id: playerId,
-            });
-          }
-        } else if (keysPressed["3"]) {
-          if (statsTree["Regen"] < maxUP && upgradePoints > 0) {
-            statsTree["Regen"] += 1;
-            upgradePoints -= 1;
-            send("statUpgrade", {
-              Upgradetype: "Regen",
-              UpgradeLevel: 1,
-              id: playerId,
-            });
-          }
-        } else if (keysPressed["4"]) {
-          if (statsTree["Bullet Pentration"] < maxUP && upgradePoints > 0) {
-            statsTree["Bullet Pentration"] += 1;
-            upgradePoints -= 1;
-            send("statUpgrade", {
-              Upgradetype: "Bullet Pentration",
-              UpgradeLevel: 1,
-              id: playerId,
-            });
-          }
-        } else if (keysPressed["5"]) {
-          if (statsTree["Bullet Speed"] < maxUP && upgradePoints > 0) {
-            statsTree["Bullet Speed"] += 1;
-            upgradePoints -= 1;
-            send("statUpgrade", {
-              Upgradetype: "Bullet Speed",
-              UpgradeLevel: 1,
-              id: playerId,
-            });
-          }
-        } else if (keysPressed["6"]) {
-          if (statsTree["Bullet Damage"] < maxUP && upgradePoints > 0) {
-            statsTree["Bullet Damage"] += 1;
-            upgradePoints -= 1;
-            send("statUpgrade", {
-              Upgradetype: "Bullet Damage",
-              UpgradeLevel: 1,
-              id: playerId,
-            });
-          }
-        } else if (keysPressed["7"]) {
-          if (statsTree["Bullet Reload"] < maxUP && upgradePoints > 0) {
-            statsTree["Bullet Reload"] += 1;
-            upgradePoints -= 1;
-            send("statUpgrade", {
-              Upgradetype: "Bullet Reload",
-              UpgradeLevel: 1,
-              id: playerId,
-            });
-          }
-        } else if (keysPressed["8"]) {
-          if (statsTree["Speed"] < maxUP && upgradePoints > 0) {
-            statsTree["Speed"] += 1;
-            upgradePoints -= 1;
-            send("statUpgrade", {
-              Upgradetype: "Speed",
-              UpgradeLevel: 1,
-              id: playerId,
-            });
-          }
-        } else if (keysPressed["="]) {
-          FOV += 0.1;
-        } else if (keysPressed["e"]) {
-          if (lockautoRotating) return;
-          autoFiring = !autoFiring;
-          if (!autoFiring) {
-            canFire = true;
-          }
-        } else if (keysPressed["c"]) {
-          send("browserunHidden", { id: playerId });
-          autoRotating = !autoRotating;
-        } else if (keysPressed["h"]) {
-          __type__ = types[typeindex];
-          typeindex += 1;
-          if (typeindex >= types.length) {
-            typeindex = 0;
-          }
-          players[playerId].type = __type__;
-          let tankdata = tankmeta[__type__];
-          var tankdatacannon__ = tankdata["cannons"];
-          playerSize *= tankdata["size-m"];
-          playerSpeed *= tankdata["speed-m"];
-          bullet_damage *= tankdata["damage-m"];
-          playerReheal *= tankdata["regen-m"];
-          bodyDamage *= tankdata["BodyDamage-m"];
-          maxhealth *= tankdata["health-m"];
-          if (playerHealth > maxhealth) {
-            playerHealth = maxhealth;
-          }
-
-          send("typeChange", {
-            id: playerId,
-            x: playerX,
-            y: playerY,
-            health: playerHealth,
-            speed: playerSpeed,
-            size: playerSize,
-            bodyDamage: bodyDamage,
-            cannonW: cannonWidth,
-            cannonH: 0,
-            __type__: __type__,
-            cannon_angle: getCannonAngle(),
-            score: score,
-            username: username,
-            level: level,
-            state: state,
-            statecycle: statecycle,
-            playerHealTime: playerHealTime,
-            maxhealth: maxhealth,
-            playerReheal: playerReheal,
-            FOV: FOV,
-            MouseX: MouseX_,
-            MouseY: MouseY_,
-            screenWidth: canvas.width,
-            screenHeight: canvas.height,
-          });
-          setTimeout(() => {
-            cannonWidth = [];
-            for (let i = 0; i < Object.keys(tankdatacannon__).length; i++) {
-              cannonWidth.push(0);
+        }
+        if (canKeyPress) {
+          if (keysPressed["-"]) {
+            FOV -= 0.1;
+            waitpls();
+          } else if (keysPressed["1"]) {
+            if (statsTree["Health"] < maxUP && upgradePoints > 0) {
+              statsTree["Health"] += 1;
+              upgradePoints -= 1;
+              send("statUpgrade", {
+                Upgradetype: "Health",
+                UpgradeLevel: 1,
+                id: playerId,
+              });
             }
-          }, 100);
+            waitpls();
+          } else if (keysPressed["2"]) {
+            if (statsTree["Body Damage"] < maxUP && upgradePoints > 0) {
+              statsTree["Body Damage"] += 1;
+              upgradePoints -= 1;
+              send("statUpgrade", {
+                Upgradetype: "Body Damage",
+                UpgradeLevel: 1,
+                id: playerId,
+              });
+            }
+            waitpls();
+          } else if (keysPressed["3"]) {
+            if (statsTree["Regen"] < maxUP && upgradePoints > 0) {
+              statsTree["Regen"] += 1;
+              upgradePoints -= 1;
+              send("statUpgrade", {
+                Upgradetype: "Regen",
+                UpgradeLevel: 1,
+                id: playerId,
+              });
+            }
+            waitpls();
+          } else if (keysPressed["4"]) {
+            if (statsTree["Bullet Pentration"] < maxUP && upgradePoints > 0) {
+              statsTree["Bullet Pentration"] += 1;
+              upgradePoints -= 1;
+              send("statUpgrade", {
+                Upgradetype: "Bullet Pentration",
+                UpgradeLevel: 1,
+                id: playerId,
+              });
+            }
+            waitpls();
+          } else if (keysPressed["5"]) {
+            if (statsTree["Bullet Speed"] < maxUP && upgradePoints > 0) {
+              statsTree["Bullet Speed"] += 1;
+              upgradePoints -= 1;
+              send("statUpgrade", {
+                Upgradetype: "Bullet Speed",
+                UpgradeLevel: 1,
+                id: playerId,
+              });
+            }
+            waitpls();
+          } else if (keysPressed["6"]) {
+            if (statsTree["Bullet Damage"] < maxUP && upgradePoints > 0) {
+              statsTree["Bullet Damage"] += 1;
+              upgradePoints -= 1;
+              send("statUpgrade", {
+                Upgradetype: "Bullet Damage",
+                UpgradeLevel: 1,
+                id: playerId,
+              });
+            }
+            waitpls();
+          } else if (keysPressed["7"]) {
+            if (statsTree["Bullet Reload"] < maxUP && upgradePoints > 0) {
+              statsTree["Bullet Reload"] += 1;
+              upgradePoints -= 1;
+              send("statUpgrade", {
+                Upgradetype: "Bullet Reload",
+                UpgradeLevel: 1,
+                id: playerId,
+              });
+            }
+            waitpls();
+          } else if (keysPressed["8"]) {
+            if (statsTree["Speed"] < maxUP && upgradePoints > 0) {
+              statsTree["Speed"] += 1;
+              upgradePoints -= 1;
+              send("statUpgrade", {
+                Upgradetype: "Speed",
+                UpgradeLevel: 1,
+                id: playerId,
+              });
+            }
+            waitpls();
+          } else if (keysPressed["="]) {
+            FOV += 0.1;
+          } else if (keysPressed["e"]) {
+            if (lockautoRotating) return;
+            autoFiring = !autoFiring;
+            if (!autoFiring) {
+              canFire = true;
+            }
+            waitpls();
+          } else if (keysPressed["c"]) {
+            send("browserunHidden", { id: playerId });
+            autoRotating = !autoRotating;
+            waitpls();
+          }
         }
       }
 
@@ -3230,6 +3178,12 @@
           canvas.width / 2 + innerteamwidth / 2 - 15,
           canvas.height / 2 - innerteamheight / 2 + 26
         );
+      }
+      if (setprogress > progress) {
+        progress += 0.07;
+        if (setprogress === 0 || setprogress > 1) {
+          progress = 0;
+        }
       }
     }
 

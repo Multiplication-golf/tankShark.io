@@ -1154,16 +1154,16 @@ wss.on("connection", (socket) => {
       if (data.userId) {
         console.log(userbase, data.userId);
         var _player = userbase.find((_player) => {
-          console.log("a",_player.userid,data.userId)
+          console.log("a", _player.userid, data.userId);
           return Math.abs(_player.userid - data.userId) < 0.001;
-        });  
-        console.log(_player)
+        });
+        console.log(_player);
         if (_player !== undefined) {
-          console.log("_player",_player);
+          console.log("_player", _player);
           let score__$ = _player.scores.reduce((a, b) => {
-            console.log("a,b:",a,b)
+            console.log("a,b:", a, b);
             return a + b.score;
-          },0);
+          }, 0);
           if (score__$ >= 50000000) {
             badge = "/badges/10.png";
           } else if (score__$ >= 25000000) {
@@ -1197,7 +1197,7 @@ wss.on("connection", (socket) => {
           players[data.id].userId = newid;
           userbase.push({ userid: newid, scores: [] });
           badge = "/badges/1.png";
-          console.log("userbase 1199",userbase)
+          console.log("userbase 1199", userbase);
         }
       } else {
         var newid =
@@ -1205,7 +1205,7 @@ wss.on("connection", (socket) => {
           Date.now() * Math.random() +
           Date.now() / 213984238 +
           Math.random();
-        console.log(1207)
+        console.log(1207);
         socket.send(JSON.stringify({ type: "newid", data: { newid: newid } }));
         console.log(typeof userbase, console.log(userbase));
         userbase.push({ userid: newid, scores: [] });
@@ -2778,12 +2778,19 @@ wss.on("connection", (socket) => {
     }
     var _player = userbase.find((_player) => {
       console.log(_player.userid, players[connection.playerId].userId);
-      return Math.abs(_player.userid - players[connection.playerId].userId) < 0.001;
+      return (
+        Math.abs(_player.userid - players[connection.playerId].userId) < 0.001
+      );
     });
     _player.scores.push({
       score: players[connection.playerId].score,
       Date: Date.now(),
     });
+    _player.scores.sort(function (a, b) {
+      return a.score - b.score;
+    });
+    _player.scores.reverse();
+    _player.scores = _player.scores.slice(0,10)
     console.log(userbase);
     fs.writeFile(
       "users.json",
