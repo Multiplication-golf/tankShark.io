@@ -1,5 +1,5 @@
 {
-  "name": "socket-io-example",
+  "name": "Tankshark",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "",
   "engines": {
     "node": "14.x"
   },

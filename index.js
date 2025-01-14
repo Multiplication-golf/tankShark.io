@@ -145,7 +145,9 @@ const levels = {
 };
 fs.readFile("users.json", function (err, data) {
   if (err) throw err;
-  userbase = data;
+  data = JSON.parse(data);
+  userbase = data.userbase;
+  console.log(userbase);
 });
 const tankmeta = {
   basic: {
@@ -1105,7 +1107,7 @@ function moveCannonAngle(cannon) {
   });
 }
 
-function checkforPlayer(x, y, range) {}
+console.log("userbase", typeof userbase);
 
 wss.on("connection", (socket) => {
   let connection = { socket: socket, playerId: null };
@@ -1123,6 +1125,7 @@ wss.on("connection", (socket) => {
           con.playerId = data.id;
         }
       });
+      var badge;
       console.log(players);
       emit("playerJoined", data); // Emit playerJoined event to notify all clients
       emit("FoodUpdate", food_squares); // Emit FoodUpdate event to update food squares
@@ -1148,45 +1151,95 @@ wss.on("connection", (socket) => {
         ) ||
         !confirmplayerradia(x, y)
       );
+      if (data.userId) {
+        console.log(userbase, data.userId);
+        var _player = userbase.find((_player) => {
+          console.log("a",_player.userid,data.userId)
+          return Math.abs(_player.userid - data.userId) < 0.001;
+        });  
+        console.log(_player)
+        if (_player !== undefined) {
+          console.log("_player",_player);
+          let score__$ = _player.scores.reduce((a, b) => {
+            console.log("a,b:",a,b)
+            return a + b.score;
+          },0);
+          if (score__$ >= 50000000) {
+            badge = "/badges/10.png";
+          } else if (score__$ >= 25000000) {
+            badge = "/badges/9.png";
+          } else if (score__$ >= 10000000) {
+            badge = "/badges/8.png";
+          } else if (score__$ >= 5000000) {
+            badge = "/badges/7.png";
+          } else if (score__$ >= 2500000) {
+            badge = "/badges/6.png";
+          } else if (score__$ >= 1000000) {
+            badge = "/badges/5.png";
+          } else if (score__$ >= 500000) {
+            badge = "/badges/4.png";
+          } else if (score__$ >= 250000) {
+            badge = "/badges/3.png";
+          } else if (score__$ >= 100000) {
+            badge = "/badges/2.png";
+          } else {
+            badge = "/badges/1.png";
+          }
+        } else {
+          var newid =
+            Math.floor(Math.random() * 7779) +
+            Date.now() * Math.random() +
+            Date.now() / 213984238 +
+            Math.random();
+          socket.send(
+            JSON.stringify({ type: "newid", data: { newid: newid } })
+          );
+          players[data.id].userId = newid;
+          userbase.push({ userid: newid, scores: [] });
+          badge = "/badges/1.png";
+          console.log("userbase 1199",userbase)
+        }
+      } else {
+        var newid =
+          Math.floor(Math.random() * 7779) +
+          Date.now() * Math.random() +
+          Date.now() / 213984238 +
+          Math.random();
+        console.log(1207)
+        socket.send(JSON.stringify({ type: "newid", data: { newid: newid } }));
+        console.log(typeof userbase, console.log(userbase));
+        userbase.push({ userid: newid, scores: [] });
+        badge = "/badges/1.png";
+        players[data.id].userId = newid;
+      }
+      console.log("userbase", userbase);
+      socket.send(
+        JSON.stringify({ type: "badgeToplayer", data: { badge: badge } })
+      );
       emit("new_X_Y", { x: x, y: y, id: data.id });
       players[data.id].x = x;
       players[data.id].y = y;
-      leader_board.hidden.push({ id: data.id, score: 0, name: data.username });
+      leader_board.hidden.push({
+        id: data.id,
+        score: 0,
+        name: data.username,
+        badge: badge,
+      });
       if (!leader_board.shown[10]) {
-        leader_board.shown.push({ id: data.id, score: 0, name: data.username });
+        leader_board.shown.push({
+          id: data.id,
+          score: 0,
+          name: data.username,
+          badge: badge,
+        });
       }
       if (leader_board.shown[10]) {
         if (0 > leader_board.shown[10].score) {
-          if (data.userid) {
-            var _player = userbase.find((_player) => {
-              return _player.id === data.userid
-            })
-            if (score__$ >= 50000000) {
-              badge = "/badges/10.png";
-            } else if (score__$ >= 25000000) {
-              badge = "/badges/9.png";
-            } else if (score__$ >= 10000000) {
-              badge = "/badges/8.png";
-            } else if (score__$ >= 5000000) {
-              badge = "/badges/7.png";
-            } else if (score__$ >= 2500000) {
-              badge = "/badges/6.png";
-            } else if (score__$ >= 1000000) {
-              badge = "/badges/5.png";
-            } else if (score__$ >= 500000) {
-              badge = "/badges/4.png";
-            } else if (score__$ >= 250000) {
-              badge = "/badges/3.png";
-            } else if (score__$ >= 100000) {
-              badge = "/badges/2.png";
-            } else if (score__$ >= 50000) {
-              badge = "/badges/1.png";
-            }
-          }
           leader_board.shown.push({
             id: data.id,
             score: 0,
             name: data.username,
+            badge: badge,
           });
         }
         if (0 > leader_board.shown[10].score) {
@@ -1194,6 +1247,7 @@ wss.on("connection", (socket) => {
             id: data.id,
             score: 0,
             name: data.username,
+            badge: badge,
           };
         }
       }
@@ -2722,6 +2776,23 @@ wss.on("connection", (socket) => {
     } catch (e) {
       console.log(e);
     }
+    var _player = userbase.find((_player) => {
+      console.log(_player.userid, players[connection.playerId].userId);
+      return Math.abs(_player.userid - players[connection.playerId].userId) < 0.001;
+    });
+    _player.scores.push({
+      score: players[connection.playerId].score,
+      Date: Date.now(),
+    });
+    console.log(userbase);
+    fs.writeFile(
+      "users.json",
+      JSON.stringify({ userbase: userbase }),
+      function (err, data) {
+        if (err) throw err;
+      }
+    );
+    console.log(userbase);
     teamlist = teamlist.filter((team) => {
       var teamplayers = team.players;
       teamplayers = teamplayers.filter((player) => {
@@ -2733,7 +2804,7 @@ wss.on("connection", (socket) => {
       }
       if (team.owner.id === connection.playerId) {
         if (teamplayers.length !== 0) {
-          console.log(teamplayers[0]);
+          //console.log(teamplayers[0]);
           team.owner = teamplayers[0];
           emit("newOwner", {
             teamID: team.teamID,
@@ -2745,7 +2816,7 @@ wss.on("connection", (socket) => {
       }
       return true;
     });
-    console.log("Dis", JSON.stringify(teamlist));
+    //console.log("Dis", JSON.stringify(teamlist));
     var public_teams = [];
     teamlist.forEach((team) => {
       if (!team.private) {
@@ -2907,7 +2978,7 @@ setInterval(() => {
             bullet_.speed *
             (bullet_.size / 5 +
               Math.cos(Math.abs(bullet.angle - bullet_.angle)));
-          console.log(bullet.bullet_distance);
+          //console.log(bullet.bullet_distance);
         }
       });
     }
