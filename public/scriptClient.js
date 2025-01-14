@@ -208,7 +208,8 @@
     var joinedTeam = false;
     var selected_class = null;
     var owner_of_team = false;
-    var score__$ = getCookie("score");
+    var userId = getCookie("userId");
+    var prescore = -1;
     var badge = "";
     var img = null;
     var levels = {
@@ -402,6 +403,7 @@
                 Speed: statsTree.Speed,
               },
               team: teamOn,
+              userId: userId,
             });
 
             setTimeout(() => {
@@ -525,11 +527,21 @@
     const generateUniquePlayerId = () => {
       return "player-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
     };
-
+    let levelpro = [];
     function levelHANDLER() {
       let tonextlevel = levels[level] - levels[level - 1];
-      progress =
+      let setprogress =
         (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
+      setprogress =
+        setprogress === 0 || Number.isNaN(setprogress) ? 1 : setprogress;
+      for (let i = 0; i < 10; i++) {
+        console.log(i, setprogress);
+        setTimeout(() => {
+          progress += (setprogress - progress) / (setprogress * 10);
+          console.log(progress);
+        }, 25 * i);
+        levelpro.push(progress);
+      }
       if (score / levels[level] >= 1) {
         upgradePoints += 1;
         // Add transition property
@@ -538,15 +550,32 @@
         levelUpgrader(tankdata);
         level += 1;
         let tonextlevel = levels[level] - levels[level - 1];
-        progress =
+        progress = 0;
+        let setprogress =
           (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
+        console.log(setprogress * 10);
+        for (let i = 0; i < 10; i++) {
+          console.log(i);
+          setTimeout(() => {
+            progress += (setprogress - progress) / (setprogress * 10);
+            console.log(progress);
+          }, 25 * i);
+        }
         playerSize += playerSize * 0.005;
         while (score / levels[level] >= 1) {
           level += 1;
           upgradePoints += 1;
           playerSize += playerSize * 0.005;
-          progress =
+          progress = 0;
+          let setprogress =
             (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
+          for (let i = 0; i < 10; i++) {
+            console.log(i);
+            setTimeout(() => {
+              progress += (setprogress - progress) / (setprogress * 10);
+              console.log(progress);
+            }, 25 * i);
+          }
           let tankdata = tankmeta[__type__];
           levelUpgrader(tankdata);
         }
@@ -599,7 +628,9 @@
             Speed: 1,
           },
           team: teamOn,
+          userId: userId,
         };
+        console.log("userId", userId);
 
         send("newPlayer", playerData);
 
@@ -681,6 +712,9 @@
             }
           } else if (type === "autoCannonUPDATE-ADD") {
             autocannons = data;
+          } else if (type === "badgeToplayer") {
+            badge = data.badge;
+            img.src = `https://deip-io3.glitch.me${badge}?nocache=${Date.now()}`;
           } else if (type === "boardUpdate") {
             leader_board = data.leader_board;
           } else if (type === "autoCannonUPDATE-ANGLE") {
@@ -846,6 +880,7 @@
                   Speed: 1,
                 },
                 team: teamOn,
+                userId: userId,
               });
             }
             setTimeout(() => {
@@ -1098,6 +1133,10 @@
           } else if (type === "playerCannonUpdatedInactive") {
             MouseX_ = data.MouseX_;
             MouseY_ = data.MouseY_;
+          } else if (type === "newid") {
+            userId = data.newid;
+            console.log(data.newid);
+            setCookie("userId", userId, 365);
           }
         };
 
@@ -1956,28 +1995,15 @@
         ctx.strokeStyle = barbourder;
       }
       ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.lineTo(x + width - radius, y);
-      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-      ctx.lineTo(x + width, y + height - radius);
-      ctx.quadraticCurveTo(
-        x + width,
-        y + height,
-        x + width - radius,
-        y + height
-      );
-      ctx.lineTo(x + radius, y + height);
-      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-      ctx.lineTo(x, y + radius);
-      ctx.quadraticCurveTo(x, y, x + radius, y);
-      ctx.closePath();
+      ctx.roundRect(x, y, width, height, radius);
       ctx.fill();
       if (barbourder) {
         ctx.stroke();
       }
-
+      ctx.closePath();
       // Filled bar (progress)
-      const filledWidth = width * progress;
+      var filledWidth = width * progress;
+      if (filledWidth < 0) filledWidth = 0;
       ctx.fillStyle = barXP;
       ctx.beginPath();
       ctx.moveTo(x + radius, y);
@@ -2009,18 +2035,8 @@
         ctx.lineTo(x, y + radius);
         ctx.quadraticCurveTo(x, y, x + radius, y);
       } else {
-        ctx.quadraticCurveTo(x + filledWidth, y, x + filledWidth, y + radius);
-        ctx.lineTo(x + filledWidth, y + height - radius);
-        ctx.quadraticCurveTo(
-          x + filledWidth,
-          y + height,
-          x + filledWidth - radius,
-          y + height
-        );
-        ctx.lineTo(x, y + height);
-        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.beginPath();
+        ctx.roundRect(x, y, filledWidth, height, radius);
       }
       ctx.closePath();
 
@@ -2036,9 +2052,18 @@
         //let img = { complete: false };
         // If the image is not yet loaded, wait for it to load
         //console.log(img);
-        ctx.drawImage(img, canvas.width / 2 - 20, canvas.height - 150, 40, 40);
+        try {
+          ctx.drawImage(
+            img,
+            canvas.width / 2 - 20,
+            canvas.height - 150,
+            40,
+            40
+          );
+        } catch {}
       }
     }
+
     const movePlayer = (dx, dy, last, i) => {
       movementTimeouts.shift();
       if (!canmove) return;
