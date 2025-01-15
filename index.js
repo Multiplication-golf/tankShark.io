@@ -143,12 +143,20 @@ const levels = {
   99: 486614,
   100: 501480,
 };
+
+var pi = Math.PI;
+var pi180 = pi / 180;
+var sqrt23 = Math.sqrt(3) / 2;
+var piby2 = -pi / 2;
+var response = new SAT.Response();
+
 fs.readFile("users.json", function (err, data) {
   if (err) throw err;
   data = JSON.parse(data);
   userbase = data.userbase;
   console.log(userbase);
 });
+
 const tankmeta = {
   basic: {
     "size-m": 1,
@@ -646,203 +654,262 @@ const tankmeta = {
 
 var levelmultiplyer = 1.2;
 
-function getRandomInt(min, max) {
-  const minCeiled = Math.ceil(min);
-  const maxFloored = Math.floor(max);
-  return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
-}
+class Utils_ {
+  constructor() {}
 
-function between(x, min, max) {
-  return x >= min && x <= max;
-}
-
-function MathHypotenuse(x, y) {
-  return Math.sqrt(x * x + y * y);
-}
-
-function mmalizeAngleRadians(angle) {
-  while (angle >= Math.PI) angle -= 2 * Math.PI;
-  while (angle < -Math.PI) angle += 2 * Math.PI;
-  return angle;
-}
-
-var pi = Math.PI;
-var pi180 = pi / 180;
-var sqrt23 = Math.sqrt(3) / 2;
-var piby2 = -pi / 2;
-
-function calculateTriangleVertices(cx, cy, size, angle) {
-  const height = sqrt23 * size;
-  const halfSize = size / 2;
-
-  // Convert the angle to radians
-  const angleRad = angle * pi180;
-
-  // Precalculate cos and sin of the angle to avoid repeating it
-  const cosAngle = Math.cos(angleRad);
-  const sinAngle = Math.sin(angleRad);
-
-  let vertices = [
-    { x: -halfSize, y: -height / 3 },
-    { x: halfSize, y: -height / 3 },
-    { x: 0, y: (2 * height) / 3 },
-  ];
-
-  for (let i = 0; i < vertices.length; i++) {
-    const vertex = vertices[i];
-
-    const rotatedX = vertex.x * cosAngle - vertex.y * sinAngle;
-    const rotatedY = vertex.x * sinAngle + vertex.y * cosAngle;
-
-    vertices[i] = { x: rotatedX + cx, y: rotatedY + cy };
+  static getRandomInt(min, max) {
+    const minCeiled = Math.ceil(min);
+    const maxFloored = Math.floor(max);
+    return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
   }
 
-  return vertices;
-}
-
-function calculateRotatedPentagonVertices(cx, cy, r, rotation) {
-  const R = r;
-  const angleOffset = piby2 + rotation;
-  const vertices = new Array(5);
-
-  for (let i = 0; i < 5; i++) {
-    const angle = (2 * pi * i) / 5 + angleOffset;
-    const x = cx + R * Math.cos(angle);
-    const y = cy + R * Math.sin(angle);
-    vertices[i] = { x, y };
+  static between(x, min, max) {
+    return x >= min && x <= max;
   }
 
-  return vertices;
-}
-
-function calculateSquareVertices(cx, cy, size, angle) {
-  var halfSize = size / 2;
-
-  var angleRad = angle * pi180;
-  var cosAngle = Math.cos(angleRad);
-  var sinAngle = Math.sin(angleRad);
-
-  let vertices = [
-    { x: -halfSize, y: -halfSize },
-    { x: halfSize, y: -halfSize },
-    { x: halfSize, y: halfSize },
-    { x: -halfSize, y: halfSize },
-  ];
-
-  for (let i = 0; i < vertices.length; i++) {
-    const vertex = vertices[i];
-    const rotatedX = vertex.x * cosAngle - vertex.y * sinAngle;
-    const rotatedY = vertex.x * sinAngle + vertex.y * cosAngle;
-    vertices[i] = { x: rotatedX + cx, y: rotatedY + cy };
+  static MathHypotenuse(x, y) {
+    return Math.sqrt(x * x + y * y);
   }
 
-  return vertices;
-}
-
-function findBullet(id) {
-  return bullets.find((bullet) => id === bullet.uniqueid);
-}
-
-// Helper function to convert points to SAT Polygon
-function toSATPolygon(vertices) {
-  const points = new Array(vertices.length);
-  for (let i = 0; i < vertices.length; i++) {
-    points[i] = new SAT.Vector(vertices[i].x, vertices[i].y);
+  static mmalizeAngleRadians(angle) {
+    while (angle >= Math.PI) angle -= 2 * Math.PI;
+    while (angle < -Math.PI) angle += 2 * Math.PI;
+    return angle;
   }
-  return new SAT.Polygon(new SAT.Vector(0, 0), points);
-}
-var response = new SAT.Response();
-// Function to check collision between circle and polygon using SAT.js
 
-function normalizeAngle(angle) {
-  return angle % 360;
-}
+  static calculateTriangleVertices(cx, cy, size, angle) {
+    const height = sqrt23 * size;
+    const halfSize = size / 2;
 
-function rotatePointAroundPlayer(cannonOffsetX, cannonOffsetY, playerRotation) {
-  // Convert player rotation to radians for math
-  const playerRotationRad = playerRotation * (Math.PI / 180);
+    // Convert the angle to radians
+    const angleRad = angle * pi180;
 
-  // Rotate cannon's offset position based on player rotation
-  const rotatedX =
-    cannonOffsetX * Math.cos(playerRotationRad) -
-    cannonOffsetY * Math.sin(playerRotationRad);
-  const rotatedY =
-    cannonOffsetX * Math.sin(playerRotationRad) +
-    cannonOffsetY * Math.cos(playerRotationRad);
+    // Precalculate cos and sin of the angle to avoid repeating it
+    const cosAngle = Math.cos(angleRad);
+    const sinAngle = Math.sin(angleRad);
 
-  return [rotatedX, rotatedY];
-}
+    let vertices = [
+      { x: -halfSize, y: -height / 3 },
+      { x: halfSize, y: -height / 3 },
+      { x: 0, y: (2 * height) / 3 },
+    ];
 
-// Check if the target angle is within the cannon's swivel range, accounting for player rotation
-function isTargetInSwivelRange(
-  playerRotation,
-  targetAngle,
-  logging,
-  offset_degress
-) {
-  // Normalize player's rotation and target angle
-  playerRotation = normalizeAngle(playerRotation + offset_degress);
-  targetAngle = normalizeAngle(targetAngle);
+    for (let i = 0; i < vertices.length; i++) {
+      const vertex = vertices[i];
 
-  // Define the swivel range around the player's current rotation
-  const minSwivelAngle = normalizeAngle(playerRotation - 85); // 90 degrees left of player
-  const maxSwivelAngle = normalizeAngle(playerRotation + 85); // 90 degrees right of player
+      const rotatedX = vertex.x * cosAngle - vertex.y * sinAngle;
+      const rotatedY = vertex.x * sinAngle + vertex.y * cosAngle;
 
-  // Check if the target is within the swivel range
-  if (minSwivelAngle <= maxSwivelAngle) {
-    return minSwivelAngle <= targetAngle && targetAngle <= maxSwivelAngle;
-  } else {
-    // Handle the case where angles wrap around 0°
-    return targetAngle >= minSwivelAngle || targetAngle <= maxSwivelAngle;
+      vertices[i] = { x: rotatedX + cx, y: rotatedY + cy };
+    }
+
+    return vertices;
+  }
+
+  static calculateRotatedPentagonVertices(cx, cy, r, rotation) {
+    const R = r;
+    const angleOffset = piby2 + rotation;
+    const vertices = new Array(5);
+
+    for (let i = 0; i < 5; i++) {
+      const angle = (2 * pi * i) / 5 + angleOffset;
+      const x = cx + R * Math.cos(angle);
+      const y = cy + R * Math.sin(angle);
+      vertices[i] = { x, y };
+    }
+
+    return vertices;
+  }
+
+  static calculateSquareVertices(cx, cy, size, angle) {
+    var halfSize = size / 2;
+
+    var angleRad = angle * pi180;
+    var cosAngle = Math.cos(angleRad);
+    var sinAngle = Math.sin(angleRad);
+
+    let vertices = [
+      { x: -halfSize, y: -halfSize },
+      { x: halfSize, y: -halfSize },
+      { x: halfSize, y: halfSize },
+      { x: -halfSize, y: halfSize },
+    ];
+
+    for (let i = 0; i < vertices.length; i++) {
+      const vertex = vertices[i];
+      const rotatedX = vertex.x * cosAngle - vertex.y * sinAngle;
+      const rotatedY = vertex.x * sinAngle + vertex.y * cosAngle;
+      vertices[i] = { x: rotatedX + cx, y: rotatedY + cy };
+    }
+
+    return vertices;
+  }
+
+  static findBullet(id) {
+    return bullets.find((bullet) => id === bullet.uniqueid);
+  }
+
+  static toSATPolygon(vertices) {
+    const points = new Array(vertices.length);
+    for (let i = 0; i < vertices.length; i++) {
+      points[i] = new SAT.Vector(vertices[i].x, vertices[i].y);
+    }
+    return new SAT.Polygon(new SAT.Vector(0, 0), points);
+  }
+
+  static normalizeAngle(angle) {
+    return angle % 360;
+  }
+
+  static rotatePointAroundPlayer(cannonOffsetX, cannonOffsetY, playerRotation) {
+    // Convert player rotation to radians for math
+    const playerRotationRad = playerRotation * (Math.PI / 180);
+
+    // Rotate cannon's offset position based on player rotation
+    const rotatedX =
+      cannonOffsetX * Math.cos(playerRotationRad) -
+      cannonOffsetY * Math.sin(playerRotationRad);
+    const rotatedY =
+      cannonOffsetX * Math.sin(playerRotationRad) +
+      cannonOffsetY * Math.cos(playerRotationRad);
+
+    return [rotatedX, rotatedY];
+  }
+
+  static isTargetInSwivelRange(playerRotation, targetAngle, logging, offset_degress) {
+    // Normalize player's rotation and target angle
+    playerRotation = Utils.normalizeAngle(playerRotation + offset_degress);
+    targetAngle = Utils.normalizeAngle(targetAngle);
+
+    // Define the swivel range around the player's current rotation
+    const minSwivelAngle = Utils.normalizeAngle(playerRotation - 85); // 90 degrees left of player
+    const maxSwivelAngle = Utils.normalizeAngle(playerRotation + 85); // 90 degrees right of player
+
+    // Check if the target is within the swivel range
+    if (minSwivelAngle <= maxSwivelAngle) {
+      return minSwivelAngle <= targetAngle && targetAngle <= maxSwivelAngle;
+    } else {
+      // Handle the case where angles wrap around 0°
+      return targetAngle >= minSwivelAngle || targetAngle <= maxSwivelAngle;
+    }
+  }
+
+  static isBulletCollidingWithPolygon(circle, polygonVertices) {
+    var circleSAT;
+    circleSAT = new SAT.Circle(new SAT.Vector(circle.x, circle.y), circle.size);
+    const polygonSAT = Utils.toSATPolygon(polygonVertices);
+    var collided = SAT.testCirclePolygon(circleSAT, polygonSAT);
+    return collided;
+  }
+
+  static isPlayerCollidingWithPolygon(circle, polygonVertices) {
+    response.clear();
+    var circleSAT;
+    circleSAT = new SAT.Circle(
+      new SAT.Vector(circle.x, circle.y),
+      circle.size * 40
+    );
+    const polygonSAT = Utils.toSATPolygon(polygonVertices);
+    var collided = SAT.testCirclePolygon(circleSAT, polygonSAT, response);
+    return [collided, response];
+  }
+
+  static finder_(data) {
+    let index___ = autocannons.findIndex(
+      (cannon) => data._cannon.CannonID === cannon.CannonID
+    );
+    if (index___ !== -1) {
+      let cannon = autocannons[index___];
+      return [cannon, index___];
+    }
+    return undefined;
+  }
+
+  static generateRandomNumber(min, max) {
+    return Math.random() * (max - min) + min;
+  } //
+
+  static rearrange() {
+    if (leader_board.shown.length <= 1) {
+      return;
+    }
+    leader_board.shown.sort(function (a, b) {
+      return a.score - b.score;
+    });
+    leader_board.shown.reverse(); // huh
+  }
+
+  static confirmplayerradia(_x, _y) {
+    for (const player in players) {
+      let player_ = players[player];
+      if (
+        Utils.between(
+          player_.x,
+          _x - (player_.size + 50),
+          _x + (player_.size + 50)
+        ) &&
+        Utils.between(player_.y, _y - (player_.size + 50), _y + (player_.size + 50))
+      ) {
+        return false; // Overlap detected
+      }
+    }
+    return true; // No overlap
+  }
+
+  static limitedLog(message, ...optionalParams) {
+    if (logCounter < LOG_LIMIT) {
+      console.log(message, ...optionalParams);
+      logCounter++;
+    } else if (logCounter === LOG_LIMIT) {
+      console.log("Logging limit reached. Further logs will be suppressed.");
+      logCounter++; // Increment one last time to stop this message from repeating
+    }
+  }
+
+  static normalizeAngle_2(angle) {
+    if (typeof angle !== "number" || isNaN(angle)) {
+      Utils.limitedLog("normalizeAngle received invalid input:", angle);
+      return 0; // Fallback to 0
+    }
+    return ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+  }
+
+  static moveCannonAngle(cannon) {
+    let deltaAngle = Utils.normalizeAngle_2(cannon.targetAngle - cannon.angle);
+
+    let reloadStat = players[cannon.playerid]?.statsTree?.["Bullet Reload"];
+
+    let denominator = 3.5 - (reloadStat - 1) / 3;
+
+    let adjustment = Math.abs(deltaAngle) / denominator;
+
+    cannon.angle += Math.sign(deltaAngle) * adjustment;
+    cannon.angle = Utils.normalizeAngle_2(cannon.angle);
+
+    emit("autoCannonUPDATE-ANGLE", {
+      angle: cannon.angle,
+      cannon_ID: cannon.CannonID,
+    });
   }
 }
 
-function isBulletCollidingWithPolygon(circle, polygonVertices) {
-  var circleSAT;
-  circleSAT = new SAT.Circle(new SAT.Vector(circle.x, circle.y), circle.size);
-  const polygonSAT = toSATPolygon(polygonVertices);
-  var collided = SAT.testCirclePolygon(circleSAT, polygonSAT);
-  return collided;
-}
+//const Utils_ = new Utils();
 
-function isPlayerCollidingWithPolygon(circle, polygonVertices) {
-  response.clear();
-  var circleSAT;
-  circleSAT = new SAT.Circle(
-    new SAT.Vector(circle.x, circle.y),
-    circle.size * 40
-  );
-  const polygonSAT = toSATPolygon(polygonVertices);
-  var collided = SAT.testCirclePolygon(circleSAT, polygonSAT, response);
-  return [collided, response];
-}
-
-function finder_(data) {
-  let index___ = autocannons.findIndex(
-    (cannon) => data._cannon.CannonID === cannon.CannonID
-  );
-  if (index___ !== -1) {
-    let cannon = autocannons[index___];
-    return [cannon, index___];
-  }
-  return undefined;
-}
-
-for (let i = 0; i < getRandomInt(400, 500); i++) {
+for (let i = 0; i < Utils_.getRandomInt(400, 500); i++) {
   var randID = Math.random() * i * Date.now();
-  let x = getRandomInt(-5000, 5000);
-  let y = getRandomInt(-5000, 5000);
+  let x = Utils_.getRandomInt(-5000, 5000);
+  let y = Utils_.getRandomInt(-5000, 5000);
   for (let j = 0; j < cors_taken.length; j++) {
     if (
-      between(x, cors_taken[j].x - 50, cors_taken[j].x + 50) &&
-      between(y, cors_taken[j].y - 50, cors_taken[j].y + 50)
+      Utils_.between(x, cors_taken[j].x - 50, cors_taken[j].x + 50) &&
+      Utils_.between(y, cors_taken[j].y - 50, cors_taken[j].y + 50)
     ) {
-      x = getRandomInt(-5000, 5000);
-      y = getRandomInt(-5000, 5000);
+      x = Utils_.getRandomInt(-5000, 5000);
+      y = Utils_.getRandomInt(-5000, 5000);
     }
   }
   cors_taken.push({ x: x, y: y, id: randID });
-  const valueOp__A = getRandomInt(1, 16);
+  const valueOp__A = Utils_.getRandomInt(1, 16);
   var type = "";
   var color = "";
   var health_max = "";
@@ -850,7 +917,7 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
   var body_damage = 0;
   var weight = 0;
   switch (true) {
-    case between(valueOp__A, 1, 9): // Adjusted to 1-6 for square
+    case Utils_.between(valueOp__A, 1, 9): // Adjusted to 1-6 for square
       type = "square";
       color = "Gold";
       health_max = 10;
@@ -858,7 +925,7 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
       body_damage = 2;
       weight = 3;
       break;
-    case between(valueOp__A, 10, 13): // Adjusted to 7-8 for triangle
+    case Utils_.between(valueOp__A, 10, 13): // Adjusted to 7-8 for triangle
       type = "triangle";
       color = "Red";
       health_max = 15;
@@ -866,7 +933,7 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
       body_damage = 3.5;
       weight = 5;
       break;
-    case between(valueOp__A, 14, 15): // Adjusted to 9-10 for pentagon
+    case Utils_.between(valueOp__A, 14, 15): // Adjusted to 9-10 for pentagon
       type = "pentagon";
       color = "#579bfa";
       health_max = 100;
@@ -880,22 +947,22 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
     health: health_max,
     maxhealth: health_max,
     size: 50,
-    angle: getRandomInt(0, 180),
+    angle: Utils_.getRandomInt(0, 180),
     x: x,
     y: y,
     centerX: x,
     centerY: y,
     weight: weight,
     body_damage: body_damage,
-    scalarX: getRandomInt(-100, 100),
-    scalarY: getRandomInt(-100, 100),
+    scalarX: Utils_.getRandomInt(-100, 100),
+    scalarY: Utils_.getRandomInt(-100, 100),
     vertices: null,
     color: color,
     score_add: score_add,
     randomID: randID,
   };
   if (type === "square") {
-    const rawvertices = calculateSquareVertices(
+    const rawvertices = Utils_.calculateSquareVertices(
       fooditem.x,
       fooditem.y,
       fooditem.size,
@@ -904,7 +971,7 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
     fooditem.vertices = rawvertices;
   }
   if (type === "triangle") {
-    const rawvertices = calculateTriangleVertices(
+    const rawvertices = Utils_.calculateTriangleVertices(
       fooditem.x,
       fooditem.y,
       fooditem.size,
@@ -913,7 +980,7 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
     fooditem.vertices = rawvertices;
   }
   if (type === "pentagon") {
-    const rawvertices = calculateRotatedPentagonVertices(
+    const rawvertices = Utils_.calculateRotatedPentagonVertices(
       fooditem.x,
       fooditem.y,
       fooditem.size,
@@ -937,21 +1004,21 @@ food_squares.forEach((shape, index) => {
   }
 });
 
-for (let i = 0; i < getRandomInt(50, 75); i++) {
-  let x = getRandomInt(-1000, 1000);
-  let y = getRandomInt(-1000, 1000);
+for (let i = 0; i < Utils_.getRandomInt(50, 75); i++) {
+  let x = Utils_.getRandomInt(-1000, 1000);
+  let y = Utils_.getRandomInt(-1000, 1000);
   var randID = Math.random() * i * Date.now();
   for (let j = 0; j < cors_taken.length; j++) {
     if (
-      between(x, cors_taken[j].x - 50, cors_taken[j].x + 50) &&
-      between(y, cors_taken[j].y - 50, cors_taken[j].y + 50)
+      Utils_.between(x, cors_taken[j].x - 50, cors_taken[j].x + 50) &&
+      Utils_.between(y, cors_taken[j].y - 50, cors_taken[j].y + 50)
     ) {
-      x = getRandomInt(-1000, 1000);
-      y = getRandomInt(-1000, 1000);
+      x = Utils_.getRandomInt(-1000, 1000);
+      y = Utils_.getRandomInt(-1000, 1000);
     }
   }
   cors_taken.push({ x: x, y: y, id: randID });
-  const valueOp = getRandomInt(1, 10);
+  const valueOp = Utils_.getRandomInt(1, 10);
   var type = "";
   var color = "";
   var health_max = "";
@@ -980,15 +1047,15 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
     health: health_max,
     maxhealth: health_max,
     size: size,
-    angle: getRandomInt(0, 180),
+    angle: Utils_.getRandomInt(0, 180),
     x: x,
     y: y,
     centerX: x,
     centerY: y,
     weight: weight,
     body_damage: body_damage,
-    scalarX: getRandomInt(-100, 100),
-    scalarY: getRandomInt(-100, 100),
+    scalarX: Utils_.getRandomInt(-100, 100),
+    scalarY: Utils_.getRandomInt(-100, 100),
     vertices: null,
     color: color,
     score_add: score_add,
@@ -996,7 +1063,7 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
     "respawn-raidis": 1000,
   };
   if (type === "square") {
-    const rawvertices = calculateSquareVertices(
+    const rawvertices = Utils_.calculateSquareVertices(
       fooditem.x,
       fooditem.y,
       fooditem.size,
@@ -1005,7 +1072,7 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
     fooditem.vertices = rawvertices;
   }
   if (type === "triangle") {
-    const rawvertices = calculateTriangleVertices(
+    const rawvertices = Utils_.calculateTriangleVertices(
       fooditem.x,
       fooditem.y,
       fooditem.size,
@@ -1014,7 +1081,7 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
     fooditem.vertices = rawvertices;
   }
   if (type === "pentagon") {
-    const rawvertices = calculateRotatedPentagonVertices(
+    const rawvertices = Utils_.calculateRotatedPentagonVertices(
       fooditem.x,
       fooditem.y,
       fooditem.size,
@@ -1025,34 +1092,7 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
 
   food_squares.push(fooditem);
 }
-
-function generateRandomNumber(min, max) {
-  return Math.random() * (max - min) + min;
-} //
-
-function rearrange() {
-  if (leader_board.shown.length <= 1) {
-    return;
-  }
-  leader_board.shown.sort(function (a, b) {
-    return a.score - b.score;
-  });
-  leader_board.shown.reverse(); // huh
-}
-
-function confirmplayerradia(_x, _y) {
-  for (const player in players) {
-    let player_ = players[player];
-    if (
-      between(player_.x, _x - (player_.size + 50), _x + (player_.size + 50)) &&
-      between(player_.y, _y - (player_.size + 50), _y + (player_.size + 50))
-    ) {
-      return false; // Overlap detected
-    }
-  }
-  return true; // No overlap
-}
-
+ 
 var angle = 0;
 
 const algorithm = "aes-256-cbc";
@@ -1071,43 +1111,7 @@ const connections = [];
 let logCounter = 0;
 const LOG_LIMIT = 1300; // Maximum number of logs
 
-function limitedLog(message, ...optionalParams) {
-  if (logCounter < LOG_LIMIT) {
-    console.log(message, ...optionalParams);
-    logCounter++;
-  } else if (logCounter === LOG_LIMIT) {
-    console.log("Logging limit reached. Further logs will be suppressed.");
-    logCounter++; // Increment one last time to stop this message from repeating
-  }
-}
-
-function normalizeAngle_2(angle) {
-  if (typeof angle !== "number" || isNaN(angle)) {
-    limitedLog("normalizeAngle received invalid input:", angle);
-    return 0; // Fallback to 0
-  }
-  return ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;
-}
-
-function moveCannonAngle(cannon) {
-  let deltaAngle = normalizeAngle_2(cannon.targetAngle - cannon.angle);
-
-  let reloadStat = players[cannon.playerid]?.statsTree?.["Bullet Reload"];
-
-  let denominator = 3.5 - (reloadStat - 1) / 3;
-
-  let adjustment = Math.abs(deltaAngle) / denominator;
-
-  cannon.angle += Math.sign(deltaAngle) * adjustment;
-  cannon.angle = normalizeAngle_2(cannon.angle);
-
-  emit("autoCannonUPDATE-ANGLE", {
-    angle: cannon.angle,
-    cannon_ID: cannon.CannonID,
-  });
-}
-
-console.log("userbase", typeof userbase);
+console.log("userbase", userbase);
 
 wss.on("connection", (socket) => {
   let connection = { socket: socket, playerId: null };
@@ -1142,14 +1146,14 @@ wss.on("connection", (socket) => {
       emit("pubteamlist", public_teams);
       let x, y;
       do {
-        x = getRandomInt(-4500, 4500);
-        y = getRandomInt(-4500, 4500);
+        x = Utils_.getRandomInt(-4500, 4500);
+        y = Utils_.getRandomInt(-4500, 4500);
       } while (
         cors_taken.some(
           (c) =>
-            between(x, c.x - 50, c.x + 50) && between(y, c.y - 50, c.y + 50)
+            Utils_.between(x, c.x - 50, c.x + 50) && Utils_.between(y, c.y - 50, c.y + 50)
         ) ||
-        !confirmplayerradia(x, y)
+        !Utils_.confirmplayerradia(x, y)
       );
       if (data.userId) {
         console.log(userbase, data.userId);
@@ -1491,7 +1495,7 @@ wss.on("connection", (socket) => {
                 if (tankdatacannondata["offSet-x-multpliyer"]) {
                   offSet_x *= -1;
                 }
-                var [X, Y] = rotatePointAroundPlayer(offSet_x, 0, data.angle);
+                var [X, Y] = Utils_.rotatePointAroundPlayer(offSet_x, 0, data.angle);
                 cannon["x_"] = X;
                 cannon["y_"] = Y;
               }
@@ -1677,7 +1681,7 @@ wss.on("connection", (socket) => {
             if (tankdatacannondata["offSet-x-multpliyer"]) {
               offSet_x *= -1;
             }
-            var [X, Y] = rotatePointAroundPlayer(offSet_x, 0, data.angle);
+            var [X, Y] = Utils_.rotatePointAroundPlayer(offSet_x, 0, data.angle);
             cannon["x_"] = X;
             cannon["y_"] = Y;
           }
@@ -1702,7 +1706,7 @@ wss.on("connection", (socket) => {
         let size__ = player.size * 80 + item.size * 1.5;
         if (!(distanceX < size__ && distanceY < size__)) return true;
 
-        var collisionCheck = isPlayerCollidingWithPolygon(
+        var collisionCheck = Utils_.isPlayerCollidingWithPolygon(
           player,
           item.vertices
         );
@@ -1762,7 +1766,7 @@ wss.on("connection", (socket) => {
                 __index__.score += item.score_add;
               }
             });
-            rearrange();
+            Utils_.rearrange();
             console.log(leader_board.shown);
             emit("boardUpdate", {
               leader_board: leader_board.shown,
@@ -1779,20 +1783,20 @@ wss.on("connection", (socket) => {
             let respawnrai = item["respawn-raidis"] || 4500;
             let x, y;
             do {
-              x = getRandomInt(-respawnrai, respawnrai);
-              y = getRandomInt(-respawnrai, respawnrai);
+              x = Utils_.getRandomInt(-respawnrai, respawnrai);
+              y = Utils_.getRandomInt(-respawnrai, respawnrai);
             } while (
               cors_taken.some(
                 (c) =>
-                  between(x, c.x - 50, c.x + 50) &&
-                  between(y, c.y - 50, c.y + 50)
+                  Utils_.between(x, c.x - 50, c.x + 50) &&
+                  Utils_.between(y, c.y - 50, c.y + 50)
               )
             );
             let randID = Math.random() * index * Date.now();
 
             cors_taken.push({ x, y, id: randID });
 
-            const valueOp = getRandomInt(1, 15);
+            const valueOp = Utils_.getRandomInt(1, 15);
             var type = "";
             var color = "";
             var health_max = "";
@@ -1801,7 +1805,7 @@ wss.on("connection", (socket) => {
             var weight = 0;
             if (!item["respawn-raidis"]) {
               switch (true) {
-                case between(valueOp, 1, 10): // Adjusted to 1-6 for square
+                case Utils_.between(valueOp, 1, 10): // Adjusted to 1-6 for square
                   type = "square";
                   color = "Gold";
                   health_max = 10;
@@ -1809,7 +1813,7 @@ wss.on("connection", (socket) => {
                   body_damage = 2;
                   weight = 3;
                   break;
-                case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
+                case Utils_.between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
                   type = "triangle";
                   color = "Red";
                   health_max = 15;
@@ -1817,7 +1821,7 @@ wss.on("connection", (socket) => {
                   body_damage = 3.5;
                   weight = 5;
                   break;
-                case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
+                case Utils_.between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
                   type = "pentagon";
                   color = "#579bfa";
                   health_max = 100;
@@ -1827,7 +1831,7 @@ wss.on("connection", (socket) => {
                   break;
               }
             } else {
-              const valueOp2 = getRandomInt(1, 10);
+              const valueOp2 = Utils_.getRandomInt(1, 10);
 
               type = "pentagon";
               color = "#579bfa";
@@ -1850,22 +1854,22 @@ wss.on("connection", (socket) => {
               health: health_max,
               maxhealth: health_max,
               size: 50,
-              angle: getRandomInt(0, 180),
+              angle: Utils_.getRandomInt(0, 180),
               x: x,
               y: y,
               centerX: x,
               centerY: y,
               weight: weight,
               body_damage: body_damage,
-              scalarX: getRandomInt(-100, 100),
-              scalarY: getRandomInt(-100, 100),
+              scalarX: Utils_.getRandomInt(-100, 100),
+              scalarY: Utils_.getRandomInt(-100, 100),
               vertices: null,
               color: color,
               score_add: score_add,
               randomID: randID,
             };
             if (type === "square") {
-              const rawvertices = calculateSquareVertices(
+              const rawvertices = Utils_.calculateSquareVertices(
                 fooditem.x,
                 fooditem.y,
                 fooditem.size,
@@ -1874,7 +1878,7 @@ wss.on("connection", (socket) => {
               fooditem.vertices = rawvertices;
             }
             if (type === "triangle") {
-              const rawvertices = calculateTriangleVertices(
+              const rawvertices = Utils_.calculateTriangleVertices(
                 fooditem.x,
                 fooditem.y,
                 fooditem.size,
@@ -1883,7 +1887,7 @@ wss.on("connection", (socket) => {
               fooditem.vertices = rawvertices;
             }
             if (type === "pentagon") {
-              const rawvertices = calculateRotatedPentagonVertices(
+              const rawvertices = Utils_.calculateRotatedPentagonVertices(
                 fooditem.x,
                 fooditem.y,
                 fooditem.size,
@@ -1935,7 +1939,7 @@ wss.on("connection", (socket) => {
           player.state !== "start" &&
           !sameTeam
         ) {
-          var distance = MathHypotenuse(player.x - data.x, player.y - data.y);
+          var distance = Utils_.MathHypotenuse(player.x - data.x, player.y - data.y);
           if (distance < maxdistance) {
             let angle = Math.atan2(
               player.y - players[data.playerId].y, // y difference
@@ -1952,7 +1956,7 @@ wss.on("connection", (socket) => {
                 ]["offSet-x-multpliyer"] === -1
               ) {
                 if (
-                  isTargetInSwivelRange(
+                  Utils_.isTargetInSwivelRange(
                     players[data.playerId].cannon_angle,
                     (angle * 180) / pi,
                     true,
@@ -1964,7 +1968,7 @@ wss.on("connection", (socket) => {
                 }
               } else {
                 if (
-                  isTargetInSwivelRange(
+                  Utils_.isTargetInSwivelRange(
                     players[data.playerId].cannon_angle,
                     (angle * 180) / pi,
                     true,
@@ -1984,7 +1988,7 @@ wss.on("connection", (socket) => {
       }
       if (maxdistance > 1300) {
         food_squares.forEach((item) => {
-          var distance = MathHypotenuse(
+          var distance = Utils_.MathHypotenuse(
             item.x - data.playerX,
             item.y - data.playerY
           );
@@ -2004,7 +2008,7 @@ wss.on("connection", (socket) => {
                 ]["offSet-x-multpliyer"] === -1
               ) {
                 if (
-                  isTargetInSwivelRange(
+                  Utils_.isTargetInSwivelRange(
                     players[data.playerId].cannon_angle,
                     (angle * 180) / pi,
                     true,
@@ -2016,7 +2020,7 @@ wss.on("connection", (socket) => {
                 }
               } else {
                 if (
-                  isTargetInSwivelRange(
+                  Utils_.isTargetInSwivelRange(
                     players[data.playerId].cannon_angle,
                     (angle * 180) / pi,
                     true,
@@ -2072,7 +2076,7 @@ wss.on("connection", (socket) => {
 
       let bullet_size_l = data.bullet_size * cannon["bulletSize"];
 
-      let randomNumber = generateRandomNumber(-0.2, 0.2);
+      let randomNumber = Utils_.generateRandomNumber(-0.2, 0.2);
 
       var offSet_x = cannon["offSet-x"];
       if (cannon["offSet-x"] === "playerX") {
@@ -2147,7 +2151,7 @@ wss.on("connection", (socket) => {
       };
 
       bullets.push(bullet);
-      var [_index_, CO] = finder_(data);
+      var [_index_, CO] = Utils_.finder_(data);
       return;
     }
 
@@ -2348,7 +2352,7 @@ wss.on("connection", (socket) => {
       }
       if (data.type === "AutoBullet") {
         let autoID =
-          getRandomInt(-10000, 10000) * Date.now() * getRandomInt(-1000, 1000);
+          Utils_.getRandomInt(-10000, 10000) * Date.now() * getRandomInt(-1000, 1000);
         let auto_cannon = {
           CannonID: autoID,
           playerid: data.uniqueid,
@@ -2398,7 +2402,7 @@ wss.on("connection", (socket) => {
               player.team !== null &&
               players[data.id].team !== null;
             if (playerID !== bullet.id && !sameTeam) {
-              var distance = MathHypotenuse(
+              var distance = Utils_.MathHypotenuse(
                 player.x - bullet.x,
                 player.y - bullet.y
               );
@@ -2415,7 +2419,7 @@ wss.on("connection", (socket) => {
           }
           if (maxdistance > 1300) {
             food_squares.forEach((item) => {
-              var distance = MathHypotenuse(
+              var distance = Utils_.MathHypotenuse(
                 item.x - bullet.x,
                 item.y - bullet.y
               );
@@ -2452,7 +2456,7 @@ wss.on("connection", (socket) => {
 
           let bullet_size_l = (bullet.size * cannon["bulletSize"]) / 1.8;
 
-          let randomNumber = generateRandomNumber(-0.2, 0.2);
+          let randomNumber = Utils_.generateRandomNumber(-0.2, 0.2);
 
           var offSet_x = cannon["offSet-x"];
           if (cannon["offSet-x"] === "playerX") {
@@ -2572,7 +2576,7 @@ wss.on("connection", (socket) => {
 
           let bullet_size_l = (bullet.size * cannon["bulletSize"]) / 1.2;
 
-          let randomNumber = generateRandomNumber(-0.2, 0.2);
+          let randomNumber = Utils_.generateRandomNumber(-0.2, 0.2);
 
           var offSet_x = cannon["offSet-x"];
           if (cannon["offSet-x"] === "playerX") {
@@ -2790,7 +2794,7 @@ wss.on("connection", (socket) => {
       return a.score - b.score;
     });
     _player.scores.reverse();
-    _player.scores = _player.scores.slice(0,10)
+    _player.scores = _player.scores.slice(0, 10);
     console.log(userbase);
     fs.writeFile(
       "users.json",
@@ -2883,7 +2887,7 @@ setInterval(() => {
     var newX__;
     var newY__;
     if (bullet.type !== "directer") {
-      bullet.distanceTraveled += MathHypotenuse(
+      bullet.distanceTraveled += Utils_.MathHypotenuse(
         newX - bullet.x,
         newY - bullet.y
       );
@@ -2899,7 +2903,7 @@ setInterval(() => {
       }
 
       bullets.forEach((bullet_) => {
-        let distance = MathHypotenuse(
+        let distance = Utils_.MathHypotenuse(
           bullet.x - bullet_.x,
           bullet.y - bullet_.y
         );
@@ -2955,7 +2959,7 @@ setInterval(() => {
         }
       });
 
-      const rawvertices = calculateTriangleVertices(
+      const rawvertices = Utils_.calculateTriangleVertices(
         bullet.x,
         bullet.y,
         bullet.size * 3,
@@ -2964,7 +2968,7 @@ setInterval(() => {
       bullet.vertices = rawvertices;
     } else {
       bullets.forEach((bullet_) => {
-        let distance = MathHypotenuse(
+        let distance = Utils_.MathHypotenuse(
           bullet.x - bullet_.x,
           bullet.y - bullet_.y
         );
@@ -3002,7 +3006,7 @@ setInterval(() => {
 
     for (const playerId in players) {
       var player = players[playerId];
-      var distance = MathHypotenuse(player.x - bullet.x, player.y - bullet.y);
+      var distance = Utils_.MathHypotenuse(player.x - bullet.x, player.y - bullet.y);
       let player40 = player.size * 40;
       var sameTeam =
         players[bullet.id]?.team === players[playerId]?.team &&
@@ -3095,7 +3099,7 @@ setInterval(() => {
                 __index__.score += reward;
               }
             });
-            rearrange();
+            Utils_.rearrange();
             emit("boardUpdate", {
               leader_board: leader_board.shown,
             });
@@ -3151,7 +3155,7 @@ setInterval(() => {
       var tankdatacannon__ =
         tankmeta[players[cannon.playerid].__type__]["cannons"];
     } else if (cannon._type_ === "bulletAuto") {
-      let par_ = findBullet(cannon.playerid);
+      let par_ = Utils_.findBullet(cannon.playerid);
       if (par_ == null || players[par_.id] === undefined) return;
       var tankdatacannon__ = tankmeta[players[par_.id].__type__]["cannons"];
     }
@@ -3175,18 +3179,18 @@ setInterval(() => {
           offSet_x *= -1;
         }
         if (cannon["x_"]) {
-          var distance = MathHypotenuse(
+          var distance = Utils_.MathHypotenuse(
             player.x - (players[cannon.playerid].x + cannon["x_"]),
             player.y - (players[cannon.playerid].y + cannon["y_"])
           );
         } else if (cannon._type_ === "bulletAuto") {
-          let parentBullet = findBullet(cannon.playerid);
-          var distance = MathHypotenuse(
+          let parentBullet = Utils_.findBullet(cannon.playerid);
+          var distance = Utils_.MathHypotenuse(
             player.x - parentBullet.x,
             player.y - parentBullet.y
           );
         } else {
-          var distance = MathHypotenuse(
+          var distance = Utils_.MathHypotenuse(
             player.x - (players[cannon.playerid].x + offSet_x),
             player.y - players[cannon.playerid].y
           );
@@ -3198,7 +3202,7 @@ setInterval(() => {
               player.x - players[cannon.playerid].x // x difference
             );
           } else if (cannon._type_ === "bulletAuto") {
-            let parentBullet = findBullet(cannon.playerid);
+            let parentBullet = Utils_.findBullet(cannon.playerid);
             var angle = Math.atan2(
               player.y - parentBullet.y,
               player.x - parentBullet.x
@@ -3225,7 +3229,7 @@ setInterval(() => {
               ]["offSet-x-multpliyer"] === -1
             ) {
               if (
-                isTargetInSwivelRange(
+                Utils_.isTargetInSwivelRange(
                   players[cannon.playerid].cannon_angle,
                   angle * (180 / pi),
                   true,
@@ -3238,7 +3242,7 @@ setInterval(() => {
               }
             } else {
               if (
-                isTargetInSwivelRange(
+                Utils_.isTargetInSwivelRange(
                   players[cannon.playerid].cannon_angle,
                   angle * (180 / pi),
                   true,
@@ -3260,7 +3264,7 @@ setInterval(() => {
     }
     if (maxdistance > 1300) {
       if (cannon._type_ === "bulletAuto") {
-        var __parentBullet__ = findBullet(cannon.playerid);
+        var __parentBullet__ = Utils_.findBullet(cannon.playerid);
       }
       food_squares.forEach((item) => {
         var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
@@ -3271,18 +3275,18 @@ setInterval(() => {
           offSet_x *= -1;
         }
         if (cannon["x_"]) {
-          var distance = MathHypotenuse(
+          var distance = Utils_.MathHypotenuse(
             item.x - (players[cannon.playerid].x + cannon["x_"]),
             item.y - (players[cannon.playerid].y + cannon["y_"])
           );
         } else if (cannon._type_ === "bulletAuto") {
-          let parentBullet = findBullet(cannon.playerid);
-          var distance = MathHypotenuse(
+          let parentBullet = Utils_.findBullet(cannon.playerid);
+          var distance = Utils_.MathHypotenuse(
             item.x - parentBullet.x,
             item.y - parentBullet.y
           );
         } else {
-          var distance = MathHypotenuse(
+          var distance = Utils_.MathHypotenuse(
             item.x - (players[cannon.playerid].x + offSet_x),
             item.y - players[cannon.playerid].y
           );
@@ -3294,7 +3298,7 @@ setInterval(() => {
               item.x - players[cannon.playerid].x // x difference
             );
           } else if (cannon._type_ === "bulletAuto") {
-            let parentBullet = findBullet(cannon.playerid);
+            let parentBullet = Utils_.findBullet(cannon.playerid);
             var angle = Math.atan2(
               item.y - parentBullet.y,
               item.x - parentBullet.x
@@ -3321,7 +3325,7 @@ setInterval(() => {
               ]["offSet-x-multpliyer"] === -1
             ) {
               if (
-                isTargetInSwivelRange(
+                Utils_.isTargetInSwivelRange(
                   players[cannon.playerid].cannon_angle,
                   angle * (180 / pi),
                   true,
@@ -3334,7 +3338,7 @@ setInterval(() => {
               }
             } else {
               if (
-                isTargetInSwivelRange(
+                Utils_.isTargetInSwivelRange(
                   players[cannon.playerid].cannon_angle,
                   angle * (180 / pi),
                   true,
@@ -3401,7 +3405,7 @@ setInterval(() => {
           });
         }
       } else {
-        moveCannonAngle(cannon);
+        Utils_.moveCannonAngle(cannon);
       }
     }
     if (fire_at__ !== undefined && fire_at__ !== null) {
@@ -3458,7 +3462,7 @@ setInterval(() => {
       console.error("Malformed shape detected:", index, item);
     }
     if (item.type === "square") {
-      const rawvertices = calculateSquareVertices(
+      const rawvertices = Utils_.calculateSquareVertices(
         item.x,
         item.y,
         item.size,
@@ -3467,7 +3471,7 @@ setInterval(() => {
       item.vertices = rawvertices;
     }
     if (item.type === "triangle") {
-      const rawvertices = calculateTriangleVertices(
+      const rawvertices = Utils_.calculateTriangleVertices(
         item.x,
         item.y,
         item.size,
@@ -3476,7 +3480,7 @@ setInterval(() => {
       item.vertices = rawvertices;
     }
     if (item.type === "pentagon") {
-      const rawvertices = calculateRotatedPentagonVertices(
+      const rawvertices = Utils_.calculateRotatedPentagonVertices(
         item.x,
         item.y,
         item.size,
@@ -3496,7 +3500,7 @@ setInterval(() => {
       let size__ = player.size * 80 + item.size * 1.5;
 
       if (distanceX < size__ && distanceY < size__) {
-        var collisionCheck = isPlayerCollidingWithPolygon(
+        var collisionCheck = Utils_.isPlayerCollidingWithPolygon(
           player,
           item.vertices
         );
@@ -3555,7 +3559,7 @@ setInterval(() => {
                 __index__.score += item.score_add;
               }
             });
-            rearrange();
+            Utils_.rearrange();
             emit("boardUpdate", {
               leader_board: leader_board.shown,
             });
@@ -3571,20 +3575,20 @@ setInterval(() => {
             let respawnrai = item["respawn-raidis"] || 4500;
             let x, y;
             do {
-              x = getRandomInt(-respawnrai, respawnrai);
-              y = getRandomInt(-respawnrai, respawnrai);
+              x = Utils_.getRandomInt(-respawnrai, respawnrai);
+              y = Utils_.getRandomInt(-respawnrai, respawnrai);
             } while (
               cors_taken.some(
                 (c) =>
-                  between(x, c.x - 50, c.x + 50) &&
-                  between(y, c.y - 50, c.y + 50)
+                  Utils_.between(x, c.x - 50, c.x + 50) &&
+                  Utils_.between(y, c.y - 50, c.y + 50)
               )
             );
             let randID = Math.random() * index * Date.now();
 
             cors_taken.push({ x, y, id: randID });
 
-            const valueOp = getRandomInt(1, 15);
+            const valueOp = Utils_.getRandomInt(1, 15);
             var type = "";
             var color = "";
             var health_max = "";
@@ -3593,7 +3597,7 @@ setInterval(() => {
             var weight = 0;
             if (!item["respawn-raidis"]) {
               switch (true) {
-                case between(valueOp, 1, 10): // Adjusted to 1-6 for square
+                case Utils_.between(valueOp, 1, 10): // Adjusted to 1-6 for square
                   type = "square";
                   color = "Gold";
                   health_max = 10;
@@ -3601,7 +3605,7 @@ setInterval(() => {
                   body_damage = 2;
                   weight = 3;
                   break;
-                case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
+                case Utils_.between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
                   type = "triangle";
                   color = "Red";
                   health_max = 15;
@@ -3609,7 +3613,7 @@ setInterval(() => {
                   body_damage = 3.5;
                   weight = 5;
                   break;
-                case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
+                case Utils_.between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
                   type = "pentagon";
                   color = "#579bfa";
                   health_max = 100;
@@ -3619,7 +3623,7 @@ setInterval(() => {
                   break;
               }
             } else {
-              const valueOp2 = getRandomInt(1, 10);
+              const valueOp2 = Utils_.getRandomInt(1, 10);
 
               type = "pentagon";
               color = "#579bfa";
@@ -3642,22 +3646,22 @@ setInterval(() => {
               health: health_max,
               maxhealth: health_max,
               size: size,
-              angle: getRandomInt(0, 180),
+              angle: Utils_.getRandomInt(0, 180),
               x: x,
               y: y,
               centerX: x,
               centerY: y,
               body_damage: body_damage,
               weight: weight,
-              scalarX: getRandomInt(-100, 100),
-              scalarY: getRandomInt(-100, 100),
+              scalarX: Utils_.getRandomInt(-100, 100),
+              scalarY: Utils_.getRandomInt(-100, 100),
               vertices: null,
               color: color,
               score_add: score_add,
               randomID: randID,
             };
             if (type === "square") {
-              const rawvertices = calculateSquareVertices(
+              const rawvertices = Utils_.calculateSquareVertices(
                 fooditem.x,
                 fooditem.y,
                 fooditem.size,
@@ -3666,7 +3670,7 @@ setInterval(() => {
               fooditem.vertices = rawvertices;
             }
             if (type === "triangle") {
-              const rawvertices = calculateTriangleVertices(
+              const rawvertices = Utils_.calculateTriangleVertices(
                 fooditem.x,
                 fooditem.y,
                 fooditem.size,
@@ -3675,7 +3679,7 @@ setInterval(() => {
               fooditem.vertices = rawvertices;
             }
             if (type === "pentagon") {
-              const rawvertices = calculateRotatedPentagonVertices(
+              const rawvertices = Utils_.calculateRotatedPentagonVertices(
                 fooditem.x,
                 fooditem.y,
                 fooditem.size,
@@ -3704,9 +3708,9 @@ setInterval(() => {
       }
     }
     bullets.forEach((bullet) => {
-      let distance = MathHypotenuse(item.x - bullet.x, item.y - bullet.y);
+      let distance = Utils_.MathHypotenuse(item.x - bullet.x, item.y - bullet.y);
       if (distance < 400) {
-        let collisionCheck = isBulletCollidingWithPolygon(
+        let collisionCheck = Utils_.isBulletCollidingWithPolygon(
           bullet,
           item.vertices
         );
@@ -3752,7 +3756,7 @@ setInterval(() => {
               __index__.score += item.score_add;
             }
           });
-          rearrange();
+          Utils_.rearrange();
           emit("boardUpdate", {
             leader_board: leader_board.shown,
           });
@@ -3774,19 +3778,19 @@ setInterval(() => {
           let respawnrai = item["respawn-raidis"] || 4500;
           let x, y;
           do {
-            x = getRandomInt(-respawnrai, respawnrai);
-            y = getRandomInt(-respawnrai, respawnrai);
+            x = Utils_.getRandomInt(-respawnrai, respawnrai);
+            y = Utils_.getRandomInt(-respawnrai, respawnrai);
           } while (
             cors_taken.some(
               (c) =>
-                between(x, c.x - 50, c.x + 50) && between(y, c.y - 50, c.y + 50)
+                Utils_.between(x, c.x - 50, c.x + 50) && Utils_.between(y, c.y - 50, c.y + 50)
             ) ||
-            !confirmplayerradia(x, y)
+            !Utils_.confirmplayerradia(x, y)
           );
 
           cors_taken.push({ x, y, id: randID });
 
-          const valueOp = getRandomInt(1, 15);
+          const valueOp = Utils_.getRandomInt(1, 15);
           var type = "";
           var color = "";
           var health_max = "";
@@ -3795,7 +3799,7 @@ setInterval(() => {
           var weight = 0;
           if (!item["respawn-raidis"]) {
             switch (true) {
-              case between(valueOp, 1, 10): // Adjusted to 1-6 for square
+              case Utils_.between(valueOp, 1, 10): // Adjusted to 1-6 for square
                 type = "square";
                 color = "Gold";
                 health_max = 10;
@@ -3803,7 +3807,7 @@ setInterval(() => {
                 body_damage = 2;
                 weight = 3;
                 break;
-              case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
+              case Utils_.between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
                 type = "triangle";
                 color = "Red";
                 health_max = 15;
@@ -3811,7 +3815,7 @@ setInterval(() => {
                 body_damage = 3.5;
                 weight = 5;
                 break;
-              case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
+              case Utils_.between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
                 type = "pentagon";
                 color = "#579bfa";
                 health_max = 100;
@@ -3821,7 +3825,7 @@ setInterval(() => {
                 break;
             }
           } else {
-            const valueOp2 = getRandomInt(1, 10);
+            const valueOp2 = Utils_.getRandomInt(1, 10);
 
             type = "pentagon";
             color = "#579bfa";
@@ -3845,15 +3849,15 @@ setInterval(() => {
               health: health_max,
               maxhealth: health_max,
               size: 50,
-              angle: getRandomInt(0, 180),
+              angle: Utils_.getRandomInt(0, 180),
               x: x,
               y: y,
               centerX: x,
               centerY: y,
               weight: weight,
               body_damage: body_damage,
-              scalarX: getRandomInt(-100, 100),
-              scalarY: getRandomInt(-100, 100),
+              scalarX: Utils_.getRandomInt(-100, 100),
+              scalarY: Utils_.getRandomInt(-100, 100),
               vertices: null,
               color: color,
               score_add: score_add,
@@ -3866,15 +3870,15 @@ setInterval(() => {
               health: health_max,
               maxhealth: health_max,
               size: size,
-              angle: getRandomInt(0, 180),
+              angle: Utils_.getRandomInt(0, 180),
               x: x,
               y: y,
               centerX: x,
               centerY: y,
               weight: weight,
               body_damage: body_damage,
-              scalarX: getRandomInt(-100, 100),
-              scalarY: getRandomInt(-100, 100),
+              scalarX: Utils_.getRandomInt(-100, 100),
+              scalarY: Utils_.getRandomInt(-100, 100),
               vertices: null,
               color: color,
               score_add: score_add,
@@ -3898,7 +3902,7 @@ setInterval(() => {
           item.centerY += recoilY;
 
           if (type === "triangle") {
-            const rawvertices = calculateTriangleVertices(
+            const rawvertices = Utils_.calculateTriangleVertices(
               fooditem__XX.x,
               fooditem__XX.y,
               fooditem__XX.size,
@@ -3907,7 +3911,7 @@ setInterval(() => {
             fooditem__XX.vertices = rawvertices;
           } //
           if (type === "pentagon") {
-            const rawvertices = calculateRotatedPentagonVertices(
+            const rawvertices = Utils_.calculateRotatedPentagonVertices(
               fooditem__XX.x,
               fooditem__XX.y,
               fooditem__XX.size,
@@ -3916,7 +3920,7 @@ setInterval(() => {
             fooditem__XX.vertices = rawvertices;
           }
           if (type === "square") {
-            const rawvertices = calculateSquareVertices(
+            const rawvertices = Utils_.calculateSquareVertices(
               fooditem__XX.x,
               fooditem__XX.y,
               fooditem__XX.size,
@@ -4036,7 +4040,7 @@ function smartbroadcast(type, data, senderConn) {
     }
   });
 }
-
+ 
 const listener = server.listen(process.env.PORT, function () {
   console.log("Your app is listening on port " + listener.address().port);
 });
