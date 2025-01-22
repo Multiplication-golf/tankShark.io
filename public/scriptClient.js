@@ -4,6 +4,7 @@
     return Math.random() * (max - min) + min;
   }
   var username = "Unamed tank";
+
   for (let i = 0; i < 125; i++) {
     for (let j = 0; j < 125; j++) {
       const div = document.createElement("div");
@@ -15,11 +16,112 @@
       document.getElementById("grid").appendChild(div);
     }
   }
+  const schema = `
+    syntax = "proto3";
+
+    message GameObject {
+      float angle = 1;
+      string cvolor = 2;
+      int32 health = 3;
+      int32 maxhealth = 4;
+      float size = 5;
+      string type = 6;
+      float weight = 7;
+      float x = 8;
+      float y = 9;
+      float transparency = 10;
+    }
+
+    message GameObjectList {
+      repeated GameObject objects = 1;
+    }
+    `;
+  function loadProto() {
+    // Define the schema directly as a JSON object
+    const schema = {
+      nested: {
+        GameObject: {
+          fields: {
+            angle: { type: "float", id: 1 },
+            color: { type: "string", id: 2 },
+            health: { type: "int32", id: 3 },
+            maxhealth: { type: "int32", id: 4 },
+            size: { type: "float", id: 5 },
+            type: { type: "string", id: 6 },
+            weight: { type: "float", id: 7 },
+            x: { type: "float", id: 8 },
+            y: { type: "float", id: 9 },
+            transparency: { type: "float", id: 10 },
+          },
+        },
+        GameObjectList: {
+          fields: {
+            objects: { rule: "repeated", type: "GameObject", id: 1 },
+          },
+        },
+      },
+    };
+
+    // Parse the schema and create the root object
+    const root = protobuf.Root.fromJSON(schema);
+
+    // Look up the GameObjectList type definition
+    const GameObjectList = root.lookupType("GameObjectList");
+
+    return GameObjectList; // Return the GameObjectList type
+  }
+  /*function loadProto() {
+    return fetch("game.json")
+      .then((response) => response.json()) // Parse the JSON schema
+      .then((jsonDescriptor) => {
+        // Create the protobuf root object from the schema
+        const root = protobuf.Root.fromJSON(jsonDescriptor);
+        // Get the GameObjectList type definition
+        const GameObjectList = root.lookupType("GameObjectList");
+        return GameObjectList; // Return the GameObjectList type
+      });
+  }*/
+
+  // Function to decode the Protobuf message and return the type and data
+  function decodeMessage(event) {
+    var GameObjectList = loadProto();
+    if (!event.data) {
+      throw new Error("event.data is missing");
+    }
+
+    const buffer = new Uint8Array(event.data);
+
+    const message = GameObjectList.decode(buffer);
+
+    return message;
+  }
+
   function ongame() {
     const socket =
       new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(
         "https://deip-io3.glitch.me/"
       );
+    socket.binaryType = "arraybuffer";
+    const schema = `
+          syntax = "proto3";
+
+          message GameObject {
+            float angle = 1;
+            string color = 2;
+            int32 health = 3;
+            int32 maxhealth = 4;
+            float size = 5;
+            string type = 6;
+            float weight = 7;
+            float x = 8;
+            float y = 9;
+            float transparency = 10;
+          }
+
+          message GameObjectList {
+            repeated GameObject objects = 1;
+          }
+          `;
 
     let playerId = null; // Connect to the server
     const canvas = document.createElement("canvas");
@@ -276,7 +378,7 @@
       setTimeout(() => {
         canKeyPress = true;
       }, 300);
-      canKeyPress = false
+      canKeyPress = false;
     }
 
     function getMousePos(canvas, evt) {
@@ -317,6 +419,25 @@
         Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
       );
     };
+
+    function mix(rgb, rgb2, percent, ...otherrgbs) {
+      let _return = false;
+      rgb.forEach((f) => {
+        if (typeof f !== "number") _return = true;
+      });
+      rgb2.forEach((f) => {
+        if (typeof f !== "number") _return = true;
+      });
+      if (rgb.length !== 3 || rgb2.length !== 3) _return = true;
+      if (_return) throw new Error("Bad rgbs");
+      var newrgb = rgb.map((c, i) => {
+        return (c = rgb2[i] * percent + c * (1 - percent));
+      });
+      otherrgbs.forEach((rgb, i) => {
+        mix(rgb, otherrgbs[i], percent);
+      });
+      return newrgb;
+    }
 
     function setCookie(cname, cvalue, exdays) {
       const d = new Date();
@@ -615,7 +736,6 @@
           team: teamOn,
           userId: userId,
         };
-        console.log("userId", userId);
 
         send("newPlayer", playerData);
 
@@ -632,13 +752,27 @@
         img.onload = function () {
           ctx.drawImage(img, canvas.width / 2, canvas.height - 60);
         };
-        console.log(badge);
         img.src = `https://deip-io3.glitch.me${badge}?nocache=${Date.now()}`;
 
         socket.onmessage = function (event) {
-          const message = JSON.parse(event.data);
+          var type;
+          var data;
+          try {
+            const message = JSON.parse(event.data);
 
-          const { type, data } = message;
+            type = message.type;
+            data = message.data;
+          } catch {
+            function f() {
+              const message = decodeMessage(event);
+
+              type = message.type;
+              data = message.data;
+              food_list = message.objects;
+            }
+            f();
+            return
+          }
 
           if (type === "playerUpdated") {
             players[data.id] = data; // Update the local player data
@@ -943,7 +1077,6 @@
               });
             } else {
               let MYteam = pubteams.find((team) => {
-                console.log(players[playerId].team, team.teamID);
                 return team.teamID === players[playerId].team;
               });
               MYteam.players.forEach((player) => {
@@ -955,7 +1088,6 @@
                 } else {
                   item.innerText = player.username;
                 }
-                console.log(MYteam.owner.id, player.id);
                 if (player.id === MYteam.owner.id) {
                   var crown = document.createElement("img");
                   crown.src = "assets/crownIcon.png";
@@ -972,7 +1104,6 @@
             }
           } else if (type === "playerJoinedTeam") {
             players[data.id].team = data.teamId;
-            console.log("team", players[data.id]);
             if (data.id === playerId && data.teamId !== null) {
               joinedTeam = true;
               teamOn = data.teamId;
@@ -996,7 +1127,7 @@
                 send("playerHealintterupted", { ID: playerId });
                 playerHealTime = 0;
                 state = "damaged";
-                statecycle = 0;
+                //statecycle = 0;
                 send("statechange", {
                   state: state,
                   statecycle: statecycle,
@@ -1004,7 +1135,7 @@
                 });
                 setTimeout(() => {
                   state = "normal";
-                  statecycle = 0;
+                  //statecycle = 0;
                   send("statechange", {
                     state: state,
                     statecycle: statecycle,
@@ -1025,7 +1156,7 @@
 
               if (data.PlayerId == playerId) {
                 state = "damaged";
-                statecycle = 0;
+                //statecycle = 0;
                 send("statechange", {
                   state: state,
                   statecycle: statecycle,
@@ -1033,7 +1164,7 @@
                 });
                 setTimeout(() => {
                   state = "normal";
-                  statecycle = 0;
+                  //statecycle = 0;
                   send("statechange", {
                     state: state,
                     statecycle: statecycle,
@@ -1056,7 +1187,7 @@
 
               if (data.PlayerId == playerId) {
                 state = "damaged";
-                statecycle = 0;
+                //statecycle = 0;
                 send("statechange", {
                   state: state,
                   statecycle: statecycle,
@@ -1064,7 +1195,7 @@
                 });
                 setTimeout(() => {
                   state = "normal";
-                  statecycle = 0;
+                  //statecycle = 0;
                   send("statechange", {
                     state: state,
                     statecycle: statecycle,
@@ -1090,14 +1221,14 @@
               }
             });
             movementTimeouts = [];
-            let playerSpeed2 = playerSpeed / 2;
-            for (let i = 0; i < playerSpeed2; i++) {
+            let playerSpeed2 = playerSpeed * 2;
+            for (let i = 0; i < playerSpeed / 2; i++) {
               let timeout = setTimeout(() => {
                 movePlayer(
-                  -((data.response[1].overlapV.x * 1.1) / playerSpeed2),
-                  -((data.response[1].overlapV.y * 1.1) / playerSpeed2)
+                  -((data.response.x * 1.1) / playerSpeed2),
+                  -((data.response.y * 1.1) / playerSpeed2)
                 );
-              }, 50 * i);
+              }, 85 * i);
               movementTimeouts.push({ timeout: timeout, bouceBack: true });
             }
             setTimeout(() => {
@@ -1108,10 +1239,13 @@
           } else if (type === "statechangeUpdate") {
             if (!players[data.playerID]) return;
             players[data.playerID].state = data.state;
+            if (data.playerID === playerId) {
+              state = data.state;
+            }
+          } else if (type === "statecycleUpdate") {
             players[data.playerID].statecycle = data.statecycle;
             if (data.playerID === playerId) {
               statecycle = data.statecycle;
-              state = data.state;
             }
           } else if (type === "playerCannonWidthUpdate") {
             players[data.id].cannonW = data.cannonW;
@@ -1120,7 +1254,6 @@
             MouseY_ = data.MouseY_;
           } else if (type === "newid") {
             userId = data.newid;
-            console.log(data.newid);
             setCookie("userId", userId, 365);
           }
         };
@@ -1134,7 +1267,6 @@
 
         const movePlayer = (dx, dy, last, i) => {
           movementTimeouts.shift();
-          if (!canmove) return;
           cavansX += dx;
           playerY += dy;
           cavansY += dy;
@@ -1823,7 +1955,6 @@
               });
             } else {
               let MYteam = pubteams.find((team) => {
-                console.log(players[playerId].team, team.teamID);
                 return team.teamID === players[playerId].team;
               });
               MYteam.players.forEach((player) => {
@@ -1835,7 +1966,6 @@
                 } else {
                   item.innerText = player.username;
                 }
-                console.log(MYteam.owner.id, player.id);
                 if (player.id === MYteam.owner.id) {
                   var crown = document.createElement("img");
                   crown.src = "assets/crownIcon.png";
@@ -2051,7 +2181,6 @@
 
     const movePlayer = (dx, dy, last, i) => {
       movementTimeouts.shift();
-      if (!canmove) return;
       cavansX += dx;
       playerY += dy;
       cavansY += dy;
@@ -2081,9 +2210,9 @@
           distance < player.size * 40 + playerSize * 40 &&
           playerId_ !== playerId &&
           !(
-            players[playerId_].team === players[playerId].team &&
-            players[playerId_].team !== null &&
-            players[playerId].team !== null
+            players[playerId_]?.team === players[playerId]?.team &&
+            players[playerId_]?.team !== null &&
+            players[playerId]?.team !== null
           )
         ) {
           send("playerCollided", {
@@ -2176,8 +2305,8 @@
       ) {
         for (let i = 0; i < playerSpeed / 5; i++) {
           var movement = setTimeout(() => {
-            movePlayer(dx * 2, dy * 2, i === playerSpeed - 1 || i === 0);
-          }, 75 * i);
+            movePlayer(dx * 3, dy * 3, i === playerSpeed - 1 || i === 0);
+          }, 80 * i);
           movementTimeouts.push({ timeout: movement, bouceBack: true });
         }
         checkCollisions(dx, dy);
@@ -2251,38 +2380,40 @@
     function drawself() {
       ctx.fillStyle = squareColor;
       if (!messaging) {
-        if (keysPressed["]"]) {
-          players[playerId].score += 50;
-          score = players[playerId].score;
-          levelHANDLER();
-        } else if (
-          (keysPressed["ArrowLeft"] && keysPressed["ArrowUp"]) ||
-          (keysPressed["a"] && keysPressed["w"])
-        ) {
-          handleMovement(-1, -1);
-        } else if (
-          (keysPressed["ArrowLeft"] && keysPressed["ArrowDown"]) ||
-          (keysPressed["a"] && keysPressed["s"])
-        ) {
-          handleMovement(-1, 1);
-        } else if (
-          (keysPressed["ArrowRight"] && keysPressed["ArrowUp"]) ||
-          (keysPressed["d"] && keysPressed["w"])
-        ) {
-          handleMovement(1, -1);
-        } else if (
-          (keysPressed["ArrowRight"] && keysPressed["ArrowDown"]) ||
-          (keysPressed["d"] && keysPressed["s"])
-        ) {
-          handleMovement(1, 1);
-        } else if (keysPressed["ArrowUp"] || keysPressed["w"]) {
-          handleMovement(0, -1);
-        } else if (keysPressed["ArrowDown"] || keysPressed["s"]) {
-          handleMovement(0, 1);
-        } else if (keysPressed["ArrowLeft"] || keysPressed["a"]) {
-          handleMovement(-1, 0);
-        } else if (keysPressed["ArrowRight"] || keysPressed["d"]) {
-          handleMovement(1, 0);
+        if (canmove) {
+          if (keysPressed["]"]) {
+            players[playerId].score += 50;
+            score = players[playerId].score;
+            levelHANDLER();
+          } else if (
+            (keysPressed["ArrowLeft"] && keysPressed["ArrowUp"]) ||
+            (keysPressed["a"] && keysPressed["w"])
+          ) {
+            handleMovement(-1, -1);
+          } else if (
+            (keysPressed["ArrowLeft"] && keysPressed["ArrowDown"]) ||
+            (keysPressed["a"] && keysPressed["s"])
+          ) {
+            handleMovement(-1, 1);
+          } else if (
+            (keysPressed["ArrowRight"] && keysPressed["ArrowUp"]) ||
+            (keysPressed["d"] && keysPressed["w"])
+          ) {
+            handleMovement(1, -1);
+          } else if (
+            (keysPressed["ArrowRight"] && keysPressed["ArrowDown"]) ||
+            (keysPressed["d"] && keysPressed["s"])
+          ) {
+            handleMovement(1, 1);
+          } else if (keysPressed["ArrowUp"] || keysPressed["w"]) {
+            handleMovement(0, -1);
+          } else if (keysPressed["ArrowDown"] || keysPressed["s"]) {
+            handleMovement(0, 1);
+          } else if (keysPressed["ArrowLeft"] || keysPressed["a"]) {
+            handleMovement(-1, 0);
+          } else if (keysPressed["ArrowRight"] || keysPressed["d"]) {
+            handleMovement(1, 0);
+          }
         }
         if (canKeyPress) {
           if (keysPressed["-"]) {
@@ -2864,8 +2995,16 @@
         false
       );
       let num = statecycle % 10;
-      if (num === 0 && (state === "start" || state === "damaged")) {
-        ctx.fillStyle = "white";
+      if (state === "start" || state === "damaged") {
+        let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
+        let percentage =
+          statecycle % 10 <= 5
+            ? statecycle % 10
+            : backwardsObj[(statecycle % 10) - 5];
+        percentage += 0.25;
+        percentage = percentage >= 1 ? 1 : percentage;
+        let newrgb = mix([0, 0, 255], [255, 255, 255], (statecycle % 10) / 10);
+        ctx.fillStyle = `rgb(${newrgb[0]} ${newrgb[1]} ${newrgb[2]})`;
       } else {
         ctx.fillStyle = "blue";
       }
@@ -3993,12 +4132,7 @@
           });
           mymessages.forEach((message) => {
             ctx.save();
-            console.log(
-              (Date.now() - message.hidetime) / 500,
-              Date.now() < message.hidetime
-            );
             if (message.hidetime < Date.now()) {
-              console.log(1 - (Date.now() - message.hidetime) / 500);
               if (1 > 1 - (Date.now() - message.hidetime) / 500) {
                 ctx.globalAlpha = 1 - (Date.now() - message.hidetime) / 500;
               }
@@ -4212,8 +4346,12 @@
       ctx.lineTo(mapLeft, mapTop);
       ctx.stroke();
 
+      let b = Date.now();
+      console.log(b)
       gridstyle.top = `calc(-5000px - ${cavansY}px)`;
       gridstyle.left = `calc(-5000px - ${cavansX}px)`;
+      let bb = Date.now();
+      console.log(bb-b)
 
       // Call the function to draw the level bar
       drawRoundedLevelBar(

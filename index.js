@@ -11,6 +11,77 @@ const crypto = require("crypto");
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 const fs = require("fs");
+const helmet = require("helmet");
+const protobuf = require("protobufjs");
+
+// Define the Protobuf schema
+const schema = `
+syntax = "proto3";
+
+message GameObject {
+  float angle = 1;
+  string color = 2;
+  int32 health = 3;
+  int32 maxhealth = 4;
+  float size = 5;
+  string type = 6;
+  float weight = 7;
+  float x = 8;
+  float y = 9;
+  float transparency = 10;
+}
+
+message GameObjectList {
+  repeated GameObject objects = 1;
+}
+`; 
+
+async function runProtobufExample() {
+    // Parse the schema and get the GameObject type
+    const root = await protobuf.parse(schema).root;
+    const GameObject = root.lookupType("GameObject");
+
+    // Example GameObject data
+    const gameObject = {
+        angle: 294,
+        color: "Gold",
+        health: 10,
+        maxhealth: 10,
+        size: 50,
+        type: "square",
+        weight: 3,
+        x: 4535.7837601949805,
+        y: -4492.806481930626,
+        transparency: 0.8
+    };
+
+    // Encode the data into Protobuf (binary format)
+    const buffer = GameObject.encode(gameObject).finish();
+}
+
+runProtobufExample();
+
+app.use(helmet.noSniff());
+
+app.use(helmet.hsts({
+  maxAge: 31536000, // 1 year in seconds
+  includeSubDomains: true, // Apply to all subdomains
+  preload: true // Allow preloading in browsers
+}));
+
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],  // Only allow content from the same origin
+    scriptSrc: ["'self'","https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/light/protobuf.min.js", "'unsafe-eval'"], // Allow scripts from self and a trusted CDN
+    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com","https://fonts.gstatic.com"], // Allow inline styles (use cautiously)
+    imgSrc: ["'self'", "https://images.com"], // Allow images from self and a trusted source
+    connectSrc: ["'self'"], // Restrict fetch/XHR/WebSockets
+    frameAncestors: ["'none'"], // Prevent embedding via <iframe>
+    objectSrc: ["'none'"], // Prevent <object>, <embed>, <applet>
+    upgradeInsecureRequests: [], // Upgrade HTTP requests to HTTPS
+    'unsafe-eval': ["https://cdnjs.cloudflare.com/ajax/libs/protobufjs/7.2.5/protobuf.min.js"]
+  }
+}));
 
 app.use(express.static(path.join(__dirname, "public")));
 var port = process.env.PORT;
@@ -27,6 +98,7 @@ let teamlist = [];
 let playersjoined = [];
 let userbase = [];
 let food_squares_ = [];
+let player_array = [];
 /* warning very senstive*/
 let purge_limit = 5;
 let ColorUpgrades = [
@@ -143,12 +215,20 @@ const levels = {
   99: 486614,
   100: 501480,
 };
+
+var pi = Math.PI;
+var pi180 = pi / 180;
+var sqrt23 = Math.sqrt(3) / 2;
+var piby2 = -pi / 2;
+var response = new SAT.Response();
+
 fs.readFile("users.json", function (err, data) {
   if (err) throw err;
   data = JSON.parse(data);
   userbase = data.userbase;
   console.log(userbase);
 });
+
 const tankmeta = {
   basic: {
     "size-m": 1,
@@ -666,11 +746,6 @@ function mmalizeAngleRadians(angle) {
   return angle;
 }
 
-var pi = Math.PI;
-var pi180 = pi / 180;
-var sqrt23 = Math.sqrt(3) / 2;
-var piby2 = -pi / 2;
-
 function calculateTriangleVertices(cx, cy, size, angle) {
   const height = sqrt23 * size;
   const halfSize = size / 2;
@@ -743,16 +818,13 @@ function findBullet(id) {
   return bullets.find((bullet) => id === bullet.uniqueid);
 }
 
-// Helper function to convert points to SAT Polygon
-function toSATPolygon(vertices) {
-  const points = new Array(vertices.length);
-  for (let i = 0; i < vertices.length; i++) {
+function toSATPolygon(vertices, points = []) {
+  const len = vertices.length;
+  for (let i = 0; i < len; i++) {
     points[i] = new SAT.Vector(vertices[i].x, vertices[i].y);
   }
-  return new SAT.Polygon(new SAT.Vector(0, 0), points);
+  return new SAT.Polygon(new SAT.Vector(0, 0), points.slice(0, len));
 }
-var response = new SAT.Response();
-// Function to check collision between circle and polygon using SAT.js
 
 function normalizeAngle(angle) {
   return angle % 360;
@@ -773,7 +845,6 @@ function rotatePointAroundPlayer(cannonOffsetX, cannonOffsetY, playerRotation) {
   return [rotatedX, rotatedY];
 }
 
-// Check if the target angle is within the cannon's swivel range, accounting for player rotation
 function isTargetInSwivelRange(
   playerRotation,
   targetAngle,
@@ -807,8 +878,8 @@ function isBulletCollidingWithPolygon(circle, polygonVertices) {
 
 function isPlayerCollidingWithPolygon(circle, polygonVertices) {
   response.clear();
-  var circleSAT;
-  circleSAT = new SAT.Circle(
+
+  let circleSAT = new SAT.Circle(
     new SAT.Vector(circle.x, circle.y),
     circle.size * 40
   );
@@ -827,6 +898,71 @@ function finder_(data) {
   }
   return undefined;
 }
+
+function generateRandomNumber(min, max) {
+  return Math.random() * (max - min) + min;
+} //
+
+function rearrange() {
+  if (leader_board.shown.length <= 1) {
+    return;
+  }
+  leader_board.shown.sort(function (a, b) {
+    return a.score - b.score;
+  });
+  leader_board.shown.reverse(); // huh
+}
+
+function confirmplayerradia(_x, _y) {
+  for (const player in players) {
+    let player_ = players[player];
+    if (
+      between(player_.x, _x - (player_.size + 50), _x + (player_.size + 50)) &&
+      between(player_.y, _y - (player_.size + 50), _y + (player_.size + 50))
+    ) {
+      return false; // Overlap detected
+    }
+  }
+  return true; // No overlap
+}
+
+function limitedLog(message, ...optionalParams) {
+  if (logCounter < LOG_LIMIT) {
+    console.log(message, ...optionalParams);
+    logCounter++;
+  } else if (logCounter === LOG_LIMIT) {
+    console.log("Logging limit reached. Further logs will be suppressed.");
+    logCounter++; // Increment one last time to stop this message from repeating
+  }
+}
+
+function normalizeAngle_2(angle) {
+  if (typeof angle !== "number" || isNaN(angle)) {
+    limitedLog("normalizeAngle received invalid input:", angle);
+    return 0; // Fallback to 0
+  }
+  return ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+}
+
+function moveCannonAngle(cannon) {
+  let deltaAngle = normalizeAngle_2(cannon.targetAngle - cannon.angle);
+
+  let reloadStat = players[cannon.playerid]?.statsTree?.["Bullet Reload"];
+
+  let denominator = 3.5 - (reloadStat - 1) / 3;
+
+  let adjustment = Math.abs(deltaAngle) / denominator;
+
+  cannon.angle += Math.sign(deltaAngle) * adjustment;
+  cannon.angle = normalizeAngle_2(cannon.angle);
+
+  emit("autoCannonUPDATE-ANGLE", {
+    angle: cannon.angle,
+    cannon_ID: cannon.CannonID,
+  });
+}
+
+//const Utils_ = new Utils();
 
 for (let i = 0; i < getRandomInt(400, 500); i++) {
   var randID = Math.random() * i * Date.now();
@@ -1026,33 +1162,6 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
   food_squares.push(fooditem);
 }
 
-function generateRandomNumber(min, max) {
-  return Math.random() * (max - min) + min;
-} //
-
-function rearrange() {
-  if (leader_board.shown.length <= 1) {
-    return;
-  }
-  leader_board.shown.sort(function (a, b) {
-    return a.score - b.score;
-  });
-  leader_board.shown.reverse(); // huh
-}
-
-function confirmplayerradia(_x, _y) {
-  for (const player in players) {
-    let player_ = players[player];
-    if (
-      between(player_.x, _x - (player_.size + 50), _x + (player_.size + 50)) &&
-      between(player_.y, _y - (player_.size + 50), _y + (player_.size + 50))
-    ) {
-      return false; // Overlap detected
-    }
-  }
-  return true; // No overlap
-}
-
 var angle = 0;
 
 const algorithm = "aes-256-cbc";
@@ -1071,49 +1180,14 @@ const connections = [];
 let logCounter = 0;
 const LOG_LIMIT = 1300; // Maximum number of logs
 
-function limitedLog(message, ...optionalParams) {
-  if (logCounter < LOG_LIMIT) {
-    console.log(message, ...optionalParams);
-    logCounter++;
-  } else if (logCounter === LOG_LIMIT) {
-    console.log("Logging limit reached. Further logs will be suppressed.");
-    logCounter++; // Increment one last time to stop this message from repeating
-  }
-}
-
-function normalizeAngle_2(angle) {
-  if (typeof angle !== "number" || isNaN(angle)) {
-    limitedLog("normalizeAngle received invalid input:", angle);
-    return 0; // Fallback to 0
-  }
-  return ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;
-}
-
-function moveCannonAngle(cannon) {
-  let deltaAngle = normalizeAngle_2(cannon.targetAngle - cannon.angle);
-
-  let reloadStat = players[cannon.playerid]?.statsTree?.["Bullet Reload"];
-
-  let denominator = 3.5 - (reloadStat - 1) / 3;
-
-  let adjustment = Math.abs(deltaAngle) / denominator;
-
-  cannon.angle += Math.sign(deltaAngle) * adjustment;
-  cannon.angle = normalizeAngle_2(cannon.angle);
-
-  emit("autoCannonUPDATE-ANGLE", {
-    angle: cannon.angle,
-    cannon_ID: cannon.CannonID,
-  });
-}
-
-console.log("userbase", typeof userbase);
+console.log("userbase", userbase);
 
 wss.on("connection", (socket) => {
   let connection = { socket: socket, playerId: null };
   let handshaked = false;
   connections.push(connection);
 
+  let stateupdate = null;
   socket.on("message", (message) => {
     const { type, data } = JSON.parse(message);
 
@@ -1251,7 +1325,7 @@ wss.on("connection", (socket) => {
           };
         }
       }
-      console.log(leader_board.shown);
+
       emit("boardUpdate", {
         leader_board: leader_board.shown,
       });
@@ -1259,17 +1333,24 @@ wss.on("connection", (socket) => {
       let state = "start";
       var start = setInterval(() => {
         try {
-          statecycle += 1;
           players[data.id].state = data.state;
           let _data = {
             state: state,
-            statecycle: statecycle,
             playerID: data.id,
           };
           emit("statechangeUpdate", _data, socket);
         } catch {
           start = null;
         }
+      }, 50);
+      stateupdate = setInterval(() => {
+        statecycle += 1;
+        let _data__ = {
+          state: state,
+          statecycle: statecycle,
+          playerID: data.id,
+        };
+        emit("statecycleUpdate", _data__);
       }, 50);
 
       setTimeout(() => {
@@ -1328,7 +1409,6 @@ wss.on("connection", (socket) => {
         }
       });
       emit("pubteamlist", public_teams);
-      console.log(public_teams);
       return;
     }
 
@@ -1339,7 +1419,6 @@ wss.on("connection", (socket) => {
       });
       MYteam.players.push({ username: players[data.id].username, id: data.id });
       emit("playerJoinedTeam", { id: data.id, teamId: data.teamId });
-      console.log(teamlist);
       var public_teams = [];
       teamlist.forEach((team) => {
         if (!team.private) {
@@ -1364,9 +1443,7 @@ wss.on("connection", (socket) => {
       );
       if (data.id === MYteam.owner.id) {
         let teamplayers = MYteam.players;
-        console.log(MYteam.players.length);
         if (teamplayers.length !== 0) {
-          console.log(teamplayers[0]);
           MYteam.owner = teamplayers[0];
           emit("newOwner", {
             teamID: MYteam.teamID,
@@ -1380,7 +1457,6 @@ wss.on("connection", (socket) => {
         }
       }
       emit("playerJoinedTeam", { id: data.id, teamId: null });
-      console.log(teamlist);
       let public_teams = [];
       teamlist.forEach((team) => {
         if (!team.private) {
@@ -1402,7 +1478,6 @@ wss.on("connection", (socket) => {
       ) {
         socket.close();
       }
-      console.log(MYteam);
       MYteam.players.forEach((player) => {
         emit("playerJoinedTeam", { id: player.id, teamId: null });
       });
@@ -1695,10 +1770,10 @@ wss.on("connection", (socket) => {
       }
       let player = players[data.id];
       let hasfoodchanged = false;
-      food_squares = food_squares.filter((item, index) => {
+      /*food_squares = food_squares.filter((item, index) => {
         const distanceX = Math.abs(player.x - item.x);
         const distanceY = Math.abs(player.y - item.y);
-        // for speed
+        
         let size__ = player.size * 80 + item.size * 1.5;
         if (!(distanceX < size__ && distanceY < size__)) return true;
 
@@ -1763,7 +1838,6 @@ wss.on("connection", (socket) => {
               }
             });
             rearrange();
-            console.log(leader_board.shown);
             emit("boardUpdate", {
               leader_board: leader_board.shown,
             });
@@ -1911,11 +1985,7 @@ wss.on("connection", (socket) => {
           }
         }
         return true;
-      });
-      if (hasfoodchanged) {
-        emit("FoodUpdate", food_squares);
-      }
-      emit("playerMovedScreen");
+      });*/
       broadcast("playerMoved", data, socket);
       return;
     }
@@ -2681,16 +2751,19 @@ wss.on("connection", (socket) => {
     }
 
     if (type === "resize") {
+      if (!players[data.id]) return;
       players[data.id].screenWidth = data.screenWidth;
       players[data.id].screenHeight = data.screenHeight;
       return;
     }
 
     if (type === "MouseAway") {
+      if (!players[data.id]) return;
       players[data.id].mousestate = "held";
     }
 
     if (type === "MousestateUpdate") {
+      if (!players[data.id]) return;
       players[data.id].mousestate = "up";
     }
 
@@ -2707,13 +2780,11 @@ wss.on("connection", (socket) => {
           return player.id !== connection.playerId;
         });
         team.players = teamplayers;
-        console.log(team.owner.id, connection.playerId);
         if (teamplayers.length === 0) {
           return false;
         }
         if (team.owner.id === connection.playerId) {
           if (teamplayers.length !== 0) {
-            console.log(teamplayers[0]);
             team.owner = teamplayers[0];
             emit("newOwner", {
               teamID: team.teamID,
@@ -2732,7 +2803,6 @@ wss.on("connection", (socket) => {
         }
       });
       emit("pubteamlist", public_teams);
-      console.log(JSON.stringify(teamlist));
       try {
         leader_board.shown = leader_board.shown.filter(
           (__index__) => __index__.id !== connection.playerId
@@ -2740,7 +2810,6 @@ wss.on("connection", (socket) => {
         leader_board.hidden = leader_board.hidden.filter(
           (__index__) => __index__.id !== connection.playerId
         );
-        console.log(leader_board.shown);
         emit("boardUpdate", {
           leader_board: leader_board.shown,
         });
@@ -2776,30 +2845,32 @@ wss.on("connection", (socket) => {
     } catch (e) {
       console.log(e);
     }
-    var _player = userbase.find((_player) => {
-      console.log(_player.userid, players[connection.playerId].userId);
-      return (
-        Math.abs(_player.userid - players[connection.playerId].userId) < 0.001
+    try {
+      var _player = userbase.find((_player) => {
+        return (
+          Math.abs(_player.userid - players[connection.playerId].userId) < 0.001
+        );
+      });
+      _player.scores.push({
+        score: players[connection.playerId].score,
+        Date: Date.now(),
+      });
+      _player.scores.sort(function (a, b) {
+        return a.score - b.score;
+      });
+      _player.scores.reverse();
+      _player.scores = _player.scores.slice(0, 10);
+      fs.writeFile(
+        "users.json",
+        JSON.stringify({ userbase: userbase }),
+        function (err, data) {
+          if (err) throw err;
+        }
       );
-    });
-    _player.scores.push({
-      score: players[connection.playerId].score,
-      Date: Date.now(),
-    });
-    _player.scores.sort(function (a, b) {
-      return a.score - b.score;
-    });
-    _player.scores.reverse();
-    _player.scores = _player.scores.slice(0,10)
-    console.log(userbase);
-    fs.writeFile(
-      "users.json",
-      JSON.stringify({ userbase: userbase }),
-      function (err, data) {
-        if (err) throw err;
-      }
-    );
-    console.log(userbase);
+    } catch (e) {
+      console.log(e);
+    }
+    clearInterval(stateupdate);
     teamlist = teamlist.filter((team) => {
       var teamplayers = team.players;
       teamplayers = teamplayers.filter((player) => {
@@ -2811,7 +2882,6 @@ wss.on("connection", (socket) => {
       }
       if (team.owner.id === connection.playerId) {
         if (teamplayers.length !== 0) {
-          //console.log(teamplayers[0]);
           team.owner = teamplayers[0];
           emit("newOwner", {
             teamID: team.teamID,
@@ -2823,7 +2893,6 @@ wss.on("connection", (socket) => {
       }
       return true;
     });
-    //console.log("Dis", JSON.stringify(teamlist));
     var public_teams = [];
     teamlist.forEach((team) => {
       if (!team.private) {
@@ -2985,7 +3054,6 @@ setInterval(() => {
             bullet_.speed *
             (bullet_.size / 5 +
               Math.cos(Math.abs(bullet.angle - bullet_.angle)));
-          //console.log(bullet.bullet_distance);
         }
       });
     }
@@ -3099,7 +3167,6 @@ setInterval(() => {
             emit("boardUpdate", {
               leader_board: leader_board.shown,
             });
-            console.log("player kill --", leader_board);
             players = Object.entries(players).reduce(
               (newPlayers, [key, value]) => {
                 if (key !== player.id) {
@@ -3121,7 +3188,6 @@ setInterval(() => {
         bullet.y += newY__;
       }
 
-      //console.log(bullet.bullet_distance, bullet, collied);
       return true;
     }
     if (bullet.type === "directer") {
@@ -3434,6 +3500,7 @@ setInterval(() => {
   });
 
   let tempToPush = [];
+  player_array = [];
   food_squares = food_squares.filter((item, index) => {
     item.x = item.centerX + item.scalarX * Math.cos(angle);
     item.y = item.centerY + item.scalarY * Math.sin(angle);
@@ -3446,17 +3513,6 @@ setInterval(() => {
       item.angle = 0;
     }
     angle += speed;
-    if (
-      isNaN(item.x) ||
-      item.x == null ||
-      isNaN(item.y) ||
-      item.y == null ||
-      item.size <= 0 ||
-      !item.vertices ||
-      item.vertices.some((v) => isNaN(v.x) || isNaN(v.y))
-    ) {
-      console.error("Malformed shape detected:", index, item);
-    }
     if (item.type === "square") {
       const rawvertices = calculateSquareVertices(
         item.x,
@@ -3484,14 +3540,29 @@ setInterval(() => {
       );
       item.vertices = rawvertices;
     }
+    let item2 = item;
+    let gameObject = {
+      angle: item2.angle,
+      color: item2.color,
+      health: item2.health,
+      maxhealth: item2.maxhealth,
+      size: item2.size,
+      type: item2.type,
+      weight: item2.weight,
+      x: item2.x,
+      y: item2.y,
+      transparency:item2.transparency
+    };
+
+    player_array.push(gameObject);
     let return_ = true;
     if (item.isdead) {
       item.transparency = 1 - (Date.now() - item.deathtime) / 150;
     }
     for (const playerId in players) {
       var player = players[playerId];
-      const distanceX = Math.abs(player.x - item.x);
-      const distanceY = Math.abs(player.y - item.y);
+      let distanceX = Math.abs(player.x - item.x);
+      let distanceY = Math.abs(player.y - item.y);
       // for speed
       let size__ = player.size * 80 + item.size * 1.5;
 
@@ -3525,7 +3596,11 @@ setInterval(() => {
             );
           }
 
-          emit("bouceBack", { response: collisionCheck, playerID: player.id });
+          console.log(collisionCheck[1].overlapV);
+          emit("bouceBack", {
+            response: collisionCheck[1].overlapV,
+            playerID: player.id,
+          });
           if (0 > item.health) {
             player.score += item.score_add;
             emit("playerScore", {
@@ -3701,6 +3776,7 @@ setInterval(() => {
             });
           }
         }
+        collisionCheck = null;
       }
     }
     bullets.forEach((bullet) => {
@@ -3964,7 +4040,6 @@ setInterval(() => {
         }
         bullet.bullet_distance -=
           (bullet.size * 40) / bullet.bullet_pentration + bullet.size * 3 + 40;
-        console.log(bullet.bullet_pentration, bullet.size);
 
         bullet.bullet_distance -= 1; // for drones
         if (
@@ -3999,8 +4074,48 @@ setInterval(() => {
   });
 
   emit("bulletUpdate", bullets);
-  smartemit("FoodUpdate", food_squares);
+  createAndSendGameObjects(player_array);
 }, UPDATE_INTERVAL);
+
+async function createAndSendGameObjects(playerArray) {
+  // Load and compile the Protobuf schema
+  const root = await protobuf.parse(schema).root;
+  const GameObject = root.lookupType('GameObject');
+  const GameObjectList = root.lookupType('GameObjectList');
+
+  // Convert player array to GameObject format (DO NOT encode here)
+  const gameObjects = playerArray.map(item => ({
+    angle: item.angle,
+    color: item.color,
+    health: item.health,
+    maxhealth: item.maxhealth,
+    size: item.size,
+    type: item.type,
+    weight: item.weight,
+    x: item.x,
+    y: item.y,
+    transparency: item.transparency,
+  }));
+
+  // Create the GameObjectList (DO NOT encode here either)
+  const gameObjectList = { objects: gameObjects };
+
+  // Now encode the entire list properly
+  const messageBuffer = GameObjectList.encode(gameObjectList).finish();
+
+  // Send the binary message using smartemit()
+  smartemitBinary("gameUpdate", messageBuffer);
+}
+
+function smartemitBinary(type, data) {
+  connections.forEach((conn) => {
+    if (conn.playerId == null || players[conn.playerId] == undefined) return;
+    if (players[conn.playerId].visible) {
+      conn.socket.send(data); // Send binary data directly
+    }
+  });
+}
+
 function emit(type, data) {
   const message = JSON.stringify({ type, data });
   connections.forEach((conn) => {

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <title>TankShark.IO</title>
-    <link rel="stylesheet" href="style.css" /> 
+    <link rel="stylesheet" href="style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,6 +14,20 @@
       content="A fun open world game were every one is foe. Enjoy lots of fun with loads of new tanks and shapes."
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="http-equiv"
+      content="Content-Security-Policy: img-src 'self'; frame-ancestors 'none';X-Content-Type-Options: nosniff; base-uri 'none'; object-src 'none'; script-src 'none'; object-src: 'self'"
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="img-src 'self'; frame-ancestors 'none'"
+    />
+    <meta name="http-equiv" content="Referrer-Policy: same-origin" />
+    <meta
+      http-equiv="Strict-Transport-Security"
+      content="Strict-Transport-Security: max-age=63072000"
+    />
+    <meta name="http-equiv" content="X-Content-Type-Options: nosniff" />
     <link rel="icon" type="image/x-icon" href="/favicons/favicon.ico" />
   </head>
   <body>
@@ -141,7 +155,7 @@
         <h1 style="z-index: 10">Your team name</h1>
         <label class="label" for="checkbox">Private:</label>
         <label class="switch" id="checkbox">
-          <input type="checkbox" id="private" class="null"/>
+          <input type="checkbox" id="private" class="null" />
           <span class="slider round" id="getval"></span>
         </label>
         <input
@@ -155,6 +169,7 @@
         <button id="teamButton" style="z-index: 10">Create team</button>
       </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/light/protobuf.min.js"></script>
     <script src="scriptClient.js"></script>
   </body>
 </html>
