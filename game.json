@@ -1,0 +1,23 @@
+{
+  "nested": {
+    "GameObject": {
+      "fields": {
+        "angle": { "type": "float", "id": 1 },
+        "color": { "type": "string", "id": 2 },
+        "health": { "type": "int32", "id": 3 },
+        "maxhealth": { "type": "int32", "id": 4 },
+        "size": { "type": "float", "id": 5 },
+        "type": { "type": "string", "id": 6 },
+        "weight": { "type": "float", "id": 7 },
+        "x": { "type": "float", "id": 8 },
+        "y": { "type": "float", "id": 9 },
+        "transparency": { "type": "float", "id": 10 }
+      }
+    },
+    "GameObjectList": {
+      "fields": {
+        "objects": { "rule": "repeated", "type": "GameObject", "id": 1 }
+      }
+    }
+  }
+}

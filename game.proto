@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+message GameObject {
+  float angle = 1;
+  string color = 2;
+  int32 health = 3;
+  int32 maxhealth = 4;
+  float size = 5;
+  string type = 6;
+  float weight = 7;
+  float x = 8;
+  float y = 9;
+  float transparency = 10;
+}
+
+message GameObjectList {
+  repeated GameObject objects = 1;
+}
