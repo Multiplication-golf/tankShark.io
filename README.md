@@ -6,7 +6,7 @@ Suggestions welcome
 
 It is still kind of buggy.
 
-##But improved with more tanks being added, but the basic game engines built
+## But improved with more tanks being added, but the basic game engines built
 
 
 ![img of game](https://github.com/Multiplication-golf/deip.io-3/blob/main/game.png?raw=true)
