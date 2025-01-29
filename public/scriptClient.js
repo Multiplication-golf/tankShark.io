@@ -214,6 +214,16 @@
     var pubteams = [];
     var level = 0;
     var xp = 0;
+    var buttton140 = 0.07291666666 * canvas.width; // tested screen height is 1031x1920
+    var button275 = 0.14322916666 * canvas.width;
+    var button475 = 0.24739583333 * canvas.width;
+    var button462_5 = 0.24088541666 * canvas.width;
+    var button375 = 0.1953125 * canvas.width;
+    console.log(button375);
+    var button80 = 0.07759456838 * canvas.height;
+    var button40 = 0.03879728419 * canvas.height;
+    var button10 = 0.00969932104 * canvas.height;
+    var button110 = 0.10669253152 * canvas.height;
     var FOV = 1; // senstive
     var autoFiring = false;
     var autoRotating = false;
@@ -665,10 +675,12 @@
         setprogress =
           (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
         playerSize += playerSize * 0.005;
+        scaleFactor -= 0.008;
         while (score / levels[level] >= 1) {
           level += 1;
           upgradePoints += 1;
           playerSize += playerSize * 0.005;
+          scaleFactor -= 0.008;
           progress = 0;
           setprogress =
             (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
@@ -1907,8 +1919,8 @@
 
         document.addEventListener("mousedown", (evt) => {
           if (
-            canvas.width - 475 < MouseX_ &&
-            MouseX_ < canvas.width - 275 &&
+            window.innerWidth - 475 < MouseX_ &&
+            MouseX_ < window.innerWidth - 275 &&
             MouseY_ > 10 &&
             MouseY_ < 110 &&
             !teampanelopen
@@ -1919,9 +1931,9 @@
             var teamcontainer = document.getElementById("teamcontainer");
             teamcontainer.style.display = "block";
             teamcontainer.style.left =
-              canvas.width / 2 - innerteamwidth / 2 + "px";
+              window.innerWidth / 2 - innerteamwidth / 2 + "px";
             teamcontainer.style.top =
-              canvas.height / 2 - innerteamheight / 2 + "px";
+              window.innerHeight / 2 - innerteamheight / 2 + "px";
             teamcontainer.style.height = innerteamheight - 100 + "px";
             teamcontainer.innerHTML = "";
             if (!joinedTeam) {
@@ -2002,12 +2014,16 @@
 
             // Check if mouse is within the text bounding box
             const withinX =
-              MouseX_ >= canvas.width / 2 + innerteamwidth / 2 - 15 &&
-              MouseX_ <= canvas.width / 2 + innerteamwidth / 2 - 15 + textWidth;
+              MouseX_ >= window.innerWidth / 2 + innerteamwidth / 2 - 15 &&
+              MouseX_ <=
+                window.innerWidth / 2 + innerteamwidth / 2 - 15 + textWidth;
             const withinY =
               MouseY_ >=
-                canvas.height / 2 - innerteamheight / 2 + 26 - textHeight &&
-              MouseY_ <= canvas.height / 2 - innerteamheight / 2 + 26;
+                window.innerHeight / 2 -
+                  innerteamheight / 2 +
+                  26 -
+                  textHeight &&
+              MouseY_ <= window.innerHeight / 2 - innerteamheight / 2 + 26;
             if (withinX && withinY) {
               teampanelopen = false;
               var teamcontainer = document.getElementById("teamcontainer");
@@ -2018,11 +2034,12 @@
             }
 
             const withinX3 =
-              MouseX_ >= canvas.width / 2 - innerteamwidth / 2 + 10 &&
-              MouseX_ <= canvas.width / 2 - innerteamwidth / 2 + 10 + 80;
+              MouseX_ >= window.innerWidth / 2 - innerteamwidth / 2 + 10 &&
+              MouseX_ <= window.innerWidth / 2 - innerteamwidth / 2 + 10 + 80;
             const withinY3 =
-              MouseY_ >= canvas.height / 2 + innerteamheight / 2 - 50 &&
-              MouseY_ <= canvas.height / 2 + innerteamheight / 2 - 50 + 40;
+              MouseY_ >= window.innerHeight / 2 + innerteamheight / 2 - 50 &&
+              MouseY_ <= window.innerHeight / 2 + innerteamheight / 2 - 50 + 40;
+            console.log(window.innerHeight / 2 + innerteamheight / 2 - 50 + 40);
             if (withinX3 && withinY3) {
               if (!joinedTeam) {
                 if (selected_class !== null) {
@@ -2153,8 +2170,8 @@
         ctx.strokeStyle = "black";
         ctx.textAlign = "center";
         ctx.font = "bold 40px Nunito";
-        ctx.strokeText(level, canvas.width / 2, canvas.height - 60);
-        ctx.fillText(level, canvas.width / 2, canvas.height - 60);
+        ctx.strokeText(level, canvas.width / 2, canvas.height - button10 * 6);
+        ctx.fillText(level, canvas.width / 2, canvas.height - button10 * 6);
         //let img = { complete: false };
         // If the image is not yet loaded, wait for it to load
         //console.log(img);
@@ -2162,9 +2179,9 @@
           ctx.drawImage(
             img,
             canvas.width / 2 - 20,
-            canvas.height - 150,
-            40,
-            40
+            canvas.height - button10 * 15,
+            button40,
+            button40
           );
         } catch {}
       }
@@ -2437,6 +2454,15 @@
             teamheight = 0.33333333333333333333333333 * canvas.height;
             innerteamwidth = 0.14322916666 * canvas.width;
             innerteamheight = 0.308333333333333333333 * canvas.height;
+            buttton140 = 0.07291666666 * canvas.width; // tested screen height is 1031x1920
+            button275 = 0.14322916666 * canvas.width;
+            button475 = 0.24739583333 * canvas.width;
+            button462_5 = 0.24088541666 * canvas.width;
+            button375 = 0.1953125 * canvas.width;
+            button80 = 0.07759456838 * canvas.height;
+            button40 = 0.03879728419 * canvas.height;
+            button10 = 0.00969932104 * canvas.height;
+            button110 = 0.10669253152 * canvas.height;
             barWidth = 0.3125 * canvas.width;
             barHeight = 0.02909796314 * canvas.height;
             document.getElementById("grid").style[
@@ -3181,12 +3207,12 @@
         ctx.beginPath();
         ctx.fillStyle = "#96ceff";
         ctx.strokeStyle = "#41a4fa";
-        let boxlen = 300 + typedtext.length * 12;
+        let boxlen = button10 * 30 + typedtext.length * (button10 * 1.2);
         ctx.roundRect(
           canvas.width / 2 - boxlen / 2,
-          canvas.height / 2 - 25,
+          canvas.height / 2 - button10 * 2.5,
           boxlen,
-          50,
+          button10 * 5,
           5
         );
         ctx.fill();
@@ -3198,7 +3224,7 @@
         ctx.fillText(
           typedtext,
           canvas.width / 2 - (boxlen / 2 - 5),
-          canvas.height / 2 + 15
+          canvas.height / 2 + button10 * 1.5
         );
         ctx.closePath();
         var textwidth = ctx.measureText(typedtext).width + 3;
@@ -3208,21 +3234,21 @@
           ctx.strokeStyle = "black";
           ctx.moveTo(
             canvas.width / 2 - (boxlen / 2 - 5) + textwidth,
-            canvas.height / 2 + 15 - 30
+            canvas.height / 2 - button10 * 1.5
           );
           ctx.lineTo(
             canvas.width / 2 - (boxlen / 2 - 5) + textwidth,
-            canvas.height / 2 + 15 + 0
+            canvas.height / 2 + button10 * 1.5
           );
           ctx.stroke();
           ctx.closePath();
         }
       }
       if (
-        canvas.width - 475 < MouseX_ &&
-        MouseX_ < canvas.width - 275 &&
-        MouseY_ > 10 &&
-        MouseY_ < 110
+        canvas.width - button475 < MouseX_ &&
+        MouseX_ < canvas.width - button275 &&
+        MouseY_ > button10 &&
+        MouseY_ < button110
       ) {
         ctx.strokeStyle = "#4fe5ff";
         ctx.lineWidth = 7;
@@ -3234,19 +3260,31 @@
       ctx.fillStyle = "#45bbff";
 
       ctx.beginPath();
-      ctx.roundRect(canvas.width - 475, 10, 200, 100, 5);
+      ctx.roundRect(
+        canvas.width - button475,
+        button10,
+        button10 * 20,
+        button10 * 10,
+        5
+      );
       ctx.fill();
       ctx.stroke();
       ctx.closePath();
       ctx.fillStyle = "#00a0fd";
       ctx.beginPath();
-      ctx.roundRect(canvas.width - 462.5, 25, 175, 70, 5);
+      ctx.roundRect(
+        canvas.width - button462_5,
+        button10 * 2.5,
+        button10 * 17.5,
+        button10 * 7,
+        5
+      );
       ctx.fill();
       ctx.closePath();
       ctx.textAlign = "center";
       ctx.font = "bold 40px Nunito";
       ctx.fillStyle = "black";
-      ctx.fillText("Teams", canvas.width - 375, 75);
+      ctx.fillText("Teams", canvas.width - button375, button10 * 7.5);
       if (teampanelopen) {
         ctx.globalAlpha = 0.5;
         ctx.fillStyle = "#a3a3a3";
@@ -3285,19 +3323,19 @@
         if (joinedTeam) {
           if (owner_of_team) {
             ctx.roundRect(
-              canvas.width / 2 + innerteamwidth / 2 - 150,
-              canvas.height / 2 + innerteamheight / 2 - 50,
-              140,
-              40,
+              canvas.width / 2 + innerteamwidth / 2 - button10 * 15,
+              canvas.height / 2 + innerteamheight / 2 - button10 * 5,
+              buttton140,
+              button40,
               5
             );
           }
         } else {
           ctx.roundRect(
-            canvas.width / 2 + innerteamwidth / 2 - 150,
-            canvas.height / 2 + innerteamheight / 2 - 50,
-            140,
-            40,
+            canvas.width / 2 + innerteamwidth / 2 - button10 * 15,
+            canvas.height / 2 + innerteamheight / 2 - button10 * 5,
+            buttton140,
+            button40,
             5
           );
         }
@@ -3306,10 +3344,10 @@
         ctx.beginPath();
         ctx.fillStyle = "#4f84ff";
         ctx.roundRect(
-          canvas.width / 2 - innerteamwidth / 2 + 10,
-          canvas.height / 2 + innerteamheight / 2 - 50,
-          80,
-          40,
+          canvas.width / 2 - innerteamwidth / 2 + button10,
+          canvas.height / 2 + innerteamheight / 2 - button10 * 5,
+          button80,
+          button40,
           5
         );
         ctx.closePath();
@@ -3327,7 +3365,7 @@
         }
         ctx.fillText(
           text_,
-          canvas.width / 2 - innerteamwidth / 2 + 50,
+          canvas.width / 2 - innerteamwidth / 2 + button10 * 5,
           canvas.height / 2 + innerteamheight / 2 - 17.5
         );
         ctx.font = "bold 21px Nunito";
@@ -3344,14 +3382,14 @@
         if (text2 !== null) {
           ctx.fillText(
             text2,
-            canvas.width / 2 - innerteamwidth / 2 + 195,
+            canvas.width / 2 - innerteamwidth / 2 + button10 * 19.5,
             canvas.height / 2 + innerteamheight / 2 - 22.5
           );
         }
         ctx.textAlign = "left";
         ctx.fillText(
           "X",
-          canvas.width / 2 + innerteamwidth / 2 - 15,
+          canvas.width / 2 + innerteamwidth / 2 - button10 * 1.5,
           canvas.height / 2 - innerteamheight / 2 + 26
         );
       }
@@ -4398,8 +4436,12 @@
       ctx.lineTo(mapLeft, mapTop);
       ctx.stroke();
 
-      gridstyle.top = `calc(-5000px - ${cavansY * scaleFactor}px)`;
-      gridstyle.left = `calc(-5000px - ${cavansX * scaleFactor}px)`;
+      gridstyle.top = `calc(-${(10000 * scaleFactor) / 2}px - ${
+        cavansY * scaleFactor
+      }px)`;
+      gridstyle.left = `calc(-${(10000 * scaleFactor) / 2}px - ${
+        cavansX * scaleFactor
+      }px)`;
 
       // Call the function to draw the level bar
       drawRoundedLevelBar(
