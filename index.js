@@ -3601,6 +3601,18 @@ setInterval(() => {
             response: collisionCheck[1].overlapV,
             playerID: player.id,
           });
+          for (let i = 0; i < 10; i++) {
+            var factor = (item.weight/5) < 1 ? 1 : (item.weight/5)
+            console.log(factor)
+            setTimeout(()=>{
+              let recoilX = collisionCheck[1].overlapV.x/30;
+              let recoilY = collisionCheck[1].overlapV.y/30;
+              item.x += recoilX/factor;
+              item.y += recoilY/factor;
+              item.centerX += recoilX/factor;
+              item.centerY += recoilY/factor;
+            },50*i)
+          }
           if (0 > item.health) {
             player.score += item.score_add;
             emit("playerScore", {
@@ -3776,7 +3788,7 @@ setInterval(() => {
             });
           }
         }
-        collisionCheck = null;
+        //collisionCheck = null;
       }
     }
     bullets.forEach((bullet) => {
