@@ -70,17 +70,6 @@
 
     return GameObjectList; // Return the GameObjectList type
   }
-  /*function loadProto() {
-    return fetch("game.json")
-      .then((response) => response.json()) // Parse the JSON schema
-      .then((jsonDescriptor) => {
-        // Create the protobuf root object from the schema
-        const root = protobuf.Root.fromJSON(jsonDescriptor);
-        // Get the GameObjectList type definition
-        const GameObjectList = root.lookupType("GameObjectList");
-        return GameObjectList; // Return the GameObjectList type
-      });
-  }*/
 
   // Function to decode the Protobuf message and return the type and data
   function decodeMessage(event) {
@@ -125,6 +114,7 @@
 
     let playerId = null; // Connect to the server
     const canvas = document.createElement("canvas");
+    const Ghostcanvas = document.getElementById("ghostCanvas");
     const ctx = canvas.getContext("2d");
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -272,7 +262,7 @@
     var statecycle = 0;
     var progress = 0.0;
     var gridstyle = grid.style;
-    var boundrectcanvas = canvas.getBoundingClientRect();
+    var boundrectcanvas = Ghostcanvas.getBoundingClientRect();
     var canmove = true;
     var nolist = [3, 5, 7, 8, 10, 11, 13];
     var keysPressed = {};
@@ -399,7 +389,7 @@
             window.location.reload();
           }, 2500);
           alert(
-            "There is an error or disconnection. Please report this if the error is not related to a closing state error."
+            "There is an error or socket disconnection. Please report this if the error is not related to a closing state error."
           );
           alert("error", e);
         }
@@ -771,7 +761,7 @@
               food_list = message.objects;
             }
             f();
-            return
+            return;
           }
 
           if (type === "playerUpdated") {
@@ -1228,12 +1218,10 @@
                   -((data.response.x * 1.1) / playerSpeed2),
                   -((data.response.y * 1.1) / playerSpeed2)
                 );
+                if (i < playerSpeed / 2) canmove = true;
               }, 85 * i);
               movementTimeouts.push({ timeout: timeout, bouceBack: true });
             }
-            setTimeout(() => {
-              canmove = true;
-            }, 20 * playerSpeed);
           } else if (type === "type_Change") {
             players[data.id] = data;
           } else if (type === "statechangeUpdate") {
@@ -1267,10 +1255,12 @@
 
         const movePlayer = (dx, dy, last, i) => {
           movementTimeouts.shift();
-          cavansX += dx;
-          playerY += dy;
-          cavansY += dy;
-          playerX += dx;
+          if (!canmove) return;
+          console.log(scaleFactor);
+          cavansX += dx * scaleFactor;
+          playerY += dy * scaleFactor;
+          cavansY += dy * scaleFactor;
+          playerX += dx * scaleFactor;
 
           if (i in nolist) return; // just roll with it
           send("playerMoved", {
@@ -1371,12 +1361,12 @@
         document.addEventListener("mousemove", (evt) => {
           if (autoRotating) return;
           if (lockautoRotating) return;
-          var mousepos = getMousePos(container, evt);
+          var mousepos = getMousePos(window, evt);
           MouseX_ = mousepos.x;
           MouseY_ = mousepos.y;
           let __angle__ = Math.atan2(
-            Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-            Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
+            Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
+            Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
           );
           send("playerCannonMoved", {
             id: playerId,
@@ -1469,8 +1459,8 @@
             if (evt.button === 2) return;
           }
           var angle = Math.atan2(
-            Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-            Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
+            Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
+            Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
           );
 
           // Fire all cannons
@@ -1653,8 +1643,9 @@
               (event = evt, MouseY__ = MouseY_, MouseX__ = MouseX_) => {
                 canFire2 = false;
                 let angle = Math.atan2(
-                  Math.abs(MouseY__) - (canvas.height / 2 - playerSize * FOV),
-                  Math.abs(MouseX__) - (canvas.width / 2 - playerSize * FOV)
+                  Math.abs(MouseY_) -
+                    (window.innerHeight / 2 - playerSize * FOV),
+                  Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
                 );
                 if (autoFiring) return;
 
@@ -2357,6 +2348,8 @@
         }
       }
     };
+    var oWidth = canvas.width;
+    var oHieght = canvas.height;
 
     function rotatePointAroundPlayer(
       cannonOffsetX,
@@ -2376,6 +2369,8 @@
 
       return [rotatedX, rotatedY];
     }
+
+    var scaleFactor = 1;
 
     function drawself() {
       ctx.fillStyle = squareColor;
@@ -2417,7 +2412,54 @@
         }
         if (canKeyPress) {
           if (keysPressed["-"]) {
-            FOV -= 0.1;
+            scaleFactor -= 0.1; // Reduce scale factor
+
+            // Update logical canvas size (but keep it fullscreen)
+            var upscaleX = oWidth / (canvas.width * scaleFactor);
+            var upscaleY = oHieght / (canvas.height * scaleFactor);
+            console.log(upscaleX, upscaleY);
+            canvas.width *= upscaleX;
+            canvas.height *= upscaleY;
+            ctx.scale(scaleFactor, scaleFactor);
+            var canW1 = canW;
+            var canH1 = canH;
+            canW = canvas.width;
+            canH = canvas.height;
+            playerX -= canW1 / 2;
+            playerY -= canH1 / 2;
+            playerX += canW / 2;
+            playerY += canH / 2;
+            playerX -= canW / 2 - canW1 / 2;
+            playerY -= canH / 2 - canH1 / 2;
+            cavansX -= canW / 2 - canW1 / 2;
+            cavansY -= canH / 2 - canH1 / 2;
+            teamwidth = 0.15625 * canvas.width;
+            teamheight = 0.33333333333333333333333333 * canvas.height;
+            innerteamwidth = 0.14322916666 * canvas.width;
+            innerteamheight = 0.308333333333333333333 * canvas.height;
+            barWidth = 0.3125 * canvas.width;
+            barHeight = 0.02909796314 * canvas.height;
+            document.getElementById("grid").style[
+              "grid-template-columns"
+            ] = `repeat(125, ${79 * scaleFactor + 1}px)`;
+            document.getElementById("grid").style[
+              "grid-template-rows"
+            ] = `repeat(125, ${79 * scaleFactor + 1}px)`;
+            document.getElementById("grid").style.width = `${
+              10000 * scaleFactor
+            }px`;
+            document.getElementById("grid").style.height = `${
+              10000 * scaleFactor
+            }px`;
+            document.getElementById("grid").childNodes.forEach((node) => {
+              node.style.width = `${79 * scaleFactor}px`;
+              node.style.height = `${79 * scaleFactor}px`;
+            });
+            send("resize", {
+              id: playerId,
+              screenWidth: canvas.width,
+              screenHeight: canvas.height,
+            });
             waitpls();
           } else if (keysPressed["1"]) {
             if (statsTree["Health"] < maxUP && upgradePoints > 0) {
@@ -2525,8 +2567,8 @@
       }
 
       let angle = Math.atan2(
-        Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-        Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
+        Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
+        Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
       );
       let tankdata = tankmeta[__type__];
 
@@ -2977,19 +3019,14 @@
         // Draw border
         ctx.lineWidth = 1;
         ctx.strokeStyle = "grey";
-        ctx.strokeRect(
-          canvas.width / 2 - 50 * FOV,
-          canvas.height / 2 + 55 * FOV,
-          90 * FOV,
-          10 * FOV
-        );
+        ctx.strokeRect(canvas.width / 2 - 50, canvas.height / 2 + 55, 90, 10);
       }
 
       ctx.beginPath();
       ctx.arc(
         canvas.width / 2,
         canvas.height / 2,
-        playerSize * FOV * 40,
+        playerSize * 40,
         0,
         2 * Math.PI,
         false
@@ -3328,10 +3365,9 @@
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
       food_list.forEach((item) => {
-        var realx = item.x - item.size * (FOV - 1);
-        var realy = item.y - item.size * (FOV - 1);
+        var realx = item.x;
+        var realy = item.y;
         if (
           realx + item.size > 0 + cavansX &&
           realx < canvas.width + cavansX + item.size &&
@@ -3403,6 +3439,7 @@
               ctx.fillRect(-45, 35, healthWidth, 10 * FOV);
             }
           }
+
           if (item.type === "pentagon") {
             ctx.fillStyle = item.color;
             const centerX = 0;
@@ -3463,14 +3500,25 @@
 
           ctx.restore();
           ctx.globalAlpha = 1;
+          ctx.save();
+          ctx.translate(item.x - cavansX, item.y - cavansY);
+          ctx.beginPath();
+          ctx.arc(0, 0, 1, 0, 2 * Math.PI, false);
+          ctx.fill();
+          ctx.closePath();
+          ctx.restore();
         }
       });
 
       let unZbullets = [];
 
       bullets.forEach((bullet) => {
-        var realx = bullet.x - Math.abs(bullet.size * 2 * (FOV - 1));
-        var realy = bullet.y - Math.abs(bullet.size * 2 * (FOV - 1));
+        var realstartx =
+          (bullet.xstart - (bullet.xstart - cavansX)) * (FOV - 1);
+        var realstarty =
+          (bullet.ystart - (bullet.ystart - cavansY)) * (FOV - 1);
+        var realx = bullet.x - bullet.size * FOV * (FOV - 1);
+        var realy = bullet.y - bullet.size * FOV * (FOV - 1);
         if (
           realx > 0 + cavansX &&
           realx < canvas.width + cavansX &&
@@ -3502,8 +3550,8 @@
             let realsize = bullet.size * FOV;
 
             ctx.arc(
-              realx - (bullet.xstart - (bullet.xstart - cavansX)),
-              realy - (bullet.ystart - (bullet.ystart - cavansY)),
+              realx - realstartx,
+              realy - realstarty,
               realsize,
               0,
               2 * Math.PI
@@ -3518,8 +3566,11 @@
       });
 
       unZbullets.forEach((bullet) => {
-        var realx = bullet.x - Math.abs(bullet.size * 2 * (FOV - 1));
-        var realy = bullet.y - Math.abs(bullet.size * 2 * (FOV - 1));
+        var realx = bullet.x;
+        var realy = bullet.y;
+
+        var realstartx = bullet.xstart - (bullet.xstart - cavansX);
+        var realstarty = bullet.ystart - (bullet.ystart - cavansY);
         if (
           realx > 0 + cavansX &&
           realx < canvas.width + cavansX &&
@@ -3549,6 +3600,7 @@
             }
             let realsize = bullet.size * FOV;
 
+            console.log(realx - bullet.x);
             ctx.arc(
               realx - (bullet.xstart - (bullet.xstart - cavansX)),
               realy - (bullet.ystart - (bullet.ystart - cavansY)),
@@ -3789,10 +3841,10 @@
 
           let tankdatacannon = tankdata["cannons"];
 
-          let playerX = player.x - Math.abs(player.size * 80 * (FOV - 1));
-          let playerY = player.y - Math.abs(player.size * 80 * (FOV - 1));
+          let playerX = player.x;
+          let playerY = player.y;
 
-          let FOVplayerz = player.size * FOV;
+          let FOVplayerz = player.size;
 
           if (tankdata.decor) {
             tankdata.decor.forEach((decor_) => {
@@ -4331,8 +4383,8 @@
       ctx.fillStyle = squareColor;
 
       let angle = Math.atan2(
-        Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-        Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
+        Math.abs(MouseY_) - (canvas.height / 2 - playerSize),
+        Math.abs(MouseX_) - (canvas.width / 2 - playerSize)
       );
       drawself();
 
@@ -4346,12 +4398,8 @@
       ctx.lineTo(mapLeft, mapTop);
       ctx.stroke();
 
-      let b = Date.now();
-      console.log(b)
-      gridstyle.top = `calc(-5000px - ${cavansY}px)`;
-      gridstyle.left = `calc(-5000px - ${cavansX}px)`;
-      let bb = Date.now();
-      console.log(bb-b)
+      gridstyle.top = `calc(-5000px - ${cavansY * scaleFactor}px)`;
+      gridstyle.left = `calc(-5000px - ${cavansX * scaleFactor}px)`;
 
       // Call the function to draw the level bar
       drawRoundedLevelBar(
