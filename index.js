@@ -34,54 +34,69 @@ message GameObject {
 message GameObjectList {
   repeated GameObject objects = 1;
 }
-`; 
+`;
 
 async function runProtobufExample() {
-    // Parse the schema and get the GameObject type
-    const root = await protobuf.parse(schema).root;
-    const GameObject = root.lookupType("GameObject");
+  // Parse the schema and get the GameObject type
+  const root = await protobuf.parse(schema).root;
+  const GameObject = root.lookupType("GameObject");
 
-    // Example GameObject data
-    const gameObject = {
-        angle: 294,
-        color: "Gold",
-        health: 10,
-        maxhealth: 10,
-        size: 50,
-        type: "square",
-        weight: 3,
-        x: 4535.7837601949805,
-        y: -4492.806481930626,
-        transparency: 0.8
-    };
+  // Example GameObject data
+  const gameObject = {
+    angle: 294,
+    color: "Gold",
+    health: 10,
+    maxhealth: 10,
+    size: 50,
+    type: "square",
+    weight: 3,
+    x: 4535.7837601949805,
+    y: -4492.806481930626,
+    transparency: 0.8,
+  };
 
-    // Encode the data into Protobuf (binary format)
-    const buffer = GameObject.encode(gameObject).finish();
+  // Encode the data into Protobuf (binary format)
+  const buffer = GameObject.encode(gameObject).finish();
 }
 
 runProtobufExample();
 
 app.use(helmet.noSniff());
 
-app.use(helmet.hsts({
-  maxAge: 31536000, // 1 year in seconds
-  includeSubDomains: true, // Apply to all subdomains
-  preload: true // Allow preloading in browsers
-}));
+app.use(
+  helmet.hsts({
+    maxAge: 31536000, // 1 year in seconds
+    includeSubDomains: true, // Apply to all subdomains
+    preload: true, // Allow preloading in browsers
+  })
+);
 
-app.use(helmet.contentSecurityPolicy({
-  directives: {
-    defaultSrc: ["'self'"],  // Only allow content from the same origin
-    scriptSrc: ["'self'","https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/light/protobuf.min.js", "'unsafe-eval'"], // Allow scripts from self and a trusted CDN
-    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com","https://fonts.gstatic.com"], // Allow inline styles (use cautiously)
-    imgSrc: ["'self'", "https://images.com"], // Allow images from self and a trusted source
-    connectSrc: ["'self'"], // Restrict fetch/XHR/WebSockets
-    frameAncestors: ["'none'"], // Prevent embedding via <iframe>
-    objectSrc: ["'none'"], // Prevent <object>, <embed>, <applet>
-    upgradeInsecureRequests: [], // Upgrade HTTP requests to HTTPS
-    'unsafe-eval': ["https://cdnjs.cloudflare.com/ajax/libs/protobufjs/7.2.5/protobuf.min.js"]
-  }
-}));
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"], // Only allow content from the same origin
+      scriptSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/light/protobuf.min.js",
+        "'unsafe-eval'",
+      ], // Allow scripts from self and a trusted CDN
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+        "https://fonts.gstatic.com",
+      ], // Allow inline styles (use cautiously)
+      imgSrc: ["'self'", "https://images.com"], // Allow images from self and a trusted source
+      connectSrc: ["'self'"], // Restrict fetch/XHR/WebSockets
+      frameAncestors: ["'none'"], // Prevent embedding via <iframe>
+      objectSrc: ["'none'"], // Prevent <object>, <embed>, <applet>
+      upgradeInsecureRequests: [], // Upgrade HTTP requests to HTTPS
+      "unsafe-eval": [
+        "https://cdnjs.cloudflare.com/ajax/libs/protobufjs/7.2.5/protobuf.min.js",
+      ],
+    },
+  })
+);
 
 app.use(express.static(path.join(__dirname, "public")));
 var port = process.env.PORT;
@@ -95,6 +110,7 @@ let bullet_intervals = [];
 let hidden_broswers = [];
 let messages = [];
 let teamlist = [];
+let bosses = [];
 let playersjoined = [];
 let userbase = [];
 let food_squares_ = [];
@@ -886,6 +902,23 @@ function isPlayerCollidingWithPolygon(circle, polygonVertices) {
   const polygonSAT = toSATPolygon(polygonVertices);
   var collided = SAT.testCirclePolygon(circleSAT, polygonSAT, response);
   return [collided, response];
+}
+
+function midpointCalc(verts) {
+  let returnArray = [];
+  verts.forEach((vert, i) => {
+    var temp = { x: 0, y: 0 };
+    temp.x =
+      i + 1 < verts.length
+        ? (vert.x + verts[i + 1].x) / 2
+        : (vert.x + verts[0].x) / 2;
+    temp.y =
+      i + 1 < verts.length
+        ? (vert.y + verts[i + 1].y) / 2
+        : (vert.y + verts[0].y) / 2;
+    returnArray.push(temp);
+  });
+  return returnArray;
 }
 
 function finder_(data) {
@@ -1988,6 +2021,11 @@ wss.on("connection", (socket) => {
       });*/
       broadcast("playerMoved", data, socket);
       return;
+    }
+
+    if (type === "Sizeup") {
+      if (!players[data.id]) return;
+      players[data.id].size += data.plus;
     }
 
     if (type === "Autofire") {
@@ -3506,8 +3544,10 @@ setInterval(() => {
     item.y = item.centerY + item.scalarY * Math.sin(angle);
     if (item.type === "pentagon") {
       item.angle += 0.25;
-    } else {
+    } else if (item.subtype !== "Enemyboss") {
       item.angle += 0.5;
+    } else if (item.subtype === "Enemyboss") {
+      item.angle += 0.01;
     }
     if (item.angle >= 360) {
       item.angle = 0;
@@ -3540,18 +3580,48 @@ setInterval(() => {
       );
       item.vertices = rawvertices;
     }
-    let item2 = item;
+    let realtype = item.type;
+    if (item.subtype === "Enemyboss") {
+      realtype = "square:boss";
+      let points = midpointCalc(item.vertices);
+      item.cannons = [
+        {
+          type: "necromancerDrone",
+          x: points[0].x,
+          y: points[0].y,
+          offsetAngle: 90,
+        },
+        {
+          type: "necromancerDrone",
+          x: points[1].x,
+          y: points[1].y,
+          offsetAngle: 180,
+        },
+        {
+          type: "necromancerDrone",
+          x: points[2].x, 
+          y: points[2].y,
+          offsetAngle: 270,
+        },
+        {
+          type: "necromancerDrone",
+          x: points[3].x,
+          y: points[3].y,
+          offsetAngle: 0,
+        },
+      ];
+    }
     let gameObject = {
-      angle: item2.angle,
-      color: item2.color,
-      health: item2.health,
-      maxhealth: item2.maxhealth,
-      size: item2.size,
-      type: item2.type,
-      weight: item2.weight,
-      x: item2.x,
-      y: item2.y,
-      transparency:item2.transparency
+      angle: item.angle,
+      color: item.color,
+      health: item.health,
+      maxhealth: item.maxhealth,
+      size: item.size,
+      type: realtype,
+      weight: item.weight,
+      x: item.x,
+      y: item.y,
+      transparency: item.transparency,
     };
 
     player_array.push(gameObject);
@@ -3602,16 +3672,16 @@ setInterval(() => {
             playerID: player.id,
           });
           for (let i = 0; i < 10; i++) {
-            var factor = (item.weight/5) < 1 ? 1 : (item.weight/5)
-            console.log(factor)
-            setTimeout(()=>{
-              let recoilX = collisionCheck[1].overlapV.x/30;
-              let recoilY = collisionCheck[1].overlapV.y/30;
-              item.x += recoilX/factor;
-              item.y += recoilY/factor;
-              item.centerX += recoilX/factor;
-              item.centerY += recoilY/factor;
-            },50*i)
+            var factor = item.weight / 5 < 1 ? 1 : item.weight / 5;
+            console.log(factor);
+            setTimeout(() => {
+              let recoilX = collisionCheck[1].overlapV.x / 30;
+              let recoilY = collisionCheck[1].overlapV.y / 30;
+              item.x += recoilX / factor;
+              item.y += recoilY / factor;
+              item.centerX += recoilX / factor;
+              item.centerY += recoilY / factor;
+            }, 50 * i);
           }
           if (0 > item.health) {
             player.score += item.score_add;
@@ -4092,11 +4162,11 @@ setInterval(() => {
 async function createAndSendGameObjects(playerArray) {
   // Load and compile the Protobuf schema
   const root = await protobuf.parse(schema).root;
-  const GameObject = root.lookupType('GameObject');
-  const GameObjectList = root.lookupType('GameObjectList');
+  const GameObject = root.lookupType("GameObject");
+  const GameObjectList = root.lookupType("GameObjectList");
 
   // Convert player array to GameObject format (DO NOT encode here)
-  const gameObjects = playerArray.map(item => ({
+  const gameObjects = playerArray.map((item) => ({
     angle: item.angle,
     color: item.color,
     health: item.health,
@@ -4118,6 +4188,61 @@ async function createAndSendGameObjects(playerArray) {
   // Send the binary message using smartemit()
   smartemitBinary("gameUpdate", messageBuffer);
 }
+
+setInterval(() => {
+  let x = getRandomInt(-4000, 4000);
+  let y = getRandomInt(-4000, 4000);
+  type = "square";
+  color = "Gold";
+  let fooditem = {
+    type: type,
+    subtype: "Enemyboss",
+    health: 1500,
+    maxhealth: 1500,
+    size: 150,
+    angle: getRandomInt(0, 180),
+    x: x,
+    y: y,
+    centerX: x,
+    centerY: y,
+    body_damage: 7,
+    weight: weight,
+    scalarX: getRandomInt(-100, 100),
+    scalarY: getRandomInt(-100, 100),
+    vertices: null,
+    color: color,
+    score_add: score_add,
+    randomID: randID,
+  };
+  food_squares.push(fooditem);
+}, 1000 * 60 * 10);
+
+let x = 0;
+let y = 0;
+type = "square";
+color = "Gold";
+let fooditem = {
+  type: type,
+  subtype: "Enemyboss",
+  health: 1500,
+  maxhealth: 1500,
+  size: 300,
+  angle: getRandomInt(0, 180),
+  x: x,
+  y: y,
+  centerX: x,
+  centerY: y,
+  body_damage: 7,
+  weight: weight,
+  scalarX: getRandomInt(-100, 100),
+  scalarY: getRandomInt(-100, 100),
+  vertices: null,
+  color: color,
+  score_add: score_add,
+  randomID: randID,
+};
+food_squares.push(fooditem);
+console.log(x, y);
 
 function smartemitBinary(type, data) {
   connections.forEach((conn) => {
