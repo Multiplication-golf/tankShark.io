@@ -306,6 +306,8 @@
     var teamheight = 0.33333333333333333333333333 * canvas.height;
     var innerteamwidth = 0.14322916666 * canvas.width;
     var innerteamheight = 0.308333333333333333333 * canvas.height;
+    var innerteamwidthreal = 0.14322916666 * window.innerWidth;
+    var innerteamheightreal = 0.308333333333333333333 * window.innerHeight;
     var teamlist = [];
     var teamOn = null;
     var joinedTeam = false;
@@ -675,11 +677,13 @@
         setprogress =
           (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
         playerSize += playerSize * 0.005;
+        send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
         scaleFactor -= 0.008;
         while (score / levels[level] >= 1) {
           level += 1;
           upgradePoints += 1;
           playerSize += playerSize * 0.005;
+          send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
           scaleFactor -= 0.008;
           progress = 0;
           setprogress =
@@ -1931,10 +1935,10 @@
             var teamcontainer = document.getElementById("teamcontainer");
             teamcontainer.style.display = "block";
             teamcontainer.style.left =
-              window.innerWidth / 2 - innerteamwidth / 2 + "px";
+              window.innerWidth / 2 - innerteamwidthreal / 2 + "px";
             teamcontainer.style.top =
-              window.innerHeight / 2 - innerteamheight / 2 + "px";
-            teamcontainer.style.height = innerteamheight - 100 + "px";
+              window.innerHeight / 2 - innerteamheightreal / 2 + "px";
+            teamcontainer.style.height = innerteamheightreal - 100 + "px";
             teamcontainer.innerHTML = "";
             if (!joinedTeam) {
               pubteams.forEach((team) => {
@@ -2010,20 +2014,20 @@
           }
           if (teampanelopen) {
             const textWidth = ctx.measureText("X").width;
-            const textHeight = 16; // Approximate the height of the text (varies by font)
+            const textHeight = 16;
 
-            // Check if mouse is within the text bounding box
             const withinX =
-              MouseX_ >= window.innerWidth / 2 + innerteamwidth / 2 - 15 &&
+              MouseX_ >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
               MouseX_ <=
-                window.innerWidth / 2 + innerteamwidth / 2 - 15 + textWidth;
+                window.innerWidth / 2 + innerteamwidthreal / 2 - 15 + textWidth;
+
             const withinY =
               MouseY_ >=
                 window.innerHeight / 2 -
-                  innerteamheight / 2 +
+                  innerteamheightreal / 2 +
                   26 -
                   textHeight &&
-              MouseY_ <= window.innerHeight / 2 - innerteamheight / 2 + 26;
+              MouseY_ <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
             if (withinX && withinY) {
               teampanelopen = false;
               var teamcontainer = document.getElementById("teamcontainer");
@@ -2034,11 +2038,14 @@
             }
 
             const withinX3 =
-              MouseX_ >= window.innerWidth / 2 - innerteamwidth / 2 + 10 &&
-              MouseX_ <= window.innerWidth / 2 - innerteamwidth / 2 + 10 + 80;
+              MouseX_ >= window.innerWidth / 2 - innerteamwidthreal / 2 + 10 &&
+              MouseX_ <=
+                window.innerWidth / 2 - innerteamwidthreal / 2 + 10 + 80;
             const withinY3 =
-              MouseY_ >= window.innerHeight / 2 + innerteamheight / 2 - 50 &&
-              MouseY_ <= window.innerHeight / 2 + innerteamheight / 2 - 50 + 40;
+              MouseY_ >=
+                window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
+              MouseY_ <=
+                window.innerHeight / 2 + innerteamheightreal / 2 - 50 + 40;
             console.log(window.innerHeight / 2 + innerteamheight / 2 - 50 + 40);
             if (withinX3 && withinY3) {
               if (!joinedTeam) {
@@ -2063,11 +2070,14 @@
             }
 
             const withinX2 =
-              MouseX_ >= canvas.width / 2 + innerteamwidth / 2 - 150 &&
-              MouseX_ <= canvas.width / 2 + innerteamwidth / 2 - 150 + 140;
+              MouseX_ >= window.innerWidth / 2 + innerteamwidthreal / 2 - 150 &&
+              MouseX_ <=
+                window.innerWidth / 2 + innerteamwidthreal / 2 - 150 + 140;
             const withinY2 =
-              MouseY_ >= canvas.height / 2 + innerteamheight / 2 - 50 &&
-              MouseY_ <= canvas.height / 2 + innerteamheight / 2 - 50 + 40;
+              MouseY_ >=
+                window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
+              MouseY_ <=
+                window.innerHeight / 2 + innerteamheightreal / 2 - 50 + 40;
             if (withinX2 && withinY2) {
               if (!owner_of_team) {
                 document.getElementById("teambox").style.display = "block";
@@ -2172,9 +2182,7 @@
         ctx.font = "bold 40px Nunito";
         ctx.strokeText(level, canvas.width / 2, canvas.height - button10 * 6);
         ctx.fillText(level, canvas.width / 2, canvas.height - button10 * 6);
-        //let img = { complete: false };
-        // If the image is not yet loaded, wait for it to load
-        //console.log(img);
+
         try {
           ctx.drawImage(
             img,
@@ -3387,6 +3395,17 @@
           );
         }
         ctx.textAlign = "left";
+        const withinX =
+          MouseX_ >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
+          MouseX_ <= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 + 16;
+        //console.log(MouseX_,MouseY_,window.innerWidth / 2 + innerteamwidth / 2 - 15,window.innerWidth / 2 + innerteamwidth / 2 - 15 + textWidth)
+        const withinY =
+          MouseY_ >=
+            window.innerHeight / 2 - innerteamheightreal / 2 + 26 - 16 &&
+          MouseY_ <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
+        if (withinX && withinY) {
+          ctx.fillStyle = "red";
+        }
         ctx.fillText(
           "X",
           canvas.width / 2 + innerteamwidth / 2 - button10 * 1.5,
@@ -3535,16 +3554,88 @@
               );
             }
           }
+          if (item.type === "square:boss") {
+            ctx.fillStyle = item.color;
+            ctx.fillRect(
+              -item.size / 2,
+              -item.size / 2,
+              item.size * FOV,
+              item.size * FOV
+            );
+            ctx.strokeStyle = "GoldenRod";
+            ctx.lineWidth = 5;
+            ctx.strokeRect(
+              -item.size / 2,
+              -item.size / 2,
+              item.size * FOV,
+              item.size * FOV
+            );
 
-          ctx.restore();
+            ctx.rotate(-item.angle * pi180);
+            if (item.health < item.maxhealth) {
+              ctx.fillStyle = "black";
+              ctx.fillRect(-45, 35, 90 * FOV, 10);
+              const healthWidth = (item.health / item.maxhealth) * 90 * FOV;
+              ctx.fillStyle = "green";
+              ctx.fillRect(-45, 35, healthWidth, 10);
+            }
+          }
           ctx.globalAlpha = 1;
-          ctx.save();
-          ctx.translate(item.x - cavansX, item.y - cavansY);
-          ctx.beginPath();
-          ctx.arc(0, 0, 1, 0, 2 * Math.PI, false);
-          ctx.fill();
-          ctx.closePath();
           ctx.restore();
+          if (item.type === "square:boss") {
+            ctx.save();
+            
+            ctx.translate((realx - cavansX), (realy - cavansY));
+            for (let i = 0; i < 4; i++) {
+              ctx.fillStyle = "#b3b3b3";
+              let angle = item.angle*(pi/180);
+
+              let angle_offset = i * (90*(pi/180));
+              //console.log((points[i].x - item.x) - cavansX, points[i].y - cavansY);
+              ctx.rotate(angle + angle_offset);
+              console.log(angle)
+              var xplus = 0;
+              if (i === 1) xplus = item.size/2-60
+              if (i === 3) xplus = item.size/2-60
+              var yplus = 0;
+              if (i === 0) xplus = item.size/2-60
+              if (i === 2) xplus = item.size/2-60
+              
+              // Draw the square
+              const cannonWidth_bottom = 30 * 1 * FOV;
+              let cannon_heightFOV = 70;
+              let basex = ((cannonWidth_bottom / 2 + cannon_heightFOV) + xplus); 
+              //player.cannonW[i];
+              let basey = (-cannon_heightFOV / 2 + cannon_heightFOV / 2) + yplus;
+
+              const cannonHeight = cannon_heightFOV;
+              const cannonWidth_top = 80 * 1 * FOV;
+
+              var canwB2 = cannonWidth_bottom / 2;
+              var canwH2 = cannonWidth_top / 2;
+              ctx.beginPath();
+              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
+              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
+              ctx.lineTo(basex, basey + canwH2);
+              ctx.lineTo(basex, basey - canwH2);
+              ctx.closePath(); // Close the path
+              ctx.fill();
+
+              // Add a border to the cannon
+              ctx.strokeStyle = "lightgrey"; // Set border color
+              ctx.lineWidth = 3; // Set border width
+              ctx.beginPath();
+              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
+              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
+              ctx.lineTo(basex, basey + canwH2);
+              ctx.lineTo(basex, basey - canwH2);
+              ctx.closePath(); // Close the path
+              ctx.stroke(); // Draw the border
+              
+              ctx.rotate(-(angle + angle_offset));
+            }
+            ctx.restore();
+          }
         }
       });
 
