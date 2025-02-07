@@ -5,17 +5,6 @@
   }
   var username = "Unamed tank";
 
-  for (let i = 0; i < 125; i++) {
-    for (let j = 0; j < 125; j++) {
-      const div = document.createElement("div");
-      let divstyle = div.style;
-      divstyle.width = "79px";
-      divstyle.height = "79px";
-      divstyle.backgroundColor = "white";
-      divstyle.border = "1px solid black";
-      document.getElementById("grid").appendChild(div);
-    }
-  }
   const schema = `
     syntax = "proto3";
 
@@ -30,6 +19,7 @@
       float x = 8;
       float y = 9;
       float transparency = 10;
+      float randomID = 11;
     }
 
     message GameObjectList {
@@ -52,6 +42,7 @@
             x: { type: "float", id: 8 },
             y: { type: "float", id: 9 },
             transparency: { type: "float", id: 10 },
+            randomID: { type: "double", id: 11 },
           },
         },
         GameObjectList: {
@@ -105,6 +96,7 @@
             float x = 8;
             float y = 9;
             float transparency = 10;
+            float randomID = 11;
           }
 
           message GameObjectList {
@@ -115,7 +107,7 @@
     let playerId = null; // Connect to the server
     const canvas = document.createElement("canvas");
     const Ghostcanvas = document.getElementById("ghostCanvas");
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     document.getElementById("game").appendChild(canvas);
@@ -131,6 +123,29 @@
     // delay which cannon fires first
     var pi180 = Math.PI / 180;
     // reload 0.() values increase
+    let lastTime = performance.now();
+    let frameTimes = [];
+    let fps = 0;
+
+    function update(timestamp) {
+      let deltaTime = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+
+      let currentFPS = 1 / deltaTime;
+      frameTimes.push(currentFPS);
+
+      // Keep the last 60 frames for a smoother average
+      if (frameTimes.length > 60) {
+        frameTimes.shift();
+      }
+
+      fps = Math.round(frameTimes.reduce((a, b) => a + b) / frameTimes.length);
+
+      console.log("FPS:", fps); // Display smoothed FPS
+
+      requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
     var tankmeta = {
       basic: {
         "size-m": 1,
@@ -219,12 +234,12 @@
     var button475 = 0.24739583333 * canvas.width;
     var button462_5 = 0.24088541666 * canvas.width;
     var button375 = 0.1953125 * canvas.width;
-    console.log(button375);
     var button80 = 0.07759456838 * canvas.height;
     var button40 = 0.03879728419 * canvas.height;
     var button10 = 0.00969932104 * canvas.height;
     var button110 = 0.10669253152 * canvas.height;
     var FOV = 1; // senstive
+    var gridstyle = grid.style;
     var autoFiring = false;
     var autoRotating = false;
     var lockautoRotating = false;
@@ -271,7 +286,6 @@
     var state = "start";
     var statecycle = 0;
     var progress = 0.0;
-    var gridstyle = grid.style;
     var boundrectcanvas = Ghostcanvas.getBoundingClientRect();
     var canmove = true;
     var nolist = [3, 5, 7, 8, 10, 11, 13];
@@ -314,6 +328,7 @@
     var selected_class = null;
     var owner_of_team = false;
     var userId = getCookie("userId");
+    var bosses = [];
     var prescore = -1;
     var setprogress = 0;
     var badge = "";
@@ -678,13 +693,13 @@
           (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
         playerSize += playerSize * 0.005;
         send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
-        scaleFactor -= 0.008;
+        scaleby(0.008);
         while (score / levels[level] >= 1) {
           level += 1;
           upgradePoints += 1;
           playerSize += playerSize * 0.005;
           send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
-          scaleFactor -= 0.008;
+          scaleby(0.008);
           progress = 0;
           setprogress =
             (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
@@ -919,6 +934,8 @@
               },
               {}
             );
+          } else if (type === "bossUpdate") {
+            bosses = data;
           } else if (type === "playerDamaged") {
             players[data.player1.id].health = data.player1.health;
             if (data.player2.id === playerId) {
@@ -1272,7 +1289,6 @@
         const movePlayer = (dx, dy, last, i) => {
           movementTimeouts.shift();
           if (!canmove) return;
-          console.log(scaleFactor);
           cavansX += dx * scaleFactor;
           playerY += dy * scaleFactor;
           cavansY += dy * scaleFactor;
@@ -2046,7 +2062,6 @@
                 window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
               MouseY_ <=
                 window.innerHeight / 2 + innerteamheightreal / 2 - 50 + 40;
-            console.log(window.innerHeight / 2 + innerteamheight / 2 - 50 + 40);
             if (withinX3 && withinY3) {
               if (!joinedTeam) {
                 if (selected_class !== null) {
@@ -2202,7 +2217,7 @@
       cavansY += dy;
       playerX += dx;
 
-      if (i in nolist) return; // just roll with it
+      //if (i in nolist) return; // just roll with it
       send("playerMoved", {
         id: playerId,
         x: playerX,
@@ -2396,6 +2411,85 @@
     }
 
     var scaleFactor = 1;
+    function scaleby(scaleDown) {
+      var canW1 = canW;
+      var canH1 = canH;
+      canW = window.innerWidth;
+      canH = window.innerHeight;
+      canvas.width = canW;
+      canvas.height = canH;
+      playerX -= canW1 / 2;
+      playerY -= canH1 / 2;
+      playerX += canW / 2;
+      playerY += canH / 2;
+      playerX -= canW / 2 - canW1 / 2;
+      playerY -= canH / 2 - canH1 / 2;
+      cavansX -= canW / 2 - canW1 / 2;
+      cavansY -= canH / 2 - canH1 / 2;
+      teamwidth = 0.15625 * canvas.width;
+      teamheight = 0.33333333333333333333333333 * canvas.height;
+      innerteamwidth = 0.14322916666 * canvas.width;
+      innerteamheight = 0.308333333333333333333 * canvas.height;
+      barWidth = 0.3125 * canvas.width;
+      barHeight = 0.02909796314 * canvas.height;
+      send("resize", {
+        id: playerId,
+        screenWidth: canvas.width,
+        screenHeight: canvas.height,
+      });
+      scaleFactor -= scaleDown; // Reduce scale factor
+
+      // Update logical canvas size (but keep it fullscreen)
+      var upscaleX = oWidth / (canvas.width * scaleFactor);
+      var upscaleY = oHieght / (canvas.height * scaleFactor);
+      canvas.width *= upscaleX;
+      canvas.height *= upscaleY;
+      ctx.scale(scaleFactor, scaleFactor);
+      var canW1 = canW;
+      var canH1 = canH;
+      canW = canvas.width;
+      canH = canvas.height;
+      playerX -= canW1 / 2;
+      playerY -= canH1 / 2;
+      playerX += canW / 2;
+      playerY += canH / 2;
+      playerX -= canW / 2 - canW1 / 2;
+      playerY -= canH / 2 - canH1 / 2;
+      cavansX -= canW / 2 - canW1 / 2;
+      cavansY -= canH / 2 - canH1 / 2;
+      teamwidth = 0.15625 * canvas.width;
+      teamheight = 0.33333333333333333333333333 * canvas.height;
+      innerteamwidth = 0.14322916666 * canvas.width;
+      innerteamheight = 0.308333333333333333333 * canvas.height;
+      buttton140 = 0.07291666666 * canvas.width; // tested screen height is 1031x1920
+      button275 = 0.14322916666 * canvas.width;
+      button475 = 0.24739583333 * canvas.width;
+      button462_5 = 0.24088541666 * canvas.width;
+      button375 = 0.1953125 * canvas.width;
+      button80 = 0.07759456838 * canvas.height;
+      button40 = 0.03879728419 * canvas.height;
+      button10 = 0.00969932104 * canvas.height;
+      button110 = 0.10669253152 * canvas.height;
+      barWidth = 0.3125 * canvas.width;
+      barHeight = 0.02909796314 * canvas.height;
+      document.getElementById("grid").style[
+        "grid-template-columns"
+      ] = `repeat(125, ${79 * scaleFactor + 1}px)`;
+      document.getElementById("grid").style[
+        "grid-template-rows"
+      ] = `repeat(125, ${79 * scaleFactor + 1}px)`;
+      document.getElementById("grid").style.width = `${10000 * scaleFactor}px`;
+      document.getElementById("grid").style.height = `${10000 * scaleFactor}px`;
+      document.getElementById("grid").childNodes.forEach((node) => {
+        node.style.width = `${79 * scaleFactor}px`;
+        node.style.height = `${79 * scaleFactor}px`;
+      });
+      send("resize", {
+        id: playerId,
+        screenWidth: canvas.width,
+        screenHeight: canvas.height,
+      });
+    }
 
     function drawself() {
       ctx.fillStyle = squareColor;
@@ -2437,63 +2531,7 @@
         }
         if (canKeyPress) {
           if (keysPressed["-"]) {
-            scaleFactor -= 0.1; // Reduce scale factor
-
-            // Update logical canvas size (but keep it fullscreen)
-            var upscaleX = oWidth / (canvas.width * scaleFactor);
-            var upscaleY = oHieght / (canvas.height * scaleFactor);
-            console.log(upscaleX, upscaleY);
-            canvas.width *= upscaleX;
-            canvas.height *= upscaleY;
-            ctx.scale(scaleFactor, scaleFactor);
-            var canW1 = canW;
-            var canH1 = canH;
-            canW = canvas.width;
-            canH = canvas.height;
-            playerX -= canW1 / 2;
-            playerY -= canH1 / 2;
-            playerX += canW / 2;
-            playerY += canH / 2;
-            playerX -= canW / 2 - canW1 / 2;
-            playerY -= canH / 2 - canH1 / 2;
-            cavansX -= canW / 2 - canW1 / 2;
-            cavansY -= canH / 2 - canH1 / 2;
-            teamwidth = 0.15625 * canvas.width;
-            teamheight = 0.33333333333333333333333333 * canvas.height;
-            innerteamwidth = 0.14322916666 * canvas.width;
-            innerteamheight = 0.308333333333333333333 * canvas.height;
-            buttton140 = 0.07291666666 * canvas.width; // tested screen height is 1031x1920
-            button275 = 0.14322916666 * canvas.width;
-            button475 = 0.24739583333 * canvas.width;
-            button462_5 = 0.24088541666 * canvas.width;
-            button375 = 0.1953125 * canvas.width;
-            button80 = 0.07759456838 * canvas.height;
-            button40 = 0.03879728419 * canvas.height;
-            button10 = 0.00969932104 * canvas.height;
-            button110 = 0.10669253152 * canvas.height;
-            barWidth = 0.3125 * canvas.width;
-            barHeight = 0.02909796314 * canvas.height;
-            document.getElementById("grid").style[
-              "grid-template-columns"
-            ] = `repeat(125, ${79 * scaleFactor + 1}px)`;
-            document.getElementById("grid").style[
-              "grid-template-rows"
-            ] = `repeat(125, ${79 * scaleFactor + 1}px)`;
-            document.getElementById("grid").style.width = `${
-              10000 * scaleFactor
-            }px`;
-            document.getElementById("grid").style.height = `${
-              10000 * scaleFactor
-            }px`;
-            document.getElementById("grid").childNodes.forEach((node) => {
-              node.style.width = `${79 * scaleFactor}px`;
-              node.style.height = `${79 * scaleFactor}px`;
-            });
-            send("resize", {
-              id: playerId,
-              screenWidth: canvas.width,
-              screenHeight: canvas.height,
-            });
+            scaleby(0.1);
             waitpls();
           } else if (keysPressed["1"]) {
             if (statsTree["Health"] < maxUP && upgradePoints > 0) {
@@ -3398,7 +3436,6 @@
         const withinX =
           MouseX_ >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
           MouseX_ <= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 + 16;
-        //console.log(MouseX_,MouseY_,window.innerWidth / 2 + innerteamwidth / 2 - 15,window.innerWidth / 2 + innerteamwidth / 2 - 15 + textWidth)
         const withinY =
           MouseY_ >=
             window.innerHeight / 2 - innerteamheightreal / 2 + 26 - 16 &&
@@ -3554,59 +3591,43 @@
               );
             }
           }
-          if (item.type === "square:boss") {
-            ctx.fillStyle = item.color;
-            ctx.fillRect(
-              -item.size / 2,
-              -item.size / 2,
-              item.size * FOV,
-              item.size * FOV
-            );
-            ctx.strokeStyle = "GoldenRod";
-            ctx.lineWidth = 5;
-            ctx.strokeRect(
-              -item.size / 2,
-              -item.size / 2,
-              item.size * FOV,
-              item.size * FOV
-            );
-
-            ctx.rotate(-item.angle * pi180);
-            if (item.health < item.maxhealth) {
-              ctx.fillStyle = "black";
-              ctx.fillRect(-45, 35, 90 * FOV, 10);
-              const healthWidth = (item.health / item.maxhealth) * 90 * FOV;
-              ctx.fillStyle = "green";
-              ctx.fillRect(-45, 35, healthWidth, 10);
-            }
-          }
-          ctx.globalAlpha = 1;
           ctx.restore();
+
           if (item.type === "square:boss") {
             ctx.save();
-            
-            ctx.translate((realx - cavansX), (realy - cavansY));
+            ctx.translate(realx - cavansX, realy - cavansY);
+            var boss = bosses.find((boss_) => boss_.id === item.randomID);
+            boss =
+              boss === undefined
+                ? {
+                    id: 0,
+                    cannons: [
+                      { cannonW: 0 },
+                      { cannonW: 0 },
+                      { cannonW: 0 },
+                      { cannonW: 0 },
+                    ],
+                  }
+                : boss;
+
             for (let i = 0; i < 4; i++) {
               ctx.fillStyle = "#b3b3b3";
-              let angle = item.angle*(pi/180);
+              let angle = item.angle * (pi / 180);
 
-              let angle_offset = i * (90*(pi/180));
-              //console.log((points[i].x - item.x) - cavansX, points[i].y - cavansY);
+              let angle_offset = i * (90 * (pi / 180));
+
               ctx.rotate(angle + angle_offset);
-              console.log(angle)
-              var xplus = 0;
-              if (i === 1) xplus = item.size/2-60
-              if (i === 3) xplus = item.size/2-60
-              var yplus = 0;
-              if (i === 0) xplus = item.size/2-60
-              if (i === 2) xplus = item.size/2-60
-              
+              var xplus = item.size / 2 - 60;
+
               // Draw the square
               const cannonWidth_bottom = 30 * 1 * FOV;
               let cannon_heightFOV = 70;
-              let basex = ((cannonWidth_bottom / 2 + cannon_heightFOV) + xplus); 
-              //player.cannonW[i];
-              let basey = (-cannon_heightFOV / 2 + cannon_heightFOV / 2) + yplus;
+              let basex =
+                cannonWidth_bottom / 2 +
+                cannon_heightFOV +
+                xplus -
+                boss.cannons[i + 1].cannonW;
+              let basey = -cannon_heightFOV / 2 + cannon_heightFOV / 2;
 
               const cannonHeight = cannon_heightFOV;
               const cannonWidth_top = 80 * 1 * FOV;
@@ -3631,23 +3652,53 @@
               ctx.lineTo(basex, basey - canwH2);
               ctx.closePath(); // Close the path
               ctx.stroke(); // Draw the border
-              
+
               ctx.rotate(-(angle + angle_offset));
             }
             ctx.restore();
           }
+
+          if (item.type === "square:boss") {
+            ctx.save();
+            ctx.translate(realx - cavansX, realy - cavansY);
+            ctx.rotate(item.angle * pi180);
+            ctx.fillStyle = item.color;
+            ctx.fillRect(
+              -item.size / 2,
+              -item.size / 2,
+              item.size * FOV,
+              item.size * FOV
+            );
+            ctx.strokeStyle = "GoldenRod";
+            ctx.lineWidth = 5;
+            ctx.strokeRect(
+              -item.size / 2,
+              -item.size / 2,
+              item.size * FOV,
+              item.size * FOV
+            );
+
+            ctx.rotate(-item.angle * pi180);
+            if (item.health < item.maxhealth) {
+              ctx.fillStyle = "black";
+              ctx.fillRect(-45, 35, 90 * FOV, 10);
+              const healthWidth = (item.health / item.maxhealth) * 90 * FOV;
+              ctx.fillStyle = "green";
+              ctx.fillRect(-45, 35, healthWidth, 10);
+            }
+            ctx.restore();
+          }
+          ctx.globalAlpha = 1;
         }
       });
 
       let unZbullets = [];
 
       bullets.forEach((bullet) => {
-        var realstartx =
-          (bullet.xstart - (bullet.xstart - cavansX)) * (FOV - 1);
-        var realstarty =
-          (bullet.ystart - (bullet.ystart - cavansY)) * (FOV - 1);
-        var realx = bullet.x - bullet.size * FOV * (FOV - 1);
-        var realy = bullet.y - bullet.size * FOV * (FOV - 1);
+        var realstartx = bullet.xstart - (bullet.xstart - cavansX);
+        var realstarty = bullet.ystart - (bullet.ystart - cavansY);
+        var realx = bullet.x;
+        var realy = bullet.y;
         if (
           realx > 0 + cavansX &&
           realx < canvas.width + cavansX &&
@@ -3676,7 +3727,7 @@
               ctx.fillStyle = "red";
               ctx.strokeStyle = "darkred";
             }
-            let realsize = bullet.size * FOV;
+            let realsize = bullet.size;
 
             ctx.arc(
               realx - realstartx,
@@ -3727,9 +3778,8 @@
               ctx.fillStyle = "red";
               ctx.strokeStyle = "darkred";
             }
-            let realsize = bullet.size * FOV;
+            let realsize = bullet.size;
 
-            console.log(realx - bullet.x);
             ctx.arc(
               realx - (bullet.xstart - (bullet.xstart - cavansX)),
               realy - (bullet.ystart - (bullet.ystart - cavansY)),
@@ -3741,6 +3791,26 @@
             ctx.lineWidth = 5;
             ctx.stroke();
             ctx.closePath();
+          } else if (bullet.type === "FreeNecromancer") {
+            ctx.save();
+            ctx.translate(realx - cavansX, realy - cavansY);
+            ctx.rotate(bullet.angle * (pi / 180));
+            ctx.fillStyle = "#f2c705";
+            ctx.fillRect(
+              -bullet.size / 2,
+              -bullet.size / 2,
+              bullet.size,
+              bullet.size
+            );
+            ctx.strokeStyle = "#e0b700";
+            ctx.lineWidth = 5;
+            ctx.strokeRect(
+              -bullet.size / 2,
+              -bullet.size / 2,
+              bullet.size,
+              bullet.size
+            );
+            ctx.restore();
           } else if (bullet.type === "trap") {
             var sameTeam =
               players[bullet.id].team === players[playerId].team &&
@@ -3815,7 +3885,7 @@
             }
             ctx.save();
             ctx.translate(realx - cavansX, realy - cavansY);
-            ctx.rotate(bullet.angle);
+            ctx.rotate(bullet.angle * (pi / 180));
             let realitemsize = bullet.size * 3 * FOV;
             const h = realitemsize * sqrt23;
 
@@ -4526,7 +4596,6 @@
       ctx.lineTo(mapLeft, mapBottom);
       ctx.lineTo(mapLeft, mapTop);
       ctx.stroke();
-
       gridstyle.top = `calc(-${(10000 * scaleFactor) / 2}px - ${
         cavansY * scaleFactor
       }px)`;

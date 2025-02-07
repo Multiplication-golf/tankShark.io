@@ -42,12 +42,18 @@
       />
       <button id="playButton">Play</button>
     </div>
-    <div id="game" style="display: none; width: 100vw;
-          position: absolute;
-          height: 100vh;
-          top: 0;
-          left: 0;
-          overflow: hidden;">
+    <div
+      id="game"
+      style="
+        display: none;
+        width: 100vw;
+        position: absolute;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        overflow: hidden;
+      "
+    >
       <img
         src="assets/you died.gif"
         style="
@@ -60,6 +66,25 @@
         "
         id="die"
       />
+      <div
+        style="
+          display: grid;
+          grid-template-columns: repeat(125, 80px);
+          grid-template-rows: repeat(125, 80px);
+          grid-gap: 0px;
+          width: 10000px;
+          height: 10000px;
+          position: absolute;
+          top: -5000px;
+          left: -5000px;
+          -khtml-user-select: none;
+          -o-user-select: none;
+          -moz-user-select: none;
+          -webkit-user-select: none;
+          user-select: none;
+        "
+        id="grid"
+      ></div>
       <div
         style="
           overflow: hidden;
@@ -90,25 +115,6 @@
           id="players"
           style="z-index: 100000000000; position: absolute; top: 0; left: 0"
         ></p>
-        <div
-          style="
-            display: grid;
-            grid-template-columns: repeat(125, 80px);
-            grid-template-rows: repeat(125, 80px);
-            grid-gap: 0px;
-            width: 10000px;
-            height: 10000px;
-            position: absolute;
-            top: -5000px;
-            left: -5000px;
-            -khtml-user-select: none;
-            -o-user-select: none;
-            -moz-user-select: none;
-            -webkit-user-select: none;
-            user-select: none;
-          "
-          id="grid"
-        ></div>
       </div>
       <style>
         @keyframes move {
@@ -134,7 +140,10 @@
           z-index: 2000;
         "
       ></div>
-      <canvas id="ghostCanvas" style="position: absolute;top:0;left:0;width:100vw;height:100vh"></canvas>
+      <canvas
+        id="ghostCanvas"
+        style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh"
+      ></canvas>
       <div class="container_" id="teamcontainer">
         <div class="team">Team1</div>
         <div class="team">Team2</div>
