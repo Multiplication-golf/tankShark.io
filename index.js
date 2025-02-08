@@ -29,6 +29,7 @@ message GameObject {
   float x = 8;
   float y = 9;
   float transparency = 10;
+  double randomID = 11;
 }
 
 message GameObjectList {
@@ -53,6 +54,7 @@ async function runProtobufExample() {
     x: 4535.7837601949805,
     y: -4492.806481930626,
     transparency: 0.8,
+    randomID: 34985984385.6,
   };
 
   // Encode the data into Protobuf (binary format)
@@ -1259,16 +1261,16 @@ wss.on("connection", (socket) => {
         !confirmplayerradia(x, y)
       );
       if (data.userId) {
-        console.log(userbase, data.userId);
+        //console.log(userbase, data.userId);
         var _player = userbase.find((_player) => {
-          console.log("a", _player.userid, data.userId);
+          //console.log("a", _player.userid, data.userId);
           return Math.abs(_player.userid - data.userId) < 0.001;
         });
-        console.log(_player);
+        console.log("_player", _player);
         if (_player !== undefined) {
-          console.log("_player", _player);
+          //console.log("_player", _player);
           let score__$ = _player.scores.reduce((a, b) => {
-            console.log("a,b:", a, b);
+            //console.log("a,b:", a, b);
             return a + b.score;
           }, 0);
           if (score__$ >= 50000000) {
@@ -1304,7 +1306,7 @@ wss.on("connection", (socket) => {
           players[data.id].userId = newid;
           userbase.push({ userid: newid, scores: [] });
           badge = "/badges/1.png";
-          console.log("userbase 1199", userbase);
+          //console.log("userbase 1199", userbase);
         }
       } else {
         var newid =
@@ -1312,14 +1314,14 @@ wss.on("connection", (socket) => {
           Date.now() * Math.random() +
           Date.now() / 213984238 +
           Math.random();
-        console.log(1207);
+        //console.log(1207);
         socket.send(JSON.stringify({ type: "newid", data: { newid: newid } }));
-        console.log(typeof userbase, console.log(userbase));
+        //console.log(typeof userbase, console.log(userbase));
         userbase.push({ userid: newid, scores: [] });
         badge = "/badges/1.png";
         players[data.id].userId = newid;
       }
-      console.log("userbase", userbase);
+      //console.log("userbase", userbase);
       socket.send(
         JSON.stringify({ type: "badgeToplayer", data: { badge: badge } })
       );
@@ -1390,12 +1392,14 @@ wss.on("connection", (socket) => {
         start = null;
         state = "normal";
         let _data = { state: state, statecycle: statecycle, playerID: data.id };
-        players[data.id].state = data.state;
-        emit("statechangeUpdate", _data, socket);
-        setTimeout(() => {
-          players[data.id].state = _data.state;
+        if (players[data.id]) {
+          players[data.id].state = data.state;
           emit("statechangeUpdate", _data, socket);
-        }, 300);
+          setTimeout(() => {
+            players[data.id].state = _data.state;
+            emit("statechangeUpdate", _data, socket);
+          }, 300);
+        }
       }, 6000);
 
       return;
@@ -2743,6 +2747,7 @@ wss.on("connection", (socket) => {
             Zlevel: 3,
           };
 
+          //console.log(bullet____)
           bullets.push(bullet____);
           var interval__;
           var reload_bullet = setTimeout(() => {
@@ -2954,9 +2959,12 @@ wss.on("connection", (socket) => {
 });
 
 let loglimit = 10000;
+let tempToPush = [];
+let tempBulletToPush = [];
 
 setInterval(() => {
   // Filter and update bullets
+  var deadlist = [];
   bullets = bullets.filter((bullet) => {
     if (bullet.type === "directer") {
       try {
@@ -2980,16 +2988,46 @@ setInterval(() => {
         if (players[bullet.id]) {
           emit("dronekilled", { droneID: bullet.id });
         }
-        console.log(e);
+        console.log("2988", e);
         return false;
       }
     }
+    if (bullet.type === "FreeNecromancer") {
+      // choose a player to attak
+      var maxdistance = 1300;
+      var target = { x: bullet.x, y: bullet.y };
+      var foundTarget = false;
+      for (const playerId in players) {
+        var player = players[playerId];
+        let distanceX = Math.abs(player.x - bullet.x);
+        let distanceY = Math.abs(player.y - bullet.y);
+        let newdistance = MathHypotenuse(distanceX, distanceY);
+        if (newdistance < maxdistance) {
+          target = { x: player.x, y: player.y };
+          newdistance = maxdistance;
+          foundTarget = true;
+        }
+      }
+      let __angle = Math.atan2(target.y - bullet.y, target.x - bullet.x);
+
+      bullet.angle = __angle;
+    }
     let collied = false;
-    let newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
-    let newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
+    if (bullet.type === "FreeNecromancer") {
+      if (foundTarget) {
+        var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
+        var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
+      } else {
+        var newX = bullet.x;
+        var newY = bullet.y;
+      }
+    } else {
+      var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
+      var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
+    }
     var newX__;
     var newY__;
-    if (bullet.type !== "directer") {
+    if (bullet.type !== "directer" && bullet.type !== "FreeNecromancer") {
       bullet.distanceTraveled += MathHypotenuse(
         newX - bullet.x,
         newY - bullet.y
@@ -3095,15 +3133,18 @@ setInterval(() => {
         }
       });
     }
-    if (
+    if (bullet.bullet_distance < 100 * (bullet.speed - 4)) {
+      bullet.transparency = bullet.bullet_distance / 10;
+    } else if (
       bullet.bullet_distance - bullet.distanceTraveled < 10 &&
       bullet.bullet_distance > 20 &&
-      bullet.type !== "directer"
+      bullet.type !== "directer" &&
+      bullet.type !== "FreeNecromancer"
     ) {
       bullet.transparency =
-        (bullet.bullet_distance - bullet.distanceTraveled) / 10;
-    } else if (bullet.bullet_distance < 10) {
-      bullet.transparency = bullet.bullet_distance / 10;
+        ((bullet.bullet_distance - bullet.distanceTraveled) * bullet.speed) /
+        4 /
+        10;
     }
 
     for (const playerId in players) {
@@ -3124,7 +3165,10 @@ setInterval(() => {
               (player.size + 6 / bullet.size + 3);
             bullet.bullet_distance /=
               bullet.size / (bullet.bullet_pentration + 10);
-          } else if (bullet.type === "directer") {
+          } else if (
+            bullet.type === "directer" ||
+            bullet.type === "FreeNecromancer"
+          ) {
             player.health -=
               (bullet.bullet_damage - 4.4) /
               (player.size + 6 / bullet.size + 5);
@@ -3230,6 +3274,10 @@ setInterval(() => {
     }
     if (bullet.type === "directer") {
       emit("dronekilled", { droneID: bullet.id });
+    }
+    if (bullet.type === "FreeNecromancer") {
+      console.log("drone died");
+      deadlist.push(bullet.id);
     }
 
     if (bullet.type === "AutoBullet") {
@@ -3537,11 +3585,36 @@ setInterval(() => {
     }
   });
 
-  let tempToPush = [];
+  tempToPush = [];
   player_array = [];
+  tempBulletToPush = [];
+
   food_squares = food_squares.filter((item, index) => {
-    item.x = item.centerX + item.scalarX * Math.cos(angle);
-    item.y = item.centerY + item.scalarY * Math.sin(angle);
+    if (item.subtype !== "Enemyboss") {
+      item.x = item.centerX + item.scalarX * Math.cos(angle);
+      item.y = item.centerY + item.scalarY * Math.sin(angle);
+    } else if (item.subtype === "Enemyboss") {
+      var maxdistance = 1300;
+      var target = { x: item.x, y: item.y };
+      for (const playerId in players) {
+        var player = players[playerId];
+        let distanceX = Math.abs(player.x - item.x);
+        let distanceY = Math.abs(player.y - item.y);
+        let newdistance = MathHypotenuse(distanceX, distanceY);
+        if (newdistance < maxdistance) {
+          target = { x: player.x, y: player.y };
+          newdistance = maxdistance;
+        }
+      }
+      let __angle = Math.atan2(target.y - item.y, target.x - item.x);
+      //console.log(__angle)
+      let newX = item.x + item.speed * Math.cos(__angle);
+      let newY = item.y + item.speed * Math.sin(__angle);
+      item.centerX = newX;
+      item.centerY = newY;
+      item.x = newX;
+      item.y = newY;
+    }
     if (item.type === "pentagon") {
       item.angle += 0.25;
     } else if (item.subtype !== "Enemyboss") {
@@ -3582,34 +3655,59 @@ setInterval(() => {
     }
     let realtype = item.type;
     if (item.subtype === "Enemyboss") {
+      //console.log("Enemyboss",item.cannons.length)
       realtype = "square:boss";
       let points = midpointCalc(item.vertices);
-      item.cannons = [
-        {
-          type: "necromancerDrone",
-          x: points[0].x,
-          y: points[0].y,
-          offsetAngle: 90,
-        },
-        {
-          type: "necromancerDrone",
-          x: points[1].x,
-          y: points[1].y,
-          offsetAngle: 180,
-        },
-        {
-          type: "necromancerDrone",
-          x: points[2].x, 
-          y: points[2].y,
-          offsetAngle: 270,
-        },
-        {
-          type: "necromancerDrone",
-          x: points[3].x,
-          y: points[3].y,
-          offsetAngle: 0,
-        },
-      ];
+      for (let i = 0; i < 4; i++) {
+        item.cannons[i].x = points[i].x;
+        item.cannons[i].y = points[i].y;
+      }
+      item.cannons.forEach((cannon, i) => {
+        if (cannon.canfire && cannon.current < cannon.maxbullets) {
+          cannon.current += 1;
+          cannon.canfire = false;
+          setTimeout(() => {
+            cannon.canfire = true;
+          }, 305);
+          var randID = Math.random() * 3 * Date.now();
+          let bullet____ = {
+            type: "FreeNecromancer",
+            bullet_distance: 1000,
+            speed: 2,
+            size: 50,
+            angle: 0,
+            bullet_damage: 6,
+            distanceTraveled: 0,
+            vertices: null,
+            bullet_pentration: 1,
+            x: cannon.x,
+            y: cannon.y,
+            lifespan: 0,
+            health: 10,
+            xstart: cannon.x,
+            ystart: cannon.y,
+            id: cannon.id,
+            uniqueid: randID,
+            boundtype: "square",
+          };
+          //console.log(bullet____);
+          tempBulletToPush.push(bullet____);
+          let boss = bosses.find((boss_) => item.randomID === boss_.id);
+          for (let l = 0; l < 10; l++) {
+            setTimeout(() => {
+              boss.cannons[i].cannonW -= 1;
+            }, 20 * l);
+            setTimeout(() => {
+              boss.cannons[i].cannonW += 1;
+            }, 40 * l); // Updated to prevent overlap
+          }
+        }
+        if (deadlist.length !== 0) console.log(deadlist);
+        if (deadlist.some((itemx) => cannon.id === itemx)) {
+          cannon.current -= 1;
+          //console.log("drone died---");
+        }
+      });
     }
     let gameObject = {
       angle: item.angle,
@@ -3622,6 +3720,7 @@ setInterval(() => {
       x: item.x,
       y: item.y,
       transparency: item.transparency,
+      randomID: item.randomID,
     };
 
     player_array.push(gameObject);
@@ -3666,14 +3765,14 @@ setInterval(() => {
             );
           }
 
-          console.log(collisionCheck[1].overlapV);
+          //console.log(collisionCheck[1].overlapV);
           emit("bouceBack", {
             response: collisionCheck[1].overlapV,
             playerID: player.id,
           });
           for (let i = 0; i < 10; i++) {
             var factor = item.weight / 5 < 1 ? 1 : item.weight / 5;
-            console.log(factor);
+            //console.log(factor);
             setTimeout(() => {
               let recoilX = collisionCheck[1].overlapV.x / 30;
               let recoilY = collisionCheck[1].overlapV.y / 30;
@@ -3683,7 +3782,7 @@ setInterval(() => {
               item.centerY += recoilY / factor;
             }, 50 * i);
           }
-          if (0 > item.health) {
+          if (0 >= item.health) {
             player.score += item.score_add;
             emit("playerScore", {
               bulletId: player.id,
@@ -3880,7 +3979,7 @@ setInterval(() => {
           (bullet.bullet_damage * 4) / (item.size + bulletSpeed) +
           bullet.bullet_pentration; //
 
-        if (damage >= item.health) {
+        if (damage >= item.health && bullet.type !== "FreeNecromancer") {
           if (!players[bullet.id]) {
             console.log(bullet.id);
             console.log(players);
@@ -4103,8 +4202,25 @@ setInterval(() => {
           }
 
           return_ = false;
+        } else if (bullet.type !== "FreeNecromancer") {
+          if (bullet.type !== "FreeNecromancer") {
+            item.health -= damage;
+          }
+          let recoilX =
+            ((bullet.size / item.weight) *
+              bullet.speed *
+              Math.cos(bullet.angle)) /
+            4;
+          let recoilY =
+            ((bullet.size / item.weight) *
+              bullet.speed *
+              Math.sin(bullet.angle)) /
+            4;
+          item.x += recoilX;
+          item.y += recoilY;
+          item.centerX += recoilX;
+          item.centerY += recoilY;
         } else {
-          item.health -= damage;
           let recoilX =
             ((bullet.size / item.weight) *
               bullet.speed *
@@ -4120,28 +4236,25 @@ setInterval(() => {
           item.centerX += recoilX;
           item.centerY += recoilY;
         }
-        bullet.bullet_distance -=
-          (bullet.size * 40) / bullet.bullet_pentration + bullet.size * 3 + 40;
+        if (bullet.type !== "FreeNecromancer") {
+          bullet.bullet_distance -=
+            (bullet.size * 40) / bullet.bullet_pentration +
+            bullet.size * 3 +
+            40;
 
-        bullet.bullet_distance -= 1; // for drones
-        if (
-          bullet.bullet_distance - bullet.distanceTraveled <
-            10 - 10 * Math.abs(bullet.speed - 1) &&
-          bullet.bullet_distance > 20 &&
-          bullet.type !== "directer"
-        ) {
-          bullet.transparency =
-            ((bullet.bullet_distance - bullet.distanceTraveled) *
-              bullet.speed) /
-            (10 - 10 * Math.abs(bullet.speed - 1));
-        } else if (bullet.bullet_distance < 10) {
+          bullet.bullet_distance -= 1; // for drones
+        }
+
+        if (bullet.bullet_distance < 100 * (bullet.speed - 4)) {
           bullet.transparency = bullet.bullet_distance / 10;
+          console.log(bullet.transparency);
         }
       }
     });
     if (return_ === true && !item.isdead) {
       return return_;
     }
+
     if (item.isdead) {
       if (Date.now() >= item.deathtime + 150) {
         return false;
@@ -4151,11 +4264,18 @@ setInterval(() => {
       return true;
     }
   });
+
   tempToPush.forEach((item) => {
     food_squares.push(item);
   });
 
+  tempBulletToPush.forEach((item) => {
+    bullets.push(item);
+  });
+
   emit("bulletUpdate", bullets);
+  emit("bossUpdate", bosses);
+  //console.log(player_array.length)
   createAndSendGameObjects(player_array);
 }, UPDATE_INTERVAL);
 
@@ -4164,8 +4284,8 @@ async function createAndSendGameObjects(playerArray) {
   const root = await protobuf.parse(schema).root;
   const GameObject = root.lookupType("GameObject");
   const GameObjectList = root.lookupType("GameObjectList");
-
   // Convert player array to GameObject format (DO NOT encode here)
+  //console.log(playerArray[3].randomID)
   const gameObjects = playerArray.map((item) => ({
     angle: item.angle,
     color: item.color,
@@ -4177,6 +4297,7 @@ async function createAndSendGameObjects(playerArray) {
     x: item.x,
     y: item.y,
     transparency: item.transparency,
+    randomID: item.randomID,
   }));
 
   // Create the GameObjectList (DO NOT encode here either)
@@ -4189,24 +4310,27 @@ async function createAndSendGameObjects(playerArray) {
   smartemitBinary("gameUpdate", messageBuffer);
 }
 
-setInterval(() => {
-  let x = getRandomInt(-4000, 4000);
-  let y = getRandomInt(-4000, 4000);
+function createBoss() {
+  let x = 0;
+  let y = 0;
   type = "square";
   color = "Gold";
+  var randID = Math.random() * 3 * Date.now();
   let fooditem = {
     type: type,
     subtype: "Enemyboss",
     health: 1500,
     maxhealth: 1500,
-    size: 150,
+    size: 300,
     angle: getRandomInt(0, 180),
     x: x,
     y: y,
     centerX: x,
     centerY: y,
+    speed: 0.2,
     body_damage: 7,
-    weight: weight,
+    cannons: [{}, {}, {}, {}],
+    weight: 1000,
     scalarX: getRandomInt(-100, 100),
     scalarY: getRandomInt(-100, 100),
     vertices: null,
@@ -4214,35 +4338,62 @@ setInterval(() => {
     score_add: score_add,
     randomID: randID,
   };
+  let boss = {
+    id: randID,
+    cannons: [
+      { cannonW: 0, canfire: true },
+      { cannonW: 0, canfire: true },
+      { cannonW: 0, canfire: true },
+      { cannonW: 0, canfire: true },
+    ],
+  };
   food_squares.push(fooditem);
-}, 1000 * 60 * 10);
+  fooditem.cannons = [
+    {
+      type: "necromancerDrone",
+      x: 0,
+      y: 0,
+      offsetAngle: 0,
+      maxbullets: 10,
+      current: 0,
+      canfire: true,
+      id: Math.random() * 3 * Date.now(),
+    },
+    {
+      type: "necromancerDrone",
+      x: 0,
+      y: 0,
+      offsetAngle: 90,
+      maxbullets: 10,
+      current: 0,
+      canfire: true,
+      id: Math.random() * 3 * Date.now(),
+    },
+    {
+      type: "necromancerDrone",
+      x: 0,
+      y: 0,
+      offsetAngle: 180,
+      maxbullets: 10,
+      current: 0,
+      canfire: true,
+      id: Math.random() * 3 * Date.now(),
+    },
+    {
+      type: "necromancerDrone",
+      x: 0,
+      y: 0,
+      offsetAngle: 270,
+      maxbullets: 10,
+      current: 0,
+      canfire: true,
+      id: Math.random() * 3 * Date.now(),
+    },
+  ];
+  bosses.push(boss);
+}
 
-let x = 0;
-let y = 0;
-type = "square";
-color = "Gold";
-let fooditem = {
-  type: type,
-  subtype: "Enemyboss",
-  health: 1500,
-  maxhealth: 1500,
-  size: 300,
-  angle: getRandomInt(0, 180),
-  x: x,
-  y: y,
-  centerX: x,
-  centerY: y,
-  body_damage: 7,
-  weight: weight,
-  scalarX: getRandomInt(-100, 100),
-  scalarY: getRandomInt(-100, 100),
-  vertices: null,
-  color: color,
-  score_add: score_add,
-  randomID: randID,
-};
-food_squares.push(fooditem);
-console.log(x, y);
+createBoss();
 
 function smartemitBinary(type, data) {
   connections.forEach((conn) => {
