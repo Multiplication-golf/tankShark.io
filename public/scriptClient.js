@@ -4,6 +4,18 @@
     return Math.random() * (max - min) + min;
   }
   var username = "Unamed tank";
+  
+  /*for (let i = 0; i < 125; i++) {
+    for (let j = 0; j < 125; j++) {
+      const div = document.createElement("div");
+      let divstyle = div.style;
+      divstyle.width = "79px";
+      divstyle.height = "79px";
+      divstyle.backgroundColor = "white";
+      divstyle.border = "1px solid black";
+      document.getElementById("grid").appendChild(div);
+    }
+  }*/
 
   const schema = `
     syntax = "proto3";
@@ -1264,6 +1276,7 @@
               state = data.state;
             }
           } else if (type === "statecycleUpdate") {
+            if (!players[data.playerID]) return
             players[data.playerID].statecycle = data.statecycle;
             if (data.playerID === playerId) {
               statecycle = data.statecycle;
