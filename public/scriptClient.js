@@ -5,7 +5,7 @@
   }
   var username = "Unamed tank";
   
-  /*for (let i = 0; i < 125; i++) {
+  for (let i = 0; i < 125; i++) {
     for (let j = 0; j < 125; j++) {
       const div = document.createElement("div");
       let divstyle = div.style;
@@ -15,7 +15,7 @@
       divstyle.border = "1px solid black";
       document.getElementById("grid").appendChild(div);
     }
-  }*/
+  }
 
   const schema = `
     syntax = "proto3";
@@ -2347,9 +2347,9 @@
         playerY + dy > mapTop &&
         playerY + dy < mapBottom
       ) {
-        for (let i = 0; i < playerSpeed / 5; i++) {
+        for (let i = 0; i < playerSpeed / 2; i++) {
           var movement = setTimeout(() => {
-            movePlayer(dx * 3, dy * 3, i === playerSpeed - 1 || i === 0);
+            movePlayer(dx, dy, i === playerSpeed - 1 || i === 0);
           }, 80 * i);
           movementTimeouts.push({ timeout: movement, bouceBack: true });
         }
@@ -3480,7 +3480,7 @@
           realx < canvas.width + cavansX + item.size &&
           realy - cavansY > 0 - item.size &&
           realy - item.size < canvas.height + cavansY &&
-          item.health > 0
+          item.health >= 0
         ) {
           ctx.save();
           if (item.transparency) {
@@ -3635,11 +3635,12 @@
               // Draw the square
               const cannonWidth_bottom = 30 * 1 * FOV;
               let cannon_heightFOV = 70;
+              let t = i + 1 < boss.cannons.length ? i + 1 : 0
               let basex =
                 cannonWidth_bottom / 2 +
                 cannon_heightFOV +
                 xplus -
-                boss.cannons[i + 1].cannonW;
+                boss.cannons[t].cannonW;
               let basey = -cannon_heightFOV / 2 + cannon_heightFOV / 2;
 
               const cannonHeight = cannon_heightFOV;
@@ -3807,7 +3808,7 @@
           } else if (bullet.type === "FreeNecromancer") {
             ctx.save();
             ctx.translate(realx - cavansX, realy - cavansY);
-            ctx.rotate(bullet.angle * (pi / 180));
+            ctx.rotate(bullet.angle);
             ctx.fillStyle = "#f2c705";
             ctx.fillRect(
               -bullet.size / 2,

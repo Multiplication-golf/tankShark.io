@@ -117,6 +117,7 @@ let playersjoined = [];
 let userbase = [];
 let food_squares_ = [];
 let player_array = [];
+let deadplayers = [];
 /* warning very senstive*/
 let purge_limit = 5;
 let ColorUpgrades = [
@@ -2812,11 +2813,12 @@ wss.on("connection", (socket) => {
 
     if (type === "playerDied") {
       players = Object.entries(players).reduce((newPlayers, [key, value]) => {
-        if (key !== data.id) {
+        if (key !== connection.playerId) {
           newPlayers[key] = value;
         }
         return newPlayers;
       }, {});
+      deadplayers.push(connection.playerId);
       teamlist = teamlist.filter((team) => {
         var teamplayers = team.players;
         teamplayers = teamplayers.filter((player) => {
@@ -2859,7 +2861,7 @@ wss.on("connection", (socket) => {
       } catch (e) {
         console.log(e);
       }
-      emit("playerLeft", data.id);
+      emit("playerLeft", connection.playerId);
       return;
     }
   });
@@ -2981,7 +2983,7 @@ setInterval(() => {
         let angle = Math.atan2(dy, dx);
         bullet.angle = angle;
         if (players[bullet.id]?.mousestate === "held") {
-          bullet.angle = -angle;
+          bullet.angle = angle + pi / 2;
         }
       } catch (e) {
         // delet bad bullets
@@ -3034,7 +3036,11 @@ setInterval(() => {
       );
     }
 
-    if (bullet.type === "trap" || bullet.type === "directer") {
+    if (
+      bullet.type === "trap" ||
+      bullet.type === "directer" ||
+      bullet.type === "FreeNecromancer"
+    ) {
       if (
         bullet.bullet_distance - bullet.distanceTraveled < 200 &&
         bullet.type === "trap"
@@ -3052,6 +3058,8 @@ setInterval(() => {
         if (distance > 50) return;
         var bullet_speed = bullet.speed;
 
+        if (bullet.type !== "FreeNecromancer") {
+        }
         if (
           distance < bullet.size * 2 + bullet_.size * 2 &&
           bullet.id !== bullet_.id &&
@@ -3090,10 +3098,24 @@ setInterval(() => {
             players[bullet.id]?.team === players[bullet_.id]?.team &&
             players[bullet.id]?.team !== null &&
             players[bullet_.id]?.team !== null
-          )
+          ) &&
+          bullet.type !== "FreeNecromancer"
         ) {
-          newX__ = bullet.size * -0.9 * Math.sin(bullet.angle - bullet_.angle);
-          newY__ = bullet.size * -0.9 * Math.cos(bullet.angle - bullet_.angle);
+          newX__ = bullet.size * -0.9 * Math.sin(bullet_.angle);
+          newY__ = bullet.size * -0.9 * Math.cos(bullet_.angle);
+          collied = true;
+          bullet_.x += -newX__;
+          bullet_.y += -newY__;
+        }
+        if (
+          distance < bullet.size * 1.25 + bullet_.size * 1.25 &&
+          bullet.id === bullet_.id &&
+          bullet.uniqueid !== bullet_.uniqueid &&
+          bullet.type === bullet_.type &&
+          bullet.type === "FreeNecromancer"
+        ) {
+          newX__ = bullet.size * -0.9 * Math.sin(bullet_.angle);
+          newY__ = bullet.size * -0.9 * Math.cos(bullet_.angle);
           collied = true;
           bullet_.x += -newX__;
           bullet_.y += -newY__;
@@ -3157,8 +3179,30 @@ setInterval(() => {
         players[playerId]?.team !== null;
       if (player.state !== "start" && !sameTeam) {
         let bulletsize = bullet.size;
-
-        if (distance < player40 + bullet.size && bullet.id !== player.id) {
+        let con = false;
+        if (bullet.boundtype === "square") {
+          const rawvertices = calculateSquareVertices(
+            bullet.x,
+            bullet.y,
+            bullet.size,
+            bullet.angle
+          );
+          if (
+            distance < 2 * player40 + bullet.size &&
+            bullet.id !== player.id
+          ) {
+            var collisionCheck = isPlayerCollidingWithPolygon(
+              player,
+              rawvertices
+            );
+            con = collisionCheck[0];
+          } else {
+            con = false;
+          }
+        } else {
+          con = distance < player40 + bullet.size && bullet.id !== player.id;
+        }
+        if (con) {
           if (bullet.type === "trap") {
             player.health -=
               (bullet.bullet_damage - 3.8) /
@@ -3195,7 +3239,12 @@ setInterval(() => {
             } catch (e) {
               console.log(bullet.id);
             }
-            emit("playerScore", { bulletId: bullet.id, socrepluse: reward });
+            if (players[bullet.id]) {
+              emit("playerScore", { bulletId: bullet.id, socrepluse: reward });
+            } else {
+              var boss = bosses.find((boss_) => boss_.id === bullet.id);
+              boss.score += reward;
+            }
             emit("playerDied", {
               playerID: player.id,
               rewarder: bullet.id,
@@ -4340,6 +4389,7 @@ function createBoss() {
   };
   let boss = {
     id: randID,
+    score: 0,
     cannons: [
       { cannonW: 0, canfire: true },
       { cannonW: 0, canfire: true },
@@ -4397,7 +4447,12 @@ createBoss();
 
 function smartemitBinary(type, data) {
   connections.forEach((conn) => {
-    if (conn.playerId == null || players[conn.playerId] == undefined) return;
+    if (
+      conn.playerId == null ||
+      (players[conn.playerId] == undefined &&
+        deadplayers.indexOf(conn.playerId) !== -1)
+    )
+      return;
     if (players[conn.playerId].visible) {
       conn.socket.send(data); // Send binary data directly
     }
