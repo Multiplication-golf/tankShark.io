@@ -4454,7 +4454,7 @@ function smartemitBinary(type, data) {
       conn.playerId == null ||
       (players[conn.playerId] == undefined &&
       deadplayers.indexOf(conn.playerId) === -1)
-    )
+    ) 
       return;
     if (
       !(players[conn.playerId] == undefined &&
