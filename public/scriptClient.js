@@ -4,15 +4,20 @@
     return Math.random() * (max - min) + min;
   }
   var username = "Unamed tank";
-  
-  for (let i = 0; i < 125; i++) {
-    for (let j = 0; j < 125; j++) {
+
+  for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 10; j++) {
       const div = document.createElement("div");
+      const img = document.createElement("img");
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.src = "assets/hexbackground.png"
       let divstyle = div.style;
-      divstyle.width = "79px";
-      divstyle.height = "79px";
+      divstyle.width = "999px";
+      divstyle.height = "999px";
       divstyle.backgroundColor = "white";
       divstyle.border = "1px solid black";
+      div.appendChild(img);
       document.getElementById("grid").appendChild(div);
     }
   }
@@ -139,25 +144,6 @@
     let frameTimes = [];
     let fps = 0;
 
-    function update(timestamp) {
-      let deltaTime = (timestamp - lastTime) / 1000;
-      lastTime = timestamp;
-
-      let currentFPS = 1 / deltaTime;
-      frameTimes.push(currentFPS);
-
-      // Keep the last 60 frames for a smoother average
-      if (frameTimes.length > 60) {
-        frameTimes.shift();
-      }
-
-      fps = Math.round(frameTimes.reduce((a, b) => a + b) / frameTimes.length);
-
-      console.log("FPS:", fps); // Display smoothed FPS
-
-      requestAnimationFrame(update);
-    }
-    requestAnimationFrame(update);
     var tankmeta = {
       basic: {
         "size-m": 1,
@@ -1276,7 +1262,7 @@
               state = data.state;
             }
           } else if (type === "statecycleUpdate") {
-            if (!players[data.playerID]) return
+            if (!players[data.playerID]) return;
             players[data.playerID].statecycle = data.statecycle;
             if (data.playerID === playerId) {
               statecycle = data.statecycle;
@@ -2487,15 +2473,15 @@
       barHeight = 0.02909796314 * canvas.height;
       document.getElementById("grid").style[
         "grid-template-columns"
-      ] = `repeat(125, ${79 * scaleFactor + 1}px)`;
+      ] = `repeat(10, ${999 * scaleFactor + 1}px)`;
       document.getElementById("grid").style[
         "grid-template-rows"
-      ] = `repeat(125, ${79 * scaleFactor + 1}px)`;
+      ] = `repeat(10, ${999 * scaleFactor + 1}px)`;
       document.getElementById("grid").style.width = `${10000 * scaleFactor}px`;
       document.getElementById("grid").style.height = `${10000 * scaleFactor}px`;
       document.getElementById("grid").childNodes.forEach((node) => {
-        node.style.width = `${79 * scaleFactor}px`;
-        node.style.height = `${79 * scaleFactor}px`;
+        node.style.width = `${999 * scaleFactor}px`;
+        node.style.height = `${999 * scaleFactor}px`;
       });
       send("resize", {
         id: playerId,
@@ -3470,8 +3456,22 @@
       }
     }
 
-    function draw() {
+    function draw(timestamp) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let deltaTime = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+
+      let currentFPS = 1 / deltaTime;
+      frameTimes.push(currentFPS);
+
+      // Keep the last 60 frames for a smoother average
+      if (frameTimes.length > 60) {
+        frameTimes.shift();
+      }
+
+      fps = Math.round(frameTimes.reduce((a, b) => a + b) / frameTimes.length);
+
+      console.log("FPS:", fps); // Display smoothed FPS
       food_list.forEach((item) => {
         var realx = item.x;
         var realy = item.y;
@@ -3635,7 +3635,7 @@
               // Draw the square
               const cannonWidth_bottom = 30 * 1 * FOV;
               let cannon_heightFOV = 70;
-              let t = i + 1 < boss.cannons.length ? i + 1 : 0
+              let t = i + 1 < boss.cannons.length ? i + 1 : 0;
               let basex =
                 cannonWidth_bottom / 2 +
                 cannon_heightFOV +

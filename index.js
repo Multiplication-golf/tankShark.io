@@ -2819,6 +2819,8 @@ wss.on("connection", (socket) => {
         return newPlayers;
       }, {});
       deadplayers.push(connection.playerId);
+      console.log(deadplayers);
+      console.log("dead:", connection.playerId);
       teamlist = teamlist.filter((team) => {
         var teamplayers = team.players;
         teamplayers = teamplayers.filter((player) => {
@@ -4447,13 +4449,22 @@ createBoss();
 
 function smartemitBinary(type, data) {
   connections.forEach((conn) => {
+    
     if (
       conn.playerId == null ||
       (players[conn.playerId] == undefined &&
-        deadplayers.indexOf(conn.playerId) !== -1)
+      deadplayers.indexOf(conn.playerId) === -1)
     )
       return;
-    if (players[conn.playerId].visible) {
+    if (
+      !(players[conn.playerId] == undefined &&
+      deadplayers.indexOf(conn.playerId) === -1)
+    )
+      console.log("deadplayers", deadplayers,conn.playerId);
+    if (
+      players[conn.playerId]?.visible ||
+      deadplayers.indexOf(conn.playerId) !== -1
+    ) {
       conn.socket.send(data); // Send binary data directly
     }
   });
