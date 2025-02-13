@@ -808,18 +808,18 @@
               playerY += data.y;
               cavansY = data.y;
               playerX += data.x;
-              break
+              break;
             }
 
             case "RETURNtankmeta": {
               tankmeta = data;
               draw();
-              break
+              break;
             }
 
             case "NewMessages": {
               playerMessages = data;
-              break
+              break;
             }
             case "playerMessage": {
               playerMessages.push({
@@ -837,31 +837,31 @@
               setTimeout(() => {
                 playerMessages = playerMessages.splice(0, index_);
               }, data.exspiretime);
-              break
+              break;
             }
             case "Levels": {
               levels = data;
-              break
+              break;
             }
             case "handshake": {
               HANDSHAKE = data;
-              break
+              break;
             }
             case "updaterHeal": {
               if (!players[data.ID]) return;
               players[data.ID].playerHealTime = data.HEALTime;
-              break
+              break;
             }
             case "playerHeal": {
               players[data.ID].health = data.HEALTH;
               if (data.ID === playerId) {
                 playerHealth = data.HEALTH;
               } // Log the update
-              break
+              break;
             }
             case "statsTreeRestart": {
               players[data.id].statsTree = data.stats;
-              break
+              break;
             }
             case "playerHealthCheck": {
               if (!(players[data.ID].health === data.HEALTH)) {
@@ -874,20 +874,20 @@
                   "actual Health": players[data.ID].health,
                 });
               }
-              break
+              break;
             }
             case "autoCannonUPDATE-ADD": {
               autocannons = data;
-              break
+              break;
             }
             case "badgeToplayer": {
               badge = data.badge;
               img.src = `https://deip-io3.glitch.me${badge}?nocache=${Date.now()}`;
-              break
+              break;
             }
             case "boardUpdate": {
               leader_board = data.leader_board;
-              break
+              break;
             }
             case "autoCannonUPDATE-ANGLE": {
               autocannons.forEach((cannon_ooo) => {
@@ -895,12 +895,12 @@
                   cannon_ooo.angle = data.angle;
                 }
               });
-              break
+              break;
             }
             case "playerMoved": {
               players[data.id].x = data.x;
               players[data.id].y = data.y;
-              break
+              break;
             }
             case "playerCannonUpdated": {
               try {
@@ -912,7 +912,7 @@
                   players[data.id].cannon_angle = data.cannon_angle;
                 }
               } catch {}
-              break
+              break;
             }
             case "playerLeft": {
               let id = data.playerId;
@@ -925,7 +925,7 @@
                 },
                 {}
               );
-              break
+              break;
             }
             case "playerDied": {
               if (data["playerID"] === playerId) {
@@ -974,11 +974,11 @@
                 },
                 {}
               );
-              break
+              break;
             }
             case "bossUpdate": {
               bosses = data;
-              break
+              break;
             }
             case "playerDamaged": {
               players[data.player1.id].health = data.player1.health;
@@ -1023,11 +1023,11 @@
                 }, 1000);
               }
               players[data.player2.id].health = data.player2.health;
-              break
+              break;
             }
             case "bulletUpdate": {
               bullets = data;
-              break
+              break;
             }
             case "playerJoined": {
               console.log(data); // Log the player data
@@ -1079,7 +1079,7 @@
                   playerReheal: playerReheal,
                 });
               }, 3000);
-              break
+              break;
             }
             case "playerScore": {
               players[data["bulletId"]].score += data["socrepluse"];
@@ -1087,21 +1087,21 @@
                 score = players[data["bulletId"]].score;
               }
               levelHANDLER();
-              break
+              break;
             }
             case "dronekilled": {
               if (data.droneID === playerId) {
                 drones -= 1;
               }
-              break
+              break;
             }
             case "FoodUpdate": {
               food_list = data;
-              break
+              break;
             }
             case "colorUpgrades": {
               colorUpgrades = data;
-              break
+              break;
             }
             case "UpdateStatTree": {
               if (data.StatUpgradetype === "Health") {
@@ -1127,14 +1127,14 @@
                   __reload__ /= data.levelmultiplyer;
                 }
               }
-              break
+              break;
             }
             case "healerRestart": {
               players[data.id].Regenspeed = data.Regenspeed;
               if (data.id === playerId) {
                 Regenspeed = data.Regenspeed;
               }
-              break
+              break;
             }
             case "pubteamlist": {
               pubteams = data;
@@ -1187,7 +1187,7 @@
                   teamcontainer.appendChild(item);
                 });
               }
-              break
+              break;
             }
             case "playerJoinedTeam": {
               players[data.id].team = data.teamId;
@@ -1200,13 +1200,13 @@
                 owner_of_team = true;
                 teamOn = null;
               }
-              break
+              break;
             }
             case "newOwner": {
               if (data.teamID === teamOn) {
                 owner_of_team = true;
               }
-              break
+              break;
             }
             case "bulletDamage": {
               if (players[data.playerID]) {
@@ -1240,7 +1240,7 @@
                   data.playerID
                 );
               }
-              break
+              break;
             }
             case "shapeDamage": {
               if (players[data.PlayerId]) {
@@ -1274,7 +1274,7 @@
                   data.PlayerId
                 );
               }
-              break
+              break;
             }
             case "shapeDamage2": {
               if (players[data.PlayerId]) {
@@ -1307,7 +1307,7 @@
                   data.PlayerId
                 );
               }
-              break
+              break;
             }
             case "bouceBack": {
               if (data.playerID !== playerId) return;
@@ -1329,11 +1329,11 @@
                 }, 85 * i);
                 movementTimeouts.push({ timeout: timeout, bouceBack: true });
               }
-              break
+              break;
             }
             case "type_Change": {
               players[data.id] = data;
-              break
+              break;
             }
             case "statechangeUpdate": {
               if (!players[data.playerID]) return;
@@ -1341,7 +1341,7 @@
               if (data.playerID === playerId) {
                 state = data.state;
               }
-              break
+              break;
             }
             case "statecycleUpdate": {
               if (!players[data.playerID]) return;
@@ -1349,25 +1349,25 @@
               if (data.playerID === playerId) {
                 statecycle = data.statecycle;
               }
-              break
+              break;
             }
             case "playerCannonWidthUpdate": {
               players[data.id].cannonW = data.cannonW;
-              break
+              break;
             }
             case "playerCannonUpdatedInactive": {
               MouseX_ = data.MouseX_;
               MouseY_ = data.MouseY_;
-              break
+              break;
             }
             case "newid": {
               userId = data.newid;
               setCookie("userId", userId, 365);
-              break
+              break;
             }
             default: {
               console.log("Empty action received.");
-              break
+              break;
             }
           }
         };
@@ -1416,31 +1416,6 @@
           d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
           let expires = "expires=" + d.toUTCString();
           document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-        }
-
-        function calculateTriangleVertices(cx, cy, size, angle) {
-          const height = sqrt23 * size;
-          const halfSize = size / 2;
-          const angleRad = angle * pi180;
-          const cosAngle = Math.cos(angleRad);
-          const sinAngle = Math.sin(angleRad);
-
-          let vertices = [
-            { x: -halfSize, y: -height / 3 },
-            { x: halfSize, y: -height / 3 },
-            { x: 0, y: (2 * height) / 3 },
-          ];
-
-          for (let i = 0; i < vertices.length; i++) {
-            const vertex = vertices[i];
-
-            const rotatedX = vertex.x * cosAngle - vertex.y * sinAngle;
-            const rotatedY = vertex.x * sinAngle + vertex.y * cosAngle;
-
-            vertices[i] = { x: rotatedX + cx, y: rotatedY + cy };
-          }
-
-          return vertices;
         }
 
         document.addEventListener("keydown", (event) => {
@@ -2583,35 +2558,17 @@
         screenHeight: canvas.height,
       });
     }
-    function calculateTriangleVertices(cx, cy, size, angle) {
-      const height = Math.sqrt(3) * size;
-      const halfSize = size / 2;
+    function calculateTriangleVertices(x, y, sideLength, angle) {
+      const height = (Math.sqrt(3) / 2) * sideLength; // Height of an equilateral triangle
+      const radius = height / Math.sqrt(3); // Circumradius of the triangle
 
-      // Convert the angle to radians
-      const angleRad = angle * pi180;
-      //console.log("angleRad",angleRad)
+      const vertices = [];
 
-      // Precompute cosine and sine values
-      const cosAngle = Math.cos(angleRad);
-      const sinAngle = Math.sin(angleRad);
-
-      // Define the local triangle vertices relative to (0, 0)
-      let vertices = [
-        { x: 0, y: -height * (1 / 4) },
-        { x: -halfSize, y: height / 4 },
-        { x: halfSize, y: height / 4 },
-      ];
-
-      // Rotate and translate vertices
       for (let i = 0; i < 3; i++) {
-        const { x, y } = vertices[i];
-
-        // Apply rotation
-        const rotatedX = x * cosAngle - y * sinAngle;
-        const rotatedY = x * sinAngle + y * cosAngle;
-
-        // Translate to the center (cx, cy)
-        vertices[i] = { x: rotatedX + cx, y: rotatedY + cy };
+        const theta = angle + i * ((2 * Math.PI) / 3); // 120-degree increments
+        const vx = x + radius * Math.cos(theta);
+        const vy = y + radius * Math.sin(theta);
+        vertices.push({ x: vx, y: vy });
       }
 
       return vertices;
@@ -3650,33 +3607,19 @@
 
           if (item.type === "triangle") {
             let realitemsize = item.size;
-            const h = realitemsize * sqrt23;
+            const h = realitemsize * (Math.sqrt(3) / 2);
 
             ctx.beginPath();
-            ctx.moveTo(0, -h / 2);
-            ctx.lineTo(-realitemsize / 2, h / 2);
-            ctx.lineTo(realitemsize / 2, h / 2);
+            ctx.moveTo(-realitemsize / 2, h / 3);
+            ctx.lineTo(realitemsize / 2, h / 3);
+            ctx.lineTo(0, (-2 * h) / 3);
+
             ctx.closePath();
 
             ctx.fillStyle = item.color;
             ctx.fill();
             ctx.strokeStyle = "Darkred";
             ctx.lineWidth = 5;
-            ctx.stroke();
-            var vertices = calculateTriangleVertices(
-              0,
-              0,
-              item.size,
-              item.angle * (pi / 180)
-            );
-            console.log(vertices[0]);
-            ctx.beginPath();
-            ctx.moveTo(vertices[0].x, vertices[0].y);
-            ctx.lineTo(vertices[1].x, vertices[1].y);
-            ctx.lineTo(vertices[2].x, vertices[2].y);
-            ctx.closePath();
-
-            ctx.strokeStyle = "#ff66f7";
             ctx.stroke();
             ctx.rotate(-item.angle * pi180);
 
@@ -3902,23 +3845,45 @@
 
             ctx.restore();
 
-            ctx.save();
+            ctx.save(); // Save the current transformation state
+
             ctx.translate(realx - cavansX, realy - cavansY);
-            //ctx.rotate(item.angle * pi180);
+            ctx.rotate(item.angle * pi180);
             ctx.fillStyle = item.color;
+
             let realitemsize = item.size;
-            const h = realitemsize * sqrt23;
+            const h = (realitemsize * Math.sqrt(3)) / 2; // Equilateral triangle height
 
             ctx.beginPath();
-            ctx.moveTo(0, -h / 2);
-            ctx.lineTo(-realitemsize / 2, h / 2);
-            ctx.lineTo(realitemsize / 2, h / 2);
+
+            // Corrected vertices centered around circumcenter
+            ctx.moveTo(-realitemsize / 2, h / 3);
+            ctx.lineTo(realitemsize / 2, h / 3);
+            ctx.lineTo(0, (-2 * h) / 3);
             ctx.closePath();
 
-            ctx.fillStyle = item.color;
             ctx.fill();
             ctx.strokeStyle = "#ff66f7";
             ctx.lineWidth = 5;
+            ctx.stroke();
+            ctx.rotate(-item.angle * pi180);
+            var vertices = calculateTriangleVertices(
+              0,
+              0,
+              item.size,
+              item.angle * pi180
+            );
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = "red";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            ctx.lineTo(vertices[1].x, vertices[1].y);
+            ctx.lineTo(vertices[2].x, vertices[2].y);
+            ctx.closePath();
+
+            ctx.strokeStyle = "black";
             ctx.stroke();
 
             //ctx.rotate(-item.angle * pi180);

@@ -765,41 +765,31 @@ function mmalizeAngleRadians(angle) {
   return angle;
 }
 
-const sqrt23 = Math.sqrt(3) / 2
+const sqrt23 = Math.sqrt(3);
 
-function calculateTriangleVertices(cx, cy, size, angle) {
-  const height = sqrt23 * size;
-  const halfSize = size / 2;
+function calculateTriangleVertices(x, y, sideLength, angle) {
+  const rad = angle * (Math.PI / 180); // Convert angle from degrees to radians
+  const radius = sideLength / Math.sqrt(3); // Correct circumradius
 
-  // Convert the angle to radians
-  const angleRad = angle * pi180;
+  const vertices = [];
 
-  // Precalculate cos and sin of the angle to avoid repeating it
-  const cosAngle = Math.cos(angleRad);
-  const sinAngle = Math.sin(angleRad);
-
-  let vertices = [
-    { x: -halfSize, y: -height / 3 },
-    { x: halfSize, y: -height / 3 },
-    { x: 0, y: (2 * height) / 3 },
-  ];
-
-  for (let i = 0; i < vertices.length; i++) {
-    const vertex = vertices[i];
-
-    const rotatedX = vertex.x * cosAngle - vertex.y * sinAngle;
-    const rotatedY = vertex.x * sinAngle + vertex.y * cosAngle;
-
-    vertices[i] = { x: rotatedX + cx, y: rotatedY + cy };
+  for (let i = 0; i < 3; i++) {
+    const theta = rad + i * ((2 * Math.PI) / 3); // 120-degree increments
+    const vx = x + radius * Math.cos(theta);
+    const vy = y + radius * Math.sin(theta);
+    vertices.push({ x: vx, y: vy });
   }
 
   return vertices;
 }
-console.log(calculateTriangleVertices(0, 0, 100, 0));
+console.log(calculateTriangleVertices(0,0,150,90))
+
+// Example usage
+console.log(calculateTriangleVertices(0, 0, 100, 90));
 
 function calculateRotatedPentagonVertices(cx, cy, r, rotation) {
   const R = r;
-  const angleOffset = piby2 + rotation;
+  const angleOffset = piby2 + rotation; 
   const vertices = new Array(5);
 
   for (let i = 0; i < 5; i++) {
@@ -2042,7 +2032,7 @@ wss.on("connection", (socket) => {
       case "Sizeup": {
         if (!players[data.id]) return;
         players[data.id].size += data.plus;
-        break
+        break;
       }
 
       case "Autofire": {
@@ -2831,13 +2821,13 @@ wss.on("connection", (socket) => {
       case "MouseAway": {
         if (!players[data.id]) return;
         players[data.id].mousestate = "held";
-        break
+        break;
       }
 
       case "MousestateUpdate": {
         if (!players[data.id]) return;
         players[data.id].mousestate = "up";
-        break
+        break;
       }
 
       case "playerDied": {
@@ -3809,7 +3799,7 @@ setInterval(() => {
     if (item.subtype === "Enemyboss:Triangle") {
       //console.log("Enemyboss",item.cannons.length)
       realtype = "triangle:boss";
-      console.log(item.vertices);
+      //console.log(item.vertices);
       let points = midpointCalc(item.vertices);
       item.cannons[0].x = points[0].x;
       item.cannons[0].y = points[0].y;
