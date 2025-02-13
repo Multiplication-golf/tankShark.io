@@ -10,7 +10,7 @@ const WebSocket = require("ws");
 const crypto = require("crypto");
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
-const fs = require("fs"); 
+const fs = require("fs");
 const helmet = require("helmet");
 const protobuf = require("protobufjs");
 
@@ -237,7 +237,7 @@ const levels = {
 
 var pi = Math.PI;
 var pi180 = pi / 180;
-var sqrt23 = Math.sqrt(3) / 2;
+var sqrt3 = Math.sqrt(3);
 var piby2 = -pi / 2;
 var response = new SAT.Response();
 
@@ -255,7 +255,7 @@ const tankmeta = {
     "damage-m": 1,
     "health-m": 1,
     "regen-m": 1,
-    fov: 1,
+    fov: 0,
     "BodyDamage-m": 1,
     "reaload-m": 1,
     upgrades: {
@@ -294,7 +294,7 @@ const tankmeta = {
     "speed-m": 0.95,
     "damage-m": 1,
     "health-m": 1,
-    fov: 1,
+    fov: 0,
     "BodyDamage-m": 1,
     "regen-m": 1,
     "reaload-m": 1.3,
@@ -335,7 +335,7 @@ const tankmeta = {
     "damage-m": 1,
     "health-m": 1,
     "regen-m": 1,
-    fov: 1,
+    fov: 0,
     "BodyDamage-m": 1.1,
     "reaload-m": 1.2,
     upgradeLevel: 30,
@@ -374,7 +374,7 @@ const tankmeta = {
     "speed-m": 0.9,
     "damage-m": 1,
     "health-m": 0.95,
-    fov: 1,
+    fov: 0.2,
     "BodyDamage-m": 1,
     "regen-m": 1,
     "reaload-m": 1.5,
@@ -400,7 +400,7 @@ const tankmeta = {
     "speed-m": 1,
     "damage-m": 1,
     "health-m": 1,
-    fov: 1,
+    fov: -0.01,
     "BodyDamage-m": 1,
     "reaload-m": 0.75,
     "regen-m": 1,
@@ -433,7 +433,7 @@ const tankmeta = {
     "speed-m": 1.5,
     "damage-m": 0.9,
     "health-m": 1.1,
-    fov: 1,
+    fov: 0,
     "BodyDamage-m": 1,
     "reaload-m": 0.8,
     "regen-m": 1,
@@ -479,7 +479,7 @@ const tankmeta = {
     "speed-m": 1.2,
     "damage-m": 1,
     "health-m": 1,
-    fov: 1,
+    fov: 0,
     "BodyDamage-m": 1,
     "reaload-m": 0.7,
     "regen-m": 1,
@@ -518,7 +518,7 @@ const tankmeta = {
     "size-m": 1,
     "speed-m": 0.95,
     "damage-m": 1,
-    fov: 1,
+    fov: 0,
     "health-m": 0.95,
     "BodyDamage-m": 1,
     "regen-m": 1.1,
@@ -548,7 +548,7 @@ const tankmeta = {
     "damage-m": 1,
     "health-m": 0.9,
     "regen-m": 1,
-    fov: 1, // change later when fov is working
+    fov: 0, // change later when fov is working
     "BodyDamage-m": 1,
     "reaload-m": 1.5,
     upgradeLevel: 15,
@@ -579,7 +579,7 @@ const tankmeta = {
     "damage-m": 1,
     "health-m": 1,
     "regen-m": 1,
-    fov: 1,
+    fov: 0,
     "BodyDamage-m": 1,
     "reaload-m": 1,
     upgradeLevel: 30,
@@ -619,7 +619,7 @@ const tankmeta = {
     "damage-m": 1,
     "health-m": 1,
     "regen-m": 1,
-    fov: 1,
+    fov: 0,
     AutoRoting: true,
     "BodyDamage-m": 1,
     "reaload-m": 1,
@@ -661,7 +661,7 @@ const tankmeta = {
     "damage-m": 1,
     "health-m": 1,
     "regen-m": 1,
-    fov: 1,
+    fov: 0,
     "BodyDamage-m": 1,
     "reaload-m": 1,
     upgradeLevel: 30,
@@ -688,7 +688,7 @@ const tankmeta = {
     "damage-m": 1,
     "health-m": 1,
     "regen-m": 1,
-    fov: 1,
+    fov: 0,
     "BodyDamage-m": 1,
     "reaload-m": 1,
     upgradeLevel: 30,
@@ -715,7 +715,7 @@ const tankmeta = {
     "speed-m": 1.2,
     "damage-m": 1.1,
     "health-m": 1.4,
-    fov: 1,
+    fov: 0,
     AutoRoting: true,
     "BodyDamage-m": 1.3,
     "regen-m": 1.2,
@@ -765,6 +765,8 @@ function mmalizeAngleRadians(angle) {
   return angle;
 }
 
+const sqrt23 = Math.sqrt(3) / 2
+
 function calculateTriangleVertices(cx, cy, size, angle) {
   const height = sqrt23 * size;
   const halfSize = size / 2;
@@ -793,6 +795,7 @@ function calculateTriangleVertices(cx, cy, size, angle) {
 
   return vertices;
 }
+console.log(calculateTriangleVertices(0, 0, 100, 0));
 
 function calculateRotatedPentagonVertices(cx, cy, r, rotation) {
   const R = r;
@@ -997,8 +1000,6 @@ function moveCannonAngle(cannon) {
     cannon_ID: cannon.CannonID,
   });
 }
-
-//const Utils_ = new Utils();
 
 for (let i = 0; i < getRandomInt(400, 500); i++) {
   var randID = Math.random() * i * Date.now();
@@ -1227,73 +1228,88 @@ wss.on("connection", (socket) => {
   socket.on("message", (message) => {
     const { type, data } = JSON.parse(message);
 
-    if (type === "newPlayer") {
-      players[data.id] = data;
-      connection.playerId = data.id; // bind call
-      connections.forEach((con) => {
-        if (con.socket === connection.socket) {
-          con.playerId = data.id;
-        }
-      });
-      var badge;
-      console.log(players);
-      emit("playerJoined", data); // Emit playerJoined event to notify all clients
-      emit("FoodUpdate", food_squares); // Emit FoodUpdate event to update food squares
-      emit("autoCannonUPDATE-ADD", autocannons);
-      emit("colorUpgrades", ColorUpgrades);
-      emit("Levels", levels);
-      emit("NewMessages", messages);
-      var public_teams = [];
-      teamlist.forEach((team) => {
-        if (!team.private) {
-          public_teams.push(team);
-        }
-      });
-      emit("pubteamlist", public_teams);
-      let x, y;
-      do {
-        x = getRandomInt(-4500, 4500);
-        y = getRandomInt(-4500, 4500);
-      } while (
-        cors_taken.some(
-          (c) =>
-            between(x, c.x - 50, c.x + 50) && between(y, c.y - 50, c.y + 50)
-        ) ||
-        !confirmplayerradia(x, y)
-      );
-      if (data.userId) {
-        //console.log(userbase, data.userId);
-        var _player = userbase.find((_player) => {
-          //console.log("a", _player.userid, data.userId);
-          return Math.abs(_player.userid - data.userId) < 0.001;
+    switch (type) {
+      case "newPlayer": {
+        players[data.id] = data;
+        connection.playerId = data.id; // bind call
+        connections.forEach((con) => {
+          if (con.socket === connection.socket) {
+            con.playerId = data.id;
+          }
         });
-        console.log("_player", _player);
-        if (_player !== undefined) {
-          //console.log("_player", _player);
-          let score__$ = _player.scores.reduce((a, b) => {
-            //console.log("a,b:", a, b);
-            return a + b.score;
-          }, 0);
-          if (score__$ >= 50000000) {
-            badge = "/badges/10.png";
-          } else if (score__$ >= 25000000) {
-            badge = "/badges/9.png";
-          } else if (score__$ >= 10000000) {
-            badge = "/badges/8.png";
-          } else if (score__$ >= 5000000) {
-            badge = "/badges/7.png";
-          } else if (score__$ >= 2500000) {
-            badge = "/badges/6.png";
-          } else if (score__$ >= 1000000) {
-            badge = "/badges/5.png";
-          } else if (score__$ >= 500000) {
-            badge = "/badges/4.png";
-          } else if (score__$ >= 250000) {
-            badge = "/badges/3.png";
-          } else if (score__$ >= 100000) {
-            badge = "/badges/2.png";
+        var badge;
+        console.log(players);
+        emit("playerJoined", data); // Emit playerJoined event to notify all clients
+        emit("FoodUpdate", food_squares); // Emit FoodUpdate event to update food squares
+        emit("autoCannonUPDATE-ADD", autocannons);
+        emit("colorUpgrades", ColorUpgrades);
+        emit("Levels", levels);
+        emit("NewMessages", messages);
+        var public_teams = [];
+        teamlist.forEach((team) => {
+          if (!team.private) {
+            public_teams.push(team);
+          }
+        });
+        emit("pubteamlist", public_teams);
+        let x, y;
+        do {
+          x = getRandomInt(-4500, 4500);
+          y = getRandomInt(-4500, 4500);
+        } while (
+          cors_taken.some(
+            (c) =>
+              between(x, c.x - 50, c.x + 50) && between(y, c.y - 50, c.y + 50)
+          ) ||
+          !confirmplayerradia(x, y)
+        );
+        if (data.userId) {
+          //console.log(userbase, data.userId);
+          var _player = userbase.find((_player) => {
+            //console.log("a", _player.userid, data.userId);
+            return Math.abs(_player.userid - data.userId) < 0.001;
+          });
+          console.log("_player", _player);
+          if (_player !== undefined) {
+            //console.log("_player", _player);
+            let score__$ = _player.scores.reduce((a, b) => {
+              //console.log("a,b:", a, b);
+              return a + b.score;
+            }, 0);
+            if (score__$ >= 50000000) {
+              badge = "/badges/10.png";
+            } else if (score__$ >= 25000000) {
+              badge = "/badges/9.png";
+            } else if (score__$ >= 10000000) {
+              badge = "/badges/8.png";
+            } else if (score__$ >= 5000000) {
+              badge = "/badges/7.png";
+            } else if (score__$ >= 2500000) {
+              badge = "/badges/6.png";
+            } else if (score__$ >= 1000000) {
+              badge = "/badges/5.png";
+            } else if (score__$ >= 500000) {
+              badge = "/badges/4.png";
+            } else if (score__$ >= 250000) {
+              badge = "/badges/3.png";
+            } else if (score__$ >= 100000) {
+              badge = "/badges/2.png";
+            } else {
+              badge = "/badges/1.png";
+            }
           } else {
+            var newid =
+              Math.floor(Math.random() * 7779) +
+              Date.now() * Math.random() +
+              Date.now() / 213984238 +
+              Math.random();
+            socket.send(
+              JSON.stringify({ type: "newid", data: { newid: newid } })
+            );
+            players[data.id].userId = newid;
+            userbase.push({ userid: newid, scores: [] });
             badge = "/badges/1.png";
+            //console.log("userbase 1199", userbase);
           }
         } else {
           var newid =
@@ -1301,50 +1317,29 @@ wss.on("connection", (socket) => {
             Date.now() * Math.random() +
             Date.now() / 213984238 +
             Math.random();
+          //console.log(1207);
           socket.send(
             JSON.stringify({ type: "newid", data: { newid: newid } })
           );
-          players[data.id].userId = newid;
+          //console.log(typeof userbase, console.log(userbase));
           userbase.push({ userid: newid, scores: [] });
           badge = "/badges/1.png";
-          //console.log("userbase 1199", userbase);
+          players[data.id].userId = newid;
         }
-      } else {
-        var newid =
-          Math.floor(Math.random() * 7779) +
-          Date.now() * Math.random() +
-          Date.now() / 213984238 +
-          Math.random();
-        //console.log(1207);
-        socket.send(JSON.stringify({ type: "newid", data: { newid: newid } }));
-        //console.log(typeof userbase, console.log(userbase));
-        userbase.push({ userid: newid, scores: [] });
-        badge = "/badges/1.png";
-        players[data.id].userId = newid;
-      }
-      //console.log("userbase", userbase);
-      socket.send(
-        JSON.stringify({ type: "badgeToplayer", data: { badge: badge } })
-      );
-      emit("new_X_Y", { x: x, y: y, id: data.id });
-      players[data.id].x = x;
-      players[data.id].y = y;
-      leader_board.hidden.push({
-        id: data.id,
-        score: 0,
-        name: data.username,
-        badge: badge,
-      });
-      if (!leader_board.shown[10]) {
-        leader_board.shown.push({
+        //console.log("userbase", userbase);
+        socket.send(
+          JSON.stringify({ type: "badgeToplayer", data: { badge: badge } })
+        );
+        emit("new_X_Y", { x: x, y: y, id: data.id });
+        players[data.id].x = x;
+        players[data.id].y = y;
+        leader_board.hidden.push({
           id: data.id,
           score: 0,
           name: data.username,
           badge: badge,
         });
-      }
-      if (leader_board.shown[10]) {
-        if (0 > leader_board.shown[10].score) {
+        if (!leader_board.shown[10]) {
           leader_board.shown.push({
             id: data.id,
             score: 0,
@@ -1352,463 +1347,479 @@ wss.on("connection", (socket) => {
             badge: badge,
           });
         }
-        if (0 > leader_board.shown[10].score) {
-          leader_board.shown[10] = {
-            id: data.id,
-            score: 0,
-            name: data.username,
-            badge: badge,
-          };
+        if (leader_board.shown[10]) {
+          if (0 > leader_board.shown[10].score) {
+            leader_board.shown.push({
+              id: data.id,
+              score: 0,
+              name: data.username,
+              badge: badge,
+            });
+          }
+          if (0 > leader_board.shown[10].score) {
+            leader_board.shown[10] = {
+              id: data.id,
+              score: 0,
+              name: data.username,
+              badge: badge,
+            };
+          }
         }
-      }
 
-      emit("boardUpdate", {
-        leader_board: leader_board.shown,
-      });
-      let statecycle = 0;
-      let state = "start";
-      var start = setInterval(() => {
-        try {
-          players[data.id].state = data.state;
-          let _data = {
+        emit("boardUpdate", {
+          leader_board: leader_board.shown,
+        });
+        let statecycle = 0;
+        let state = "start";
+        var start = setInterval(() => {
+          try {
+            players[data.id].state = data.state;
+            let _data = {
+              state: state,
+              playerID: data.id,
+            };
+            emit("statechangeUpdate", _data, socket);
+          } catch {
+            start = null;
+          }
+        }, 50);
+        stateupdate = setInterval(() => {
+          statecycle += 1;
+          let _data__ = {
             state: state,
+            statecycle: statecycle,
             playerID: data.id,
           };
-          emit("statechangeUpdate", _data, socket);
-        } catch {
+          emit("statecycleUpdate", _data__);
+        }, 50);
+
+        setTimeout(() => {
           start = null;
-        }
-      }, 50);
-      stateupdate = setInterval(() => {
-        statecycle += 1;
-        let _data__ = {
-          state: state,
-          statecycle: statecycle,
-          playerID: data.id,
-        };
-        emit("statecycleUpdate", _data__);
-      }, 50);
-
-      setTimeout(() => {
-        start = null;
-        state = "normal";
-        let _data = { state: state, statecycle: statecycle, playerID: data.id };
-        if (players[data.id]) {
-          players[data.id].state = data.state;
-          emit("statechangeUpdate", _data, socket);
-          setTimeout(() => {
-            players[data.id].state = _data.state;
+          state = "normal";
+          let _data = {
+            state: state,
+            statecycle: statecycle,
+            playerID: data.id,
+          };
+          if (players[data.id]) {
+            players[data.id].state = data.state;
             emit("statechangeUpdate", _data, socket);
-          }, 300);
-        }
-      }, 6000);
+            setTimeout(() => {
+              players[data.id].state = _data.state;
+              emit("statechangeUpdate", _data, socket);
+            }, 300);
+          }
+        }, 6000);
 
-      return;
-    }
+        break;
+      }
 
-    if (type === "HANDSHAKE") {
-      if (handshaked) return;
-      (function () {
-        handshaked = true;
-        const handshake =
-          Date.now() +
-          "-" +
-          (Math.floor(Math.random() * 1000) +
-            Date.now() * Math.random() +
-            Date.now() / 1387 +
-            Math.random()) *
-            serverseed;
-        socket.send(JSON.stringify({ type: "handshake", data: handshake }));
-      })();
-      return;
-    }
+      case "HANDSHAKE": {
+        if (handshaked) return;
+        (function () {
+          handshaked = true;
+          const handshake =
+            Date.now() +
+            "-" +
+            (Math.floor(Math.random() * 1000) +
+              Date.now() * Math.random() +
+              Date.now() / 1387 +
+              Math.random()) *
+              serverseed;
+          socket.send(JSON.stringify({ type: "handshake", data: handshake }));
+        })();
+        break;
+      }
 
-    if (type === "updatePlayer") {
-      emit("playerUpdated", data); // Emit playerUpdated event if needed
-      return;
-    }
+      case "updatePlayer": {
+        emit("playerUpdated", data); // Emit playerUpdated event if needed
+        break;
+      }
 
-    if (type === "newTeamCreated") {
-      data.teamID =
-        Math.floor(Math.random() * 54968) +
-        Date.now() * Math.random() +
-        Date.now() / 489587 +
-        Math.random();
-      data.players = [
-        { id: data.owner.id, username: players[data.owner.id].username },
-      ];
-      teamlist.push(data);
-      players[data.owner.id].team = data.teamID;
-      emit("playerJoinedTeam", { id: data.owner.id, teamId: data.teamID });
-      var public_teams = [];
-      teamlist.forEach((team) => {
-        if (!team.private) {
-          public_teams.push(team);
-        }
-      });
-      emit("pubteamlist", public_teams);
-      return;
-    }
+      case "newTeamCreated": {
+        data.teamID =
+          Math.floor(Math.random() * 54968) +
+          Date.now() * Math.random() +
+          Date.now() / 489587 +
+          Math.random();
+        data.players = [
+          { id: data.owner.id, username: players[data.owner.id].username },
+        ];
+        teamlist.push(data);
+        players[data.owner.id].team = data.teamID;
+        emit("playerJoinedTeam", { id: data.owner.id, teamId: data.teamID });
+        var public_teams = [];
+        teamlist.forEach((team) => {
+          if (!team.private) {
+            public_teams.push(team);
+          }
+        });
+        emit("pubteamlist", public_teams);
+        break;
+      }
 
-    if (type === "playerJoinedTeam") {
-      players[data.id].team = data.teamId;
-      let MYteam = teamlist.find((team) => {
-        return team.teamID === data.teamId;
-      });
-      MYteam.players.push({ username: players[data.id].username, id: data.id });
-      emit("playerJoinedTeam", { id: data.id, teamId: data.teamId });
-      var public_teams = [];
-      teamlist.forEach((team) => {
-        if (!team.private) {
-          public_teams.push(team);
-        }
-      });
-      emit("pubteamlist", public_teams);
-      return;
-    }
-
-    if (type === "playerLeftTeam") {
-      let MYteam = teamlist.find((team) => {
-        return team.teamID === players[data.id].team;
-      });
-      players[data.id].team = null;
-      MYteam.players.splice(
-        MYteam.players.indexOf({
+      case "playerJoinedTeam": {
+        players[data.id].team = data.teamId;
+        let MYteam = teamlist.find((team) => {
+          return team.teamID === data.teamId;
+        });
+        MYteam.players.push({
           username: players[data.id].username,
           id: data.id,
-        }),
-        1
-      );
-      if (data.id === MYteam.owner.id) {
-        let teamplayers = MYteam.players;
-        if (teamplayers.length !== 0) {
-          MYteam.owner = teamplayers[0];
-          emit("newOwner", {
-            teamID: MYteam.teamID,
-            playerid: teamplayers[0].id,
-          });
-        } else {
-          teamplayers.forEach((player) => {
-            emit("playerJoinedTeam", { id: player.id, teamId: null });
-          });
-          teamlist.splice(teamlist.indexOf(MYteam, 1));
-        }
+        });
+        emit("playerJoinedTeam", { id: data.id, teamId: data.teamId });
+        var public_teams = [];
+        teamlist.forEach((team) => {
+          if (!team.private) {
+            public_teams.push(team);
+          }
+        });
+        emit("pubteamlist", public_teams);
+        break;
       }
-      emit("playerJoinedTeam", { id: data.id, teamId: null });
-      let public_teams = [];
-      teamlist.forEach((team) => {
-        if (!team.private) {
-          public_teams.push(team);
-        }
-      });
-      emit("pubteamlist", public_teams);
-      return;
-    }
 
-    if (type === "deleteTeam") {
-      let MYteam = teamlist.find((team) => {
-        return team.teamID === data.teamID;
-      });
-      if (
-        players[data.playerId].team !== data.teamID ||
-        players[data.playerId].team !== MYteam.teamID ||
-        data.playerId !== MYteam.owner.id
-      ) {
-        socket.close();
-      }
-      MYteam.players.forEach((player) => {
-        emit("playerJoinedTeam", { id: player.id, teamId: null });
-      });
-      teamlist.splice(teamlist.indexOf(MYteam, 1));
-      let public_teams = [];
-      teamlist.forEach((team) => {
-        if (!team.private) {
-          public_teams.push(team);
-        }
-      });
-      emit("pubteamlist", public_teams);
-      return;
-    }
-
-    if (type === "kickplayer") {
-      let MYteam = teamlist.find((team) => {
-        return team.teamID === players[data.id].team;
-      });
-      players[data.id].team = null;
-      MYteam.players.splice(
-        MYteam.players.indexOf({
-          username: players[data.id].username,
-          id: data.id,
-        }),
-        1
-      );
-      emit("playerJoinedTeam", { id: data.id, teamId: null });
-      let public_teams = [];
-      teamlist.forEach((team) => {
-        if (!team.private) {
-          public_teams.push(team);
-        }
-      });
-      emit("pubteamlist", public_teams);
-    }
-
-    if (type === "browserHidden") {
-      var autoAngle = data.autoAngle;
-      var turnhide = setInterval(() => {
-        autoAngle += 0.2 / 10;
-        if (359.8 <= autoAngle) {
-          autoAngle = 0;
-        }
-        let radians = (Math.PI / 180) * autoAngle;
-        var MouseX_ =
-          50 * Math.cos(radians) +
-          (data.canvaswidth / 2 - data.playerSize * data.FOV);
-        var MouseY_ =
-          50 * Math.sin(radians) +
-          (data.canvasheight / 2 - data.playerSize * data.FOV);
-        let angle = Math.atan2(
-          MouseY_ - (data.canvasheight / 2 - data.playerSize * data.FOV),
-          MouseX_ - (data.canvaswidth / 2 - data.playerSize * data.FOV)
+      case "playerLeftTeam": {
+        let MYteam = teamlist.find((team) => {
+          return team.teamID === players[data.id].team;
+        });
+        players[data.id].team = null;
+        MYteam.players.splice(
+          MYteam.players.indexOf({
+            username: players[data.id].username,
+            id: data.id,
+          }),
+          1
         );
+        if (data.id === MYteam.owner.id) {
+          let teamplayers = MYteam.players;
+          if (teamplayers.length !== 0) {
+            MYteam.owner = teamplayers[0];
+            emit("newOwner", {
+              teamID: MYteam.teamID,
+              playerid: teamplayers[0].id,
+            });
+          } else {
+            teamplayers.forEach((player) => {
+              emit("playerJoinedTeam", { id: player.id, teamId: null });
+            });
+            teamlist.splice(teamlist.indexOf(MYteam, 1));
+          }
+        }
+        emit("playerJoinedTeam", { id: data.id, teamId: null });
+        let public_teams = [];
+        teamlist.forEach((team) => {
+          if (!team.private) {
+            public_teams.push(team);
+          }
+        });
+        emit("pubteamlist", public_teams);
+        break;
+      }
+
+      case "deleteTeam": {
+        let MYteam = teamlist.find((team) => {
+          return team.teamID === data.teamID;
+        });
+        if (
+          players[data.playerId].team !== data.teamID ||
+          players[data.playerId].team !== MYteam.teamID ||
+          data.playerId !== MYteam.owner.id
+        ) {
+          socket.close();
+        }
+        MYteam.players.forEach((player) => {
+          emit("playerJoinedTeam", { id: player.id, teamId: null });
+        });
+        teamlist.splice(teamlist.indexOf(MYteam, 1));
+        let public_teams = [];
+        teamlist.forEach((team) => {
+          if (!team.private) {
+            public_teams.push(team);
+          }
+        });
+        emit("pubteamlist", public_teams);
+        break;
+      }
+
+      case "kickplayer": {
+        let MYteam = teamlist.find((team) => {
+          return team.teamID === players[data.id].team;
+        });
+        players[data.id].team = null;
+        MYteam.players.splice(
+          MYteam.players.indexOf({
+            username: players[data.id].username,
+            id: data.id,
+          }),
+          1
+        );
+        emit("playerJoinedTeam", { id: data.id, teamId: null });
+        let public_teams = [];
+        teamlist.forEach((team) => {
+          if (!team.private) {
+            public_teams.push(team);
+          }
+        });
+        emit("pubteamlist", public_teams);
+      }
+
+      case "browserHidden": {
+        var autoAngle = data.autoAngle;
+        var turnhide = setInterval(() => {
+          autoAngle += 0.2 / 10;
+          if (359.8 <= autoAngle) {
+            autoAngle = 0;
+          }
+          let radians = (Math.PI / 180) * autoAngle;
+          var MouseX_ =
+            50 * Math.cos(radians) +
+            (data.canvaswidth / 2 - data.playerSize * data.FOV);
+          var MouseY_ =
+            50 * Math.sin(radians) +
+            (data.canvasheight / 2 - data.playerSize * data.FOV);
+          let angle = Math.atan2(
+            MouseY_ - (data.canvasheight / 2 - data.playerSize * data.FOV),
+            MouseX_ - (data.canvaswidth / 2 - data.playerSize * data.FOV)
+          );
+          if (!players[data.id]) {
+            invaled_requests.push(data.id);
+            return;
+          }
+          players[data.id].cannon_angle = autoAngle;
+          players[data.id].MouseX = MouseX_;
+          players[data.id].MouseY = MouseY_;
+          var data_ = {
+            id: data.id,
+            cannon_angle: autoAngle,
+            MouseX: MouseX_,
+            MouseY: MouseY_,
+          };
+          smartbroadcast("playerCannonUpdated", data_, socket);
+
+          emit("playerCannonUpdatedInactive", {
+            MouseX_: MouseX_,
+            MouseY_: MouseY_,
+          });
+          data.autoIntevals.forEach((Inteval) => {
+            autocannons.forEach((cannon) => {
+              if (cannon.CannonID === Inteval.autoID) {
+                if (cannon._type_ === "SwivelAutoCannon") {
+                  var tankdatacannondata =
+                    tankmeta[players[cannon.playerid].__type__].cannons[
+                      cannon.autoindex
+                    ];
+                  var offSet_x = tankdatacannondata["offSet-x"];
+                  if (tankdatacannondata["offSet-x"] === "playerX") {
+                    offSet_x = players[cannon.playerid].size * 40;
+                  }
+                  if (tankdatacannondata["offSet-x-multpliyer"]) {
+                    offSet_x *= -1;
+                  }
+                  var [X, Y] = rotatePointAroundPlayer(offSet_x, 0, data.angle);
+                  cannon["x_"] = X;
+                  cannon["y_"] = Y;
+                }
+              }
+            });
+          });
+        }, 75);
+        hidden_broswers.push({ interval: turnhide, id: data.id });
+        break;
+      }
+
+      case "playerSend": {
+        emit("playerMessage", {
+          text: data.text,
+          exspiretime: 3000,
+          id: data.id,
+          hidetime: Date.now() + 2500,
+        });
+        messages.push({
+          text: data.text,
+          exspiretime: 3000,
+          id: data.id,
+          hidetime: Date.now() + 2500,
+        });
+        let index_ = messages.indexOf({
+          text: data.text,
+          exspiretime: data.exspiretime,
+          id: data.id,
+          hidetime: Date.now() + 2500,
+        });
+        setTimeout(() => {
+          messages = messages.splice(0, index_);
+        }, data.exspiretime);
+      }
+
+      case "browserunHidden": {
+        hidden_broswers.filter((interval) => {
+          if (data.id === interval.id) {
+            clearInterval(interval.interval);
+            return false;
+          }
+          return true;
+        });
+
+        break;
+      }
+
+      case "windowStateChange": {
+        if (players[data.id] === undefined) return;
+        var truefalse = data.vis === "visible";
+        players[data.id].visible = truefalse;
+        if (truefalse) {
+          for (const player in players) {
+            var player_ = players[player];
+            //if (data.id === player_.id) return;
+            emit("playerCannonUpdated", {
+              id: player_.id,
+              cannon_angle: player_.cannon_angle,
+              receiver: data.id,
+            });
+          }
+        }
+        break;
+      }
+
+      case "autoCannonADD": {
+        autocannons.push(data);
+        let cannosplayer = tankmeta[players[data.playerid].__type__].cannons;
+        let cannonamountplayer = Object.keys(cannosplayer).length;
+        let find = function () {
+          let cannons = 0;
+          autocannons.forEach((cannon) => {
+            if (cannon.playerid === data.playerid) {
+              if (
+                cannon._type_ === "autoCannon" ||
+                cannon._type_ === "SwivelAutoCannon"
+              ) {
+                cannons += 1;
+              }
+            }
+          });
+          return cannons;
+        };
+        let index = find();
+        let autoindex = cannonamountplayer - index;
+        let cannon__index = autocannons.indexOf(data);
+        let cannon = autocannons[cannon__index];
+        cannon.autoindex = autoindex;
+        emit("autoCannonUPDATE-ADD", autocannons);
+        break;
+      }
+
+      case "getFood": {
+        emit("FoodUpdate", food_squares);
+        break;
+      }
+
+      case "typeChange": {
         if (!players[data.id]) {
           invaled_requests.push(data.id);
           return;
         }
-        players[data.id].cannon_angle = autoAngle;
-        players[data.id].MouseX = MouseX_;
-        players[data.id].MouseY = MouseY_;
-        var data_ = {
-          id: data.id,
-          cannon_angle: autoAngle,
-          MouseX: MouseX_,
-          MouseY: MouseY_,
-        };
-        smartbroadcast("playerCannonUpdated", data_, socket);
-
-        emit("playerCannonUpdatedInactive", {
-          MouseX_: MouseX_,
-          MouseY_: MouseY_,
-        });
-        data.autoIntevals.forEach((Inteval) => {
-          autocannons.forEach((cannon) => {
-            if (cannon.CannonID === Inteval.autoID) {
-              if (cannon._type_ === "SwivelAutoCannon") {
-                var tankdatacannondata =
-                  tankmeta[players[cannon.playerid].__type__].cannons[
-                    cannon.autoindex
-                  ];
-                var offSet_x = tankdatacannondata["offSet-x"];
-                if (tankdatacannondata["offSet-x"] === "playerX") {
-                  offSet_x = players[cannon.playerid].size * 40;
-                }
-                if (tankdatacannondata["offSet-x-multpliyer"]) {
-                  offSet_x *= -1;
-                }
-                var [X, Y] = rotatePointAroundPlayer(offSet_x, 0, data.angle);
-                cannon["x_"] = X;
-                cannon["y_"] = Y;
-              }
-            }
-          });
-        });
-      }, 75);
-      hidden_broswers.push({ interval: turnhide, id: data.id });
-      return;
-    }
-
-    if (type === "playerSend") {
-      emit("playerMessage", {
-        text: data.text,
-        exspiretime: 3000,
-        id: data.id,
-        hidetime: Date.now() + 2500,
-      });
-      messages.push({
-        text: data.text,
-        exspiretime: 3000,
-        id: data.id,
-        hidetime: Date.now() + 2500,
-      });
-      let index_ = messages.indexOf({
-        text: data.text,
-        exspiretime: data.exspiretime,
-        id: data.id,
-        hidetime: Date.now() + 2500,
-      });
-      setTimeout(() => {
-        messages = messages.splice(0, index_);
-      }, data.exspiretime);
-    }
-
-    if (type === "browserunHidden") {
-      hidden_broswers.filter((interval) => {
-        if (data.id === interval.id) {
-          clearInterval(interval.interval);
-          return false;
-        }
-        return true;
-      });
-
-      return;
-    }
-
-    if (type === "windowStateChange") {
-      if (players[data.id] === undefined) return;
-      var truefalse = data.vis === "visible";
-      players[data.id].visible = truefalse;
-      if (truefalse) {
-        for (const player in players) {
-          var player_ = players[player];
-          //if (data.id === player_.id) return;
-          emit("playerCannonUpdated", {
-            id: player_.id,
-            cannon_angle: player_.cannon_angle,
-            receiver: data.id,
-          });
-        }
+        players[data.id] = data;
+        emit("type_Change", data);
+        break;
       }
-      return;
-    }
 
-    if (type === "autoCannonADD") {
-      autocannons.push(data);
-      let cannosplayer = tankmeta[players[data.playerid].__type__].cannons;
-      let cannonamountplayer = Object.keys(cannosplayer).length;
-      let find = function () {
-        let cannons = 0;
+      case "playerCannonWidth": {
+        if (!players[data.id]) {
+          invaled_requests.push(data.id);
+          return;
+        }
+        players[data.id].cannonW = data.cannonW;
+        broadcast(
+          "playerCannonWidthUpdate",
+          { id: data.id, cannonW: data.cannonW },
+          socket
+        );
+        break;
+      }
+
+      case "statUpgrade": {
+        if (!players[data.id]) return;
+        var upgradetype = data.Upgradetype;
+
+        players[data.id].statsTree[data.Upgradetype] += data.UpgradeLevel;
+
+        if (upgradetype === "health") {
+          players[data.id].health =
+            (players[data.id].health / 2) * levelmultiplyer;
+          players[data.id].maxhealth =
+            players[data.id].maxhealth * levelmultiplyer;
+        } else if (upgradetype === "Regen") {
+          let Regen = players[data.id].statsTree[data.Upgradetype];
+          let Regenspeed = 30 - 30 * (Regen / 10);
+          players[data.id].Regenspeed = Regenspeed;
+          emit("healerRestart", { id: data.id, Regenspeed: Regenspeed });
+        } else if (upgradetype === "Body Damage") {
+          players[data.id].bodyDamage *= levelmultiplyer;
+        } else if (upgradetype === "Speed") {
+          players[data.id].speed *= levelmultiplyer;
+        }
+
+        broadcast("statsTreeRestart", {
+          stats: players[data.id].statsTree,
+          id: data.id,
+        });
+
+        if (
+          upgradetype !== "Bullet Pentration" ||
+          upgradetype !== "Bullet Speed" ||
+          upgradetype !== "Bullet Damage"
+        ) {
+          emit("UpdateStatTree", {
+            id: data.id,
+            StatUpgradetype: upgradetype,
+            levelmultiplyer: levelmultiplyer,
+            doUpgrade: false,
+          });
+        } else {
+          emit("UpdateStatTree", {
+            id: data.id,
+            StatUpgradetype: upgradetype,
+            levelmultiplyer: levelmultiplyer,
+            doUpgrade: true,
+          });
+        }
+        break;
+      }
+
+      case "auto-x-update": {
         autocannons.forEach((cannon) => {
-          if (cannon.playerid === data.playerid) {
-            if (
-              cannon._type_ === "autoCannon" ||
-              cannon._type_ === "SwivelAutoCannon"
-            ) {
-              cannons += 1;
+          if (cannon.CannonID === data.autoID) {
+            if (cannon._type_ === "SwivelAutoCannon") {
+              var tankdatacannondata =
+                tankmeta[players[cannon.playerid].__type__].cannons[
+                  cannon.autoindex
+                ];
+              var offSet_x = tankdatacannondata["offSet-x"];
+              if (tankdatacannondata["offSet-x"] === "playerX") {
+                offSet_x = players[cannon.playerid].size * 40;
+              }
+              if (tankdatacannondata["offSet-x-multpliyer"]) {
+                offSet_x *= -1;
+              }
+              var [X, Y] = rotatePointAroundPlayer(offSet_x, 0, data.angle);
+              cannon["x_"] = X;
+              cannon["y_"] = Y;
             }
           }
         });
-        return cannons;
-      };
-      let index = find();
-      let autoindex = cannonamountplayer - index;
-      let cannon__index = autocannons.indexOf(data);
-      let cannon = autocannons[cannon__index];
-      cannon.autoindex = autoindex;
-      emit("autoCannonUPDATE-ADD", autocannons);
-      return;
-    }
-
-    if (type === "getFood") {
-      emit("FoodUpdate", food_squares);
-      return;
-    }
-
-    if (type === "typeChange") {
-      if (!players[data.id]) {
-        invaled_requests.push(data.id);
-        return;
-      }
-      players[data.id] = data;
-      emit("type_Change", data);
-      return;
-    }
-
-    if (type === "playerCannonWidth") {
-      if (!players[data.id]) {
-        invaled_requests.push(data.id);
-        return;
-      }
-      players[data.id].cannonW = data.cannonW;
-      broadcast(
-        "playerCannonWidthUpdate",
-        { id: data.id, cannonW: data.cannonW },
-        socket
-      );
-      return;
-    }
-
-    if (type === "statUpgrade") {
-      if (!players[data.id]) return;
-      var upgradetype = data.Upgradetype;
-
-      players[data.id].statsTree[data.Upgradetype] += data.UpgradeLevel;
-
-      if (upgradetype === "health") {
-        players[data.id].health =
-          (players[data.id].health / 2) * levelmultiplyer;
-        players[data.id].maxhealth =
-          players[data.id].maxhealth * levelmultiplyer;
-      } else if (upgradetype === "Regen") {
-        let Regen = players[data.id].statsTree[data.Upgradetype];
-        let Regenspeed = 30 - 30 * (Regen / 10);
-        players[data.id].Regenspeed = Regenspeed;
-        emit("healerRestart", { id: data.id, Regenspeed: Regenspeed });
-      } else if (upgradetype === "Body Damage") {
-        players[data.id].bodyDamage *= levelmultiplyer;
-      } else if (upgradetype === "Speed") {
-        players[data.id].speed *= levelmultiplyer;
+        break;
       }
 
-      broadcast("statsTreeRestart", {
-        stats: players[data.id].statsTree,
-        id: data.id,
-      });
-
-      if (
-        upgradetype !== "Bullet Pentration" ||
-        upgradetype !== "Bullet Speed" ||
-        upgradetype !== "Bullet Damage"
-      ) {
-        emit("UpdateStatTree", {
-          id: data.id,
-          StatUpgradetype: upgradetype,
-          levelmultiplyer: levelmultiplyer,
-          doUpgrade: false,
-        });
-      } else {
-        emit("UpdateStatTree", {
-          id: data.id,
-          StatUpgradetype: upgradetype,
-          levelmultiplyer: levelmultiplyer,
-          doUpgrade: true,
-        });
-      }
-      return;
-    }
-
-    if (type === "auto-x-update") {
-      autocannons.forEach((cannon) => {
-        if (cannon.CannonID === data.autoID) {
-          if (cannon._type_ === "SwivelAutoCannon") {
-            var tankdatacannondata =
-              tankmeta[players[cannon.playerid].__type__].cannons[
-                cannon.autoindex
-              ];
-            var offSet_x = tankdatacannondata["offSet-x"];
-            if (tankdatacannondata["offSet-x"] === "playerX") {
-              offSet_x = players[cannon.playerid].size * 40;
-            }
-            if (tankdatacannondata["offSet-x-multpliyer"]) {
-              offSet_x *= -1;
-            }
-            var [X, Y] = rotatePointAroundPlayer(offSet_x, 0, data.angle);
-            cannon["x_"] = X;
-            cannon["y_"] = Y;
-          }
+      case "playerMoved": {
+        if (!players[data.id]) return;
+        players[data.id].x = data.x;
+        players[data.id].y = data.y;
+        if (!data.last) {
+          return;
         }
-      });
-      return;
-    }
-
-    if (type === "playerMoved") {
-      if (!players[data.id]) return;
-      players[data.id].x = data.x;
-      players[data.id].y = data.y;
-      if (!data.last) {
-        return;
-      }
-      let player = players[data.id];
-      let hasfoodchanged = false;
-      /*food_squares = food_squares.filter((item, index) => {
+        let player = players[data.id];
+        let hasfoodchanged = false;
+        /*food_squares = food_squares.filter((item, index) => {
         const distanceX = Math.abs(player.x - item.x);
         const distanceY = Math.abs(player.y - item.y);
         
@@ -2024,623 +2035,650 @@ wss.on("connection", (socket) => {
         }
         return true;
       });*/
-      broadcast("playerMoved", data, socket);
-      return;
-    }
-
-    if (type === "Sizeup") {
-      if (!players[data.id]) return;
-      players[data.id].size += data.plus;
-    }
-
-    if (type === "Autofire") {
-      let maxdistance = 5000;
-      let fire_at = null;
-      let cannon = data.cannon;
-      for (const playerID in players) {
-        let player = players[playerID];
-        var sameTeam =
-          player.team === players[data.playerId].team &&
-          player.team !== null &&
-          players[data.playerId].team !== null;
-        if (
-          playerID !== data.playerId &&
-          player.state !== "start" &&
-          !sameTeam
-        ) {
-          var distance = MathHypotenuse(player.x - data.x, player.y - data.y);
-          if (distance < maxdistance) {
-            let angle = Math.atan2(
-              player.y - players[data.playerId].y, // y difference
-              player.x - players[data.playerId].x // x difference
-            );
-            if (
-              tankmeta[players[data.playerId].__type__]["cannons"][
-                data.extracannon_
-              ].type === "SwivelAutoCannon"
-            ) {
-              if (
-                tankmeta[players[data.playerId].__type__]["cannons"][
-                  data.extracannon_
-                ]["offSet-x-multpliyer"] === -1
-              ) {
-                if (
-                  isTargetInSwivelRange(
-                    players[data.playerId].cannon_angle,
-                    (angle * 180) / pi,
-                    true,
-                    180
-                  )
-                ) {
-                  maxdistance = distance;
-                  fire_at = player;
-                }
-              } else {
-                if (
-                  isTargetInSwivelRange(
-                    players[data.playerId].cannon_angle,
-                    (angle * 180) / pi,
-                    true,
-                    0
-                  )
-                ) {
-                  maxdistance = distance;
-                  fire_at = player;
-                }
-              }
-            } else {
-              maxdistance = distance;
-              fire_at = player;
-            }
-          }
-        }
-      }
-      if (maxdistance > 1300) {
-        food_squares.forEach((item) => {
-          var distance = MathHypotenuse(
-            item.x - data.playerX,
-            item.y - data.playerY
-          );
-          if (distance < maxdistance) {
-            let angle = Math.atan2(
-              item.y - players[data.playerId].y, // y difference
-              item.x - players[data.playerId].x // x difference
-            );
-            if (
-              tankmeta[players[data.playerId].__type__]["cannons"][
-                data.extracannon_
-              ].type === "SwivelAutoCannon"
-            ) {
-              if (
-                tankmeta[players[data.playerId].__type__]["cannons"][
-                  data.extracannon_
-                ]["offSet-x-multpliyer"] === -1
-              ) {
-                if (
-                  isTargetInSwivelRange(
-                    players[data.playerId].cannon_angle,
-                    (angle * 180) / pi,
-                    true,
-                    180
-                  )
-                ) {
-                  maxdistance = distance;
-                  fire_at = item;
-                }
-              } else {
-                if (
-                  isTargetInSwivelRange(
-                    players[data.playerId].cannon_angle,
-                    (angle * 180) / pi,
-                    true,
-                    0
-                  )
-                ) {
-                  maxdistance = distance;
-                  fire_at = item;
-                }
-              }
-            } else {
-              maxdistance = distance;
-              fire_at = item;
-            }
-          }
-        });
-      }
-      let speedUP = 0;
-      if (fire_at === null) return;
-
-      let cannon_life = cannon["life-time"] || 0;
-      if (players[data.playerId].statsTree["Bullet Speed"] !== 1) {
-        speedUP =
-          players[data.playerId].statsTree["Bullet Speed"] * levelmultiplyer;
+        broadcast("playerMoved", data, socket);
+        break;
       }
 
-      let bullet_speed__ = data.bullet_speed * cannon["bulletSpeed"];
-      if (cannon["type"] === "basicCannon" || cannon["type"] === "trapezoid") {
-        var bulletdistance = bullet_speed__ * 100 * (data.bullet_size / 6);
-        var __type = "basic";
-        var health = 8;
-      } else if (cannon["type"] === "trap") {
-        var bulletdistance = bullet_speed__ * 70 * (data.bullet_size / 20);
-        var __type = "trap";
-        var health = 10;
-      } else if (cannon["type"] === "directer") {
-        var bulletdistance = 100;
-        var __type = "directer";
-        var health = 10;
-      } else if (
-        cannon["type"] === "autoCannon" ||
-        cannon["type"] === "SwivelAutoCannon"
-      ) {
-        var bulletdistance =
-          (bullet_speed__ + speedUP) * 100 * (data.bullet_size / 6);
-        var __type = "basic";
-        var health = 8;
-      }
-      let angle = Math.atan2(
-        fire_at.y - data.playerY, // y difference
-        fire_at.x - data.playerX // x difference
-      );
-
-      let bullet_size_l = data.bullet_size * cannon["bulletSize"];
-
-      let randomNumber = generateRandomNumber(-0.2, 0.2);
-
-      var offSet_x = cannon["offSet-x"];
-      if (cannon["offSet-x"] === "playerX") {
-        offSet_x = (players[data.playerId].size / 2) * 40;
+      case "Sizeup": {
+        if (!players[data.id]) return;
+        players[data.id].size += data.plus;
+        break
       }
 
-      if (cannon["type"] === "basicCannon" || cannon["type"] === "trap") {
-        var xxx = cannon["cannon-width"] - bullet_size_l * 1.5;
-        var yyy = cannon["cannon-height"] - bullet_size_l * 2;
-        var angle_ = angle + cannon["offset-angle"];
-      } else if (cannon["type"] === "trapezoid") {
-        var angle_ = angle + cannon["offset-angle"] + randomNumber;
-        var xxx = cannon["cannon-width-top"] - bullet_size_l * 1.5;
-        var yyy =
-          cannon["cannon-height"] -
-          bullet_size_l * 2 -
-          (cannon["cannon-width-top"] / 2) * Math.random();
-      } else if (
-        cannon["type"] === "autoCannon" ||
-        cannon["type"] === "SwivelAutoCannon"
-      ) {
-        var xxx = cannon["cannon-width"] - bullet_size_l * 0.2;
-        var yyy = cannon["cannon-height"] - bullet_size_l * 1.2;
-        var angle_ = angle + cannon["offset-angle"];
-      }
-
-      let rotated_offset_x =
-        (offSet_x + xxx) * Math.cos(angle_) -
-        (cannon["offSet-y"] + yyy) * Math.sin(angle_);
-      let rotated_offset_y =
-        (offSet_x + xxx) * Math.sin(angle_) +
-        (cannon["offSet-y"] + yyy) * Math.cos(angle_);
-      let bullet_start_x = data.playerX + rotated_offset_x;
-      let bullet_start_y = data.playerY + rotated_offset_y;
-      // lol
-      let identdfire = Date.now() + Math.random();
-      let damageUP = 0;
-      if (players[data.playerId].statsTree["Bullet Damage"] !== 1) {
-        damageUP =
-          (players[data.playerId].statsTree["Bullet Damage"] *
-            levelmultiplyer) /
-          (data.bullet_damage ** 2 / (data.bullet_damage / 10));
-      }
-      let PentrationPluse = 0;
-      if (players[data.playerId].statsTree["Bullet Pentration"] !== 1) {
-        PentrationPluse =
-          players[data.playerId].statsTree["Bullet Pentration"] *
-          levelmultiplyer;
-      }
-
-      let bullet = {
-        type: __type,
-        bullet_distance: bulletdistance,
-        speed: bullet_speed__ + speedUP,
-        size: bullet_size_l,
-        angle: angle_,
-        bullet_damage: data.bullet_damage * cannon["bulletSize"] + damageUP,
-        distanceTraveled: 0,
-        vertices: null,
-        bullet_pentration:
-          data.bullet_pentration * cannon["bullet_pentration"] +
-          PentrationPluse,
-        x: bullet_start_x,
-        y: bullet_start_y,
-        lifespan: cannon_life,
-        health: health,
-        xstart: data.playerX,
-        ystart: data.playerY,
-        id: data.playerId,
-        uniqueid: identdfire,
-        Zlevel: 2,
-      };
-
-      bullets.push(bullet);
-      var [_index_, CO] = finder_(data);
-      return;
-    }
-
-    if (type === "playerCannonMoved") {
-      if (!players[data.id]) {
-        invaled_requests.push(data.id);
-        return;
-      }
-      players[data.id].cannon_angle = data.cannon_angle;
-      players[data.id].MouseX = data.MouseX;
-      players[data.id].MouseY = data.MouseY;
-      smartbroadcast("playerCannonUpdated", data, socket);
-      return;
-    }
-
-    if (type === "statechange") {
-      if (!players[data.playerID]) {
-        invaled_requests.push(data.playerID);
-        return;
-      }
-      players[data.playerID].state = data.state;
-      broadcast("statechangeUpdate", data, socket);
-      return;
-    }
-
-    if (type === "getTankMeta") {
-      socket.send(JSON.stringify({ type: "RETURNtankmeta", data: tankmeta }));
-      return;
-    }
-
-    if (type === "healrate") {
-      if (!players[data.id]) {
-        invaled_requests.push(data.id);
-        return;
-      }
-      players[data.playerId].playerReheal = data.playerReheal;
-      return;
-    }
-
-    if (type === "AddplayerHealTime") {
-      if (!players[data.ID]) {
-        invaled_requests.push(data.ID);
-        return;
-      }
-      players[data.ID].maxhealth = data.maxhealth;
-      players[data.ID].playerHealTime = data.playerHealTime;
-      emit("updaterHeal", { ID: data.ID, HEALTime: data.playerHealTime });
-      if (
-        data.playerHealTime > players[data.ID].Regenspeed &&
-        players[data.ID].health < players[data.ID].maxhealth
-      ) {
-        emit("playerHealing", {
-          playerID: data.ID,
-          playerHealTime: data.playerHealTime,
-        });
-
-        let healer = setInterval(function () {
-          if (!players[data.ID]) {
-            clearInterval(healer);
-            return;
-          }
-          players[data.ID].health += players[data.ID].playerReheal;
-          if (players[data.ID].health >= players[data.ID].maxhealth) {
-            players[data.ID].health = players[data.ID].maxhealth;
-            clearInterval(healer);
-          }
-          if (players[data.ID].playerHealTime < players[data.ID].Regenspeed) {
-            players[data.ID].health -= players[data.ID].playerReheal;
-            clearInterval(healer);
-          }
-          emit("playerHeal", { HEALTH: players[data.ID].health, ID: data.ID });
-        }, 50);
-      }
-      return;
-    }
-
-    if (type === "playerHealintterupted") {
-      if (!players[data.ID]) {
-        invaled_requests.push(data.id);
-        return;
-      }
-      players[data.ID].playerHealTime = 0;
-      emit("updaterHeal", { ID: data.ID, HEALTime: 0 });
-      return;
-    }
-
-    if (type === "playerCollided") {
-      try {
-        if (players[data.id_other].state !== "start") {
-          players[data.id_other].health -= data.damagegiven;
-        } // Swap damagegiven and damagetaken
-        if (players[data.id_self].state !== "start") {
-          players[data.id_self].health -= data.damagetaken;
-        }
-        if (players[data.id_other].health <= 0) {
-          let player = players[data.id_other];
-          let player2 = players[data.id_self];
-          var reward = Math.round(
-            player.score / (20 + players[player2.id].score / 10000)
-          );
-          emit("playerScore", { bulletId: player2.id, socrepluse: reward });
-          emit("playerDied", {
-            playerID: player.id,
-            rewarder: player2.id,
-            reward: reward,
-          });
-          players = Object.entries(players).reduce(
-            (newPlayers, [key, value]) => {
-              if (key !== player.id) {
-                newPlayers[key] = value;
-              }
-              return newPlayers;
-            },
-            {}
-          );
-        }
-        if (players[data.id_self].health <= 0) {
-          let player = players[data.id_self];
-          let player2 = players[data.id_other];
-          var reward = Math.round(
-            player.score / (20 + players[player2.id].score / 10000)
-          );
-          emit("playerScore", { bulletId: player2.id, socrepluse: reward });
-          emit("playerDied", {
-            playerID: player.id,
-            rewarder: player2.id,
-            reward: reward,
-          });
-          players = Object.entries(players).reduce(
-            (newPlayers, [key, value]) => {
-              if (key !== player.id) {
-                newPlayers[key] = value;
-              }
-              return newPlayers;
-            },
-            {}
-          );
-        }
-      } catch (error) {
-        console.log(error);
-        return;
-      }
-
-      emit("playerDamaged", {
-        player1: players[data.id_other],
-        ID1: data.id_other,
-        player2: players[data.id_self],
-        ID2: data.id_self,
-      });
-      return;
-    }
-
-    if (type === "playerUPDATE") {
-      players[data.id] = data;
-      return;
-    }
-
-    if (type === "deletAuto") {
-      autocannons.filter((cannons___0_0) => {
-        if (cannons___0_0.playerid === connection.playerId) {
-          return false;
-        }
-        return true;
-      });
-      return;
-    }
-
-    if (type === "bulletFired") {
-      if (!players[data.id]) return;
-      if (!players[data.id].statsTree) return;
-
-      let damageUP = 0;
-      if (players[data.id].statsTree["Bullet Damage"] !== 1) {
-        damageUP =
-          (players[data.id].statsTree["Bullet Damage"] * levelmultiplyer) /
-          (data.bullet_damage ** 2 / (data.bullet_damage / 5));
-        data.bullet_damage += damageUP;
-      }
-      let PentrationPluse = 0;
-      if (players[data.id].statsTree["Bullet Pentration"] !== 1) {
-        PentrationPluse =
-          players[data.id].statsTree["Bullet Pentration"] * levelmultiplyer;
-        data.bullet_pentration += PentrationPluse;
-      }
-      let speedUP = 0;
-      if (players[data.id].statsTree["Bullet Speed"] !== 1) {
-        speedUP = players[data.id].statsTree["Bullet Speed"] * levelmultiplyer;
-        data.speed += speedUP;
-      }
-      bullets.push(data);
-      let indexbullet = bullets.indexOf(data);
-      let bullet = bullets[indexbullet];
-      if (data.type === "trap") {
-        setTimeout(() => {
-          // hacky soltion to remove the bullet
-          bullet.distanceTraveled = 100e10;
-        }, bullet.lifespan * 1000);
-      }
-      if (data.type === "AutoBullet") {
-        let autoID =
-          getRandomInt(-10000, 10000) * Date.now() * getRandomInt(-1000, 1000);
-        let auto_cannon = {
-          CannonID: autoID,
-          playerid: data.uniqueid,
-          angle: 0.000000001,
-          _type_: "bulletAuto",
-        };
-        autocannons.push(auto_cannon);
-        let cannosplayer = tankmeta[players[data.id].__type__].cannons;
-        let cannonamountplayer = Object.keys(cannosplayer).length;
-        let find = function () {
-          let cannons = 0;
-          autocannons.forEach((cannon) => {
-            if (cannon.playerid === data.playerid) {
-              if (
-                cannon._type_ === "autoCannon" ||
-                cannon._type_ === "SwivelAutoCannon" ||
-                cannon._type_ === "bulletAuto"
-              ) {
-                cannons += 1;
-              }
-            }
-          });
-          return cannons;
-        };
-        let index = find();
-        let autoindex = cannonamountplayer - index;
-        if (autoindex === cannonamountplayer) {
-          autoindex -= 1;
-        }
-        let cannon__index = autocannons.indexOf(auto_cannon);
-        let cannon = autocannons[cannon__index];
-        cannon.autoindex = autoindex;
-        emit("autoCannonUPDATE-ADD", autocannons);
-        let __reload__ = 1;
-        for (let i = 0; i < players[data.id].statsTree["Bullet Reload"]; ++i) {
-          __reload__ *= levelmultiplyer;
-        }
-        function auto_bullet() {
-          let maxdistance = 5000;
-          let fire_at = null;
-          let cannon =
-            tankmeta[players[data.id].__type__]["cannons"][autoindex];
-          for (const playerID in players) {
-            let player = players[playerID];
-            var sameTeam =
-              player.team === players[data.id].team &&
-              player.team !== null &&
-              players[data.id].team !== null;
-            if (playerID !== bullet.id && !sameTeam) {
-              var distance = MathHypotenuse(
-                player.x - bullet.x,
-                player.y - bullet.y
+      case "Autofire": {
+        let maxdistance = 5000;
+        let fire_at = null;
+        let cannon = data.cannon;
+        for (const playerID in players) {
+          let player = players[playerID];
+          var sameTeam =
+            player.team === players[data.playerId].team &&
+            player.team !== null &&
+            players[data.playerId].team !== null;
+          if (
+            playerID !== data.playerId &&
+            player.state !== "start" &&
+            !sameTeam
+          ) {
+            var distance = MathHypotenuse(player.x - data.x, player.y - data.y);
+            if (distance < maxdistance) {
+              let angle = Math.atan2(
+                player.y - players[data.playerId].y, // y difference
+                player.x - players[data.playerId].x // x difference
               );
-              if (distance < maxdistance) {
-                let angle = Math.atan2(
-                  player.y - bullet.y, // y difference
-                  player.x - bullet.x // x difference
-                );
-
+              if (
+                tankmeta[players[data.playerId].__type__]["cannons"][
+                  data.extracannon_
+                ].type === "SwivelAutoCannon"
+              ) {
+                if (
+                  tankmeta[players[data.playerId].__type__]["cannons"][
+                    data.extracannon_
+                  ]["offSet-x-multpliyer"] === -1
+                ) {
+                  if (
+                    isTargetInSwivelRange(
+                      players[data.playerId].cannon_angle,
+                      (angle * 180) / pi,
+                      true,
+                      180
+                    )
+                  ) {
+                    maxdistance = distance;
+                    fire_at = player;
+                  }
+                } else {
+                  if (
+                    isTargetInSwivelRange(
+                      players[data.playerId].cannon_angle,
+                      (angle * 180) / pi,
+                      true,
+                      0
+                    )
+                  ) {
+                    maxdistance = distance;
+                    fire_at = player;
+                  }
+                }
+              } else {
                 maxdistance = distance;
                 fire_at = player;
               }
             }
           }
-          if (maxdistance > 1300) {
-            food_squares.forEach((item) => {
-              var distance = MathHypotenuse(
-                item.x - bullet.x,
-                item.y - bullet.y
+        }
+        if (maxdistance > 1300) {
+          food_squares.forEach((item) => {
+            var distance = MathHypotenuse(
+              item.x - data.playerX,
+              item.y - data.playerY
+            );
+            if (distance < maxdistance) {
+              let angle = Math.atan2(
+                item.y - players[data.playerId].y, // y difference
+                item.x - players[data.playerId].x // x difference
               );
-              if (distance < maxdistance) {
-                let angle = Math.atan2(
-                  item.y - bullet.y, // y difference
-                  item.x - bullet.x // x difference
-                );
-
+              if (
+                tankmeta[players[data.playerId].__type__]["cannons"][
+                  data.extracannon_
+                ].type === "SwivelAutoCannon"
+              ) {
+                if (
+                  tankmeta[players[data.playerId].__type__]["cannons"][
+                    data.extracannon_
+                  ]["offSet-x-multpliyer"] === -1
+                ) {
+                  if (
+                    isTargetInSwivelRange(
+                      players[data.playerId].cannon_angle,
+                      (angle * 180) / pi,
+                      true,
+                      180
+                    )
+                  ) {
+                    maxdistance = distance;
+                    fire_at = item;
+                  }
+                } else {
+                  if (
+                    isTargetInSwivelRange(
+                      players[data.playerId].cannon_angle,
+                      (angle * 180) / pi,
+                      true,
+                      0
+                    )
+                  ) {
+                    maxdistance = distance;
+                    fire_at = item;
+                  }
+                }
+              } else {
                 maxdistance = distance;
                 fire_at = item;
               }
-            });
-          }
-          let speedUP = 0;
-          if (fire_at === null) return;
+            }
+          });
+        }
+        let speedUP = 0;
+        if (fire_at === null) return;
 
-          if (players[bullet.id].statsTree["Bullet Speed"] !== 1) {
-            speedUP =
-              players[bullet.id].statsTree["Bullet Speed"] * levelmultiplyer;
-          }
-          let cannon_life = 0;
+        let cannon_life = cannon["life-time"] || 0;
+        if (players[data.playerId].statsTree["Bullet Speed"] !== 1) {
+          speedUP =
+            players[data.playerId].statsTree["Bullet Speed"] * levelmultiplyer;
+        }
 
-          let bullet_speed__ = (data.speed / 1.3) * cannon["bulletSpeed"] * 5;
-          var bulletdistance =
-            (bullet_speed__ + speedUP) * 100 * (bullet.size / 6);
+        let bullet_speed__ = data.bullet_speed * cannon["bulletSpeed"];
+        if (
+          cannon["type"] === "basicCannon" ||
+          cannon["type"] === "trapezoid"
+        ) {
+          var bulletdistance = bullet_speed__ * 100 * (data.bullet_size / 6);
           var __type = "basic";
           var health = 8;
+        } else if (cannon["type"] === "trap") {
+          var bulletdistance = bullet_speed__ * 70 * (data.bullet_size / 20);
+          var __type = "trap";
+          var health = 10;
+        } else if (cannon["type"] === "directer") {
+          var bulletdistance = 100;
+          var __type = "directer";
+          var health = 10;
+        } else if (
+          cannon["type"] === "autoCannon" ||
+          cannon["type"] === "SwivelAutoCannon"
+        ) {
+          var bulletdistance =
+            (bullet_speed__ + speedUP) * 100 * (data.bullet_size / 6);
+          var __type = "basic";
+          var health = 8;
+        }
+        let angle = Math.atan2(
+          fire_at.y - data.playerY, // y difference
+          fire_at.x - data.playerX // x difference
+        );
 
-          let angle = Math.atan2(
-            fire_at.y - bullet.y, // y difference
-            fire_at.x - bullet.x // x difference
-          );
+        let bullet_size_l = data.bullet_size * cannon["bulletSize"];
 
-          let bullet_size_l = (bullet.size * cannon["bulletSize"]) / 1.8;
+        let randomNumber = generateRandomNumber(-0.2, 0.2);
 
-          let randomNumber = generateRandomNumber(-0.2, 0.2);
+        var offSet_x = cannon["offSet-x"];
+        if (cannon["offSet-x"] === "playerX") {
+          offSet_x = (players[data.playerId].size / 2) * 40;
+        }
 
-          var offSet_x = cannon["offSet-x"];
-          if (cannon["offSet-x"] === "playerX") {
-            offSet_x = (players[bullet.id].size / 2) * 40;
-          }
+        if (cannon["type"] === "basicCannon" || cannon["type"] === "trap") {
+          var xxx = cannon["cannon-width"] - bullet_size_l * 1.5;
+          var yyy = cannon["cannon-height"] - bullet_size_l * 2;
+          var angle_ = angle + cannon["offset-angle"];
+        } else if (cannon["type"] === "trapezoid") {
+          var angle_ = angle + cannon["offset-angle"] + randomNumber;
+          var xxx = cannon["cannon-width-top"] - bullet_size_l * 1.5;
+          var yyy =
+            cannon["cannon-height"] -
+            bullet_size_l * 2 -
+            (cannon["cannon-width-top"] / 2) * Math.random();
+        } else if (
+          cannon["type"] === "autoCannon" ||
+          cannon["type"] === "SwivelAutoCannon"
+        ) {
+          var xxx = cannon["cannon-width"] - bullet_size_l * 0.2;
+          var yyy = cannon["cannon-height"] - bullet_size_l * 1.2;
+          var angle_ = angle + cannon["offset-angle"];
+        }
 
-          var xxx = bullet.size / 5 - bullet_size_l * 0.2;
-          var yyy = bullet.size / 10 - bullet_size_l * 1.2;
-          var angle_ = angle;
+        let rotated_offset_x =
+          (offSet_x + xxx) * Math.cos(angle_) -
+          (cannon["offSet-y"] + yyy) * Math.sin(angle_);
+        let rotated_offset_y =
+          (offSet_x + xxx) * Math.sin(angle_) +
+          (cannon["offSet-y"] + yyy) * Math.cos(angle_);
+        let bullet_start_x = data.playerX + rotated_offset_x;
+        let bullet_start_y = data.playerY + rotated_offset_y;
+        // lol
+        let identdfire = Date.now() + Math.random();
+        let damageUP = 0;
+        if (players[data.playerId].statsTree["Bullet Damage"] !== 1) {
+          damageUP =
+            (players[data.playerId].statsTree["Bullet Damage"] *
+              levelmultiplyer) /
+            (data.bullet_damage ** 2 / (data.bullet_damage / 10));
+        }
+        let PentrationPluse = 0;
+        if (players[data.playerId].statsTree["Bullet Pentration"] !== 1) {
+          PentrationPluse =
+            players[data.playerId].statsTree["Bullet Pentration"] *
+            levelmultiplyer;
+        }
 
-          let rotated_offset_x =
-            (bullet.size + xxx) * Math.cos(angle_) -
-            (bullet.size / 2 + yyy) * Math.sin(angle_);
-          let rotated_offset_y =
-            (bullet.size + xxx) * Math.sin(angle_) +
-            (bullet.size / 2 + yyy) * Math.cos(angle_);
-          let bullet_start_x = data.x + rotated_offset_x;
-          let bullet_start_y = data.y + rotated_offset_y;
-          // lol
-          let identdfire =
-            (Date.now() + Math.random()) * Date.now() * 3 * Math.random();
-          let damageUP = 0;
-          if (players[bullet.id].statsTree["Bullet Damage"] !== 1) {
-            damageUP =
-              (players[bullet.id].statsTree["Bullet Damage"] *
-                levelmultiplyer) /
-              (data.bullet_damage ** 2 / (data.bullet_damage / 10));
-          }
-          let PentrationPluse = 0;
-          if (players[bullet.id].statsTree["Bullet Pentration"] !== 1) {
-            PentrationPluse =
-              players[bullet.id].statsTree["Bullet Pentration"] *
-              levelmultiplyer;
-          }
+        let bullet = {
+          type: __type,
+          bullet_distance: bulletdistance,
+          speed: bullet_speed__ + speedUP,
+          size: bullet_size_l,
+          angle: angle_,
+          bullet_damage: data.bullet_damage * cannon["bulletSize"] + damageUP,
+          distanceTraveled: 0,
+          vertices: null,
+          bullet_pentration:
+            data.bullet_pentration * cannon["bullet_pentration"] +
+            PentrationPluse,
+          x: bullet_start_x,
+          y: bullet_start_y,
+          lifespan: cannon_life,
+          health: health,
+          xstart: data.playerX,
+          ystart: data.playerY,
+          id: data.playerId,
+          uniqueid: identdfire,
+          Zlevel: 2,
+        };
 
-          let bullet____ = {
-            type: __type,
-            bullet_distance: bulletdistance,
-            speed: bullet_speed__ + speedUP,
-            size: bullet_size_l,
-            angle: angle_,
-            bullet_damage: data.bullet_damage * cannon["bulletSize"] + damageUP,
-            distanceTraveled: 0,
-            vertices: null,
-            bullet_pentration:
-              data.bullet_pentration * cannon["bullet_pentration"] +
-              PentrationPluse,
-            x: bullet_start_x,
-            y: bullet_start_y,
-            lifespan: cannon_life,
-            health: health,
-            xstart: data.x,
-            ystart: data.y,
-            id: bullet.id,
-            uniqueid: identdfire,
-            Zlevel: 3,
-          };
+        bullets.push(bullet);
+        var [_index_, CO] = finder_(data);
+        break;
+      }
 
-          bullets.push(bullet____);
-          var interval__;
-          var reload_bullet = setTimeout(() => {
-            let canfire = true;
-            bullet_intervals.forEach((intervals) => {
-              if (intervals.id === bullet.uniqueid) {
-                canfire = intervals.canfire;
-                interval__ = intervals;
-              }
-            });
-            if (!canfire) {
-              var index_1 = bullet_intervals.indexOf(interval__);
-              if (index_1 !== -1 && canfire === false) {
-                bullet_intervals.splice(index_1, 1);
-              }
+      case "playerCannonMoved": {
+        if (!players[data.id]) {
+          invaled_requests.push(data.id);
+          return;
+        }
+        players[data.id].cannon_angle = data.cannon_angle;
+        players[data.id].MouseX = data.MouseX;
+        players[data.id].MouseY = data.MouseY;
+        smartbroadcast("playerCannonUpdated", data, socket);
+        break;
+      }
+
+      case "statechange": {
+        if (!players[data.playerID]) {
+          invaled_requests.push(data.playerID);
+          return;
+        }
+        players[data.playerID].state = data.state;
+        broadcast("statechangeUpdate", data, socket);
+        break;
+      }
+
+      case "getTankMeta": {
+        socket.send(JSON.stringify({ type: "RETURNtankmeta", data: tankmeta }));
+        break;
+      }
+
+      case "healrate": {
+        if (!players[data.id]) {
+          invaled_requests.push(data.id);
+          return;
+        }
+        players[data.playerId].playerReheal = data.playerReheal;
+        break;
+      }
+
+      case "AddplayerHealTime": {
+        if (!players[data.ID]) {
+          invaled_requests.push(data.ID);
+          return;
+        }
+        players[data.ID].maxhealth = data.maxhealth;
+        players[data.ID].playerHealTime = data.playerHealTime;
+        emit("updaterHeal", { ID: data.ID, HEALTime: data.playerHealTime });
+        if (
+          data.playerHealTime > players[data.ID].Regenspeed &&
+          players[data.ID].health < players[data.ID].maxhealth
+        ) {
+          emit("playerHealing", {
+            playerID: data.ID,
+            playerHealTime: data.playerHealTime,
+          });
+
+          let healer = setInterval(function () {
+            if (!players[data.ID]) {
+              clearInterval(healer);
               return;
             }
+            players[data.ID].health += players[data.ID].playerReheal;
+            if (players[data.ID].health >= players[data.ID].maxhealth) {
+              players[data.ID].health = players[data.ID].maxhealth;
+              clearInterval(healer);
+            }
+            if (players[data.ID].playerHealTime < players[data.ID].Regenspeed) {
+              players[data.ID].health -= players[data.ID].playerReheal;
+              clearInterval(healer);
+            }
+            emit("playerHeal", {
+              HEALTH: players[data.ID].health,
+              ID: data.ID,
+            });
+          }, 50);
+        }
+        break;
+      }
+
+      case "playerHealintterupted": {
+        if (!players[data.ID]) {
+          invaled_requests.push(data.id);
+          return;
+        }
+        players[data.ID].playerHealTime = 0;
+        emit("updaterHeal", { ID: data.ID, HEALTime: 0 });
+        break;
+      }
+
+      case "playerCollided": {
+        try {
+          if (players[data.id_other].state !== "start") {
+            players[data.id_other].health -= data.damagegiven;
+          } // Swap damagegiven and damagetaken
+          if (players[data.id_self].state !== "start") {
+            players[data.id_self].health -= data.damagetaken;
+          }
+          if (players[data.id_other].health <= 0) {
+            let player = players[data.id_other];
+            let player2 = players[data.id_self];
+            var reward = Math.round(
+              player.score / (20 + players[player2.id].score / 10000)
+            );
+            emit("playerScore", { bulletId: player2.id, socrepluse: reward });
+            emit("playerDied", {
+              playerID: player.id,
+              rewarder: player2.id,
+              reward: reward,
+            });
+            players = Object.entries(players).reduce(
+              (newPlayers, [key, value]) => {
+                if (key !== player.id) {
+                  newPlayers[key] = value;
+                }
+                return newPlayers;
+              },
+              {}
+            );
+          }
+          if (players[data.id_self].health <= 0) {
+            let player = players[data.id_self];
+            let player2 = players[data.id_other];
+            var reward = Math.round(
+              player.score / (20 + players[player2.id].score / 10000)
+            );
+            emit("playerScore", { bulletId: player2.id, socrepluse: reward });
+            emit("playerDied", {
+              playerID: player.id,
+              rewarder: player2.id,
+              reward: reward,
+            });
+            players = Object.entries(players).reduce(
+              (newPlayers, [key, value]) => {
+                if (key !== player.id) {
+                  newPlayers[key] = value;
+                }
+                return newPlayers;
+              },
+              {}
+            );
+          }
+        } catch (error) {
+          console.log(error);
+          return;
+        }
+
+        emit("playerDamaged", {
+          player1: players[data.id_other],
+          ID1: data.id_other,
+          player2: players[data.id_self],
+          ID2: data.id_self,
+        });
+        break;
+      }
+
+      case "playerUPDATE": {
+        players[data.id] = data;
+        break;
+      }
+
+      case "deletAuto": {
+        autocannons.filter((cannons___0_0) => {
+          if (cannons___0_0.playerid === connection.playerId) {
+            return false;
+          }
+          return true;
+        });
+        break;
+      }
+
+      case "bulletFired": {
+        if (!players[data.id]) return;
+        if (!players[data.id].statsTree) return;
+
+        let damageUP = 0;
+        if (players[data.id].statsTree["Bullet Damage"] !== 1) {
+          damageUP =
+            (players[data.id].statsTree["Bullet Damage"] * levelmultiplyer) /
+            (data.bullet_damage ** 2 / (data.bullet_damage / 5));
+          data.bullet_damage += damageUP;
+        }
+        let PentrationPluse = 0;
+        if (players[data.id].statsTree["Bullet Pentration"] !== 1) {
+          PentrationPluse =
+            players[data.id].statsTree["Bullet Pentration"] * levelmultiplyer;
+          data.bullet_pentration += PentrationPluse;
+        }
+        let speedUP = 0;
+        if (players[data.id].statsTree["Bullet Speed"] !== 1) {
+          speedUP =
+            players[data.id].statsTree["Bullet Speed"] * levelmultiplyer;
+          data.speed += speedUP;
+        }
+        bullets.push(data);
+        let indexbullet = bullets.indexOf(data);
+        let bullet = bullets[indexbullet];
+        if (data.type === "trap") {
+          setTimeout(() => {
+            // hacky soltion to remove the bullet
+            bullet.distanceTraveled = 100e10;
+          }, bullet.lifespan * 1000);
+        }
+        if (data.type === "AutoBullet") {
+          let autoID =
+            getRandomInt(-10000, 10000) *
+            Date.now() *
+            getRandomInt(-1000, 1000);
+          let auto_cannon = {
+            CannonID: autoID,
+            playerid: data.uniqueid,
+            angle: 0.000000001,
+            _type_: "bulletAuto",
+          };
+          autocannons.push(auto_cannon);
+          let cannosplayer = tankmeta[players[data.id].__type__].cannons;
+          let cannonamountplayer = Object.keys(cannosplayer).length;
+          let find = function () {
+            let cannons = 0;
+            autocannons.forEach((cannon) => {
+              if (cannon.playerid === data.playerid) {
+                if (
+                  cannon._type_ === "autoCannon" ||
+                  cannon._type_ === "SwivelAutoCannon" ||
+                  cannon._type_ === "bulletAuto"
+                ) {
+                  cannons += 1;
+                }
+              }
+            });
+            return cannons;
+          };
+          let index = find();
+          let autoindex = cannonamountplayer - index;
+          if (autoindex === cannonamountplayer) {
+            autoindex -= 1;
+          }
+          let cannon__index = autocannons.indexOf(auto_cannon);
+          let cannon = autocannons[cannon__index];
+          cannon.autoindex = autoindex;
+          emit("autoCannonUPDATE-ADD", autocannons);
+          let __reload__ = 1;
+          for (
+            let i = 0;
+            i < players[data.id].statsTree["Bullet Reload"];
+            ++i
+          ) {
+            __reload__ *= levelmultiplyer;
+          }
+          function auto_bullet() {
+            let maxdistance = 5000;
+            let fire_at = null;
+            let cannon =
+              tankmeta[players[data.id].__type__]["cannons"][autoindex];
+            for (const playerID in players) {
+              let player = players[playerID];
+              var sameTeam =
+                player.team === players[data.id].team &&
+                player.team !== null &&
+                players[data.id].team !== null;
+              if (playerID !== bullet.id && !sameTeam) {
+                var distance = MathHypotenuse(
+                  player.x - bullet.x,
+                  player.y - bullet.y
+                );
+                if (distance < maxdistance) {
+                  let angle = Math.atan2(
+                    player.y - bullet.y, // y difference
+                    player.x - bullet.x // x difference
+                  );
+
+                  maxdistance = distance;
+                  fire_at = player;
+                }
+              }
+            }
+            if (maxdistance > 1300) {
+              food_squares.forEach((item) => {
+                var distance = MathHypotenuse(
+                  item.x - bullet.x,
+                  item.y - bullet.y
+                );
+                if (distance < maxdistance) {
+                  let angle = Math.atan2(
+                    item.y - bullet.y, // y difference
+                    item.x - bullet.x // x difference
+                  );
+
+                  maxdistance = distance;
+                  fire_at = item;
+                }
+              });
+            }
+            let speedUP = 0;
+            if (fire_at === null) return;
+
+            if (players[bullet.id].statsTree["Bullet Speed"] !== 1) {
+              speedUP =
+                players[bullet.id].statsTree["Bullet Speed"] * levelmultiplyer;
+            }
+            let cannon_life = 0;
+
+            let bullet_speed__ = (data.speed / 1.3) * cannon["bulletSpeed"] * 5;
+            var bulletdistance =
+              (bullet_speed__ + speedUP) * 100 * (bullet.size / 6);
+            var __type = "basic";
+            var health = 8;
+
+            let angle = Math.atan2(
+              fire_at.y - bullet.y, // y difference
+              fire_at.x - bullet.x // x difference
+            );
+
+            let bullet_size_l = (bullet.size * cannon["bulletSize"]) / 1.8;
+
+            let randomNumber = generateRandomNumber(-0.2, 0.2);
+
+            var offSet_x = cannon["offSet-x"];
+            if (cannon["offSet-x"] === "playerX") {
+              offSet_x = (players[bullet.id].size / 2) * 40;
+            }
+
+            var xxx = bullet.size / 5 - bullet_size_l * 0.2;
+            var yyy = bullet.size / 10 - bullet_size_l * 1.2;
+            var angle_ = angle;
+
+            let rotated_offset_x =
+              (bullet.size + xxx) * Math.cos(angle_) -
+              (bullet.size / 2 + yyy) * Math.sin(angle_);
+            let rotated_offset_y =
+              (bullet.size + xxx) * Math.sin(angle_) +
+              (bullet.size / 2 + yyy) * Math.cos(angle_);
+            let bullet_start_x = data.x + rotated_offset_x;
+            let bullet_start_y = data.y + rotated_offset_y;
+            // lol
+            let identdfire =
+              (Date.now() + Math.random()) * Date.now() * 3 * Math.random();
+            let damageUP = 0;
+            if (players[bullet.id].statsTree["Bullet Damage"] !== 1) {
+              damageUP =
+                (players[bullet.id].statsTree["Bullet Damage"] *
+                  levelmultiplyer) /
+                (data.bullet_damage ** 2 / (data.bullet_damage / 10));
+            }
+            let PentrationPluse = 0;
+            if (players[bullet.id].statsTree["Bullet Pentration"] !== 1) {
+              PentrationPluse =
+                players[bullet.id].statsTree["Bullet Pentration"] *
+                levelmultiplyer;
+            }
+
+            let bullet____ = {
+              type: __type,
+              bullet_distance: bulletdistance,
+              speed: bullet_speed__ + speedUP,
+              size: bullet_size_l,
+              angle: angle_,
+              bullet_damage:
+                data.bullet_damage * cannon["bulletSize"] + damageUP,
+              distanceTraveled: 0,
+              vertices: null,
+              bullet_pentration:
+                data.bullet_pentration * cannon["bullet_pentration"] +
+                PentrationPluse,
+              x: bullet_start_x,
+              y: bullet_start_y,
+              lifespan: cannon_life,
+              health: health,
+              xstart: data.x,
+              ystart: data.y,
+              id: bullet.id,
+              uniqueid: identdfire,
+              Zlevel: 3,
+            };
+
+            bullets.push(bullet____);
+            var interval__;
+            var reload_bullet = setTimeout(() => {
+              let canfire = true;
+              bullet_intervals.forEach((intervals) => {
+                if (intervals.id === bullet.uniqueid) {
+                  canfire = intervals.canfire;
+                  interval__ = intervals;
+                }
+              });
+              if (!canfire) {
+                var index_1 = bullet_intervals.indexOf(interval__);
+                if (index_1 !== -1 && canfire === false) {
+                  bullet_intervals.splice(index_1, 1);
+                }
+                return;
+              }
+              __reload__ = 1;
+              for (
+                let i = 0;
+                i < players[data.id].statsTree["Bullet Reload"];
+                ++i
+              ) {
+                __reload__ /= levelmultiplyer - 0.1;
+              }
+              auto_bullet();
+            }, 750 * tankmeta[players[data.id].__type__]["reaload-m"] * cannon["reloadM"] * __reload__ * 2);
+          }
+          setTimeout(() => {
             __reload__ = 1;
             for (
               let i = 0;
@@ -2651,121 +2689,122 @@ wss.on("connection", (socket) => {
             }
             auto_bullet();
           }, 750 * tankmeta[players[data.id].__type__]["reaload-m"] * cannon["reloadM"] * __reload__ * 2);
-        }
-        setTimeout(() => {
-          __reload__ = 1;
-          for (
-            let i = 0;
-            i < players[data.id].statsTree["Bullet Reload"];
-            ++i
-          ) {
-            __reload__ /= levelmultiplyer - 0.1;
-          }
-          auto_bullet();
-        }, 750 * tankmeta[players[data.id].__type__]["reaload-m"] * cannon["reloadM"] * __reload__ * 2);
-        bullet_intervals.push({ canfire: true, id: bullet.uniqueid });
-      } else if (data.type === "rocketer") {
-        let __reload__ = 1;
-        let cannon =
-          tankmeta[players[data.id].__type__]["cannons"][data.parentindex];
-        function auto_bullet() {
-          if (players[bullet.id].statsTree["Bullet Speed"] !== 1) {
-            speedUP =
-              players[bullet.id].statsTree["Bullet Speed"] * levelmultiplyer;
-          }
-          let cannon_life = 0;
-
-          let bullet_speed__ = (data.speed / 5) * cannon["bulletSpeed"];
-          var bulletdistance =
-            (bullet_speed__ + speedUP) * 25 * (bullet.size / 7);
-          var __type = "basic";
-          var health = 8;
-
-          let angle = data.angle - pi;
-
-          let bullet_size_l = (bullet.size * cannon["bulletSize"]) / 1.2;
-
-          let randomNumber = generateRandomNumber(-0.2, 0.2);
-
-          var offSet_x = cannon["offSet-x"];
-          if (cannon["offSet-x"] === "playerX") {
-            offSet_x = (players[bullet.id].size / 2) * 40;
-          }
-
-          var xxx = cannon["cannon-width-top"] / 5 - bullet_size_l * 1.5;
-          var yyy =
-            cannon["cannon-height"] / 5 -
-            bullet_size_l * 2 -
-            (cannon["cannon-width-top"] / 5 / 2) * Math.random();
-          var angle_ = angle + randomNumber;
-
-          let rotated_offset_x =
-            (data.size + xxx) * Math.cos(angle_) -
-            (data.size / 2 + yyy) * Math.sin(angle_);
-          let rotated_offset_y =
-            (data.size + xxx) * Math.sin(angle_) +
-            (data.size / 2 + yyy) * Math.cos(angle_);
-          let bullet_start_x = data.x + rotated_offset_x;
-          let bullet_start_y = data.y + rotated_offset_y;
-
-          // lol
-          let identdfire =
-            (Date.now() + Math.random()) * Date.now() * 3 * Math.random();
-          let damageUP = 0;
-          if (players[bullet.id].statsTree["Bullet Damage"] !== 1) {
-            damageUP =
-              (players[bullet.id].statsTree["Bullet Damage"] *
-                levelmultiplyer) /
-              (data.bullet_damage ** 2 / (data.bullet_damage / 10));
-          }
-          let PentrationPluse = 0;
-          if (players[bullet.id].statsTree["Bullet Pentration"] !== 1) {
-            PentrationPluse =
-              players[bullet.id].statsTree["Bullet Pentration"] *
-              levelmultiplyer;
-          }
-
-          let bullet____ = {
-            type: __type,
-            bullet_distance: bulletdistance,
-            speed: bullet_speed__ + speedUP,
-            size: bullet_size_l,
-            angle: angle_,
-            bullet_damage: data.bullet_damage * cannon["bulletSize"] + damageUP,
-            distanceTraveled: 0,
-            vertices: null,
-            bullet_pentration:
-              data.bullet_pentration * cannon["bullet_pentration"] +
-              PentrationPluse,
-            x: bullet_start_x,
-            y: bullet_start_y,
-            lifespan: cannon_life,
-            health: health,
-            xstart: data.x,
-            ystart: data.y,
-            id: bullet.id,
-            uniqueid: identdfire,
-            Zlevel: 3,
-          };
-
-          //console.log(bullet____)
-          bullets.push(bullet____);
-          var interval__;
-          var reload_bullet = setTimeout(() => {
-            let canfire = true;
-            bullet_intervals.forEach((intervals) => {
-              if (intervals.id === bullet.uniqueid) {
-                canfire = intervals.canfire;
-                interval__ = intervals;
-              }
-            });
-            if (!canfire) {
-              var index_1 = bullet_intervals.indexOf(interval__);
-              if (index_1 !== -1 && canfire === false) {
-                bullet_intervals.splice(index_1, 1);
-              }
-              return;
+          bullet_intervals.push({ canfire: true, id: bullet.uniqueid });
+        } else if (data.type === "rocketer") {
+          let __reload__ = 1;
+          let cannon =
+            tankmeta[players[data.id].__type__]["cannons"][data.parentindex];
+          function auto_bullet() {
+            if (players[bullet.id].statsTree["Bullet Speed"] !== 1) {
+              speedUP =
+                players[bullet.id].statsTree["Bullet Speed"] * levelmultiplyer;
             }
+            let cannon_life = 0;
+
+            let bullet_speed__ = (data.speed / 5) * cannon["bulletSpeed"];
+            var bulletdistance =
+              (bullet_speed__ + speedUP) * 25 * (bullet.size / 7);
+            var __type = "basic";
+            var health = 8;
+
+            let angle = data.angle - pi;
+
+            let bullet_size_l = (bullet.size * cannon["bulletSize"]) / 1.2;
+
+            let randomNumber = generateRandomNumber(-0.2, 0.2);
+
+            var offSet_x = cannon["offSet-x"];
+            if (cannon["offSet-x"] === "playerX") {
+              offSet_x = (players[bullet.id].size / 2) * 40;
+            }
+
+            var xxx = cannon["cannon-width-top"] / 5 - bullet_size_l * 1.5;
+            var yyy =
+              cannon["cannon-height"] / 5 -
+              bullet_size_l * 2 -
+              (cannon["cannon-width-top"] / 5 / 2) * Math.random();
+            var angle_ = angle + randomNumber;
+
+            let rotated_offset_x =
+              (data.size + xxx) * Math.cos(angle_) -
+              (data.size / 2 + yyy) * Math.sin(angle_);
+            let rotated_offset_y =
+              (data.size + xxx) * Math.sin(angle_) +
+              (data.size / 2 + yyy) * Math.cos(angle_);
+            let bullet_start_x = data.x + rotated_offset_x;
+            let bullet_start_y = data.y + rotated_offset_y;
+
+            // lol
+            let identdfire =
+              (Date.now() + Math.random()) * Date.now() * 3 * Math.random();
+            let damageUP = 0;
+            if (players[bullet.id].statsTree["Bullet Damage"] !== 1) {
+              damageUP =
+                (players[bullet.id].statsTree["Bullet Damage"] *
+                  levelmultiplyer) /
+                (data.bullet_damage ** 2 / (data.bullet_damage / 10));
+            }
+            let PentrationPluse = 0;
+            if (players[bullet.id].statsTree["Bullet Pentration"] !== 1) {
+              PentrationPluse =
+                players[bullet.id].statsTree["Bullet Pentration"] *
+                levelmultiplyer;
+            }
+
+            let bullet____ = {
+              type: __type,
+              bullet_distance: bulletdistance,
+              speed: bullet_speed__ + speedUP,
+              size: bullet_size_l,
+              angle: angle_,
+              bullet_damage:
+                data.bullet_damage * cannon["bulletSize"] + damageUP,
+              distanceTraveled: 0,
+              vertices: null,
+              bullet_pentration:
+                data.bullet_pentration * cannon["bullet_pentration"] +
+                PentrationPluse,
+              x: bullet_start_x,
+              y: bullet_start_y,
+              lifespan: cannon_life,
+              health: health,
+              xstart: data.x,
+              ystart: data.y,
+              id: bullet.id,
+              uniqueid: identdfire,
+              Zlevel: 3,
+            };
+
+            //console.log(bullet____)
+            bullets.push(bullet____);
+            var interval__;
+            var reload_bullet = setTimeout(() => {
+              let canfire = true;
+              bullet_intervals.forEach((intervals) => {
+                if (intervals.id === bullet.uniqueid) {
+                  canfire = intervals.canfire;
+                  interval__ = intervals;
+                }
+              });
+              if (!canfire) {
+                var index_1 = bullet_intervals.indexOf(interval__);
+                if (index_1 !== -1 && canfire === false) {
+                  bullet_intervals.splice(index_1, 1);
+                }
+                return;
+              }
+              __reload__ = 1;
+              for (
+                let i = 0;
+                i < players[data.id].statsTree["Bullet Reload"];
+                ++i
+              ) {
+                __reload__ /= levelmultiplyer;
+              }
+              auto_bullet();
+            }, 500 * tankmeta[players[data.id].__type__]["reaload-m"] * cannon["reloadM"] * __reload__ * 2);
+          }
+          setTimeout(() => {
             __reload__ = 1;
             for (
               let i = 0;
@@ -2776,95 +2815,89 @@ wss.on("connection", (socket) => {
             }
             auto_bullet();
           }, 500 * tankmeta[players[data.id].__type__]["reaload-m"] * cannon["reloadM"] * __reload__ * 2);
+          bullet_intervals.push({ canfire: true, id: bullet.uniqueid });
         }
-        setTimeout(() => {
-          __reload__ = 1;
-          for (
-            let i = 0;
-            i < players[data.id].statsTree["Bullet Reload"];
-            ++i
-          ) {
-            __reload__ /= levelmultiplyer;
-          }
-          auto_bullet();
-        }, 500 * tankmeta[players[data.id].__type__]["reaload-m"] * cannon["reloadM"] * __reload__ * 2);
-        bullet_intervals.push({ canfire: true, id: bullet.uniqueid });
+        emit("bulletUpdate", bullets); // Broadcast to all clients
+        break;
       }
-      emit("bulletUpdate", bullets); // Broadcast to all clients
-      return;
-    }
 
-    if (type === "resize") {
-      if (!players[data.id]) return;
-      players[data.id].screenWidth = data.screenWidth;
-      players[data.id].screenHeight = data.screenHeight;
-      return;
-    }
+      case "resize": {
+        if (!players[data.id]) return;
+        players[data.id].screenWidth = data.screenWidth;
+        players[data.id].screenHeight = data.screenHeight;
+        break;
+      }
 
-    if (type === "MouseAway") {
-      if (!players[data.id]) return;
-      players[data.id].mousestate = "held";
-    }
+      case "MouseAway": {
+        if (!players[data.id]) return;
+        players[data.id].mousestate = "held";
+        break
+      }
 
-    if (type === "MousestateUpdate") {
-      if (!players[data.id]) return;
-      players[data.id].mousestate = "up";
-    }
+      case "MousestateUpdate": {
+        if (!players[data.id]) return;
+        players[data.id].mousestate = "up";
+        break
+      }
 
-    if (type === "playerDied") {
-      players = Object.entries(players).reduce((newPlayers, [key, value]) => {
-        if (key !== connection.playerId) {
-          newPlayers[key] = value;
-        }
-        return newPlayers;
-      }, {});
-      deadplayers.push(connection.playerId);
-      console.log(deadplayers);
-      console.log("dead:", connection.playerId);
-      teamlist = teamlist.filter((team) => {
-        var teamplayers = team.players;
-        teamplayers = teamplayers.filter((player) => {
-          return player.id !== connection.playerId;
-        });
-        team.players = teamplayers;
-        if (teamplayers.length === 0) {
-          return false;
-        }
-        if (team.owner.id === connection.playerId) {
-          if (teamplayers.length !== 0) {
-            team.owner = teamplayers[0];
-            emit("newOwner", {
-              teamID: team.teamID,
-              playerid: teamplayers[0].id,
-            });
-          } else {
+      case "playerDied": {
+        players = Object.entries(players).reduce((newPlayers, [key, value]) => {
+          if (key !== connection.playerId) {
+            newPlayers[key] = value;
+          }
+          return newPlayers;
+        }, {});
+        deadplayers.push(connection.playerId);
+        console.log(deadplayers);
+        console.log("dead:", connection.playerId);
+        teamlist = teamlist.filter((team) => {
+          var teamplayers = team.players;
+          teamplayers = teamplayers.filter((player) => {
+            return player.id !== connection.playerId;
+          });
+          team.players = teamplayers;
+          if (teamplayers.length === 0) {
             return false;
           }
-        }
-        return true;
-      });
-      var public_teams = [];
-      teamlist.forEach((team) => {
-        if (!team.private) {
-          public_teams.push(team);
-        }
-      });
-      emit("pubteamlist", public_teams);
-      try {
-        leader_board.shown = leader_board.shown.filter(
-          (__index__) => __index__.id !== connection.playerId
-        );
-        leader_board.hidden = leader_board.hidden.filter(
-          (__index__) => __index__.id !== connection.playerId
-        );
-        emit("boardUpdate", {
-          leader_board: leader_board.shown,
+          if (team.owner.id === connection.playerId) {
+            if (teamplayers.length !== 0) {
+              team.owner = teamplayers[0];
+              emit("newOwner", {
+                teamID: team.teamID,
+                playerid: teamplayers[0].id,
+              });
+            } else {
+              return false;
+            }
+          }
+          return true;
         });
-      } catch (e) {
-        console.log(e);
+        var public_teams = [];
+        teamlist.forEach((team) => {
+          if (!team.private) {
+            public_teams.push(team);
+          }
+        });
+        emit("pubteamlist", public_teams);
+        try {
+          leader_board.shown = leader_board.shown.filter(
+            (__index__) => __index__.id !== connection.playerId
+          );
+          leader_board.hidden = leader_board.hidden.filter(
+            (__index__) => __index__.id !== connection.playerId
+          );
+          emit("boardUpdate", {
+            leader_board: leader_board.shown,
+          });
+        } catch (e) {
+          console.log(e);
+        }
+        emit("playerLeft", connection.playerId);
+        break;
       }
-      emit("playerLeft", connection.playerId);
-      return;
+      default: {
+        console.log("Empty action received.");
+      }
     }
   });
   setInterval(function () {
@@ -3641,10 +3674,16 @@ setInterval(() => {
   tempBulletToPush = [];
 
   food_squares = food_squares.filter((item, index) => {
-    if (item.subtype !== "Enemyboss") {
+    if (
+      item.subtype !== "Enemyboss:Square" &&
+      item.subtype !== "Enemyboss:Triangle"
+    ) {
       item.x = item.centerX + item.scalarX * Math.cos(angle);
       item.y = item.centerY + item.scalarY * Math.sin(angle);
-    } else if (item.subtype === "Enemyboss") {
+    } else if (
+      item.subtype === "Enemyboss:Square" ||
+      item.subtype === "Enemyboss:Triangle"
+    ) {
       var maxdistance = 1300;
       var target = { x: item.x, y: item.y };
       for (const playerId in players) {
@@ -3668,9 +3707,15 @@ setInterval(() => {
     }
     if (item.type === "pentagon") {
       item.angle += 0.25;
-    } else if (item.subtype !== "Enemyboss") {
+    } else if (
+      item.subtype !== "Enemyboss:Square" ||
+      item.subtype !== "Enemyboss:Triangle"
+    ) {
       item.angle += 0.5;
-    } else if (item.subtype === "Enemyboss") {
+    } else if (
+      item.subtype === "Enemyboss:Square" ||
+      item.subtype === "Enemyboss:Triangle"
+    ) {
       item.angle += 0.01;
     }
     if (item.angle >= 360) {
@@ -3687,6 +3732,7 @@ setInterval(() => {
       item.vertices = rawvertices;
     }
     if (item.type === "triangle") {
+      //if (item.subtype === "Enemyboss:Triangle") console.log("yay")
       const rawvertices = calculateTriangleVertices(
         item.x,
         item.y,
@@ -3705,7 +3751,7 @@ setInterval(() => {
       item.vertices = rawvertices;
     }
     let realtype = item.type;
-    if (item.subtype === "Enemyboss") {
+    if (item.subtype === "Enemyboss:Square") {
       //console.log("Enemyboss",item.cannons.length)
       realtype = "square:boss";
       let points = midpointCalc(item.vertices);
@@ -3719,7 +3765,7 @@ setInterval(() => {
           cannon.canfire = false;
           setTimeout(() => {
             cannon.canfire = true;
-          }, 305);
+          }, 500);
           var randID = Math.random() * 3 * Date.now();
           let bullet____ = {
             type: "FreeNecromancer",
@@ -3740,6 +3786,60 @@ setInterval(() => {
             id: cannon.id,
             uniqueid: randID,
             boundtype: "square",
+          };
+          //console.log(bullet____);
+          tempBulletToPush.push(bullet____);
+          let boss = bosses.find((boss_) => item.randomID === boss_.id);
+          for (let l = 0; l < 10; l++) {
+            setTimeout(() => {
+              boss.cannons[i].cannonW -= 1;
+            }, 20 * l);
+            setTimeout(() => {
+              boss.cannons[i].cannonW += 1;
+            }, 40 * l); // Updated to prevent overlap
+          }
+        }
+        if (deadlist.length !== 0) console.log(deadlist);
+        if (deadlist.some((itemx) => cannon.id === itemx)) {
+          cannon.current -= 1;
+          //console.log("drone died---");
+        }
+      });
+    }
+    if (item.subtype === "Enemyboss:Triangle") {
+      //console.log("Enemyboss",item.cannons.length)
+      realtype = "triangle:boss";
+      console.log(item.vertices);
+      let points = midpointCalc(item.vertices);
+      item.cannons[0].x = points[0].x;
+      item.cannons[0].y = points[0].y;
+      item.cannons.forEach((cannon, i) => {
+        if (cannon.canfire && cannon.current < cannon.maxbullets) {
+          cannon.current += 1;
+          cannon.canfire = false;
+          setTimeout(() => {
+            cannon.canfire = true;
+          }, 305);
+          var randID = Math.random() * 3 * Date.now();
+          let bullet____ = {
+            type: "FreeSwarm",
+            bullet_distance: 1000,
+            speed: 2,
+            size: 50,
+            angle: 0,
+            bullet_damage: 6,
+            distanceTraveled: 0,
+            vertices: null,
+            bullet_pentration: 1,
+            x: cannon.x,
+            y: cannon.y,
+            lifespan: 0,
+            health: 10,
+            xstart: cannon.x,
+            ystart: cannon.y,
+            id: cannon.id,
+            uniqueid: randID,
+            boundtype: "triangle",
           };
           //console.log(bullet____);
           tempBulletToPush.push(bullet____);
@@ -4361,106 +4461,162 @@ async function createAndSendGameObjects(playerArray) {
   smartemitBinary("gameUpdate", messageBuffer);
 }
 
-function createBoss() {
-  let x = 0;
-  let y = 0;
-  type = "square";
-  color = "Gold";
-  var randID = Math.random() * 3 * Date.now();
-  let fooditem = {
-    type: type,
-    subtype: "Enemyboss",
-    health: 1500,
-    maxhealth: 1500,
-    size: 300,
-    angle: getRandomInt(0, 180),
-    x: x,
-    y: y,
-    centerX: x,
-    centerY: y,
-    speed: 0.2,
-    body_damage: 7,
-    cannons: [{}, {}, {}, {}],
-    weight: 1000,
-    scalarX: getRandomInt(-100, 100),
-    scalarY: getRandomInt(-100, 100),
-    vertices: null,
-    color: color,
-    score_add: score_add,
-    randomID: randID,
-  };
-  let boss = {
-    id: randID,
-    score: 0,
-    cannons: [
-      { cannonW: 0, canfire: true },
-      { cannonW: 0, canfire: true },
-      { cannonW: 0, canfire: true },
-      { cannonW: 0, canfire: true },
-    ],
-  };
-  food_squares.push(fooditem);
-  fooditem.cannons = [
-    {
-      type: "necromancerDrone",
-      x: 0,
-      y: 0,
-      offsetAngle: 0,
-      maxbullets: 10,
-      current: 0,
-      canfire: true,
-      id: Math.random() * 3 * Date.now(),
-    },
-    {
-      type: "necromancerDrone",
-      x: 0,
-      y: 0,
-      offsetAngle: 90,
-      maxbullets: 10,
-      current: 0,
-      canfire: true,
-      id: Math.random() * 3 * Date.now(),
-    },
-    {
-      type: "necromancerDrone",
-      x: 0,
-      y: 0,
-      offsetAngle: 180,
-      maxbullets: 10,
-      current: 0,
-      canfire: true,
-      id: Math.random() * 3 * Date.now(),
-    },
-    {
-      type: "necromancerDrone",
-      x: 0,
-      y: 0,
-      offsetAngle: 270,
-      maxbullets: 10,
-      current: 0,
-      canfire: true,
-      id: Math.random() * 3 * Date.now(),
-    },
-  ];
+function createBoss(type_) {
+  var boss = {};
+  var fooditem = {};
+  switch (type_) {
+    case "Necromancer":
+      let x = 0;
+      let y = 0;
+      type = "square";
+      color = "Gold";
+      var randID = Math.random() * 3 * Date.now();
+      fooditem = {
+        type: type,
+        subtype: "Enemyboss:Square",
+        health: 1500,
+        maxhealth: 1500,
+        size: 300,
+        angle: getRandomInt(0, 180),
+        x: x,
+        y: y,
+        centerX: x,
+        centerY: y,
+        speed: 0.2,
+        body_damage: 7,
+        cannons: [{}, {}, {}, {}],
+        weight: 1000,
+        scalarX: getRandomInt(-100, 100),
+        scalarY: getRandomInt(-100, 100),
+        vertices: null,
+        color: color,
+        score_add: score_add,
+        randomID: randID,
+      };
+      boss = {
+        id: randID,
+        score: 0,
+        cannons: [
+          { cannonW: 0, canfire: true },
+          { cannonW: 0, canfire: true },
+          { cannonW: 0, canfire: true },
+          { cannonW: 0, canfire: true },
+        ],
+      };
+
+      fooditem.cannons = [
+        {
+          type: "necromancerDrone",
+          x: 0,
+          y: 0,
+          offsetAngle: 0,
+          maxbullets: 10,
+          current: 0,
+          canfire: true,
+          id: Math.random() * 3 * Date.now(),
+        },
+        {
+          type: "necromancerDrone",
+          x: 0,
+          y: 0,
+          offsetAngle: 90,
+          maxbullets: 10,
+          current: 0,
+          canfire: true,
+          id: Math.random() * 3 * Date.now(),
+        },
+        {
+          type: "necromancerDrone",
+          x: 0,
+          y: 0,
+          offsetAngle: 180,
+          maxbullets: 10,
+          current: 0,
+          canfire: true,
+          id: Math.random() * 3 * Date.now(),
+        },
+        {
+          type: "necromancerDrone",
+          x: 0,
+          y: 0,
+          offsetAngle: 270,
+          maxbullets: 10,
+          current: 0,
+          canfire: true,
+          id: Math.random() * 3 * Date.now(),
+        },
+      ];
+      break;
+    case "Guardian":
+      let x2 = 0;
+      let y2 = 0;
+      type = "triangle";
+      color = "#ff7df8";
+      var randID2 = Math.random() * 3 * Date.now();
+      fooditem = {
+        type: type,
+        subtype: "Enemyboss:Triangle",
+        health: 1250,
+        maxhealth: 1250,
+        size: 300,
+        angle: getRandomInt(0, 180),
+        x: x2,
+        y: y2,
+        centerX: x2,
+        centerY: y2,
+        speed: 0.4,
+        body_damage: 7,
+        cannons: [{}],
+        weight: 1100,
+        scalarX: getRandomInt(-100, 100),
+        scalarY: getRandomInt(-100, 100),
+        vertices: null,
+        color: color,
+        score_add: score_add,
+        randomID: randID2,
+      };
+      boss = {
+        id: randID2,
+        score: 0,
+        cannons: [{ cannonW: 0, canfire: true }],
+      };
+
+      fooditem.cannons = [
+        {
+          type: "SwarmCannon",
+          x: 0,
+          y: 0,
+          offsetAngle: 0,
+          maxbullets: 100,
+          current: 0,
+          canfire: true,
+          id: Math.random() * 3 * Date.now(),
+        },
+      ];
+      break;
+  }
+  console.log(boss, fooditem);
   bosses.push(boss);
+  food_squares.push(fooditem);
 }
 
-createBoss();
+createBoss("Guardian");
 
 function smartemitBinary(type, data) {
   connections.forEach((conn) => {
-    
     if (
       conn.playerId == null ||
       (players[conn.playerId] == undefined &&
-      deadplayers.indexOf(conn.playerId) === -1)
-    ) 
+        deadplayers.indexOf(conn.playerId) === -1)
+    )
       return;
     if (
-      !(players[conn.playerId] == undefined &&
-      deadplayers.indexOf(conn.playerId) === -1)
+      !(
+        players[conn.playerId] == undefined &&
+        deadplayers.indexOf(conn.playerId) === -1
+      )
     )
-      console.log("deadplayers", deadplayers,conn.playerId);
+      console.log("deadplayers", deadplayers, conn.playerId);
     if (
       players[conn.playerId]?.visible ||
       deadplayers.indexOf(conn.playerId) !== -1

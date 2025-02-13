@@ -11,7 +11,7 @@
       const img = document.createElement("img");
       img.style.width = "100%";
       img.style.height = "100%";
-      img.src = "assets/hexbackground.png"
+      img.src = "assets/hexbackground.png";
       let divstyle = div.style;
       divstyle.width = "999px";
       divstyle.height = "999px";
@@ -508,6 +508,9 @@
               autoRotating = true;
               lockautoRotating = true;
             }
+            if (tankdata.fov !== 0) {
+              scaleby(tankdata.fov);
+            }
 
             send("typeChange", {
               id: playerId,
@@ -792,489 +795,580 @@
             f();
             return;
           }
-
-          if (type === "playerUpdated") {
-            players[data.id] = data; // Update the local player data
-            console.log("Player updated:", data); // Log the update
-          } else if (type === "new_X_Y") {
-            if (data.id !== playerId) return;
-            cavansX = data.x;
-            playerY += data.y;
-            cavansY = data.y;
-            playerX += data.x;
-          } else if (type === "RETURNtankmeta") {
-            tankmeta = data;
-            draw();
-          } else if (type === "NewMessages") {
-            playerMessages = data;
-          } else if (type === "playerMessage") {
-            playerMessages.push({
-              text: data.text,
-              exspiretime: data.exspiretime,
-              id: data.id,
-              hidetime: data.hidetime,
-            });
-            let index_ = playerMessages.indexOf({
-              text: data.text,
-              exspiretime: data.exspiretime,
-              id: data.id,
-              hidetime: data.hidetime,
-            });
-            setTimeout(() => {
-              playerMessages = playerMessages.splice(0, index_);
-            }, data.exspiretime);
-          } else if (type === "Levels") {
-            levels = data;
-          } else if (type === "handshake") {
-            HANDSHAKE = data;
-          } else if (type === "updaterHeal") {
-            if (!players[data.ID]) return;
-            players[data.ID].playerHealTime = data.HEALTime;
-          } else if (type === "playerHeal") {
-            players[data.ID].health = data.HEALTH;
-            if (data.ID === playerId) {
-              playerHealth = data.HEALTH;
-            } // Log the update
-          } else if (type === "statsTreeRestart") {
-            players[data.id].statsTree = data.stats;
-          } else if (type === "playerHealthCheck") {
-            if (!(players[data.ID].health === data.HEALTH)) {
-              players[data.ID].health = data.HEALTH;
-              // yes hackty hackers you getting a waring
-              setCookie("player", socket.id, 1000000);
-              socket.emit("unSynched Health", {
-                playerId: playerId,
-                "expected Health": data.HEALTH,
-                "actual Health": players[data.ID].health,
-              });
+          switch (type) {
+            case "playerUpdated": {
+              players[data.id] = data; // Update the local player data
+              console.log("Player updated:", data); // Log the update
+              break;
             }
-          } else if (type === "autoCannonUPDATE-ADD") {
-            autocannons = data;
-          } else if (type === "badgeToplayer") {
-            badge = data.badge;
-            img.src = `https://deip-io3.glitch.me${badge}?nocache=${Date.now()}`;
-          } else if (type === "boardUpdate") {
-            leader_board = data.leader_board;
-          } else if (type === "autoCannonUPDATE-ANGLE") {
-            autocannons.forEach((cannon_ooo) => {
-              if (cannon_ooo.CannonID === data.cannon_ID) {
-                cannon_ooo.angle = data.angle;
+
+            case "new_X_Y": {
+              if (data.id !== playerId) return;
+              cavansX = data.x;
+              playerY += data.y;
+              cavansY = data.y;
+              playerX += data.x;
+              break
+            }
+
+            case "RETURNtankmeta": {
+              tankmeta = data;
+              draw();
+              break
+            }
+
+            case "NewMessages": {
+              playerMessages = data;
+              break
+            }
+            case "playerMessage": {
+              playerMessages.push({
+                text: data.text,
+                exspiretime: data.exspiretime,
+                id: data.id,
+                hidetime: data.hidetime,
+              });
+              let index_ = playerMessages.indexOf({
+                text: data.text,
+                exspiretime: data.exspiretime,
+                id: data.id,
+                hidetime: data.hidetime,
+              });
+              setTimeout(() => {
+                playerMessages = playerMessages.splice(0, index_);
+              }, data.exspiretime);
+              break
+            }
+            case "Levels": {
+              levels = data;
+              break
+            }
+            case "handshake": {
+              HANDSHAKE = data;
+              break
+            }
+            case "updaterHeal": {
+              if (!players[data.ID]) return;
+              players[data.ID].playerHealTime = data.HEALTime;
+              break
+            }
+            case "playerHeal": {
+              players[data.ID].health = data.HEALTH;
+              if (data.ID === playerId) {
+                playerHealth = data.HEALTH;
+              } // Log the update
+              break
+            }
+            case "statsTreeRestart": {
+              players[data.id].statsTree = data.stats;
+              break
+            }
+            case "playerHealthCheck": {
+              if (!(players[data.ID].health === data.HEALTH)) {
+                players[data.ID].health = data.HEALTH;
+                // yes hackty hackers you getting a waring
+                setCookie("player", socket.id, 1000000);
+                socket.emit("unSynched Health", {
+                  playerId: playerId,
+                  "expected Health": data.HEALTH,
+                  "actual Health": players[data.ID].health,
+                });
               }
-            });
-          } else if (type === "playerMoved") {
-            players[data.id].x = data.x;
-            players[data.id].y = data.y;
-          } else if (type === "playerCannonUpdated") {
-            try {
-              if (data.receiver) {
-                if (data.receiver === playerId) {
+              break
+            }
+            case "autoCannonUPDATE-ADD": {
+              autocannons = data;
+              break
+            }
+            case "badgeToplayer": {
+              badge = data.badge;
+              img.src = `https://deip-io3.glitch.me${badge}?nocache=${Date.now()}`;
+              break
+            }
+            case "boardUpdate": {
+              leader_board = data.leader_board;
+              break
+            }
+            case "autoCannonUPDATE-ANGLE": {
+              autocannons.forEach((cannon_ooo) => {
+                if (cannon_ooo.CannonID === data.cannon_ID) {
+                  cannon_ooo.angle = data.angle;
+                }
+              });
+              break
+            }
+            case "playerMoved": {
+              players[data.id].x = data.x;
+              players[data.id].y = data.y;
+              break
+            }
+            case "playerCannonUpdated": {
+              try {
+                if (data.receiver) {
+                  if (data.receiver === playerId) {
+                    players[data.id].cannon_angle = data.cannon_angle;
+                  }
+                } else {
                   players[data.id].cannon_angle = data.cannon_angle;
                 }
-              } else {
-                players[data.id].cannon_angle = data.cannon_angle;
-              }
-            } catch {}
-          } else if (type === "playerLeft") {
-            let id = data.playerId;
-            players = Object.entries(players).reduce(
-              (newPlayers, [key, value]) => {
-                if (key !== data["playerID"]) {
-                  newPlayers[key] = value;
-                }
-                return newPlayers;
-              },
-              {}
-            );
-          } else if (type === "playerDied") {
-            if (data["playerID"] === playerId) {
-              setTimeout(() => {
-                document.getElementById("die").style.display = "block";
-                document.getElementById("container").style.display = "none";
-                document.getElementById("myCanvas").style.display = "none";
-                document.getElementById("tanktiles").style.display = "none";
-              }, 1000);
-
-              clearInterval(healer);
-              send("playerDied", { id: playerId });
-              socket.onmessage = {};
-              autoIntevals;
-              autoIntevals.forEach((timeout) => {
-                clearTimeout(timeout);
-              });
-              autoIntevals = [];
-
-              var old_element = document.body;
-              var new_element = old_element.cloneNode(true);
-              old_element.parentNode.replaceChild(new_element, old_element);
-              let respawn = document.createElement("button");
-
-              respawn.innerHTML = "Respawn";
-              respawn.style.position = "absolute";
-              respawn.style.top = "calc(50vh - 50px)";
-              respawn.style.left = "calc(50vw - 100px)";
-              respawn.style.width = "200px";
-              respawn.style.height = "100px";
-              document.getElementsByTagName("body")[0].style.cursor = "auto";
-              document.getElementById("game").appendChild(respawn);
-              respawn.addEventListener("click", () => {
-                window.location.reload();
-              });
-            } else if (data["rewarder"] === playerId && data.reward) {
-              score += data.reward;
+              } catch {}
+              break
             }
-
-            players = Object.entries(players).reduce(
-              (newPlayers, [key, value]) => {
-                if (key !== data["playerID"]) {
-                  newPlayers[key] = value;
-                }
-                return newPlayers;
-              },
-              {}
-            );
-          } else if (type === "bossUpdate") {
-            bosses = data;
-          } else if (type === "playerDamaged") {
-            players[data.player1.id].health = data.player1.health;
-            if (data.player2.id === playerId) {
-              playerHealth = data.player2.health;
-              playerHealTime = 0;
-              state = "damaged";
-              statecycle = 0;
-              send("statechange", {
-                state: state,
-                statecycle: statecycle,
-                playerID: playerId,
-              });
-              setTimeout(() => {
-                state = "normal";
-                statecycle = 0;
-                send("statechange", {
-                  state: state,
-                  statecycle: statecycle,
-                  playerID: playerId,
-                });
-              }, 1000);
-            }
-            if (data.player1.id === playerId) {
-              playerHealth = data.player1.health;
-              playerHealTime = 0;
-              state = "damaged";
-              statecycle = 0;
-              send("statechange", {
-                state: state,
-                statecycle: statecycle,
-                playerID: playerId,
-              });
-              setTimeout(() => {
-                state = "normal";
-                statecycle = 0;
-                send("statechange", {
-                  state: state,
-                  statecycle: statecycle,
-                  playerID: playerId,
-                });
-              }, 1000);
-            }
-            players[data.player2.id].health = data.player2.health;
-          } else if (type === "bulletUpdate") {
-            bullets = data;
-          } else if (type === "playerJoined") {
-            console.log(data); // Log the player data
-            players[data.id] = data; // Update the local player list
-            if (playerId !== data.id) {
-              send("updatePlayer", {
-                id: playerId,
-                x: playerX,
-                y: playerY,
-                health: playerHealth,
-                speed: playerSpeed,
-                size: playerSize,
-                bodyDamage: bodyDamage,
-                cannonW: cannonWidth,
-                cannonH: 0,
-                __type__: __type__,
-                cannon_angle: getCannonAngle(),
-                score: score,
-                username: username,
-                level: level,
-                state: state,
-                statecycle: statecycle,
-                playerHealTime: playerHealTime,
-                maxhealth: maxhealth,
-                playerReheal: playerReheal,
-                FOV: FOV,
-                MouseX: MouseX_,
-                Regenspeed: Regenspeed,
-                MouseY: MouseY_,
-                screenWidth: canvas.width,
-                screenHeight: canvas.height,
-                statsTree: {
-                  Health: 1,
-                  "Body Damage": 1,
-                  Regen: 1,
-                  "Bullet Pentration": 1,
-                  "Bullet Speed": 1,
-                  "Bullet Damage": 1,
-                  "Bullet Reload": 1,
-                  Speed: 1,
+            case "playerLeft": {
+              let id = data.playerId;
+              players = Object.entries(players).reduce(
+                (newPlayers, [key, value]) => {
+                  if (key !== data["playerID"]) {
+                    newPlayers[key] = value;
+                  }
+                  return newPlayers;
                 },
-                team: teamOn,
-                userId: userId,
-              });
+                {}
+              );
+              break
             }
-            setTimeout(() => {
-              send("healrate", {
-                playerId: playerId,
-                playerReheal: playerReheal,
-              });
-            }, 3000);
-          } else if (type === "playerScore") {
-            players[data["bulletId"]].score += data["socrepluse"];
-            if (data["bulletId"] === playerId) {
-              score = players[data["bulletId"]].score;
+            case "playerDied": {
+              if (data["playerID"] === playerId) {
+                setTimeout(() => {
+                  document.getElementById("die").style.display = "block";
+                  document.getElementById("container").style.display = "none";
+                  document.getElementById("myCanvas").style.display = "none";
+                  document.getElementById("tanktiles").style.display = "none";
+                }, 1000);
+
+                clearInterval(healer);
+                send("playerDied", { id: playerId });
+                socket.onmessage = {};
+                autoIntevals;
+                autoIntevals.forEach((timeout) => {
+                  clearTimeout(timeout);
+                });
+                autoIntevals = [];
+
+                var old_element = document.body;
+                var new_element = old_element.cloneNode(true);
+                old_element.parentNode.replaceChild(new_element, old_element);
+                let respawn = document.createElement("button");
+
+                respawn.innerHTML = "Respawn";
+                respawn.style.position = "absolute";
+                respawn.style.top = "calc(50vh - 50px)";
+                respawn.style.left = "calc(50vw - 100px)";
+                respawn.style.width = "200px";
+                respawn.style.height = "100px";
+                document.getElementsByTagName("body")[0].style.cursor = "auto";
+                document.getElementById("game").appendChild(respawn);
+                respawn.addEventListener("click", () => {
+                  window.location.reload();
+                });
+              } else if (data["rewarder"] === playerId && data.reward) {
+                score += data.reward;
+              }
+
+              players = Object.entries(players).reduce(
+                (newPlayers, [key, value]) => {
+                  if (key !== data["playerID"]) {
+                    newPlayers[key] = value;
+                  }
+                  return newPlayers;
+                },
+                {}
+              );
+              break
             }
-            levelHANDLER();
-          } else if (type === "dronekilled") {
-            if (data.droneID === playerId) {
-              drones -= 1;
+            case "bossUpdate": {
+              bosses = data;
+              break
             }
-          } else if (type === "FoodUpdate") {
-            food_list = data;
-          } else if (type === "colorUpgrades") {
-            colorUpgrades = data;
-          } else if (type === "UpdateStatTree") {
-            if (data.StatUpgradetype === "Health") {
-              players[data.id].health =
-                (players[data.id].health / 2) * data.levelmultiplyer;
-              players[data.id].maxhealth =
-                players[data.id].maxhealth * data.levelmultiplyer;
-              if (data.id === playerId) {
-                playerHealth =
+            case "playerDamaged": {
+              players[data.player1.id].health = data.player1.health;
+              if (data.player2.id === playerId) {
+                playerHealth = data.player2.health;
+                playerHealTime = 0;
+                state = "damaged";
+                statecycle = 0;
+                send("statechange", {
+                  state: state,
+                  statecycle: statecycle,
+                  playerID: playerId,
+                });
+                setTimeout(() => {
+                  state = "normal";
+                  statecycle = 0;
+                  send("statechange", {
+                    state: state,
+                    statecycle: statecycle,
+                    playerID: playerId,
+                  });
+                }, 1000);
+              }
+              if (data.player1.id === playerId) {
+                playerHealth = data.player1.health;
+                playerHealTime = 0;
+                state = "damaged";
+                statecycle = 0;
+                send("statechange", {
+                  state: state,
+                  statecycle: statecycle,
+                  playerID: playerId,
+                });
+                setTimeout(() => {
+                  state = "normal";
+                  statecycle = 0;
+                  send("statechange", {
+                    state: state,
+                    statecycle: statecycle,
+                    playerID: playerId,
+                  });
+                }, 1000);
+              }
+              players[data.player2.id].health = data.player2.health;
+              break
+            }
+            case "bulletUpdate": {
+              bullets = data;
+              break
+            }
+            case "playerJoined": {
+              console.log(data); // Log the player data
+              players[data.id] = data; // Update the local player list
+              if (playerId !== data.id) {
+                send("updatePlayer", {
+                  id: playerId,
+                  x: playerX,
+                  y: playerY,
+                  health: playerHealth,
+                  speed: playerSpeed,
+                  size: playerSize,
+                  bodyDamage: bodyDamage,
+                  cannonW: cannonWidth,
+                  cannonH: 0,
+                  __type__: __type__,
+                  cannon_angle: getCannonAngle(),
+                  score: score,
+                  username: username,
+                  level: level,
+                  state: state,
+                  statecycle: statecycle,
+                  playerHealTime: playerHealTime,
+                  maxhealth: maxhealth,
+                  playerReheal: playerReheal,
+                  FOV: FOV,
+                  MouseX: MouseX_,
+                  Regenspeed: Regenspeed,
+                  MouseY: MouseY_,
+                  screenWidth: canvas.width,
+                  screenHeight: canvas.height,
+                  statsTree: {
+                    Health: 1,
+                    "Body Damage": 1,
+                    Regen: 1,
+                    "Bullet Pentration": 1,
+                    "Bullet Speed": 1,
+                    "Bullet Damage": 1,
+                    "Bullet Reload": 1,
+                    Speed: 1,
+                  },
+                  team: teamOn,
+                  userId: userId,
+                });
+              }
+              setTimeout(() => {
+                send("healrate", {
+                  playerId: playerId,
+                  playerReheal: playerReheal,
+                });
+              }, 3000);
+              break
+            }
+            case "playerScore": {
+              players[data["bulletId"]].score += data["socrepluse"];
+              if (data["bulletId"] === playerId) {
+                score = players[data["bulletId"]].score;
+              }
+              levelHANDLER();
+              break
+            }
+            case "dronekilled": {
+              if (data.droneID === playerId) {
+                drones -= 1;
+              }
+              break
+            }
+            case "FoodUpdate": {
+              food_list = data;
+              break
+            }
+            case "colorUpgrades": {
+              colorUpgrades = data;
+              break
+            }
+            case "UpdateStatTree": {
+              if (data.StatUpgradetype === "Health") {
+                players[data.id].health =
                   (players[data.id].health / 2) * data.levelmultiplyer;
-                maxhealth = players[data.id].maxhealth * data.levelmultiplyer;
-              }
-            }
-            if (data.StatUpgradetype === "Body Damage") {
-              players[data.id].bodyDamage *= data.levelmultiplyer;
-              if (data.id === playerId) {
-                bodyDamage *= data.levelmultiplyer;
-              }
-            } else if (data.StatUpgradetype === "Speed") {
-              players[data.id].speed *= data.levelmultiplyer;
-            } else if (data.StatUpgradetype === "Bullet Reload") {
-              if (data.id === playerId) {
-                __reload__ /= data.levelmultiplyer;
-              }
-            }
-          } else if (type === "healerRestart") {
-            players[data.id].Regenspeed = data.Regenspeed;
-            if (data.id === playerId) {
-              Regenspeed = data.Regenspeed;
-            }
-          } else if (type === "pubteamlist") {
-            pubteams = data;
-            var teamcontainer = document.getElementById("teamcontainer");
-            teamcontainer.innerHTML = "";
-            if (!joinedTeam) {
-              pubteams.forEach((team) => {
-                var teamcontainer = document.getElementById("teamcontainer");
-                var item = document.createElement("div");
-                item.classList.add("team");
-                item.innerText = team.name;
-                teamcontainer.appendChild(item);
-                item.addEventListener("click", () => {
-                  // Remove the "glow" class from all children
-                  Array.from(teamcontainer.children).forEach((child) => {
-                    child.classList.remove("glow");
-                  });
-
-                  // Add the "glow" class to the clicked item
-                  item.classList.add("glow");
-
-                  // Set the selected class
-                  selected_class = team.teamID;
-                });
-              });
-            } else {
-              let MYteam = pubteams.find((team) => {
-                return team.teamID === players[playerId].team;
-              });
-              MYteam.players.forEach((player) => {
-                var teamcontainer = document.getElementById("teamcontainer");
-                var item = document.createElement("div");
-                item.classList.add("team");
-                if (player.id === MYteam.owner.id) {
-                  item.innerText = player.username + " -";
-                } else {
-                  item.innerText = player.username;
+                players[data.id].maxhealth =
+                  players[data.id].maxhealth * data.levelmultiplyer;
+                if (data.id === playerId) {
+                  playerHealth =
+                    (players[data.id].health / 2) * data.levelmultiplyer;
+                  maxhealth = players[data.id].maxhealth * data.levelmultiplyer;
                 }
-                if (player.id === MYteam.owner.id) {
-                  var crown = document.createElement("img");
-                  crown.src = "assets/crownIcon.png";
-                  item.appendChild(crown);
-                  crown.style.width = "1.6em";
-                  crown.style.height = "1.3em";
-                  crown.style["margin-left"] = "5px";
-                  crown.style["margin-top"] = "0px";
-                  crown.style["margin-bottom"] = "-5px";
-                  //
+              }
+              if (data.StatUpgradetype === "Body Damage") {
+                players[data.id].bodyDamage *= data.levelmultiplyer;
+                if (data.id === playerId) {
+                  bodyDamage *= data.levelmultiplyer;
                 }
-                teamcontainer.appendChild(item);
-              });
+              } else if (data.StatUpgradetype === "Speed") {
+                players[data.id].speed *= data.levelmultiplyer;
+              } else if (data.StatUpgradetype === "Bullet Reload") {
+                if (data.id === playerId) {
+                  __reload__ /= data.levelmultiplyer;
+                }
+              }
+              break
             }
-          } else if (type === "playerJoinedTeam") {
-            players[data.id].team = data.teamId;
-            if (data.id === playerId && data.teamId !== null) {
-              joinedTeam = true;
-              teamOn = data.teamId;
+            case "healerRestart": {
+              players[data.id].Regenspeed = data.Regenspeed;
+              if (data.id === playerId) {
+                Regenspeed = data.Regenspeed;
+              }
+              break
             }
-            if (data.id === playerId && data.teamId === null) {
-              joinedTeam = false;
-              owner_of_team = true;
-              teamOn = null;
-            }
-          } else if (type === "newOwner") {
-            if (data.teamID === teamOn) {
-              owner_of_team = true;
-            }
-          } else if (type === "bulletDamage") {
-            if (players[data.playerID]) {
-              bullets = data.BULLETS; // Check if the player exists
-              players[data.playerID].health = data.playerHealth;
+            case "pubteamlist": {
+              pubteams = data;
+              var teamcontainer = document.getElementById("teamcontainer");
+              teamcontainer.innerHTML = "";
+              if (!joinedTeam) {
+                pubteams.forEach((team) => {
+                  var teamcontainer = document.getElementById("teamcontainer");
+                  var item = document.createElement("div");
+                  item.classList.add("team");
+                  item.innerText = team.name;
+                  teamcontainer.appendChild(item);
+                  item.addEventListener("click", () => {
+                    // Remove the "glow" class from all children
+                    Array.from(teamcontainer.children).forEach((child) => {
+                      child.classList.remove("glow");
+                    });
 
-              if (data.playerID == playerId) {
-                playerHealth = data.playerHealth;
-                send("playerHealintterupted", { ID: playerId });
-                playerHealTime = 0;
-                state = "damaged";
-                //statecycle = 0;
-                send("statechange", {
-                  state: state,
-                  statecycle: statecycle,
-                  playerID: playerId,
+                    // Add the "glow" class to the clicked item
+                    item.classList.add("glow");
+
+                    // Set the selected class
+                    selected_class = team.teamID;
+                  });
                 });
-                setTimeout(() => {
-                  state = "normal";
+              } else {
+                let MYteam = pubteams.find((team) => {
+                  return team.teamID === players[playerId].team;
+                });
+                MYteam.players.forEach((player) => {
+                  var teamcontainer = document.getElementById("teamcontainer");
+                  var item = document.createElement("div");
+                  item.classList.add("team");
+                  if (player.id === MYteam.owner.id) {
+                    item.innerText = player.username + " -";
+                  } else {
+                    item.innerText = player.username;
+                  }
+                  if (player.id === MYteam.owner.id) {
+                    var crown = document.createElement("img");
+                    crown.src = "assets/crownIcon.png";
+                    item.appendChild(crown);
+                    crown.style.width = "1.6em";
+                    crown.style.height = "1.3em";
+                    crown.style["margin-left"] = "5px";
+                    crown.style["margin-top"] = "0px";
+                    crown.style["margin-bottom"] = "-5px";
+                    //
+                  }
+                  teamcontainer.appendChild(item);
+                });
+              }
+              break
+            }
+            case "playerJoinedTeam": {
+              players[data.id].team = data.teamId;
+              if (data.id === playerId && data.teamId !== null) {
+                joinedTeam = true;
+                teamOn = data.teamId;
+              }
+              if (data.id === playerId && data.teamId === null) {
+                joinedTeam = false;
+                owner_of_team = true;
+                teamOn = null;
+              }
+              break
+            }
+            case "newOwner": {
+              if (data.teamID === teamOn) {
+                owner_of_team = true;
+              }
+              break
+            }
+            case "bulletDamage": {
+              if (players[data.playerID]) {
+                bullets = data.BULLETS; // Check if the player exists
+                players[data.playerID].health = data.playerHealth;
+
+                if (data.playerID == playerId) {
+                  playerHealth = data.playerHealth;
+                  send("playerHealintterupted", { ID: playerId });
+                  playerHealTime = 0;
+                  state = "damaged";
                   //statecycle = 0;
                   send("statechange", {
                     state: state,
                     statecycle: statecycle,
                     playerID: playerId,
                   });
-                }, 1000);
-              }
-            } else {
-              console.warn(
-                "Received bulletDamage for an unknown player:",
-                data.playerID
-              );
-            }
-          } else if (type === "shapeDamage") {
-            if (players[data.PlayerId]) {
-              food_list = data.shapes;
-              players[data.PlayerId].health -= data.playerDamage;
-
-              if (data.PlayerId == playerId) {
-                state = "damaged";
-                //statecycle = 0;
-                send("statechange", {
-                  state: state,
-                  statecycle: statecycle,
-                  playerID: playerId,
-                });
-                setTimeout(() => {
-                  state = "normal";
-                  //statecycle = 0;
-                  send("statechange", {
-                    state: state,
-                    statecycle: statecycle,
-                    playerID: playerId,
-                  });
-                }, 1000);
-                playerHealth -= data.playerDamage;
-                playerHealTime = 0;
-                send("playerHealintterupted", { ID: playerId });
-              }
-            } else {
-              console.warn(
-                "Received shapeDamage for an unknown player:",
-                data.PlayerId
-              );
-            }
-          } else if (type === "shapeDamage2") {
-            if (players[data.PlayerId]) {
-              players[data.PlayerId].health -= data.playerDamage;
-
-              if (data.PlayerId == playerId) {
-                state = "damaged";
-                //statecycle = 0;
-                send("statechange", {
-                  state: state,
-                  statecycle: statecycle,
-                  playerID: playerId,
-                });
-                setTimeout(() => {
-                  state = "normal";
-                  //statecycle = 0;
-                  send("statechange", {
-                    state: state,
-                    statecycle: statecycle,
-                    playerID: playerId,
-                  });
-                }, 1000);
-                playerHealth -= data.playerDamage;
-                playerHealTime = 0;
-                send("playerHealintterupted", { ID: playerId });
-              }
-            } else {
-              console.warn(
-                "Received shapeDamage for an unknown player:",
-                data.PlayerId
-              );
-            }
-          } else if (type === "bouceBack") {
-            if (data.playerID !== playerId) return;
-            canmove = false;
-            movementTimeouts.forEach((timeout) => {
-              if (!timeout.bouceBack) {
-                clearTimeout(timeout.timeout);
-              }
-            });
-            movementTimeouts = [];
-            let playerSpeed2 = playerSpeed * 2;
-            for (let i = 0; i < playerSpeed / 2; i++) {
-              let timeout = setTimeout(() => {
-                movePlayer(
-                  -((data.response.x * 1.1) / playerSpeed2),
-                  -((data.response.y * 1.1) / playerSpeed2)
+                  setTimeout(() => {
+                    state = "normal";
+                    //statecycle = 0;
+                    send("statechange", {
+                      state: state,
+                      statecycle: statecycle,
+                      playerID: playerId,
+                    });
+                  }, 1000);
+                }
+              } else {
+                console.warn(
+                  "Received bulletDamage for an unknown player:",
+                  data.playerID
                 );
-                if (i < playerSpeed / 2) canmove = true;
-              }, 85 * i);
-              movementTimeouts.push({ timeout: timeout, bouceBack: true });
+              }
+              break
             }
-          } else if (type === "type_Change") {
-            players[data.id] = data;
-          } else if (type === "statechangeUpdate") {
-            if (!players[data.playerID]) return;
-            players[data.playerID].state = data.state;
-            if (data.playerID === playerId) {
-              state = data.state;
+            case "shapeDamage": {
+              if (players[data.PlayerId]) {
+                food_list = data.shapes;
+                players[data.PlayerId].health -= data.playerDamage;
+
+                if (data.PlayerId == playerId) {
+                  state = "damaged";
+                  //statecycle = 0;
+                  send("statechange", {
+                    state: state,
+                    statecycle: statecycle,
+                    playerID: playerId,
+                  });
+                  setTimeout(() => {
+                    state = "normal";
+                    //statecycle = 0;
+                    send("statechange", {
+                      state: state,
+                      statecycle: statecycle,
+                      playerID: playerId,
+                    });
+                  }, 1000);
+                  playerHealth -= data.playerDamage;
+                  playerHealTime = 0;
+                  send("playerHealintterupted", { ID: playerId });
+                }
+              } else {
+                console.warn(
+                  "Received shapeDamage for an unknown player:",
+                  data.PlayerId
+                );
+              }
+              break
             }
-          } else if (type === "statecycleUpdate") {
-            if (!players[data.playerID]) return;
-            players[data.playerID].statecycle = data.statecycle;
-            if (data.playerID === playerId) {
-              statecycle = data.statecycle;
+            case "shapeDamage2": {
+              if (players[data.PlayerId]) {
+                players[data.PlayerId].health -= data.playerDamage;
+
+                if (data.PlayerId == playerId) {
+                  state = "damaged";
+                  //statecycle = 0;
+                  send("statechange", {
+                    state: state,
+                    statecycle: statecycle,
+                    playerID: playerId,
+                  });
+                  setTimeout(() => {
+                    state = "normal";
+                    //statecycle = 0;
+                    send("statechange", {
+                      state: state,
+                      statecycle: statecycle,
+                      playerID: playerId,
+                    });
+                  }, 1000);
+                  playerHealth -= data.playerDamage;
+                  playerHealTime = 0;
+                  send("playerHealintterupted", { ID: playerId });
+                }
+              } else {
+                console.warn(
+                  "Received shapeDamage for an unknown player:",
+                  data.PlayerId
+                );
+              }
+              break
             }
-          } else if (type === "playerCannonWidthUpdate") {
-            players[data.id].cannonW = data.cannonW;
-          } else if (type === "playerCannonUpdatedInactive") {
-            MouseX_ = data.MouseX_;
-            MouseY_ = data.MouseY_;
-          } else if (type === "newid") {
-            userId = data.newid;
-            setCookie("userId", userId, 365);
+            case "bouceBack": {
+              if (data.playerID !== playerId) return;
+              canmove = false;
+              movementTimeouts.forEach((timeout) => {
+                if (!timeout.bouceBack) {
+                  clearTimeout(timeout.timeout);
+                }
+              });
+              movementTimeouts = [];
+              let playerSpeed2 = playerSpeed * 2;
+              for (let i = 0; i < playerSpeed / 2; i++) {
+                let timeout = setTimeout(() => {
+                  movePlayer(
+                    -((data.response.x * 1.1) / playerSpeed2),
+                    -((data.response.y * 1.1) / playerSpeed2)
+                  );
+                  if (i < playerSpeed / 2) canmove = true;
+                }, 85 * i);
+                movementTimeouts.push({ timeout: timeout, bouceBack: true });
+              }
+              break
+            }
+            case "type_Change": {
+              players[data.id] = data;
+              break
+            }
+            case "statechangeUpdate": {
+              if (!players[data.playerID]) return;
+              players[data.playerID].state = data.state;
+              if (data.playerID === playerId) {
+                state = data.state;
+              }
+              break
+            }
+            case "statecycleUpdate": {
+              if (!players[data.playerID]) return;
+              players[data.playerID].statecycle = data.statecycle;
+              if (data.playerID === playerId) {
+                statecycle = data.statecycle;
+              }
+              break
+            }
+            case "playerCannonWidthUpdate": {
+              players[data.id].cannonW = data.cannonW;
+              break
+            }
+            case "playerCannonUpdatedInactive": {
+              MouseX_ = data.MouseX_;
+              MouseY_ = data.MouseY_;
+              break
+            }
+            case "newid": {
+              userId = data.newid;
+              setCookie("userId", userId, 365);
+              break
+            }
+            default: {
+              console.log("Empty action received.");
+              break
+            }
           }
         };
 
@@ -2489,6 +2583,39 @@
         screenHeight: canvas.height,
       });
     }
+    function calculateTriangleVertices(cx, cy, size, angle) {
+      const height = Math.sqrt(3) * size;
+      const halfSize = size / 2;
+
+      // Convert the angle to radians
+      const angleRad = angle * pi180;
+      //console.log("angleRad",angleRad)
+
+      // Precompute cosine and sine values
+      const cosAngle = Math.cos(angleRad);
+      const sinAngle = Math.sin(angleRad);
+
+      // Define the local triangle vertices relative to (0, 0)
+      let vertices = [
+        { x: 0, y: -height * (1 / 4) },
+        { x: -halfSize, y: height / 4 },
+        { x: halfSize, y: height / 4 },
+      ];
+
+      // Rotate and translate vertices
+      for (let i = 0; i < 3; i++) {
+        const { x, y } = vertices[i];
+
+        // Apply rotation
+        const rotatedX = x * cosAngle - y * sinAngle;
+        const rotatedY = x * sinAngle + y * cosAngle;
+
+        // Translate to the center (cx, cy)
+        vertices[i] = { x: rotatedX + cx, y: rotatedY + cy };
+      }
+
+      return vertices;
+    }
 
     function drawself() {
       ctx.fillStyle = squareColor;
@@ -3522,7 +3649,7 @@
           }
 
           if (item.type === "triangle") {
-            let realitemsize = item.size * FOV;
+            let realitemsize = item.size;
             const h = realitemsize * sqrt23;
 
             ctx.beginPath();
@@ -3536,8 +3663,23 @@
             ctx.strokeStyle = "Darkred";
             ctx.lineWidth = 5;
             ctx.stroke();
+            var vertices = calculateTriangleVertices(
+              0,
+              0,
+              item.size,
+              item.angle * (pi / 180)
+            );
+            console.log(vertices[0]);
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            ctx.lineTo(vertices[1].x, vertices[1].y);
+            ctx.lineTo(vertices[2].x, vertices[2].y);
+            ctx.closePath();
 
+            ctx.strokeStyle = "#ff66f7";
+            ctx.stroke();
             ctx.rotate(-item.angle * pi180);
+
             if (item.health < item.maxhealth) {
               ctx.fillStyle = "black";
               ctx.fillRect(-45, 35, 90 * FOV, 10 * FOV);
@@ -3670,9 +3812,7 @@
               ctx.rotate(-(angle + angle_offset));
             }
             ctx.restore();
-          }
 
-          if (item.type === "square:boss") {
             ctx.save();
             ctx.translate(realx - cavansX, realy - cavansY);
             ctx.rotate(item.angle * pi180);
@@ -3693,6 +3833,95 @@
             );
 
             ctx.rotate(-item.angle * pi180);
+            if (item.health < item.maxhealth) {
+              ctx.fillStyle = "black";
+              ctx.fillRect(-45, 35, 90 * FOV, 10);
+              const healthWidth = (item.health / item.maxhealth) * 90 * FOV;
+              ctx.fillStyle = "green";
+              ctx.fillRect(-45, 35, healthWidth, 10);
+            }
+            ctx.restore();
+          }
+
+          if (item.type === "triangle:boss") {
+            ctx.save();
+            ctx.translate(realx - cavansX, realy - cavansY);
+            var boss = bosses.find((boss_) => boss_.id === item.randomID);
+            boss =
+              boss === undefined
+                ? {
+                    id: 0,
+                    cannons: [{ cannonW: 0 }],
+                  }
+                : boss;
+
+            ctx.fillStyle = "#b3b3b3";
+            //console.log(item.angle)
+            let angle = item.angle * (pi / 180);
+
+            let angle_offset = 90 * (pi / 180);
+
+            ctx.rotate(angle + angle_offset);
+            var xplus = item.size / 2 - 60;
+
+            // Draw the square
+            const cannonWidth_bottom = 30 * 1 * FOV;
+            let cannon_heightFOV = 70;
+            let basex =
+              cannonWidth_bottom / 2 +
+              cannon_heightFOV +
+              xplus -
+              boss.cannons[0].cannonW;
+            let basey = -cannon_heightFOV / 2 + cannon_heightFOV / 2;
+
+            const cannonHeight = cannon_heightFOV;
+            const cannonWidth_top = 80 * 1 * FOV;
+
+            var canwB2 = cannonWidth_bottom / 2;
+            var canwH2 = cannonWidth_top / 2;
+            ctx.beginPath();
+            ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
+            ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
+            ctx.lineTo(basex, basey + canwH2);
+            ctx.lineTo(basex, basey - canwH2);
+            ctx.closePath(); // Close the path
+            ctx.fill();
+
+            // Add a border to the cannon
+            ctx.strokeStyle = "lightgrey"; // Set border color
+            ctx.lineWidth = 3; // Set border width
+            ctx.beginPath();
+            ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
+            ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
+            ctx.lineTo(basex, basey + canwH2);
+            ctx.lineTo(basex, basey - canwH2);
+            ctx.closePath(); // Close the path
+            ctx.stroke(); // Draw the border
+
+            ctx.rotate(-(angle + angle_offset));
+
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(realx - cavansX, realy - cavansY);
+            //ctx.rotate(item.angle * pi180);
+            ctx.fillStyle = item.color;
+            let realitemsize = item.size;
+            const h = realitemsize * sqrt23;
+
+            ctx.beginPath();
+            ctx.moveTo(0, -h / 2);
+            ctx.lineTo(-realitemsize / 2, h / 2);
+            ctx.lineTo(realitemsize / 2, h / 2);
+            ctx.closePath();
+
+            ctx.fillStyle = item.color;
+            ctx.fill();
+            ctx.strokeStyle = "#ff66f7";
+            ctx.lineWidth = 5;
+            ctx.stroke();
+
+            //ctx.rotate(-item.angle * pi180);
             if (item.health < item.maxhealth) {
               ctx.fillStyle = "black";
               ctx.fillRect(-45, 35, 90 * FOV, 10);
