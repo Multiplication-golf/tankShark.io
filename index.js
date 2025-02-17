@@ -782,14 +782,14 @@ function calculateTriangleVertices(x, y, sideLength, angle) {
 
   return vertices;
 }
-console.log(calculateTriangleVertices(0,0,150,90))
+console.log(calculateTriangleVertices(0, 0, 150, 90));
 
 // Example usage
 console.log(calculateTriangleVertices(0, 0, 100, 90));
 
 function calculateRotatedPentagonVertices(cx, cy, r, rotation) {
   const R = r;
-  const angleOffset = piby2 + rotation; 
+  const angleOffset = piby2 + rotation;
   const vertices = new Array(5);
 
   for (let i = 0; i < 5; i++) {
@@ -974,6 +974,7 @@ function normalizeAngle_2(angle) {
 }
 
 function moveCannonAngle(cannon) {
+  //console.log(cannon.targetAngle - cannon.angle)
   let deltaAngle = normalizeAngle_2(cannon.targetAngle - cannon.angle);
 
   let reloadStat = players[cannon.playerid]?.statsTree?.["Bullet Reload"];
@@ -2899,6 +2900,10 @@ wss.on("connection", (socket) => {
   }, 5000);
   socket.on("close", () => {
     const index = connections.indexOf(socket);
+    deadplayers = deadplayers.splice(
+      deadplayers.indexOf(connection.playerId),
+      1
+    );
     if (index !== -1) {
       connections.splice(index, 1); // Remove the connection from the list
     }
@@ -3019,7 +3024,7 @@ setInterval(() => {
         return false;
       }
     }
-    if (bullet.type === "FreeNecromancer") {
+    if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
       // choose a player to attak
       var maxdistance = 1300;
       var target = { x: bullet.x, y: bullet.y };
@@ -3035,13 +3040,16 @@ setInterval(() => {
           foundTarget = true;
         }
       }
-      let __angle = Math.atan2(target.y - bullet.y, target.x - bullet.x);
+      var __angle = Math.atan2(target.y - bullet.y, target.x - bullet.x);
 
       bullet.angle = __angle;
     }
     let collied = false;
-    if (bullet.type === "FreeNecromancer") {
-      if (foundTarget) {
+    if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
+      let distanceX = Math.abs(target.x - bullet.x);
+      let distanceY = Math.abs(target.y - bullet.y);
+      let distance = MathHypotenuse(distanceX, distanceY);
+      if (foundTarget && distance > 40 && __angle !== 0) {
         var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
         var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
       } else {
@@ -3054,7 +3062,11 @@ setInterval(() => {
     }
     var newX__;
     var newY__;
-    if (bullet.type !== "directer" && bullet.type !== "FreeNecromancer") {
+    if (
+      bullet.type !== "directer" &&
+      bullet.type !== "FreeNecromancer" &&
+      bullet.type !== "FreeSwarm"
+    ) {
       bullet.distanceTraveled += MathHypotenuse(
         newX - bullet.x,
         newY - bullet.y
@@ -3064,6 +3076,7 @@ setInterval(() => {
     if (
       bullet.type === "trap" ||
       bullet.type === "directer" ||
+      bullet.type === "FreeSwarm" ||
       bullet.type === "FreeNecromancer"
     ) {
       if (
@@ -3083,8 +3096,6 @@ setInterval(() => {
         if (distance > 50) return;
         var bullet_speed = bullet.speed;
 
-        if (bullet.type !== "FreeNecromancer") {
-        }
         if (
           distance < bullet.size * 2 + bullet_.size * 2 &&
           bullet.id !== bullet_.id &&
@@ -3124,10 +3135,13 @@ setInterval(() => {
             players[bullet.id]?.team !== null &&
             players[bullet_.id]?.team !== null
           ) &&
-          bullet.type !== "FreeNecromancer"
+          bullet.type !== "FreeNecromancer" &&
+          bullet.type !== "FreeSwarm"
         ) {
-          newX__ = bullet.size * -0.9 * Math.sin(bullet_.angle);
-          newY__ = bullet.size * -0.9 * Math.cos(bullet_.angle);
+          var realangle =
+            bullet_.angle === 0 ? bullet_.angle : getRandomInt(-pi, pi);
+          newX__ = bullet.size * -0.9 * Math.sin(realangle);
+          newY__ = bullet.size * -0.9 * Math.cos(realangle);
           collied = true;
           bullet_.x += -newX__;
           bullet_.y += -newY__;
@@ -3137,10 +3151,12 @@ setInterval(() => {
           bullet.id === bullet_.id &&
           bullet.uniqueid !== bullet_.uniqueid &&
           bullet.type === bullet_.type &&
-          bullet.type === "FreeNecromancer"
+          (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm")
         ) {
-          newX__ = bullet.size * -0.9 * Math.sin(bullet_.angle);
-          newY__ = bullet.size * -0.9 * Math.cos(bullet_.angle);
+          var realangle =
+            bullet_.angle === 0 ? bullet_.angle : getRandomInt(-pi, pi);
+          newX__ = bullet.size * -0.9 * Math.sin(realangle);
+          newY__ = bullet.size * -0.9 * Math.cos(realangle);
           collied = true;
           bullet_.x += -newX__;
           bullet_.y += -newY__;
@@ -3186,7 +3202,8 @@ setInterval(() => {
       bullet.bullet_distance - bullet.distanceTraveled < 10 &&
       bullet.bullet_distance > 20 &&
       bullet.type !== "directer" &&
-      bullet.type !== "FreeNecromancer"
+      bullet.type !== "FreeNecromancer" &&
+      bullet.type !== "FreeSwarm"
     ) {
       bullet.transparency =
         ((bullet.bullet_distance - bullet.distanceTraveled) * bullet.speed) /
@@ -3221,6 +3238,24 @@ setInterval(() => {
               rawvertices
             );
             con = collisionCheck[0];
+          }
+          if (bullet.boundtype === "triangle") {
+            const rawvertices = calculateTriangleVertices(
+              bullet.x,
+              bullet.y,
+              bullet.size,
+              bullet.angle
+            );
+            if (
+              distance < 2 * player40 + bullet.size &&
+              bullet.id !== player.id
+            ) {
+              var collisionCheck = isPlayerCollidingWithPolygon(
+                player,
+                rawvertices
+              );
+              con = collisionCheck[0];
+            }
           } else {
             con = false;
           }
@@ -3236,7 +3271,8 @@ setInterval(() => {
               bullet.size / (bullet.bullet_pentration + 10);
           } else if (
             bullet.type === "directer" ||
-            bullet.type === "FreeNecromancer"
+            bullet.type === "FreeNecromancer" ||
+            bullet.type === "FreeSwarm"
           ) {
             player.health -=
               (bullet.bullet_damage - 4.4) /
@@ -3801,6 +3837,7 @@ setInterval(() => {
       realtype = "triangle:boss";
       //console.log(item.vertices);
       let points = midpointCalc(item.vertices);
+      //console.log(points)
       item.cannons[0].x = points[0].x;
       item.cannons[0].y = points[0].y;
       item.cannons.forEach((cannon, i) => {
@@ -3813,11 +3850,11 @@ setInterval(() => {
           var randID = Math.random() * 3 * Date.now();
           let bullet____ = {
             type: "FreeSwarm",
-            bullet_distance: 1000,
-            speed: 2,
-            size: 50,
+            bullet_distance: 400,
+            speed: 4,
+            size: 5,
             angle: 0,
-            bullet_damage: 6,
+            bullet_damage: 4,
             distanceTraveled: 0,
             vertices: null,
             bullet_pentration: 1,
@@ -4120,7 +4157,11 @@ setInterval(() => {
           (bullet.bullet_damage * 4) / (item.size + bulletSpeed) +
           bullet.bullet_pentration; //
 
-        if (damage >= item.health && bullet.type !== "FreeNecromancer") {
+        if (
+          damage >= item.health &&
+          bullet.type !== "FreeNecromancer" &&
+          bullet.type !== "FreeSwarm"
+        ) {
           if (!players[bullet.id]) {
             console.log(bullet.id);
             console.log(players);
@@ -4343,8 +4384,14 @@ setInterval(() => {
           }
 
           return_ = false;
-        } else if (bullet.type !== "FreeNecromancer") {
-          if (bullet.type !== "FreeNecromancer") {
+        } else if (
+          bullet.type !== "FreeNecromancer" &&
+          bullet.type !== "FreeSwarm"
+        ) {
+          if (
+            bullet.type !== "FreeNecromancer" &&
+            bullet.type !== "FreeSwarm"
+          ) {
             item.health -= damage;
           }
           let recoilX =
@@ -4377,7 +4424,7 @@ setInterval(() => {
           item.centerX += recoilX;
           item.centerY += recoilY;
         }
-        if (bullet.type !== "FreeNecromancer") {
+        if (bullet.type !== "FreeNecromancer" && bullet.type !== "FreeSwarm") {
           bullet.bullet_distance -=
             (bullet.size * 40) / bullet.bullet_pentration +
             bullet.size * 3 +
@@ -4480,7 +4527,7 @@ function createBoss(type_) {
         scalarY: getRandomInt(-100, 100),
         vertices: null,
         color: color,
-        score_add: score_add,
+        score_add: 3500,
         randomID: randID,
       };
       boss = {
@@ -4562,7 +4609,7 @@ function createBoss(type_) {
         scalarY: getRandomInt(-100, 100),
         vertices: null,
         color: color,
-        score_add: score_add,
+        score_add: 3000,
         randomID: randID2,
       };
       boss = {
