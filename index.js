@@ -118,6 +118,7 @@ let userbase = [];
 let food_squares_ = [];
 let player_array = [];
 let deadplayers = [];
+let announcements = [];
 /* warning very senstive*/
 let purge_limit = 5;
 let ColorUpgrades = [
@@ -751,6 +752,34 @@ function getRandomInt(min, max) {
   return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
 }
 
+function createAnnocment(
+  text,
+  sender,
+  color = "black",
+  priority = 0,
+  trans = 0.8,
+  delay = 1000,
+  rounding = 8,
+  timestand = 500
+) {
+  var randID = Math.random() * Date.now();
+  var newannouncements = {
+    text: text,
+    color: color,
+    rounding: rounding,
+    priority: priority,
+    expiretime: Date.now() + delay,
+    shovedowndate: Date.now() + delay + timestand,
+    startdowndate: Date.now() + delay,
+    trans: trans,
+    killtime: Date.now() + delay + timestand * 5,
+    id: randID,
+    sender:sender
+  };
+  announcements.push(newannouncements)
+  console.log("announcements",announcements)
+}
+
 function between(x, min, max) {
   return x >= min && x <= max;
 }
@@ -782,10 +811,6 @@ function calculateTriangleVertices(x, y, sideLength, angle) {
 
   return vertices;
 }
-console.log(calculateTriangleVertices(0, 0, 150, 90));
-
-// Example usage
-console.log(calculateTriangleVertices(0, 0, 100, 90));
 
 function calculateRotatedPentagonVertices(cx, cy, r, rotation) {
   const R = r;
@@ -1255,16 +1280,12 @@ wss.on("connection", (socket) => {
           !confirmplayerradia(x, y)
         );
         if (data.userId) {
-          //console.log(userbase, data.userId);
           var _player = userbase.find((_player) => {
-            //console.log("a", _player.userid, data.userId);
             return Math.abs(_player.userid - data.userId) < 0.001;
           });
           console.log("_player", _player);
           if (_player !== undefined) {
-            //console.log("_player", _player);
             let score__$ = _player.scores.reduce((a, b) => {
-              //console.log("a,b:", a, b);
               return a + b.score;
             }, 0);
             if (score__$ >= 50000000) {
@@ -1300,7 +1321,6 @@ wss.on("connection", (socket) => {
             players[data.id].userId = newid;
             userbase.push({ userid: newid, scores: [] });
             badge = "/badges/1.png";
-            //console.log("userbase 1199", userbase);
           }
         } else {
           var newid =
@@ -1308,16 +1328,13 @@ wss.on("connection", (socket) => {
             Date.now() * Math.random() +
             Date.now() / 213984238 +
             Math.random();
-          //console.log(1207);
           socket.send(
             JSON.stringify({ type: "newid", data: { newid: newid } })
           );
-          //console.log(typeof userbase, console.log(userbase));
           userbase.push({ userid: newid, scores: [] });
           badge = "/badges/1.png";
           players[data.id].userId = newid;
         }
-        //console.log("userbase", userbase);
         socket.send(
           JSON.stringify({ type: "badgeToplayer", data: { badge: badge } })
         );
@@ -1779,7 +1796,7 @@ wss.on("connection", (socket) => {
 
       case "auto-x-update": {
         autocannons.forEach((cannon) => {
-          if (cannon.CannonID === data.autoID) {
+          if (cannon.CannonID === data.autoID && players[cannon.playerid]) {
             if (cannon._type_ === "SwivelAutoCannon") {
               var tankdatacannondata =
                 tankmeta[players[cannon.playerid].__type__].cannons[
@@ -2766,7 +2783,6 @@ wss.on("connection", (socket) => {
               Zlevel: 3,
             };
 
-            //console.log(bullet____)
             bullets.push(bullet____);
             var interval__;
             var reload_bullet = setTimeout(() => {
@@ -2839,8 +2855,6 @@ wss.on("connection", (socket) => {
           return newPlayers;
         }, {});
         deadplayers.push(connection.playerId);
-        console.log(deadplayers);
-        console.log("dead:", connection.playerId);
         teamlist = teamlist.filter((team) => {
           var teamplayers = team.players;
           teamplayers = teamplayers.filter((player) => {
@@ -3020,7 +3034,6 @@ setInterval(() => {
         if (players[bullet.id]) {
           emit("dronekilled", { droneID: bullet.id });
         }
-        console.log("2988", e);
         return false;
       }
     }
@@ -3286,7 +3299,6 @@ setInterval(() => {
             bullet.bullet_distance -=
               bullet.size / (bullet.bullet_pentration + 10);
           }
-
           emit("bulletDamage", {
             playerID: player.id,
             playerHealth: player.health,
@@ -3302,6 +3314,7 @@ setInterval(() => {
             }
             if (players[bullet.id]) {
               emit("playerScore", { bulletId: bullet.id, socrepluse: reward });
+              createAnnocment(`You killed ${player.username}'s ${player.__type__}`,bullet.id)
             } else {
               var boss = bosses.find((boss_) => boss_.id === bullet.id);
               boss.score += reward;
@@ -3758,7 +3771,6 @@ setInterval(() => {
       item.vertices = rawvertices;
     }
     if (item.type === "triangle") {
-      //if (item.subtype === "Enemyboss:Triangle") console.log("yay")
       const rawvertices = calculateTriangleVertices(
         item.x,
         item.y,
@@ -3778,7 +3790,6 @@ setInterval(() => {
     }
     let realtype = item.type;
     if (item.subtype === "Enemyboss:Square") {
-      //console.log("Enemyboss",item.cannons.length)
       realtype = "square:boss";
       let points = midpointCalc(item.vertices);
       for (let i = 0; i < 4; i++) {
@@ -3813,7 +3824,7 @@ setInterval(() => {
             uniqueid: randID,
             boundtype: "square",
           };
-          //console.log(bullet____);
+
           tempBulletToPush.push(bullet____);
           let boss = bosses.find((boss_) => item.randomID === boss_.id);
           for (let l = 0; l < 10; l++) {
@@ -3822,22 +3833,18 @@ setInterval(() => {
             }, 20 * l);
             setTimeout(() => {
               boss.cannons[i].cannonW += 1;
-            }, 40 * l); // Updated to prevent overlap
+            }, 40 * l);
           }
         }
         if (deadlist.length !== 0) console.log(deadlist);
         if (deadlist.some((itemx) => cannon.id === itemx)) {
           cannon.current -= 1;
-          //console.log("drone died---");
         }
       });
     }
     if (item.subtype === "Enemyboss:Triangle") {
-      //console.log("Enemyboss",item.cannons.length)
       realtype = "triangle:boss";
-      //console.log(item.vertices);
       let points = midpointCalc(item.vertices);
-      //console.log(points)
       item.cannons[0].x = points[0].x;
       item.cannons[0].y = points[0].y;
       item.cannons.forEach((cannon, i) => {
@@ -3868,7 +3875,6 @@ setInterval(() => {
             uniqueid: randID,
             boundtype: "triangle",
           };
-          //console.log(bullet____);
           tempBulletToPush.push(bullet____);
           let boss = bosses.find((boss_) => item.randomID === boss_.id);
           for (let l = 0; l < 10; l++) {
@@ -3877,13 +3883,12 @@ setInterval(() => {
             }, 20 * l);
             setTimeout(() => {
               boss.cannons[i].cannonW += 1;
-            }, 40 * l); // Updated to prevent overlap
+            }, 40 * l)
           }
         }
         if (deadlist.length !== 0) console.log(deadlist);
         if (deadlist.some((itemx) => cannon.id === itemx)) {
           cannon.current -= 1;
-          //console.log("drone died---");
         }
       });
     }
@@ -3943,14 +3948,12 @@ setInterval(() => {
             );
           }
 
-          //console.log(collisionCheck[1].overlapV);
           emit("bouceBack", {
             response: collisionCheck[1].overlapV,
             playerID: player.id,
           });
           for (let i = 0; i < 10; i++) {
             var factor = item.weight / 5 < 1 ? 1 : item.weight / 5;
-            //console.log(factor);
             setTimeout(() => {
               let recoilX = collisionCheck[1].overlapV.x / 30;
               let recoilY = collisionCheck[1].overlapV.y / 30;
@@ -4376,7 +4379,6 @@ setInterval(() => {
               bullet.angle *= 5;
             }
           }
-          //emit("FoodUpdate", food_squares);
 
           if (!item.isdead) {
             item.deathtime = Date.now();
@@ -4463,7 +4465,8 @@ setInterval(() => {
 
   emit("bulletUpdate", bullets);
   emit("bossUpdate", bosses);
-  //console.log(player_array.length)
+  announcements = announcements.filter((message) => message.killtime > Date.now());
+  messageEmit("announcements",announcements);
   createAndSendGameObjects(player_array);
 }, UPDATE_INTERVAL);
 
@@ -4473,7 +4476,6 @@ async function createAndSendGameObjects(playerArray) {
   const GameObject = root.lookupType("GameObject");
   const GameObjectList = root.lookupType("GameObjectList");
   // Convert player array to GameObject format (DO NOT encode here)
-  //console.log(playerArray[3].randomID)
   const gameObjects = playerArray.map((item) => ({
     angle: item.angle,
     color: item.color,
@@ -4653,7 +4655,6 @@ function smartemitBinary(type, data) {
         deadplayers.indexOf(conn.playerId) === -1
       )
     )
-      console.log("deadplayers", deadplayers, conn.playerId);
     if (
       players[conn.playerId]?.visible ||
       deadplayers.indexOf(conn.playerId) !== -1
@@ -4683,6 +4684,17 @@ function smartemit(type, data) {
   const message = JSON.stringify({ type, data });
   connections.forEach((conn) => {
     if (conn.playerId == null || players[conn.playerId] == undefined) return;
+    if (players[conn.playerId].visible) {
+      conn.socket.send(message);
+    }
+  });
+}
+
+function messageEmit(type, data2) {
+  connections.forEach((conn) => {
+    if (conn.playerId == null || players[conn.playerId] == undefined) return;
+    let data = data2.filter((message) => {console.log(message.sender,conn.playerId); return message.sender === conn.playerId});
+    const message = JSON.stringify({ type, data });
     if (players[conn.playerId].visible) {
       conn.socket.send(message);
     }
