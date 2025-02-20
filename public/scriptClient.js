@@ -71,6 +71,7 @@
     };
 
     // Parse the schema and create the root object
+    // ignore error; does not interfer with aplication
     const root = protobuf.Root.fromJSON(schema);
 
     // Look up the GameObjectList type definition
@@ -274,6 +275,7 @@
     var playerMovementX = 0;
     var playerMovementY = 0;
     var score = 0;
+    var announcements = [];
     var leader_board = [];
     var firingIntervals = {};
     var barWidth = 0.3125 * canvas.width;
@@ -886,6 +888,11 @@
               img.src = `https://deip-io3.glitch.me${badge}?nocache=${Date.now()}`;
               break;
             }
+            case "announcements": {
+              //console.log(data)
+              announcements = data;
+              break
+            }
             case "boardUpdate": {
               leader_board = data.leader_board;
               break;
@@ -936,8 +943,7 @@
                   //document.getElementById("myCanvas").style.display = "none";
                   document.getElementById("tanktiles").style.display = "none";
                 }, 10);
-                dead = true
-                
+                dead = true;
 
                 clearInterval(healer);
                 send("playerDied", { id: playerId });
@@ -952,8 +958,8 @@
                 var new_element = old_element.cloneNode(true);
                 old_element.parentNode.replaceChild(new_element, old_element);*/
 
-                canvas = document.getElementById("myCanvas")
-                canvas.style["z-index"] = "11";
+                canvas = document.getElementById("myCanvas");
+                canvas.style["z-index"] = "5";
                 let respawn = document.createElement("button");
 
                 respawn.innerHTML = "Respawn";
@@ -1943,7 +1949,7 @@
         });
 
         window.addEventListener("resize", (evt) => {
-          var canW1 = canW;
+          /*var canW1 = canW;
           var canH1 = canH;
           canW = window.innerWidth;
           canH = window.innerHeight;
@@ -1967,7 +1973,8 @@
             id: playerId,
             screenWidth: canvas.width,
             screenHeight: canvas.height,
-          });
+          });*/
+          scaleby(0);
         });
 
         document.addEventListener("click", (evt) => {
@@ -2177,10 +2184,10 @@
             }
             return;
           }
-          if (!dronetanks.includes(__type__) && !teampanelopen) {
+          if (!dronetanks.includes(__type__) && !teampanelopen && !dead) {
             FireIntervale(evt);
           } else {
-            if (evt.button === 2) {
+            if (evt.button === 2 && !dead) {
               send("MouseAway", { id: playerId });
             }
           }
@@ -2487,33 +2494,11 @@
 
     var scaleFactor = 1;
     function scaleby(scaleDown) {
-      var canW1 = canW;
-      var canH1 = canH;
-      canW = window.innerWidth;
-      canH = window.innerHeight;
-      canvas.width = canW;
-      canvas.height = canH;
-      playerX -= canW1 / 2;
-      playerY -= canH1 / 2;
-      playerX += canW / 2;
-      playerY += canH / 2;
-      playerX -= canW / 2 - canW1 / 2;
-      playerY -= canH / 2 - canH1 / 2;
-      cavansX -= canW / 2 - canW1 / 2;
-      cavansY -= canH / 2 - canH1 / 2;
-      teamwidth = 0.15625 * canvas.width;
-      teamheight = 0.33333333333333333333333333 * canvas.height;
-      innerteamwidth = 0.14322916666 * canvas.width;
-      innerteamheight = 0.308333333333333333333 * canvas.height;
-      barWidth = 0.3125 * canvas.width;
-      barHeight = 0.02909796314 * canvas.height;
-      send("resize", {
-        id: playerId,
-        screenWidth: canvas.width,
-        screenHeight: canvas.height,
-      });
       scaleFactor -= scaleDown; // Reduce scale factor
-
+      oWidth = window.innerWidth;
+      oHieght = window.innerHeight;
+      canvas.width = oWidth;
+      canvas.height = oHieght;
       // Update logical canvas size (but keep it fullscreen)
       var upscaleX = oWidth / (canvas.width * scaleFactor);
       var upscaleY = oHieght / (canvas.height * scaleFactor);
@@ -2565,6 +2550,7 @@
         screenHeight: canvas.height,
       });
     }
+
     function calculateTriangleVertices(x, y, sideLength, angle) {
       const height = (Math.sqrt(3) / 2) * sideLength; // Height of an equilateral triangle
       const radius = height / Math.sqrt(3); // Circumradius of the triangle
@@ -2581,7 +2567,116 @@
       return vertices;
     }
 
-    function drawself() {
+    class notify {
+      constructor(
+        ctx,
+        announcements,
+        width = 500,
+        height = 27,
+        dropDownTime = 500,
+        font = "bold 20px arial",
+        textAling = "center",
+        margin = 3,
+        startHeight = 100,
+        shovespeed = 10
+      ) {
+        this.announcements = announcements;
+        this.ctx = ctx;
+        this.anoucmentW = width;
+        this.anoucmentW2 = width / 2;
+        this.anoucmentH = height;
+        this.dropDownTime = dropDownTime;
+        this.font = font;
+        this.textAling = textAling;
+        this.boundrectH = height + margin;
+        this.startHeight = startHeight;
+        this.shovespeed = shovespeed;
+        this.shovespeed5 = shovespeed * 5;
+        this.boundrectH10 = this.boundrectH - 10;
+          //console.log(canvas.width,canvas.height)
+        //Object.getOwnPropertyNames(this).forEach((item) => {console.log(this[item])})
+      }
+      run() {
+        var shovedown = 50;
+        var shoved_down = false;
+        var shoved_down_anoucment = {};
+        var exW = 1; // scale factors
+        var exH = 1; // scale factors
+        var i = 0;
+        //console.log(this.announcements)
+        this.announcements.forEach((anoucment) => {
+          if (Date.now() <= anoucment.shovedowndate) {
+            i++;
+            //console.log(announcements)
+            //console.log(anoucment)
+            var shovedownper = 0;
+            this.ctx.globalAlpha = anoucment.trans;
+            this.ctx.fillStyle = anoucment.color;
+            this.ctx.font = "bold 20px arial";
+            this.ctx.textAlign = "center";
+            if (
+              Date.now() >= anoucment.expiretime &&
+              Date.now() <= anoucment.shovedowndate
+            ) {
+              shovedown =
+                this.shovespeed5 /
+                ((anoucment.shovedowndate - Date.now()) / this.dropDownTime);
+              shovedown = shovedown <= 0 ? 0 : shovedown;
+              shoved_down_anoucment = anoucment;
+            }
+            shovedownper = shovedown;
+            if (Date.now() <= anoucment.expiretime) {
+              shovedownper =
+                shovedownper >= this.shovespeed5
+                  ? this.shovespeed5
+                  : shovedownper;
+              shovedownper = shovedownper <= 0 ? 0 : shovedownper;
+            }
+            if (Date.now() <= shoved_down_anoucment.shovedowndate) {
+              var r =
+                (shoved_down_anoucment.shovedowndate - Date.now()) /
+                  this.shovespeed <
+                this.boundrectH
+                  ? (shoved_down_anoucment.shovedowndate - Date.now()) /
+                    this.shovespeed
+                  : this.boundrectH;
+              shovedownper -= r;
+              shovedownper += this.boundrectH;
+            }
+            shovedownper = shovedownper <= 0 ? 0 : shovedownper;
+            this.ctx.globalAlpha -=
+              (canvas.height / 2 -
+                (this.startHeight -
+                  shovedownper -
+                  this.boundrectH10 +
+                  i * this.boundrectH * exH)) /
+              canvas.height;
+            this.ctx.beginPath();
+            this.ctx.roundRect(
+              canvas.width / 2 - this.anoucmentW2 * exW,
+              this.startHeight -
+                shovedownper -
+                this.boundrectH10 +
+                i * this.boundrectH * exH,
+              this.anoucmentW * exW,
+              this.anoucmentH * exH,
+              anoucment.rounding
+            );
+            this.ctx.fill();
+            this.ctx.closePath();
+            this.ctx.fillText(
+              anoucment.text,
+              canvas.width / 2,
+              (this.startHeight - shovedownper + i * this.boundrectH) * exH
+            );
+          }
+        });
+        this.ctx.globalAlpha = 1;
+      }
+    }
+    var newnotify = new notify(ctx, announcements);
+    function drawself(exW, exH) {
+      newnotify.announcements = announcements;
       ctx.fillStyle = squareColor;
       if (!messaging) {
         if (canmove) {
@@ -2727,6 +2822,8 @@
           }
         }
       }
+      
+      newnotify.run()
 
       let angle = Math.atan2(
         Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
@@ -3130,9 +3227,8 @@
           statecycle % 10 <= 5
             ? statecycle % 10
             : backwardsObj[(statecycle % 10) - 5];
-        percentage += 0.25;
         percentage = percentage >= 1 ? 1 : percentage;
-        let newrgb = mix([0, 0, 255], [255, 255, 255], (statecycle % 10) / 10);
+        let newrgb = mix([0, 0, 255], [255, 255, 255], percentage);
         ctx.fillStyle = `rgb(${newrgb[0]} ${newrgb[1]} ${newrgb[2]})`;
       } else {
         ctx.fillStyle = "blue";
@@ -3154,7 +3250,7 @@
       ctx.strokeStyle = "black";
       ctx.fillStyle = "white";
       ctx.textAlign = "center";
-      ctx.font = "bold 20px Nunito";
+      ctx.font = `bold ${20 * exW}px Nunito`;
       ctx.strokeText(score, canvas.width / 2, canvas.height / 2 - 55);
       ctx.fillText(score, canvas.width / 2, canvas.height / 2 - 55);
 
@@ -3191,15 +3287,6 @@
           );
 
           ctx.translate(canvas.width / 2 + x, y + canvas.height / 2);
-          console.log(
-            "auto cannon",
-            cannonangle,
-            angle0,
-            x,
-            y,
-            cannon_widthFOV,
-            cannon_heightFOV
-          );
 
           let angle = cannonangle;
 
@@ -3246,48 +3333,57 @@
         healthWidth,
         10 * FOV
       );
+      
 
       ctx.save();
 
-      ctx.translate(canW - 150, canH - 150);
+      ctx.translate((canW - 150) * exW, (canH - 150) * exW);
       ctx.fillStyle = "#fcfafa";
       ctx.beginPath();
-      ctx.roundRect(0, 0, 125, 125, 5);
+      ctx.roundRect(0, 0, 125 * exW, 125 * exW, 5);
       ctx.fill();
       ctx.moveTo(0, 0);
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1 * exW;
       ctx.strokeStyle = "#e3e3e3";
       for (let i = 0; i < 13; i++) {
-        ctx.moveTo(i * 10.3, 0);
-        ctx.lineTo(i * 10.3, 125);
+        ctx.moveTo(i * 10.3 * exW, 0);
+        ctx.lineTo(i * 10.3 * exW, 125 * exW);
         ctx.stroke();
       }
       ctx.closePath();
       ctx.moveTo(0, 0);
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1 * exW;
       ctx.strokeStyle = "#e3e3e3";
       for (let i = 0; i < 13; i++) {
-        ctx.moveTo(0, i * 10.3);
-        ctx.lineTo(125, i * 10.3);
+        ctx.moveTo(0, i * 10.3 * exW);
+        ctx.lineTo(125 * exW, i * 10.3 * exW);
         ctx.stroke();
       }
       ctx.closePath();
       ctx.lineWidth = 5;
       ctx.strokeStyle = "grey";
       ctx.beginPath();
-      ctx.roundRect(0, 0, 125, 125, 5);
+      ctx.roundRect(0, 0, 125 * exW, 125 * exW, 5);
       ctx.stroke();
       ctx.closePath();
 
       ctx.textAlign = "center";
-      ctx.strokeText("players: " + Object.keys(players).length, 125 / 2, -25);
-      ctx.fillText("players: " + Object.keys(players).length, 125 / 2, -25);
+      ctx.strokeText(
+        "players: " + Object.keys(players).length,
+        (125 / 2) * exW,
+        -25 * exH
+      );
+      ctx.fillText(
+        "players: " + Object.keys(players).length,
+        (125 / 2) * exW,
+        -25 * exH
+      );
 
       ctx.globalAlpha = 0.5;
       ctx.fillStyle = "#579bfa";
-      const centerX = 62.5;
-      const centerY = 62.5;
-      const radius = 30 * FOV;
+      const centerX = 62.5 * exW;
+      const centerY = 62.5 * exW;
+      const radius = 30 * exW;
       const angle_o_0_ = pentarotate; // Convert angle to radians
       vertices = [];
 
@@ -3317,22 +3413,25 @@
       ctx.closePath();
       ctx.globalAlpha = 1;
       ctx.beginPath();
-      ctx.translate((playerX + 2500) / 80 + 35, (playerY + 2500) / 80 + 35);
+      ctx.translate(
+        ((playerX + 2500) / 80 + 35) * exW,
+        ((playerY + 2500) / 80 + 35) * exH
+      );
       ctx.rotate(angle + (90 * Math.PI) / 180);
       ctx.arc(
-        (playerX + 2500) / 80 + 35,
-        (playerY + 2500) / 80 + 35,
+        ((playerX + 2500) / 80 + 35) * exW,
+        ((playerY + 2500) / 80 + 35) * exH,
         playerSize * FOV * 2,
         0,
         2 * Math.PI,
         false
       );
-      let realitemsize = playerSize * FOV * 2;
+      let realitemsize = playerSize * exW * 2;
       let h = 3;
       ctx.beginPath();
-      ctx.moveTo(0, -h / 2);
-      ctx.lineTo(-realitemsize / 2, h / 2);
-      ctx.lineTo(realitemsize / 2, h / 2);
+      ctx.moveTo(0, -(h / 2) * exH);
+      ctx.lineTo(-(realitemsize / 2) * exW, (h / 2) * exH);
+      ctx.lineTo((realitemsize / 2) * exW, (h / 2) * exH);
       ctx.closePath();
       ctx.fillStyle = "blue";
       ctx.fill();
@@ -3362,7 +3461,7 @@
         ctx.stroke();
         ctx.globalAlpha = 1;
         ctx.textAlign = "left";
-        ctx.font = "bold 30px Nunito";
+        ctx.font = `bold ${30 * exW}px Nunito`;
         ctx.fillStyle = "black";
         ctx.fillText(
           typedtext,
@@ -3425,7 +3524,7 @@
       ctx.fill();
       ctx.closePath();
       ctx.textAlign = "center";
-      ctx.font = "bold 40px Nunito";
+      ctx.font = `bold ${40 * exW}px Nunito`;
       ctx.fillStyle = "black";
       ctx.fillText("Teams", canvas.width - button375, button10 * 7.5);
       if (teampanelopen) {
@@ -3496,14 +3595,14 @@
         ctx.closePath();
         ctx.fill();
         ctx.textAlign = "center";
-        ctx.font = "bold 35px Nunito";
+        ctx.font = `bold ${35 * exW}px Nunito`;
         ctx.fillStyle = "black";
         var text_;
         if (joinedTeam) {
-          ctx.font = "bold 30px Nunito";
+          ctx.font = `bold ${35 * exW}px Nunito`;
           text_ = "Leave";
         } else {
-          ctx.font = "bold 35px Nunito";
+          ctx.font = `bold ${35 * exW}px Nunito`;
           text_ = "Join";
         }
         ctx.fillText(
@@ -3511,7 +3610,7 @@
           canvas.width / 2 - innerteamwidth / 2 + button10 * 5,
           canvas.height / 2 + innerteamheight / 2 - 17.5
         );
-        ctx.font = "bold 21px Nunito";
+        ctx.font = `bold ${21 * exW}px Nunito`;
         var text2;
         if (joinedTeam) {
           if (owner_of_team) {
@@ -3556,6 +3655,8 @@
 
     function draw(timestamp) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      var upscaleX = oWidth / (canvas.width * scaleFactor);
+      var upscaleY = oHieght / (canvas.height * scaleFactor);
       let deltaTime = (timestamp - lastTime) / 1000;
       lastTime = timestamp;
 
@@ -3573,7 +3674,7 @@
       food_list.forEach((item) => {
         var realx = item.x;
         var realy = item.y;
-        
+
         if (
           realx + item.size > 0 + cavansX &&
           realx < canvas.width + cavansX + item.size &&
@@ -3581,7 +3682,7 @@
           realy - item.size < canvas.height + cavansY &&
           item.health >= 0
         ) {
-          console.log("item")
+          //console.log("item");
           ctx.save();
           if (item.transparency) {
             ctx.globalAlpha = item.transparency;
@@ -3596,12 +3697,7 @@
 
           if (item.type === "square") {
             ctx.fillStyle = item.color;
-            ctx.fillRect(
-              -item.size / 2,
-              -item.size / 2,
-              item.size,
-              item.size
-            );
+            ctx.fillRect(-item.size / 2, -item.size / 2, item.size, item.size);
             ctx.strokeStyle = "GoldenRod";
             ctx.lineWidth = 5;
             ctx.strokeRect(
@@ -4635,7 +4731,7 @@
             );
             ctx.fillStyle = "black";
             ctx.textAlign = "center";
-            ctx.font = "bold 20px Nunito";
+            ctx.font = `bold ${21 * upscaleX}px Nunito`;
             ctx.fillText(message.text, 0, 0);
             ctx.globalAlpha = 1;
             ctx.restore();
@@ -4827,9 +4923,8 @@
         Math.abs(MouseX_) - (canvas.width / 2 - playerSize)
       );
       if (!dead) {
-        drawself();
+        drawself(upscaleX, upscaleY);
       }
-      
 
       ctx.strokeStyle = "black";
       ctx.lineWidth = 5;
@@ -4850,8 +4945,8 @@
       // Call the function to draw the level bar
       drawRoundedLevelBar(
         ctx,
-        canvas.width / 2 - barWidth / 2,
-        canvas.height - canvas.height * 0.03879728419,
+        (canvas.width / 2 - barWidth / 2) * upscaleX,
+        (canvas.height - canvas.height * 0.03879728419) * upscaleY,
         barWidth,
         barHeight,
         borderRadius,
@@ -4873,7 +4968,11 @@
         ctx.textAlign = "center";
         ctx.font = "bold 25px Nunito";
         ctx.fillStyle = "#14fc52";
-        ctx.fillText(`+${upgradePoints}`, 20 + 145 / 2, canvas.height - 34 * 9);
+        ctx.fillText(
+          `+${upgradePoints}`,
+          (20 + 145 / 2) * upscaleX,
+          (canvas.height - 34 * 9) * upscaleY
+        );
       }
 
       for (let CCC = Object.keys(statsTree).length - 1; CCC >= 0; CCC -= 1) {
@@ -4882,10 +4981,10 @@
         let color = colorUpgrades[CCC] || "red";
         drawRoundedLevelBar(
           ctx,
-          20,
-          canvas.height - 34 * I_ - 40,
-          145,
-          25,
+          20 * upscaleX,
+          (canvas.height - 34 * I_ - 40) * upscaleY,
+          145 * upscaleX,
+          25 * upscaleY,
           borderRadius,
           stat_ / 8,
           "black",
@@ -4898,18 +4997,26 @@
         ctx.fillStyle = "white";
         ctx.fillText(
           `${stat}:${stat_}`,
-          20 + 145 / 2,
-          canvas.height - 34 * I_ - 40 + 17.5
+          (20 + 145 / 2) * upscaleX,
+          (canvas.height - 34 * I_ - 40 + 17.5) * upscaleY
         );
         I_++;
       }
       ctx.font = "bold 30px Nunito";
       ctx.strokeStyle = "black";
-      ctx.strokeText("leaderboard", canvas.width - 125, 25);
+      ctx.strokeText(
+        "leaderboard",
+        (canvas.width - 125) * upscaleX,
+        25 * upscaleY
+      );
       ctx.textAlign = "center";
       ctx.font = "bold 30px Nunito";
       ctx.fillStyle = "#00f7ff";
-      ctx.fillText("leaderboard", canvas.width - 125, 25);
+      ctx.fillText(
+        "leaderboard",
+        (canvas.width - 125) * upscaleX,
+        25 * upscaleY
+      );
 
       leader_board.forEach((entre, i) => {
         var totalwidth;
@@ -4921,10 +5028,10 @@
         }
         drawRoundedLevelBar(
           ctx,
-          canvas.width - 237.5,
-          50 + i * 30,
-          225,
-          27,
+          (canvas.width - 237.5) * upscaleX,
+          (50 + i * 30) * upscaleY,
+          225 * upscaleX,
+          27 * upscaleY,
           borderRadius,
           entre.score / leader_board[0].score,
           "#23badb",
@@ -4938,8 +5045,8 @@
         ctx.fillStyle = "black";
         ctx.fillText(
           `${entre.name} ➠ ${entre.score}`,
-          canvas.width - 125,
-          72 + i * 30
+          (canvas.width - 125) * upscaleX,
+          (72 + i * 30) * upscaleY
         );
       });
 
