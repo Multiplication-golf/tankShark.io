@@ -156,32 +156,8 @@
         "BodyDamage-m": 1,
         "reaload-m": 1,
         upgradeLevel: 15,
-        upgrades: {
-          twin: 1,
-          flank: 2,
-          sniper: 3,
-          "mechiane gun": 4,
-          spreader: 5,
-          rammer: 6,
-          traper: 7,
-          directer: 8,
-          autobasic: 9,
-        },
-        cannons: [
-          {
-            type: "basicCannon",
-            "cannon-width": 90,
-            "cannon-height": 30,
-            "offSet-x": 0,
-            "offSet-y": 0,
-            "offset-angle": 0,
-            bulletSize: 1,
-            bulletSpeed: 0.5,
-            delay: 0,
-            reloadM: 1,
-            bullet_pentration: 1,
-          },
-        ],
+        upgrades: {},
+        cannons: [],
       },
     };
     var grid = document.getElementById("grid");
@@ -535,7 +511,9 @@
               playerHealTime: playerHealTime,
               maxhealth: maxhealth,
               playerReheal: playerReheal,
-              FOV: FOV,
+              FOV: scaleFactor,
+              canvasW: canvas.width,
+              canvasH: canvas.height,
               MouseX: MouseX_,
               Regenspeed: Regenspeed,
               MouseY: MouseY_,
@@ -741,7 +719,9 @@
           playerHealTime: playerHealTime,
           maxhealth: maxhealth,
           playerReheal: playerReheal,
-          FOV: FOV,
+          FOV: scaleFactor,
+          canvasW: canvas.width,
+          canvasH: canvas.height,
           MouseX: MouseX_,
           Regenspeed: Regenspeed,
           MouseY: MouseY_,
@@ -891,7 +871,7 @@
             case "announcements": {
               //console.log(data)
               announcements = data;
-              break
+              break;
             }
             case "boardUpdate": {
               leader_board = data.leader_board;
@@ -1066,7 +1046,9 @@
                   playerHealTime: playerHealTime,
                   maxhealth: maxhealth,
                   playerReheal: playerReheal,
-                  FOV: FOV,
+                  FOV: scaleFactor,
+                  canvasW: canvas.width,
+                  canvasH: canvas.height,
                   MouseX: MouseX_,
                   Regenspeed: Regenspeed,
                   MouseY: MouseY_,
@@ -1257,40 +1239,6 @@
             }
             case "shapeDamage": {
               if (players[data.PlayerId]) {
-                food_list = data.shapes;
-                players[data.PlayerId].health -= data.playerDamage;
-
-                if (data.PlayerId == playerId) {
-                  state = "damaged";
-                  //statecycle = 0;
-                  send("statechange", {
-                    state: state,
-                    statecycle: statecycle,
-                    playerID: playerId,
-                  });
-                  setTimeout(() => {
-                    state = "normal";
-                    //statecycle = 0;
-                    send("statechange", {
-                      state: state,
-                      statecycle: statecycle,
-                      playerID: playerId,
-                    });
-                  }, 1000);
-                  playerHealth -= data.playerDamage;
-                  playerHealTime = 0;
-                  send("playerHealintterupted", { ID: playerId });
-                }
-              } else {
-                console.warn(
-                  "Received shapeDamage for an unknown player:",
-                  data.PlayerId
-                );
-              }
-              break;
-            }
-            case "shapeDamage2": {
-              if (players[data.PlayerId]) {
                 players[data.PlayerId].health -= data.playerDamage;
 
                 if (data.PlayerId == playerId) {
@@ -1395,10 +1343,10 @@
         const movePlayer = (dx, dy, last, i) => {
           movementTimeouts.shift();
           if (!canmove) return;
-          cavansX += dx * scaleFactor;
-          playerY += dy * scaleFactor;
-          cavansY += dy * scaleFactor;
-          playerX += dx * scaleFactor;
+          cavansX += dx;
+          playerY += dy;
+          cavansY += dy;
+          playerX += dx;
 
           if (i in nolist) return; // just roll with it
           send("playerMoved", {
@@ -1534,7 +1482,7 @@
               id: playerId,
               autoIntevals: autoIntevals,
               playerSize: playerSize,
-              FOV: FOV,
+              FOV: scaleFactor,
               canvaswidth: canvas.width,
               canvasheight: canvas.height,
             });
@@ -1617,11 +1565,8 @@
                   cannon["cannon-height"] - cannon["cannon-width-bottom"];
                 var angle_ = angle + cannon["offset-angle"];
               } else {
-                var xxx = cannon["cannon-width-top"] - bullet_size_l * 1.5;
-                var yyy =
-                  cannon["cannon-height"] -
-                  bullet_size_l * 2 -
-                  cannon["cannon-width-top"] / 2;
+                var xxx = cannon["cannon-height"] + bullet_size_l;
+                var yyy = 0;
                 var angle_ = angle + cannon["offset-angle"];
               }
 
@@ -1808,11 +1753,8 @@
                       cannon["cannon-height"] - cannon["cannon-width-bottom"];
                     var angle_ = angle + cannon["offset-angle"];
                   } else {
-                    var xxx = cannon["cannon-width-top"] - bullet_size_l * 1.5;
-                    var yyy =
-                      cannon["cannon-height"] -
-                      bullet_size_l * 2 -
-                      cannon["cannon-width-top"] / 2;
+                    var xxx = cannon["cannon-width-top"] / 2;
+                    var yyy = cannon["cannon-width-top"] / 2;
                     var angle_ = angle + cannon["offset-angle"];
                   }
 
@@ -1949,31 +1891,6 @@
         });
 
         window.addEventListener("resize", (evt) => {
-          /*var canW1 = canW;
-          var canH1 = canH;
-          canW = window.innerWidth;
-          canH = window.innerHeight;
-          canvas.width = canW;
-          canvas.height = canH;
-          playerX -= canW1 / 2;
-          playerY -= canH1 / 2;
-          playerX += canW / 2;
-          playerY += canH / 2;
-          playerX -= canW / 2 - canW1 / 2;
-          playerY -= canH / 2 - canH1 / 2;
-          cavansX -= canW / 2 - canW1 / 2;
-          cavansY -= canH / 2 - canH1 / 2;
-          teamwidth = 0.15625 * canvas.width;
-          teamheight = 0.33333333333333333333333333 * canvas.height;
-          innerteamwidth = 0.14322916666 * canvas.width;
-          innerteamheight = 0.308333333333333333333 * canvas.height;
-          barWidth = 0.3125 * canvas.width;
-          barHeight = 0.02909796314 * canvas.height;
-          send("resize", {
-            id: playerId,
-            screenWidth: canvas.width,
-            screenHeight: canvas.height,
-          });*/
           scaleby(0);
         });
 
@@ -2494,17 +2411,24 @@
 
     var scaleFactor = 1;
     function scaleby(scaleDown) {
-      scaleFactor -= scaleDown; // Reduce scale factor
+      scaleFactor -= scaleDown;
       oWidth = window.innerWidth;
       oHieght = window.innerHeight;
       canvas.width = oWidth;
       canvas.height = oHieght;
-      // Update logical canvas size (but keep it fullscreen)
       var upscaleX = oWidth / (canvas.width * scaleFactor);
       var upscaleY = oHieght / (canvas.height * scaleFactor);
       canvas.width *= upscaleX;
       canvas.height *= upscaleY;
       ctx.scale(scaleFactor, scaleFactor);
+      send("FOV-Update", {
+        scaleFactor: scaleFactor,
+        canvasW: canvas.width,
+        canvasH: canvas.height,
+        screenW: oWidth,
+        screenH: oHieght,
+        id:playerId
+      });
       var canW1 = canW;
       var canH1 = canH;
       canW = canvas.width;
@@ -2593,7 +2517,7 @@
         this.shovespeed = shovespeed;
         this.shovespeed5 = shovespeed * 5;
         this.boundrectH10 = this.boundrectH - 10;
-          //console.log(canvas.width,canvas.height)
+        //console.log(canvas.width,canvas.height)
         //Object.getOwnPropertyNames(this).forEach((item) => {console.log(this[item])})
       }
       run() {
@@ -2822,8 +2746,8 @@
           }
         }
       }
-      
-      newnotify.run()
+
+      newnotify.run();
 
       let angle = Math.atan2(
         Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
@@ -3333,7 +3257,6 @@
         healthWidth,
         10 * FOV
       );
-      
 
       ctx.save();
 
@@ -4204,7 +4127,7 @@
             }
             ctx.save();
             ctx.translate(realx - cavansX, realy - cavansY);
-            ctx.rotate(bullet.angle * (pi / 180));
+            ctx.rotate(bullet.angle);
             let realitemsize = bullet.size * 3 * FOV;
             const h = realitemsize * sqrt23;
 
@@ -4222,7 +4145,7 @@
 
             ctx.save();
             ctx.translate(realx - cavansX, realy - cavansY);
-            ctx.rotate(bullet.angle * (pi / 180));
+            ctx.rotate(bullet.angle);
             let realitemsize = bullet.size * 3 * FOV;
             const h = realitemsize * sqrt23;
 
