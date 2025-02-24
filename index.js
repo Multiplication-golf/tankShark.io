@@ -774,10 +774,10 @@ function createAnnocment(
     trans: trans,
     killtime: Date.now() + delay + timestand * 5,
     id: randID,
-    sender:sender
+    sender: sender,
   };
-  announcements.push(newannouncements)
-  console.log("announcements",announcements)
+  announcements.push(newannouncements);
+  console.log("announcements", announcements);
 }
 
 function between(x, min, max) {
@@ -1398,6 +1398,7 @@ wss.on("connection", (socket) => {
             statecycle: statecycle,
             playerID: data.id,
           };
+          console.log(players[data.id].state);
           emit("statecycleUpdate", _data__);
         }, 50);
 
@@ -1410,7 +1411,8 @@ wss.on("connection", (socket) => {
             playerID: data.id,
           };
           if (players[data.id]) {
-            players[data.id].state = data.state;
+            players[data.id].state = _data.state;
+            console.log(players[data.id].state);
             emit("statechangeUpdate", _data, socket);
             setTimeout(() => {
               players[data.id].state = _data.state;
@@ -1724,9 +1726,21 @@ wss.on("connection", (socket) => {
       case "typeChange": {
         if (!players[data.id]) {
           invaled_requests.push(data.id);
-          return;
+          break;
         }
-        players[data.id] = data;
+        console.log(data.state, data);
+        setTimeout(() => {
+          console.log(data.state);
+        }, 5000);
+        setTimeout(() => {
+          console.log(data.state);
+        }, 500);
+        if (data.id !== connection.playerId) {
+          // Do somethin here like put the cleints eyes out for hacken
+          console.warn("PLAYERS hacken man");
+          return "ahhhh";
+        }
+        players[connection.playerId] = data;
         emit("type_Change", data);
         break;
       }
@@ -2829,21 +2843,31 @@ wss.on("connection", (socket) => {
       }
 
       case "resize": {
-        if (!players[data.id]) return;
+        if (!players[data.id]) break;
         players[data.id].screenWidth = data.screenWidth;
         players[data.id].screenHeight = data.screenHeight;
         break;
       }
 
       case "MouseAway": {
-        if (!players[data.id]) return;
+        if (!players[data.id]) break;
         players[data.id].mousestate = "held";
         break;
       }
 
       case "MousestateUpdate": {
-        if (!players[data.id]) return;
+        if (!players[data.id]) break;
         players[data.id].mousestate = "up";
+        break;
+      }
+
+      case "FOV-Update": {
+        if (!players[data.id]) break;
+        let player = players[data.id];
+        player.canvasW = data.canvasW;
+        player.canvasH = data.canvasH;
+        player.screenWidth = data.oWidth;
+        player.screenHeight = data.oHieght;
         break;
       }
 
@@ -3014,13 +3038,22 @@ setInterval(() => {
   bullets = bullets.filter((bullet) => {
     if (bullet.type === "directer") {
       try {
+        let recipracailFOV = 1+(1-players[bullet.id].FOV)
+        let upscaleX =
+          players[bullet.id].screenWidth /
+          (players[bullet.id].canvasW * players[bullet.id].FOV);
+        let upscaleY =
+          players[bullet.id].screenHeight /
+          (players[bullet.id].canvasH * players[bullet.id].FOV);
         let dx =
-          players[bullet.id].MouseX +
+          (players[bullet.id].MouseX*recipracailFOV) +
+          upscaleX +
           players[bullet.id].x -
           players[bullet.id].screenWidth / 2 -
           bullet.x;
         let dy =
-          players[bullet.id].MouseY +
+          (players[bullet.id].MouseY*recipracailFOV) +
+          upscaleY +
           players[bullet.id].y -
           players[bullet.id].screenHeight / 2 -
           bullet.y;
@@ -3314,7 +3347,10 @@ setInterval(() => {
             }
             if (players[bullet.id]) {
               emit("playerScore", { bulletId: bullet.id, socrepluse: reward });
-              createAnnocment(`You killed ${player.username}'s ${player.__type__}`,bullet.id)
+              createAnnocment(
+                `You killed ${player.username}'s ${player.__type__}`,
+                bullet.id
+              );
             } else {
               var boss = bosses.find((boss_) => boss_.id === bullet.id);
               boss.score += reward;
@@ -3883,7 +3919,7 @@ setInterval(() => {
             }, 20 * l);
             setTimeout(() => {
               boss.cannons[i].cannonW += 1;
-            }, 40 * l)
+            }, 40 * l);
           }
         }
         if (deadlist.length !== 0) console.log(deadlist);
@@ -4131,7 +4167,7 @@ setInterval(() => {
           }
 
           if (player.state !== "start") {
-            emit("shapeDamage2", {
+            emit("shapeDamage", {
               PlayerId: player.id,
               playerDamage: damageplayer,
               shapes: food_squares,
@@ -4465,8 +4501,10 @@ setInterval(() => {
 
   emit("bulletUpdate", bullets);
   emit("bossUpdate", bosses);
-  announcements = announcements.filter((message) => message.killtime > Date.now());
-  messageEmit("announcements",announcements);
+  announcements = announcements.filter(
+    (message) => message.killtime > Date.now()
+  );
+  messageEmit("announcements", announcements);
   createAndSendGameObjects(player_array);
 }, UPDATE_INTERVAL);
 
@@ -4655,12 +4693,12 @@ function smartemitBinary(type, data) {
         deadplayers.indexOf(conn.playerId) === -1
       )
     )
-    if (
-      players[conn.playerId]?.visible ||
-      deadplayers.indexOf(conn.playerId) !== -1
-    ) {
-      conn.socket.send(data); // Send binary data directly
-    }
+      if (
+        players[conn.playerId]?.visible ||
+        deadplayers.indexOf(conn.playerId) !== -1
+      ) {
+        conn.socket.send(data); // Send binary data directly
+      }
   });
 }
 
@@ -4693,7 +4731,10 @@ function smartemit(type, data) {
 function messageEmit(type, data2) {
   connections.forEach((conn) => {
     if (conn.playerId == null || players[conn.playerId] == undefined) return;
-    let data = data2.filter((message) => {console.log(message.sender,conn.playerId); return message.sender === conn.playerId});
+    let data = data2.filter((message) => {
+      console.log(message.sender, conn.playerId);
+      return message.sender === conn.playerId;
+    });
     const message = JSON.stringify({ type, data });
     if (players[conn.playerId].visible) {
       conn.socket.send(message);
