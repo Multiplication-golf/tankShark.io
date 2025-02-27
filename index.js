@@ -20,7 +20,7 @@ syntax = "proto3";
 
 message GameObject {
   float angle = 1;
-  string color = 2;
+  string color = 2; 
   int32 health = 3;
   int32 maxhealth = 4;
   float size = 5;
@@ -81,18 +81,18 @@ app.use(
         "'self'",
         "https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/light/protobuf.min.js",
         "'unsafe-eval'",
-      ], // Allow scripts from self and a trusted CDN
+      ],
       styleSrc: [
         "'self'",
         "'unsafe-inline'",
         "https://fonts.googleapis.com",
         "https://fonts.gstatic.com",
-      ], // Allow inline styles (use cautiously)
-      imgSrc: ["'self'", "https://images.com"], // Allow images from self and a trusted source
+      ],
+      imgSrc: ["'self'", "https://images.com"],
       connectSrc: ["'self'"], // Restrict fetch/XHR/WebSockets
-      frameAncestors: ["'none'"], // Prevent embedding via <iframe>
-      objectSrc: ["'none'"], // Prevent <object>, <embed>, <applet>
-      upgradeInsecureRequests: [], // Upgrade HTTP requests to HTTPS
+      frameAncestors: ["'none'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
       "unsafe-eval": [
         "https://cdnjs.cloudflare.com/ajax/libs/protobufjs/7.2.5/protobuf.min.js",
       ],
@@ -258,8 +258,8 @@ var config = {
   updateInterval: 75,
   numberOfFoodItems: { low: 400, high: 500 },
   numberOfPentagons: { low: 50, high: 75 },
-  rotationSpeed:0.00001,
-  precision:0.001
+  rotationSpeed: 0.00001,
+  precision: 0.001,
 };
 
 const tankmeta = {
