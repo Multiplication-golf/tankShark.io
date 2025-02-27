@@ -11,7 +11,7 @@
     />
     <meta
       name="description"
-      content="A fun open world game were every one is foe. Enjoy lots of fun with loads of new tanks and shapes."
+      content="A fun open world game were everyone is foe. Enjoy lots of fun with loads of new tanks and shapes."
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
@@ -152,27 +152,84 @@
         <div class="team">Team4</div>
       </div>
       <div
-        id="teambox"
         style="
           text-align: center;
           background: #fff;
           padding: 20px;
           border-radius: 8px;
           z-index: 9;
+          width: 300px;
+          height: 6vw;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          position: absolute;
+          top: calc(40vh - 6vw);
+          left: calc(75vw - 220px);
+          display:none;
+        "
+        id="requestJoin"
+      >
+        <strong
+          ><span style="color: #00ffff; font-size: 40px"
+            >Allow Join
+            <br />
+            <button
+              style="
+                background: #fff;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                width: 3.5vw;
+                height: 3.5vw;
+                margin-left: 10px;
+                margin-right: 10px;
+                border-radius: 8px;
+              "
+              id="allowNo"
+            >
+              <strong>yes</strong></button
+            ><button
+              style="
+                background: #fff;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                width: 3.5vw;
+                height: 3.5vw;
+                margin-left: 10px;
+                border-radius: 8px;
+                margin-right: 10px;
+              "
+              id="allowYes"
+            >
+              <strong>no</strong>
+            </button>
+          </span></strong
+        >
+      </div>
+      <div
+        id="teambox"
+        style="
+          text-align: center;
+          background: #fff;
+          padding: -10px 20px 20px 20px;
+          border-radius: 8px;
+          z-index: 9;
           width: 400px;
-          height: 200px;
+          height: 250px;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
           display: none;
           position: absolute;
-          top: calc(50vh - 120px);
+          top: calc(50vh - 155px);
           left: calc(50vw - 220px);
         "
       >
         <h1 style="z-index: 10">Your team name</h1>
-        <label class="label" for="checkbox">Private:</label>
+        <label class="label" for="checkbox">Hidden:</label>
         <label class="switch" id="checkbox">
-          <input type="checkbox" id="private" class="null" />
+          <input type="checkbox" id="hidden" class="null" />
           <span class="slider round" id="getval"></span>
+        </label>
+        <br /><br />
+        <label class="label" for="checkbox2">Private:</label>
+        <label class="switch" id="checkbox2">
+          <input type="checkbox" id="private" class="null2" />
+          <span class="slider round" id="getval2"></span>
         </label>
         <input
           type="text"
