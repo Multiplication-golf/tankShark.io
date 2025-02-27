@@ -1155,8 +1155,6 @@
                     Array.from(teamcontainer.children).forEach((child) => {
                       child.classList.remove("glow");
                     });
-
-                    // Add the "glow" class to the clicked item
                     item.classList.add("glow");
 
                     // Set the selected class
@@ -2613,9 +2611,9 @@
         this.ctx.globalAlpha = 1;
       }
     }
-  
+
     var newnotify = new notify(ctx, announcements);
-  
+
     function drawself(exW, exH) {
       newnotify.announcements = announcements;
       ctx.fillStyle = squareColor;
@@ -3146,10 +3144,6 @@
 
         zlevelbullets = [];
 
-        // Draw border
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = "grey";
-        ctx.strokeRect(canvas.width / 2 - 50, canvas.height / 2 + 55, 90, 10);
       }
 
       ctx.beginPath();
@@ -3168,7 +3162,7 @@
           statecycle % 10 <= 5
             ? statecycle % 10
             : backwardsObj[(statecycle % 10) - 5];
-        percentage = percentage >= 1 ? 1 : percentage;
+        percentage /= 10;
         let newrgb = mix([0, 0, 255], [255, 255, 255], percentage);
         ctx.fillStyle = `rgb(${newrgb[0]} ${newrgb[1]} ${newrgb[2]})`;
       } else {
@@ -3181,12 +3175,16 @@
 
       // Draw background bar
       ctx.fillStyle = "black";
-      ctx.fillRect(
-        canvas.width / 2 - 50 * FOV,
-        canvas.height / 2 + 55 * FOV,
-        90 * FOV,
-        10 * FOV
+      ctx.beginPath();
+      ctx.roundRect(
+        canvas.width / 2 - 45,
+        canvas.height / 2 + 55,
+        90,
+        10,
+        5
       );
+      ctx.fill();
+      ctx.closePath();
 
       ctx.strokeStyle = "black";
       ctx.fillStyle = "white";
@@ -3266,14 +3264,18 @@
         }
       }
       // Draw health bar
-      const healthWidth = (playerHealth / maxhealth) * 90 * FOV;
+      const healthWidth = (playerHealth / maxhealth) * 90;
       ctx.fillStyle = "green";
-      ctx.fillRect(
-        canvas.width / 2 - 50 * FOV,
-        canvas.height / 2 + 55 * FOV,
+      ctx.beginPath();
+      ctx.roundRect(
+        canvas.width / 2 - 45,
+        canvas.height / 2 + 55,
         healthWidth,
-        10 * FOV
+        10,
+        5
       );
+      ctx.fill();
+      ctx.closePath();
 
       ctx.save();
 
@@ -3592,6 +3594,20 @@
         }
       }
     }
+  
+    function drawbar(item) {
+      ctx.fillStyle = "black";
+      ctx.beginPath();
+      ctx.roundRect(-45, 35, 90, 10, 5);
+      ctx.fill();
+      ctx.closePath();
+      const healthWidth = (item.health / item.maxhealth) * 90;
+      ctx.fillStyle = "green";
+      ctx.beginPath();
+      ctx.roundRect(-45, 35, healthWidth, 10, 5);
+      ctx.fill();
+      ctx.closePath();
+    }
 
     function draw(timestamp) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -3650,11 +3666,7 @@
 
             ctx.rotate(-item.angle * pi180);
             if (item.health < item.maxhealth) {
-              ctx.fillStyle = "black";
-              ctx.fillRect(-45, 35, 90 * FOV, 10);
-              const healthWidth = (item.health / item.maxhealth) * 90 * FOV;
-              ctx.fillStyle = "green";
-              ctx.fillRect(-45, 35, healthWidth, 10);
+              drawbar(item);
             }
           }
 
@@ -3677,11 +3689,7 @@
             ctx.rotate(-item.angle * pi180);
 
             if (item.health < item.maxhealth) {
-              ctx.fillStyle = "black";
-              ctx.fillRect(-45, 35, 90 * FOV, 10 * FOV);
-              const healthWidth = (item.health / item.maxhealth) * 90 * FOV;
-              ctx.fillStyle = "green";
-              ctx.fillRect(-45, 35, healthWidth, 10 * FOV);
+              drawbar(item);
             }
           }
 
@@ -3725,21 +3733,29 @@
             // Draw health bar if health is less than 100%
             if (item.health < item.maxhealth) {
               ctx.fillStyle = "black";
-              ctx.fillRect(
-                centerX - 60 * FOV,
-                centerY + (35 + (item.size - 50)) * FOV,
-                (120 + (item.size - 50)) * FOV,
-                10
+              ctx.beginPath();
+              ctx.roundRect(
+                centerX - 60,
+                centerY + (35 + (item.size - 50)),
+                120 + (item.size - 50),
+                10,
+                5
               );
+              ctx.fill();
+              ctx.closePath();
               const healthWidth =
-                (item.health / item.maxhealth) * (120 + (item.size - 50)) * FOV;
+                (item.health / item.maxhealth) * (120 + (item.size - 50));
               ctx.fillStyle = "green";
-              ctx.fillRect(
-                centerX - 60 * FOV,
-                centerY + (35 + (item.size - 50)) * FOV,
+              ctx.beginPath();
+              ctx.roundRect(
+                centerX - 60,
+                centerY + (35 + (item.size - 50)),
                 healthWidth,
-                10
+                10,
+                5
               );
+              ctx.fill();
+              ctx.closePath();
             }
           }
           ctx.restore();
@@ -3852,7 +3868,7 @@
                 : boss;
 
             ctx.fillStyle = "#b3b3b3";
-            //console.log(item.angle)
+
             let angle = item.angle * (pi / 180);
 
             let angle_offset = pi;
@@ -3920,24 +3936,6 @@
             ctx.lineWidth = 5;
             ctx.stroke();
             ctx.rotate(-item.angle * pi180 - 90 * pi180);
-            var vertices = calculateTriangleVertices(
-              0,
-              0,
-              item.size,
-              item.angle * pi180
-            );
-            ctx.beginPath();
-            ctx.arc(0, 0, 5, 0, 2 * Math.PI);
-            ctx.fillStyle = "red";
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(vertices[0].x, vertices[0].y);
-            ctx.lineTo(vertices[1].x, vertices[1].y);
-            ctx.lineTo(vertices[2].x, vertices[2].y);
-            ctx.closePath();
-
-            ctx.strokeStyle = "black";
-            ctx.stroke();
 
             if (item.health < item.maxhealth) {
               ctx.fillStyle = "black";
@@ -4311,7 +4309,7 @@
         }
       });
 
-      for (let playerId__ in players) {
+      for (const playerId__ in players) {
         if (players.hasOwnProperty(playerId__) && playerId__ != playerId) {
           let player = players[playerId__];
 
@@ -4638,8 +4636,25 @@
             num === 0 &&
             (player.state === "start" || player.state === "damaged")
           ) {
-            ctx.fillStyle = "white";
-            ctx.strokeStyle = "#fafafa";
+            if (!sameTeam) {
+              let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
+              let percentage =
+                player.statecycle % 10 <= 5
+                  ? player.statecycle % 10
+                  : backwardsObj[(player.statecycle % 10) - 5];
+              percentage /= 10;
+              let newrgb = mix([255, 0, 0], [255, 255, 255], percentage);
+              ctx.fillStyle = `rgb(${newrgb[0]} ${newrgb[1]} ${newrgb[2]})`;
+            } else {
+              let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
+              let percentage =
+                player.statecycle % 10 <= 5
+                  ? player.statecycle % 10
+                  : backwardsObj[(player.statecycle % 10) - 5];
+              percentage /= 10;
+              let newrgb = mix([0, 0, 255], [255, 255, 255], percentage);
+              ctx.fillStyle = `rgb(${newrgb[0]} ${newrgb[1]} ${newrgb[2]})`;
+            }
           } else if (!sameTeam) {
             ctx.fillStyle = "red";
             ctx.strokeStyle = "darkred";
@@ -4647,6 +4662,10 @@
             ctx.fillStyle = "blue";
             ctx.strokeStyle = "darkblue";
           }
+          ctx.fill();
+          ctx.lineWidth = 5;
+          ctx.strokeStyle = "darkblue";
+          ctx.stroke();
 
           ctx.fill();
           ctx.lineWidth = 5;
