@@ -307,6 +307,7 @@
     var bosses = [];
     var prescore = -1;
     var setprogress = 0;
+    var requests = [];
     var dead = false;
     var badge = "";
     var img = null;
@@ -750,8 +751,6 @@
 
         send("HANDSHAKE", {});
 
-        var masseg = document.getElementById("mesage");
-
         img = new Image();
 
         img.onload = function () {
@@ -784,7 +783,6 @@
               console.log("Player updated:", data); // Log the update
               break;
             }
-
             case "new_X_Y": {
               if (data.id !== playerId) return;
               cavansX = data.x;
@@ -793,13 +791,37 @@
               playerX += data.x;
               break;
             }
-
+            case "requests": {
+              function requests() {
+                var conteiner = document.getElementById("requestJoin");
+                var new_element = conteiner.cloneNode(true);
+                conteiner.parentNode.replaceChild(new_element, conteiner);
+                var allowYes = document.getElementById("allowYes");
+                var allowNo = document.getElementById("allowNo");
+                conteiner.style.display = "block";
+                var newname = document.createElement("p");
+                newname.style = "color: #00ffff; font-size: 40px";
+                newname.innerText = players[requests[0].requester].username;
+                conteiner.appendChild(newname);
+                allowYes.addEventlistener((evt) => {
+                  send("allowYes", { request: requests[0] });
+                  requests = requests.splice(0, 1);
+                  requests();
+                });
+                allowNo.addEventlistener((evt) => {
+                  send("allowNo", { request: requests[0] });
+                  requests = requests.splice(0, 1);
+                  requests();
+                });
+              }
+              requests = data;
+              break;
+            }
             case "RETURNtankmeta": {
               tankmeta = data;
               draw();
               break;
             }
-
             case "NewMessages": {
               playerMessages = data;
               break;
@@ -846,19 +868,6 @@
               players[data.id].statsTree = data.stats;
               break;
             }
-            case "playerHealthCheck": {
-              if (!(players[data.ID].health === data.HEALTH)) {
-                players[data.ID].health = data.HEALTH;
-                // yes hackty hackers you getting a waring
-                setCookie("player", socket.id, 1000000);
-                socket.emit("unSynched Health", {
-                  playerId: playerId,
-                  "expected Health": data.HEALTH,
-                  "actual Health": players[data.ID].health,
-                });
-              }
-              break;
-            }
             case "autoCannonUPDATE-ADD": {
               autocannons = data;
               break;
@@ -869,7 +878,6 @@
               break;
             }
             case "announcements": {
-              //console.log(data)
               announcements = data;
               break;
             }
@@ -1184,6 +1192,10 @@
               }
               break;
             }
+            case "JoinTeamSuccess": {
+              joinedTeam = true;
+              break;
+            }
             case "playerJoinedTeam": {
               players[data.id].team = data.teamId;
               if (data.id === playerId && data.teamId !== null) {
@@ -1213,7 +1225,6 @@
                   send("playerHealintterupted", { ID: playerId });
                   playerHealTime = 0;
                   state = "damaged";
-                  //statecycle = 0;
                   send("statechange", {
                     state: state,
                     statecycle: statecycle,
@@ -1221,7 +1232,6 @@
                   });
                   setTimeout(() => {
                     state = "normal";
-                    //statecycle = 0;
                     send("statechange", {
                       state: state,
                       statecycle: statecycle,
@@ -1420,8 +1430,7 @@
         });
 
         document.addEventListener("mousemove", (evt) => {
-          if (autoRotating) return;
-          if (lockautoRotating) return;
+          if (autoRotating || lockautoRotating) return;
           var mousepos = getMousePos(window, evt);
           MouseX_ = mousepos.x;
           MouseY_ = mousepos.y;
@@ -1496,18 +1505,25 @@
 
         document.getElementById("teamButton").addEventListener("click", () => {
           var teamname = document.getElementById("teamname").value;
-          var checked;
+          var checked, checked2;
           try {
-            var checkedValue = document.querySelector(".null:checked").value;
+            var checkedValue = document.querySelector(".null2:checked").value;
             checked = true;
           } catch {
             checked = false;
+          }
+          try {
+            var checkedValue = document.querySelector(".null:checked").value;
+            checked2 = true;
+          } catch {
+            checked2 = false;
           }
 
           document.getElementById("teambox").style.display = "none";
           send("newTeamCreated", {
             owner: { id: playerId, username: username },
-            private: checked,
+            private: checked2,
+            hidden: checked,
             name: teamname,
           });
           owner_of_team = true;
@@ -2068,7 +2084,6 @@
                     id: playerId,
                     teamId: selected_class,
                   });
-                  joinedTeam = true;
                 }
               } else {
                 send("playerLeftTeam", {
@@ -2427,7 +2442,7 @@
         canvasH: canvas.height,
         screenW: oWidth,
         screenH: oHieght,
-        id:playerId
+        id: playerId,
       });
       var canW1 = canW;
       var canH1 = canH;
@@ -2598,7 +2613,9 @@
         this.ctx.globalAlpha = 1;
       }
     }
+  
     var newnotify = new notify(ctx, announcements);
+  
     function drawself(exW, exH) {
       newnotify.announcements = announcements;
       ctx.fillStyle = squareColor;
@@ -3594,6 +3611,7 @@
       fps = Math.round(frameTimes.reduce((a, b) => a + b) / frameTimes.length);
 
       console.log("FPS:", fps); // Display smoothed FPS
+      ctx.lineJoin = "round";
       food_list.forEach((item) => {
         var realx = item.x;
         var realy = item.y;
@@ -3933,6 +3951,7 @@
           ctx.globalAlpha = 1;
         }
       });
+      ctx.lineJoin = "miter";
 
       let unZbullets = [];
 
@@ -4980,7 +4999,6 @@
   document.getElementById("playButton").addEventListener("mousedown", () => {
     username = document.getElementById("username").value;
     if (username) {
-      // Proceed to the game with the entered username
       setTimeout(() => {
         document.getElementById("start").style.display = "none";
         document.getElementById("game").style.display = "block";
