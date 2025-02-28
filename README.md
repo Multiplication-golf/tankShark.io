@@ -4,9 +4,9 @@ Suggestions welcome
 
 ### looking for testers
 
-It is still kind of buggy.
+It is still kind of buggy. But getting better by the day
 
-## But improved with more tanks being added, but the basic game engines built
+# Official server has just opened ( not port fowarded yet though ): )
 
 
 ![img of game](https://github.com/Multiplication-golf/deip.io-3/blob/main/game.png?raw=true)
