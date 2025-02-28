@@ -89,7 +89,7 @@ app.use(
         "https://fonts.gstatic.com",
       ],
       imgSrc: ["'self'", "https://images.com"],
-      connectSrc: ["'self'"], // Restrict fetch/XHR/WebSockets
+      connectSrc: ["'self'","ws://localhost:50409/"], // Restrict fetch/XHR/WebSockets
       frameAncestors: ["'none'"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
@@ -1515,7 +1515,7 @@ wss.on("connection", (socket) => {
           );
           JoinRequests.push({
             requester: data.id,
-            owner: MYteam.id,
+            owner: MYteam.owner.id,
             teamID: MYteam.teamID,
           });
         }
@@ -3130,11 +3130,9 @@ setInterval(() => {
       var foundTarget = false;
       for (const playerId in players) {
         var player = players[playerId];
-        let distanceX = Math.abs(player.x - bullet.x);
-        let distanceY = Math.abs(player.y - bullet.y);
-        let newdistance = MathHypotenuse(distanceX, distanceY);
+        let newdistance = MathHypotenuse(player.x - bullet.x, player.y - bullet.y);
         if (newdistance < maxdistance) {
-          target = { x: player.x, y: player.y };
+          target = { x: player.x, y: player.y, distance: distance };
           newdistance = maxdistance;
           foundTarget = true;
         }
@@ -3145,9 +3143,7 @@ setInterval(() => {
     }
     let collied = false;
     if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
-      let distanceX = Math.abs(target.x - bullet.x);
-      let distanceY = Math.abs(target.y - bullet.y);
-      let distance = MathHypotenuse(distanceX, distanceY);
+      let distance = target.distance;
       if (foundTarget && distance > 40 && __angle !== 0) {
         var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
         var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
@@ -3303,7 +3299,6 @@ setInterval(() => {
         1 - bullet.distanceTraveled / bullet.bullet_distance < 0
           ? 0.000000000000001
           : 1 - bullet.distanceTraveled / bullet.bullet_distance;
-      //console.log(bullet.transparency);
     }
 
     for (const playerId in players) {
@@ -3480,9 +3475,11 @@ setInterval(() => {
 
       return true;
     }
+    
     if (bullet.type === "directer") {
       emit("dronekilled", { droneID: bullet.id });
     }
+    
     if (bullet.type === "FreeNecromancer") {
       deadlist.push(bullet.id);
     }
@@ -3493,9 +3490,10 @@ setInterval(() => {
         return true;
       });
     }
+    
     bullet_intervals.forEach((__bullet_) => {
       if (bullet.uniqueid === __bullet_.id) {
-        __bullet_.canfire = false; // kill in the next tick
+        __bullet_.canfire = false;
       }
     });
     return false;
@@ -3793,7 +3791,6 @@ setInterval(() => {
   });
 
   tempToPush = [];
-  player_array = [];
   tempBulletToPush = [];
 
   food_squares = food_squares.filter((item, index) => {
@@ -3844,7 +3841,6 @@ setInterval(() => {
     if (item.angle >= 360) {
       item.angle = 0;
     }
-    angle += speed;
     if (item.type === "square") {
       const rawvertices = calculateSquareVertices(
         item.x,
@@ -3976,33 +3972,16 @@ setInterval(() => {
         }
       });
     }
-    let gameObject = {
-      angle: item.angle,
-      color: item.color,
-      health: item.health,
-      maxhealth: item.maxhealth,
-      size: item.size,
-      type: realtype,
-      weight: item.weight,
-      x: item.x,
-      y: item.y,
-      transparency: item.transparency,
-      randomID: item.randomID,
-    };
-
-    player_array.push(gameObject);
     let return_ = true;
     if (item.isdead) {
       item.transparency = 1 - (Date.now() - item.deathtime) / 150;
     }
     for (const playerId in players) {
       var player = players[playerId];
-      let distanceX = Math.abs(player.x - item.x);
-      let distanceY = Math.abs(player.y - item.y);
-      // for speed
+      let distance = MathHypotenuse(item.x - player.x, item.y - player.y);
       let size__ = player.size * 80 + item.size * 1.5;
 
-      if (distanceX < size__ && distanceY < size__) {
+      if (distance < size__) {
         var collisionCheck = isPlayerCollidingWithPolygon(
           player,
           item.vertices
@@ -4205,7 +4184,7 @@ setInterval(() => {
               fooditem.vertices = rawvertices;
             }
 
-            food_squares.push(fooditem);
+            tempToPush.push(fooditem);
 
             return false;
           } else {
@@ -4222,7 +4201,6 @@ setInterval(() => {
             });
           }
         }
-        //collisionCheck = null;
       }
     }
     bullets.forEach((bullet) => {
@@ -4531,7 +4509,6 @@ setInterval(() => {
     if (return_ === true && !item.isdead) {
       return return_;
     }
-
     if (item.isdead) {
       if (Date.now() >= item.deathtime + 150) {
         return false;
@@ -4557,7 +4534,7 @@ setInterval(() => {
   );
   requestEmit("requests", JoinRequests);
   messageEmit("announcements", announcements);
-  createAndSendGameObjects(player_array);
+  createAndSendGameObjects(food_squares);
 }, UPDATE_INTERVAL);
 
 async function createAndSendGameObjects(playerArray) {
@@ -4795,18 +4772,22 @@ function messageEmit(type, data2) {
 function requestEmit(type, data2) {
   connections.forEach((conn) => {
     if (conn.playerId == null || players[conn.playerId] == undefined) return;
-    let data = data2.filter((request) => {
+    let splices = [];
+    let data = data2.filter((request, i) => {
       if (request.owner === conn.playerId) {
         request.callbackID = Math.random() * 7;
         PendingJoinRequests.push(request);
+        splices.push(i);
       }
       return request.owner === conn.playerId;
     });
-    data2 = data2.filter((request) => {
-      return request.owner !== conn.playerId;
+    splices.forEach((s) => {
+      //console.log("s",s,data)
+      data2 = data2.splice(s, 1);
     });
     const message = JSON.stringify({ type, data });
-    if (players[conn.playerId].visible && data) {
+    if (data && data.length !== 0) {
+      //if (data.length !== 0) console.log(data,PendingJoinRequests)
       conn.socket.send(message);
     }
   });
