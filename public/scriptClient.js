@@ -97,7 +97,7 @@
   function ongame() {
     const socket =
       new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(
-        "https://deip-io3.glitch.me/"
+        "ws://localhost:50409/"
       );
     socket.binaryType = "arraybuffer";
     const schema = `
@@ -489,7 +489,7 @@
               lockautoRotating = true;
             }
             if (tankdata.fov !== 0) {
-              scaleby(tankdata.fov);
+              byby(tankdata.fov);
             }
 
             send("typeChange", {
@@ -792,6 +792,7 @@
               break;
             }
             case "requests": {
+              console.log(data)
               function requests() {
                 var conteiner = document.getElementById("requestJoin");
                 var new_element = conteiner.cloneNode(true);
@@ -1202,7 +1203,7 @@
               }
               if (data.id === playerId && data.teamId === null) {
                 joinedTeam = false;
-                owner_of_team = true;
+                owner_of_team = false;
                 teamOn = null;
               }
               break;
@@ -1505,13 +1506,13 @@
           var teamname = document.getElementById("teamname").value;
           var checked, checked2;
           try {
-            var checkedValue = document.querySelector(".null2:checked").value;
+            var checkedValue = document.querySelector(".null:checked").value;
             checked = true;
           } catch {
             checked = false;
           }
           try {
-            var checkedValue = document.querySelector(".null:checked").value;
+            var checkedValue = document.querySelector(".null2:checked").value;
             checked2 = true;
           } catch {
             checked2 = false;
@@ -2458,6 +2459,8 @@
       teamheight = 0.33333333333333333333333333 * canvas.height;
       innerteamwidth = 0.14322916666 * canvas.width;
       innerteamheight = 0.308333333333333333333 * canvas.height;
+      innerteamwidthreal = 0.14322916666 * window.innerWidth;
+      innerteamheightreal = 0.308333333333333333333 * window.innerHeight;
       buttton140 = 0.07291666666 * canvas.width; // tested screen height is 1031x1920
       button275 = 0.14322916666 * canvas.width;
       button475 = 0.24739583333 * canvas.width;
