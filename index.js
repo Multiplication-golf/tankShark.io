@@ -28,7 +28,7 @@ message GameObject {
   float weight = 7;
   float x = 8;
   float y = 9;
-  float transparency = 10;
+  float transparency = 10; 
   double randomID = 11;
 }
 
@@ -89,7 +89,7 @@ app.use(
         "https://fonts.gstatic.com",
       ],
       imgSrc: ["'self'", "https://images.com"],
-      connectSrc: ["'self'","ws://localhost:50409/"], // Restrict fetch/XHR/WebSockets
+      connectSrc: ["'self'", "ws://localhost:50409/"], // Restrict fetch/XHR/WebSockets
       frameAncestors: ["'none'"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
@@ -121,8 +121,10 @@ let deadplayers = [];
 let announcements = [];
 let JoinRequests = [];
 let PendingJoinRequests = [];
+let joinPlayers = [];
 /* warning very senstive*/
 let purge_limit = 5;
+let frame = 0;
 let ColorUpgrades = [
   "#f54242",
   "#fa8050",
@@ -296,7 +298,7 @@ const tankmeta = {
         "offSet-y": 0,
         "offset-angle": 0,
         bulletSize: 1,
-        bulletSpeed: 0.5,
+        bulletSpeed: 0.9,
         delay: 0,
         reloadM: 1,
         bullet_pentration: 1,
@@ -1522,9 +1524,16 @@ wss.on("connection", (socket) => {
         break;
       }
 
+      case "allowNo": {
+        var request = PendingJoinRequests.find(
+          (_request) => _request.callbackID === data.callbackID
+        );
+        PendingJoinRequests.splice(PendingJoinRequests.indexOf(request), 1);
+        break;
+      }
+
       case "allowYes": {
-        socket.send(JSON.stringify({ type: "JoinTeamSuccess", data: {} }));
-        request.callbackID = Math.random() * 7;
+        emit("JoinTeamSuccess", { id: data.requester });
         var request = PendingJoinRequests.find(
           (_request) => _request.callbackID === data.callbackID
         );
@@ -1545,11 +1554,13 @@ wss.on("connection", (socket) => {
           }
         });
         emit("pubteamlist", public_teams);
+        break;
       }
 
       case "playerLeftTeam": {
+        console.log(data);
         let MYteam = teamlist.find((team) => {
-          return team.teamID === players[data.id].team;
+          return team.teamID === players[data.id]?.team;
         });
         players[data.id].team = null;
         MYteam.players.splice(
@@ -1632,20 +1643,20 @@ wss.on("connection", (socket) => {
         emit("pubteamlist", public_teams);
       }
 
-      case "browserHidden": {
+      case "rotate": {
         var autoAngle = data.autoAngle;
         var turnhide = setInterval(() => {
-          autoAngle += 0.2 / 10;
+          autoAngle += 1;
           if (359.8 <= autoAngle) {
             autoAngle = 0;
           }
-          let radians = (Math.PI / 180) * autoAngle;
+          let radians = autoAngle * (Math.PI / 180);
           var MouseX_ =
             50 * Math.cos(radians) +
-            (data.canvaswidth / 2 - data.playerSize * data.FOV);
+            (data.canvaswidth / 2 - players[data.id].size * data.FOV);
           var MouseY_ =
             50 * Math.sin(radians) +
-            (data.canvasheight / 2 - data.playerSize * data.FOV);
+            (data.canvasheight / 2 - players[data.id].size * data.FOV);
           let angle = Math.atan2(
             MouseY_ - (data.canvasheight / 2 - data.playerSize * data.FOV),
             MouseX_ - (data.canvaswidth / 2 - data.playerSize * data.FOV)
@@ -1659,16 +1670,48 @@ wss.on("connection", (socket) => {
           players[data.id].MouseY = MouseY_;
           var data_ = {
             id: data.id,
-            cannon_angle: autoAngle,
+            cannon_angle: angle,
             MouseX: MouseX_,
             MouseY: MouseY_,
           };
           smartbroadcast("playerCannonUpdated", data_, socket);
 
-          emit("playerCannonUpdatedInactive", {
-            MouseX_: MouseX_,
-            MouseY_: MouseY_,
+          data.autoIntevals.forEach((Inteval) => {
+            let autoID = Inteval.autoID;
+            let angle = autoAngle;
+
+            autocannons.forEach((cannon) => {
+              if (cannon.CannonID === autoID && players[cannon.playerid]) {
+                if (cannon._type_ === "SwivelAutoCannon") {
+                  var tankdatacannondata =
+                    tankmeta[players[cannon.playerid].__type__].cannons[
+                      cannon.autoindex
+                    ];
+                  var offSet_x = tankdatacannondata["offSet-x"];
+                  if (tankdatacannondata["offSet-x"] === "playerX") {
+                    offSet_x = players[cannon.playerid].size * 40;
+                  }
+                  if (tankdatacannondata["offSet-x-multpliyer"]) {
+                    offSet_x *= -1;
+                  }
+                  var [X, Y] = rotatePointAroundPlayer(offSet_x, 0, angle);
+                  cannon["x_"] = X;
+                  cannon["y_"] = Y;
+                }
+              }
+            });
           });
+
+          socket.send(
+            JSON.stringify({
+              type: "playerCannonUpdatedInactive",
+              data: {
+                MouseX_: MouseX_,
+                MouseY_: MouseY_,
+                autoAngle: autoAngle,
+              },
+            })
+          );
           data.autoIntevals.forEach((Inteval) => {
             autocannons.forEach((cannon) => {
               if (cannon.CannonID === Inteval.autoID) {
@@ -1720,7 +1763,7 @@ wss.on("connection", (socket) => {
         }, data.exspiretime);
       }
 
-      case "browserunHidden": {
+      case "unrotating": {
         hidden_broswers.filter((interval) => {
           if (data.id === interval.id) {
             clearInterval(interval.interval);
@@ -1728,7 +1771,6 @@ wss.on("connection", (socket) => {
           }
           return true;
         });
-
         break;
       }
 
@@ -3086,6 +3128,7 @@ let tempToPush = [];
 let tempBulletToPush = [];
 
 setInterval(() => {
+  frame++;
   // Filter and update bullets
   var deadlist = [];
   bullets = bullets.filter((bullet) => {
@@ -3123,28 +3166,36 @@ setInterval(() => {
         return false;
       }
     }
-    if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
-      // choose a player to attak
-      var maxdistance = 1300;
-      var target = { x: bullet.x, y: bullet.y };
-      var foundTarget = false;
-      for (const playerId in players) {
-        var player = players[playerId];
-        let newdistance = MathHypotenuse(player.x - bullet.x, player.y - bullet.y);
-        if (newdistance < maxdistance) {
-          target = { x: player.x, y: player.y, distance: distance };
-          newdistance = maxdistance;
-          foundTarget = true;
-        }
-      }
-      var __angle = Math.atan2(target.y - bullet.y, target.x - bullet.x);
-
-      bullet.angle = __angle;
-    }
     let collied = false;
     if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
-      let distance = target.distance;
-      if (foundTarget && distance > 40 && __angle !== 0) {
+      // choose a player to attak
+      if (frame % 3 === 0) {
+        var maxdistance = 1300;
+        var target = { x: bullet.x, y: bullet.y };
+        var foundTarget = false;
+        for (const playerId in players) {
+          var player = players[playerId];
+          let newdistance = MathHypotenuse(
+            player.x - bullet.x,
+            player.y - bullet.y
+          );
+          if (newdistance < maxdistance) {
+            target = { x: player.x, y: player.y, distance: newdistance };
+            newdistance = maxdistance;
+            foundTarget = true;
+          }
+        }
+        if (foundTarget) {
+          bullet.target = target;
+        } else {
+          bullet.target = undefined;
+        }
+
+        var __angle = Math.atan2(target.y - bullet.y, target.x - bullet.x);
+
+        bullet.angle = __angle;
+      }
+      if (bullet.target && bullet.target?.distance > 40 && __angle !== 0) {
         var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
         var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
       } else {
@@ -3475,11 +3526,11 @@ setInterval(() => {
 
       return true;
     }
-    
+
     if (bullet.type === "directer") {
       emit("dronekilled", { droneID: bullet.id });
     }
-    
+
     if (bullet.type === "FreeNecromancer") {
       deadlist.push(bullet.id);
     }
@@ -3490,7 +3541,7 @@ setInterval(() => {
         return true;
       });
     }
-    
+
     bullet_intervals.forEach((__bullet_) => {
       if (bullet.uniqueid === __bullet_.id) {
         __bullet_.canfire = false;
@@ -4543,19 +4594,24 @@ async function createAndSendGameObjects(playerArray) {
   const GameObject = root.lookupType("GameObject");
   const GameObjectList = root.lookupType("GameObjectList");
   // Convert player array to GameObject format (DO NOT encode here)
-  const gameObjects = playerArray.map((item) => ({
-    angle: item.angle,
-    color: item.color,
-    health: item.health,
-    maxhealth: item.maxhealth,
-    size: item.size,
-    type: item.type,
-    weight: item.weight,
-    x: item.x,
-    y: item.y,
-    transparency: item.transparency,
-    randomID: item.randomID,
-  }));
+  const gameObjects = playerArray.map((item) => {
+    let realtype = item.type;
+    if (item.subtype === "Enemyboss:Square") realtype = "square:boss";
+    if (item.subtype === "Enemyboss:Triangle") realtype = "triangle:boss";
+    return {
+      angle: item.angle,
+      color: item.color,
+      health: item.health,
+      maxhealth: item.maxhealth,
+      size: item.size,
+      type: realtype,
+      weight: item.weight,
+      x: item.x,
+      y: item.y,
+      transparency: item.transparency,
+      randomID: item.randomID,
+    };
+  });
 
   const gameObjectList = { objects: gameObjects };
 
@@ -4777,17 +4833,16 @@ function requestEmit(type, data2) {
       if (request.owner === conn.playerId) {
         request.callbackID = Math.random() * 7;
         PendingJoinRequests.push(request);
+        console.log(PendingJoinRequests);
         splices.push(i);
       }
       return request.owner === conn.playerId;
     });
     splices.forEach((s) => {
-      //console.log("s",s,data)
       data2 = data2.splice(s, 1);
     });
     const message = JSON.stringify({ type, data });
     if (data && data.length !== 0) {
-      //if (data.length !== 0) console.log(data,PendingJoinRequests)
       conn.socket.send(message);
     }
   });
