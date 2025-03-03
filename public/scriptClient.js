@@ -97,7 +97,7 @@
   function ongame() {
     const socket =
       new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(
-        "ws://localhost:50409/"
+        "https://deip-io3.glitch.me/"
       );
     socket.binaryType = "arraybuffer";
     const schema = `
@@ -204,7 +204,7 @@
     var pubteams = [];
     var level = 0;
     var xp = 0;
-    var buttton140 = 0.07291666666 * canvas.width; // tested screen height is 1031x1920
+    var buttton140 = 0.07291666666 * canvas.width;
     var button275 = 0.14322916666 * canvas.width;
     var button475 = 0.24739583333 * canvas.width;
     var button462_5 = 0.24088541666 * canvas.width;
@@ -792,30 +792,38 @@
               break;
             }
             case "requests": {
-              console.log(data)
-              function requests() {
+              function requester() {
                 var conteiner = document.getElementById("requestJoin");
-                var new_element = conteiner.cloneNode(true);
-                conteiner.parentNode.replaceChild(new_element, conteiner);
+                if (requests.length <= 0) {
+                  conteiner.style.display = "none";
+                  return;
+                }
                 var allowYes = document.getElementById("allowYes");
                 var allowNo = document.getElementById("allowNo");
                 conteiner.style.display = "block";
                 var newname = document.createElement("p");
-                newname.style = "color: #00ffff; font-size: 40px";
+                newname.style = "color: #00ffff; font-size: 16px";
                 newname.innerText = players[requests[0].requester].username;
                 conteiner.appendChild(newname);
-                allowYes.addEventlistener((evt) => {
-                  send("allowYes", { request: requests[0] });
-                  requests = requests.splice(0, 1);
-                  requests();
-                });
-                allowNo.addEventlistener((evt) => {
-                  send("allowNo", { request: requests[0] });
-                  requests = requests.splice(0, 1);
-                  requests();
-                });
+                var yes, no;
+                console.log(requests);
+                yes = () => {
+                  send("allowYes", requests[0]);
+                  requests.shift();
+                  allowNo.removeEventListener("click", no);
+                  requester();
+                };
+                no = () => {
+                  send("allowNo", requests[0]);
+                  requests.shift();
+                  allowYes.removeEventListener("click", yes);
+                  requester();
+                };
+                allowYes.addEventListener("click", yes, { once: true });
+                allowNo.addEventListener("click", no, { once: true });
               }
               requests = data;
+              requester();
               break;
             }
             case "RETURNtankmeta": {
@@ -862,7 +870,7 @@
               players[data.ID].health = data.HEALTH;
               if (data.ID === playerId) {
                 playerHealth = data.HEALTH;
-              } // Log the update
+              }
               break;
             }
             case "statsTreeRestart": {
@@ -942,10 +950,6 @@
                   clearTimeout(timeout);
                 });
                 autoIntevals = [];
-
-                /*var old_element = document.body;
-                var new_element = old_element.cloneNode(true);
-                old_element.parentNode.replaceChild(new_element, old_element);*/
 
                 canvas = document.getElementById("myCanvas");
                 canvas.style["z-index"] = "5";
@@ -1192,7 +1196,9 @@
               break;
             }
             case "JoinTeamSuccess": {
-              joinedTeam = true;
+              if (data.id === playerId) {
+                joinedTeam = true;
+              }
               break;
             }
             case "playerJoinedTeam": {
@@ -1328,6 +1334,7 @@
             case "playerCannonUpdatedInactive": {
               MouseX_ = data.MouseX_;
               MouseY_ = data.MouseY_;
+              autoAngle = data.autoAngle;
               break;
             }
             case "newid": {
@@ -1445,59 +1452,6 @@
           });
         });
 
-        setInterval(() => {
-          pentarotate += 1;
-          if (359.8 <= pentarotate) {
-            pentarotate = 0;
-          }
-          if (!autoRotating && !lockautoRotating) return;
-          if (!document.hidden) {
-            // do what you need
-
-            autoAngle += 1;
-            if (359.8 <= autoAngle) {
-              // yes point 8 I can do math kids
-              autoAngle = 0;
-            }
-            let radians = (Math.PI / 180) * autoAngle;
-            MouseX_ =
-              50 * Math.cos(radians) + (canvas.width / 2 - playerSize * FOV);
-            MouseY_ =
-              50 * Math.sin(radians) + (canvas.height / 2 - playerSize * FOV);
-            let angle = Math.atan2(
-              MouseY_ - (canvas.height / 2 - playerSize * FOV),
-              MouseX_ - (canvas.width / 2 - playerSize * FOV)
-            );
-            send("playerCannonMoved", {
-              id: playerId,
-              cannon_angle: autoAngle,
-              MouseX: MouseX_,
-              MouseY: MouseY_,
-            });
-            autoIntevals.forEach((Inteval) => {
-              send("auto-x-update", {
-                autoID: Inteval.autoID,
-                angle: autoAngle,
-              });
-            });
-            if (hidden) {
-              send("browserunHidden", { id: playerId });
-              hidden = false;
-            }
-          } else if (document.hidden && !hidden) {
-            send("browserHidden", {
-              autoAngle: autoAngle,
-              id: playerId,
-              autoIntevals: autoIntevals,
-              playerSize: playerSize,
-              FOV: scaleFactor,
-              canvaswidth: canvas.width,
-              canvasheight: canvas.height,
-            });
-            hidden = true;
-          }
-        }, 75);
-
         function generateRandomNumber(min, max) {
           return Math.random() * (max - min) + min;
         }
@@ -1527,6 +1481,42 @@
           });
           owner_of_team = true;
         });
+        
+        function bounceBackAndRecoil(i, Bsize, Bspeed, anlge_) {
+          cannonWidth[i] = cannonWidth[i] || 0;
+          for (let l = 0; l < 10; l++) {
+            setTimeout(() => {
+              cannonWidth[i] -= 1;
+              send("playerCannonWidth", {
+                id: playerId,
+                cannonW: cannonWidth,
+              });
+            }, 10 * l);
+            setTimeout(() => {
+              cannonWidth[i] += 1;
+              send("playerCannonWidth", {
+                id: playerId,
+                cannonW: cannonWidth,
+              });
+            }, 20 * l); // Updated to prevent overlap
+          }
+
+          let recoilX = -(
+            (Bsize / 10) *
+            Bspeed *
+            Math.cos(anlge_)
+          );
+          let recoilY = -(
+            (Bsize / 10) *
+            Bspeed *
+            Math.sin(anlge_)
+          );
+          for (let i = 0; i < playerSpeed; i++) {
+            setTimeout(() => {
+              movePlayer(recoilX / 15, recoilY / 15, i == playerSpeed - 1);
+            }, 15 * i);
+          }
+        }
 
         function fireOnce(evt, directer) {
           let tankdata = tankmeta[__type__];
@@ -1534,12 +1524,12 @@
           if (!autoFiring && !directer) {
             if (evt.button === 2) return;
           }
+
           var angle = Math.atan2(
             Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
             Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
           );
 
-          // Fire all cannons
           tankdatacannon.forEach((cannon, i) => {
             if (!cannonFireData[i]) return;
             cannonFireData[i] = false;
@@ -1551,7 +1541,6 @@
                 return;
               if (!directer && cannon.type === "directer") return;
 
-              //if (cannon.type === "directer" && !directer) return;
               let bullet_size_l = bullet_size * cannon["bulletSize"];
 
               let randomNumber = generateRandomNumber(-0.2, 0.2);
@@ -1596,40 +1585,8 @@
               let identdfire = Date.now() + Math.random();
               let bullet_speed__ = bullet_speed * cannon["bulletSpeed"];
 
-              // Recoil effect
-              cannonWidth[i] = cannonWidth[i] || 0;
-              for (let l = 0; l < 10; l++) {
-                setTimeout(() => {
-                  cannonWidth[i] -= 1;
-                  send("playerCannonWidth", {
-                    id: playerId,
-                    cannonW: cannonWidth,
-                  });
-                }, 10 * l);
-                setTimeout(() => {
-                  cannonWidth[i] += 1;
-                  send("playerCannonWidth", {
-                    id: playerId,
-                    cannonW: cannonWidth,
-                  });
-                }, 20 * l); // Updated to prevent overlap
-              }
+              bounceBackAndRecoil(i,bullet_size_l,bullet_speed__,angle_)
 
-              let recoilX = -(
-                (bullet_size_l / 10) *
-                bullet_speed__ *
-                Math.cos(angle_)
-              );
-              let recoilY = -(
-                (bullet_size_l / 10) *
-                bullet_speed__ *
-                Math.sin(angle_)
-              );
-              for (let i = 0; i < playerSpeed; i++) {
-                setTimeout(() => {
-                  movePlayer(recoilX / 15, recoilY / 15, i == playerSpeed - 1);
-                }, 15 * i);
-              }
               let vertices = 0;
               if (
                 cannon["type"] === "basicCannon" ||
@@ -1716,9 +1673,10 @@
               (event = evt, MouseY__ = MouseY_, MouseX__ = MouseX_) => {
                 canFire2 = false;
                 let angle = Math.atan2(
-                  Math.abs(MouseY_) -
+                  Math.abs(MouseY__) -
                     (window.innerHeight / 2 - playerSize * FOV),
-                  Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
+                  Math.abs(MouseX__) -
+                    (window.innerWidth / 2 - playerSize * FOV)
                 );
                 if (autoFiring) return;
 
@@ -1785,44 +1743,8 @@
                   let identdfire = Date.now() + Math.random();
                   let bullet_speed__ = bullet_speed * cannon["bulletSpeed"];
 
-                  // Recoil effect
-                  cannonWidth[i] = cannonWidth[i] || 0;
-                  for (let l = 0; l < 10; l++) {
-                    setTimeout(() => {
-                      cannonWidth[i] -= 1;
-                      send("playerCannonWidth", {
-                        id: playerId,
-                        cannonW: cannonWidth,
-                      });
-                    }, 10 * l);
-                    setTimeout(() => {
-                      cannonWidth[i] += 1;
-                      send("playerCannonWidth", {
-                        id: playerId,
-                        cannonW: cannonWidth,
-                      });
-                    }, 20 * l); // Updated to prevent overlap
-                  }
-
-                  let recoilX = -(
-                    (bullet_size_l / 10) *
-                    bullet_speed__ *
-                    Math.cos(angle_)
-                  );
-                  let recoilY = -(
-                    (bullet_size_l / 10) *
-                    bullet_speed__ *
-                    Math.sin(angle_)
-                  );
-                  for (let i = 0; i < playerSpeed; i++) {
-                    setTimeout(() => {
-                      movePlayer(
-                        recoilX / 15,
-                        recoilY / 15,
-                        i == playerSpeed - 1
-                      );
-                    }, 15 * i);
-                  }
+                  bounceBackAndRecoil(i,bullet_size_l,bullet_speed__,angle_)
+                  
                   let vertices = 0;
                   if (
                     cannon["type"] === "basicCannon" ||
@@ -1978,15 +1900,12 @@
                 item.innerText = team.name;
                 teamcontainer.appendChild(item);
                 item.addEventListener("click", () => {
-                  // Remove the "glow" class from all children
                   Array.from(teamcontainer.children).forEach((child) => {
                     child.classList.remove("glow");
                   });
 
-                  // Add the "glow" class to the clicked item
                   item.classList.add("glow");
 
-                  // Set the selected class
                   selected_class = team.teamID;
                 });
               });
@@ -2207,7 +2126,7 @@
         ctx.fillStyle = "#0228c2";
         ctx.strokeStyle = "black";
         ctx.textAlign = "center";
-        ctx.font = "bold 40px Nunito";
+        ctx.font = `bold ${40 * (1 + (1 - scaleFactor))}px Nunito`;
         ctx.strokeText(level, canvas.width / 2, canvas.height - button10 * 6);
         ctx.fillText(level, canvas.width / 2, canvas.height - button10 * 6);
 
@@ -2430,10 +2349,10 @@
       oHieght = window.innerHeight;
       canvas.width = oWidth;
       canvas.height = oHieght;
-      var upscaleX = oWidth / (canvas.width * scaleFactor);
-      var upscaleY = oHieght / (canvas.height * scaleFactor);
-      canvas.width *= upscaleX;
-      canvas.height *= upscaleY;
+      var upscaleX_ = oWidth / (canvas.width * scaleFactor);
+      var upscaleY_ = oHieght / (canvas.height * scaleFactor);
+      canvas.width *= upscaleX_;
+      canvas.height *= upscaleY_;
       ctx.scale(scaleFactor, scaleFactor);
       send("FOV-Update", {
         scaleFactor: scaleFactor,
@@ -2620,6 +2539,10 @@
     function drawself(exW, exH) {
       newnotify.announcements = announcements;
       ctx.fillStyle = squareColor;
+      let angle = Math.atan2(
+        Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
+        Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
+      );
       if (!messaging) {
         if (canmove) {
           if (keysPressed["]"]) {
@@ -2758,7 +2681,19 @@
             }
             waitpls();
           } else if (keysPressed["c"]) {
-            send("browserunHidden", { id: playerId });
+            if (autoRotating && !lockautoRotating) {
+              send("unrotating", { id: playerId });
+            } else {
+              send("rotate", {
+                autoAngle: angle * (180 / pi),
+                id: playerId,
+                autoIntevals: autoIntevals,
+                playerSize: playerSize,
+                FOV: scaleFactor,
+                canvaswidth: canvas.width,
+                canvasheight: canvas.height,
+              });
+            }
             autoRotating = !autoRotating;
             waitpls();
           }
@@ -2767,10 +2702,6 @@
 
       newnotify.run();
 
-      let angle = Math.atan2(
-        Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
-        Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
-      );
       let tankdata = tankmeta[__type__];
 
       let tankdatacannon = tankdata["cannons"];
@@ -3146,7 +3077,6 @@
         });
 
         zlevelbullets = [];
-
       }
 
       ctx.beginPath();
@@ -3179,13 +3109,7 @@
       // Draw background bar
       ctx.fillStyle = "black";
       ctx.beginPath();
-      ctx.roundRect(
-        canvas.width / 2 - 45,
-        canvas.height / 2 + 55,
-        90,
-        10,
-        5
-      );
+      ctx.roundRect(canvas.width / 2 - 45, canvas.height / 2 + 55, 90, 10, 5);
       ctx.fill();
       ctx.closePath();
 
@@ -3597,7 +3521,7 @@
         }
       }
     }
-  
+
     function drawbar(item) {
       ctx.fillStyle = "black";
       ctx.beginPath();
@@ -3614,8 +3538,8 @@
 
     function draw(timestamp) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      var upscaleX = oWidth / (canvas.width * scaleFactor);
-      var upscaleY = oHieght / (canvas.height * scaleFactor);
+      var upscaleX = 1 + (1 - oWidth / canvas.width);
+      var upscaleY = 1 + (1 - oHieght / canvas.height);
       let deltaTime = (timestamp - lastTime) / 1000;
       lastTime = timestamp;
 
@@ -3629,7 +3553,7 @@
 
       fps = Math.round(frameTimes.reduce((a, b) => a + b) / frameTimes.length);
 
-      console.log("FPS:", fps); // Display smoothed FPS
+      //console.log("FPS:", fps); // Display smoothed FPS
       ctx.lineJoin = "round";
       food_list.forEach((item) => {
         var realx = item.x;
@@ -3928,7 +3852,6 @@
 
             ctx.beginPath();
 
-            // Corrected vertices centered around circumcenter
             ctx.moveTo(-realitemsize / 2, h / 3);
             ctx.lineTo(realitemsize / 2, h / 3);
             ctx.lineTo(0, (-2 * h) / 3);
@@ -4667,7 +4590,7 @@
           }
           ctx.fill();
           ctx.lineWidth = 5;
-          ctx.strokeStyle = "darkblue";
+          //ctx.strokeStyle = "darkblue";
           ctx.stroke();
 
           ctx.fill();
@@ -4909,8 +4832,8 @@
       // Call the function to draw the level bar
       drawRoundedLevelBar(
         ctx,
-        (canvas.width / 2 - barWidth / 2) * upscaleX,
-        (canvas.height - canvas.height * 0.03879728419) * upscaleY,
+        canvas.width / 2 - barWidth / 2,
+        canvas.height - canvas.height * 0.03879728419,
         barWidth,
         barHeight,
         borderRadius,
@@ -4926,16 +4849,16 @@
         ctx.strokeStyle = "#89faa7";
         ctx.strokeText(
           `+${upgradePoints}`,
-          20 + 145 / 2,
-          canvas.height - 34 * 9
+          20 + (145 * upscaleX) / 2,
+          canvas.height - 34 * upscaleY * 9
         );
         ctx.textAlign = "center";
         ctx.font = "bold 25px Nunito";
         ctx.fillStyle = "#14fc52";
         ctx.fillText(
           `+${upgradePoints}`,
-          (20 + 145 / 2) * upscaleX,
-          (canvas.height - 34 * 9) * upscaleY
+          20 + (145 * upscaleX) / 2,
+          canvas.height - 34 * upscaleY * 9
         );
       }
 
@@ -4945,8 +4868,8 @@
         let color = colorUpgrades[CCC] || "red";
         drawRoundedLevelBar(
           ctx,
-          20 * upscaleX,
-          (canvas.height - 34 * I_ - 40) * upscaleY,
+          20,
+          canvas.height - 34 * upscaleY * I_ - 40,
           145 * upscaleX,
           25 * upscaleY,
           borderRadius,
@@ -4957,30 +4880,21 @@
           false
         );
         ctx.textAlign = "center";
-        ctx.font = "bold 15px Nunito";
+        ctx.font = `bold ${15 * (1 + (1 - scaleFactor))}px Nunito`;
         ctx.fillStyle = "white";
         ctx.fillText(
           `${stat}:${stat_}`,
-          (20 + 145 / 2) * upscaleX,
-          (canvas.height - 34 * I_ - 40 + 17.5) * upscaleY
+          20 + (145 * upscaleX) / 2,
+          canvas.height - 34 * upscaleY * I_ - 40 + 17.5 * upscaleY
         );
         I_++;
       }
       ctx.font = "bold 30px Nunito";
       ctx.strokeStyle = "black";
-      ctx.strokeText(
-        "leaderboard",
-        (canvas.width - 125) * upscaleX,
-        25 * upscaleY
-      );
+      ctx.strokeText("leaderboard", canvas.width - 125 * upscaleX, 25);
       ctx.textAlign = "center";
-      ctx.font = "bold 30px Nunito";
       ctx.fillStyle = "#00f7ff";
-      ctx.fillText(
-        "leaderboard",
-        (canvas.width - 125) * upscaleX,
-        25 * upscaleY
-      );
+      ctx.fillText("leaderboard", canvas.width - 125 * upscaleX, 25);
 
       leader_board.forEach((entre, i) => {
         var totalwidth;
@@ -4990,10 +4904,11 @@
         if (!leader_board[0].score) {
           totalwidth = 1;
         }
+        console.log(upscaleX);
         drawRoundedLevelBar(
           ctx,
-          (canvas.width - 237.5) * upscaleX,
-          (50 + i * 30) * upscaleY,
+          canvas.width - 237.5 * upscaleX,
+          50 + i * 30,
           225 * upscaleX,
           27 * upscaleY,
           borderRadius,
@@ -5010,7 +4925,7 @@
         ctx.fillText(
           `${entre.name} ➠ ${entre.score}`,
           (canvas.width - 125) * upscaleX,
-          (72 + i * 30) * upscaleY
+          72 + i * 30 * upscaleY
         );
       });
 
@@ -5024,7 +4939,7 @@
       setTimeout(() => {
         document.getElementById("start").style.display = "none";
         document.getElementById("game").style.display = "block";
-        if (username === "A") {
+        if (username !== "A") {
           document.addEventListener("contextmenu", (event) =>
             event.preventDefault()
           );
