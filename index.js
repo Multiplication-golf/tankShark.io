@@ -1842,7 +1842,7 @@ wss.on("connection", (socket) => {
       case "playerCannonWidth": {
         if (!players[data.id]) {
           invaled_requests.push(data.id);
-          return;
+          break;
         }
         players[data.id].cannonW = data.cannonW;
         broadcast(

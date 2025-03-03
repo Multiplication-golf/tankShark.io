@@ -1481,6 +1481,42 @@
           });
           owner_of_team = true;
         });
+        
+        function bounceBackAndRecoil(i, Bsize, Bspeed, anlge_) {
+          cannonWidth[i] = cannonWidth[i] || 0;
+          for (let l = 0; l < 10; l++) {
+            setTimeout(() => {
+              cannonWidth[i] -= 1;
+              send("playerCannonWidth", {
+                id: playerId,
+                cannonW: cannonWidth,
+              });
+            }, 10 * l);
+            setTimeout(() => {
+              cannonWidth[i] += 1;
+              send("playerCannonWidth", {
+                id: playerId,
+                cannonW: cannonWidth,
+              });
+            }, 20 * l); // Updated to prevent overlap
+          }
+
+          let recoilX = -(
+            (Bsize / 10) *
+            Bspeed *
+            Math.cos(anlge_)
+          );
+          let recoilY = -(
+            (Bsize / 10) *
+            Bspeed *
+            Math.sin(anlge_)
+          );
+          for (let i = 0; i < playerSpeed; i++) {
+            setTimeout(() => {
+              movePlayer(recoilX / 15, recoilY / 15, i == playerSpeed - 1);
+            }, 15 * i);
+          }
+        }
 
         function fireOnce(evt, directer) {
           let tankdata = tankmeta[__type__];
@@ -1494,7 +1530,6 @@
             Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
           );
 
-          // Fire all cannons
           tankdatacannon.forEach((cannon, i) => {
             if (!cannonFireData[i]) return;
             cannonFireData[i] = false;
@@ -1506,7 +1541,6 @@
                 return;
               if (!directer && cannon.type === "directer") return;
 
-              //if (cannon.type === "directer" && !directer) return;
               let bullet_size_l = bullet_size * cannon["bulletSize"];
 
               let randomNumber = generateRandomNumber(-0.2, 0.2);
@@ -1551,40 +1585,8 @@
               let identdfire = Date.now() + Math.random();
               let bullet_speed__ = bullet_speed * cannon["bulletSpeed"];
 
-              // Recoil effect
-              cannonWidth[i] = cannonWidth[i] || 0;
-              for (let l = 0; l < 10; l++) {
-                setTimeout(() => {
-                  cannonWidth[i] -= 1;
-                  send("playerCannonWidth", {
-                    id: playerId,
-                    cannonW: cannonWidth,
-                  });
-                }, 10 * l);
-                setTimeout(() => {
-                  cannonWidth[i] += 1;
-                  send("playerCannonWidth", {
-                    id: playerId,
-                    cannonW: cannonWidth,
-                  });
-                }, 20 * l); // Updated to prevent overlap
-              }
+              bounceBackAndRecoil(i,bullet_size_l,bullet_speed__,angle_)
 
-              let recoilX = -(
-                (bullet_size_l / 10) *
-                bullet_speed__ *
-                Math.cos(angle_)
-              );
-              let recoilY = -(
-                (bullet_size_l / 10) *
-                bullet_speed__ *
-                Math.sin(angle_)
-              );
-              for (let i = 0; i < playerSpeed; i++) {
-                setTimeout(() => {
-                  movePlayer(recoilX / 15, recoilY / 15, i == playerSpeed - 1);
-                }, 15 * i);
-              }
               let vertices = 0;
               if (
                 cannon["type"] === "basicCannon" ||
@@ -1741,44 +1743,8 @@
                   let identdfire = Date.now() + Math.random();
                   let bullet_speed__ = bullet_speed * cannon["bulletSpeed"];
 
-                  // Recoil effect
-                  cannonWidth[i] = cannonWidth[i] || 0;
-                  for (let l = 0; l < 10; l++) {
-                    setTimeout(() => {
-                      cannonWidth[i] -= 1;
-                      send("playerCannonWidth", {
-                        id: playerId,
-                        cannonW: cannonWidth,
-                      });
-                    }, 10 * l);
-                    setTimeout(() => {
-                      cannonWidth[i] += 1;
-                      send("playerCannonWidth", {
-                        id: playerId,
-                        cannonW: cannonWidth,
-                      });
-                    }, 20 * l); // Updated to prevent overlap
-                  }
-
-                  let recoilX = -(
-                    (bullet_size_l / 10) *
-                    bullet_speed__ *
-                    Math.cos(angle_)
-                  );
-                  let recoilY = -(
-                    (bullet_size_l / 10) *
-                    bullet_speed__ *
-                    Math.sin(angle_)
-                  );
-                  for (let i = 0; i < playerSpeed; i++) {
-                    setTimeout(() => {
-                      movePlayer(
-                        recoilX / 15,
-                        recoilY / 15,
-                        i == playerSpeed - 1
-                      );
-                    }, 15 * i);
-                  }
+                  bounceBackAndRecoil(i,bullet_size_l,bullet_speed__,angle_)
+                  
                   let vertices = 0;
                   if (
                     cannon["type"] === "basicCannon" ||
@@ -2719,7 +2685,7 @@
               send("unrotating", { id: playerId });
             } else {
               send("rotate", {
-                autoAngle: angle * (180/pi),
+                autoAngle: angle * (180 / pi),
                 id: playerId,
                 autoIntevals: autoIntevals,
                 playerSize: playerSize,
