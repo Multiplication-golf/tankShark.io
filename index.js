@@ -89,7 +89,11 @@ app.use(
         "https://fonts.gstatic.com",
       ],
       imgSrc: ["'self'", "https://images.com"],
-      connectSrc: ["'self'", "ws://localhost:50409/"], // Restrict fetch/XHR/WebSockets
+      connectSrc: [
+        "'self'",
+        "wss://71.73.66.5:270",
+        "wss://deip-io3.glitch.me/",
+      ], // Restrict fetch/XHR/WebSockets
       frameAncestors: ["'none'"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
@@ -254,7 +258,7 @@ fs.readFile("users.json", function (err, data) {
   console.log(userbase);
 });
 
-// don't touch
+// don't touch pls
 var config = {
   levelMultiplyer: 1.2,
   updateInterval: 75,
@@ -794,7 +798,6 @@ function createAnnocment(
     sender: sender,
   };
   announcements.push(newannouncements);
-  console.log("announcements", announcements);
 }
 
 function between(x, min, max) {
@@ -812,13 +815,13 @@ function mmalizeAngleRadians(angle) {
 }
 
 function calculateTriangleVertices(x, y, sideLength, angle) {
-  const rad = angle * (Math.PI / 180); // Convert angle from degrees to radians
-  const radius = sideLength / Math.sqrt(3); // Correct circumradius
+  const rad = angle * (Math.PI / 180);
+  const radius = sideLength / Math.sqrt(3);
 
   const vertices = [];
 
   for (let i = 0; i < 3; i++) {
-    const theta = rad + i * ((2 * Math.PI) / 3); // 120-degree increments
+    const theta = rad + i * ((2 * Math.PI) / 3);
     const vx = x + radius * Math.cos(theta);
     const vy = y + radius * Math.sin(theta);
     vertices.push({ x: vx, y: vy });
@@ -895,6 +898,10 @@ function rotatePointAroundPlayer(cannonOffsetX, cannonOffsetY, playerRotation) {
     cannonOffsetY * Math.cos(playerRotationRad);
 
   return [rotatedX, rotatedY];
+}
+
+function findThisBoss(id) {
+  return bosses.find((boss) => id === boss.id);
 }
 
 function isTargetInSwivelRange(
@@ -1128,18 +1135,6 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
   food_squares.push(fooditem);
 }
 
-food_squares.forEach((shape, index) => {
-  if (
-    isNaN(shape.x) ||
-    isNaN(shape.y) ||
-    shape.size <= 0 ||
-    !shape.vertices ||
-    shape.vertices.some((v) => isNaN(v.x) || isNaN(v.y))
-  ) {
-    console.error("Malformed shape detected:", index, shape);
-  }
-});
-
 for (let i = 0; i < getRandomInt(50, 75); i++) {
   let x = getRandomInt(-1000, 1000);
   let y = getRandomInt(-1000, 1000);
@@ -1229,6 +1224,270 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
   food_squares.push(fooditem);
 }
 
+function newtarget(instancevars) {
+  instancevars.locked = true;
+  if (!instancevars.crissCross) {
+    getTarget(instancevars);
+  }
+  if (instancevars.crissCross) {
+    if (instancevars.randomCrossInterval()) {
+      instancevars.locked = true;
+      instancevars.targetX = instancevars.baseX;
+      instancevars.targetY = instancevars.baseY;
+      instancevars.targetX +=
+        instancevars.wanderRadius * Math.cos(instancevars.angle);
+      instancevars.targetY +=
+        instancevars.wanderRadius * Math.sin(instancevars.angle);
+      while (!instancevars.reachedTarget) {
+        if (instancevars.reachedTarget) {
+          instancevars.locked = false;
+        }
+        isAtTarget(instancevars);
+        movestraight(instancevars);
+      }
+    } else {
+      getTarget(instancevars);
+    }
+  }
+}
+
+function getTarget(instancevars) {
+  setTimeout(() => {
+    instancevars.angle = getRandomAngle(instancevars);
+    instancevars.targetX = instancevars.baseX;
+    instancevars.targetY = instancevars.baseY;
+    if (!instancevars.allowInner) {
+      instancevars.targetX +=
+        instancevars.wanderRadius * Math.cos(instancevars.angle);
+      instancevars.targetY +=
+        instancevars.wanderRadius * Math.sin(instancevars.angle);
+    } else if (instancevars.allowInner) {
+      instancevars.targetX +=
+        getRandom(
+          instancevars.minimumWanderDistance,
+          instancevars.wanderRadius
+        ) * Math.cos(instancevars.angle);
+      instancevars.targetY +=
+        getRandom(
+          instancevars.minimumWanderDistance,
+          instancevars.wanderRadius
+        ) * Math.sin(instancevars.angle);
+    }
+    if (instancevars.wanderType === "arc") {
+      instancevars.arcEndAngle = instancevars.angle;
+    }
+    instancevars.locked = false;
+  }, getRandomTime(instancevars));
+}
+
+function getRandomAngle(instancevars) {
+  if (instancevars.wanderType === "straight") {
+    let min = -Math.PI;
+    let max = Math.PI;
+    return Math.random() * (max - min + 1) + min;
+  } else if (instancevars.wanderType === "arc") {
+    var plusminusangle = getRandom(
+      instancevars.AngleDiffrence,
+      Math.PI - (Math.PI % instancevars.angle),
+      instancevars
+    );
+    if (instancevars.Direction === "positive") {
+      plusminusangle = Math.abs(plusminusangle);
+      instancevars.arcEndAngle = instancevars.angle + plusminusangle;
+      return instancevars.angle + plusminusangle;
+    }
+    if (instancevars.Direction === "negative") {
+      plusminusangle = Math.abs(plusminusangle);
+      instancevars.arcEndAngle = instancevars.angle + plusminusangle;
+      return instancevars.angle + plusminusangle;
+    }
+    if (instancevars.Direction === "neutral") {
+      return instancevars.angle + plusminusangle;
+    }
+  }
+}
+
+function setArcStartAngle(instancevars) {
+  instancevars.arcStartAngle = Math.atan2(
+    instancevars.baseY - instancevars.y,
+    instancevars.baseX - instancevars.x
+  );
+}
+
+function getRandomTime(instancevars) {
+  let min = instancevars.waitTime.low;
+  let max = instancevars.waitTime.high;
+  return (Math.random() * (max - min + 1) + min) * 1000;
+}
+
+function getRandom(min, max, instancevars) {
+  return Math.random() * (max - min + 1) + min;
+}
+
+function moveAngle(instancevars) {
+  if (instancevars.locked) return;
+  if (
+    Math.abs(instancevars.currentAngle - instancevars.arcEndAngle) <
+    instancevars.arcSpeed * 1.01
+  ) {
+    newtarget(instancevars);
+  } else if (instancevars.currentAngle < instancevars.arcEndAngle) {
+    instancevars.currentAngle += instancevars.arcSpeed;
+  } else if (instancevars.currentAngle > instancevars.arcEndAngle) {
+    instancevars.currentAngle -= instancevars.arcSpeed;
+  }
+}
+
+function move(instancevars) {
+  if (instancevars.locked) return;
+  if (instancevars.wanderType === "straight") {
+    instancevars.x -= instancevars.speed * Math.cos(instancevars.angle);
+    instancevars.y -= instancevars.speed * Math.sin(instancevars.angle);
+  } else if (instancevars.wanderType === "arc") {
+    instancevars.x =
+      instancevars.baseX +
+      instancevars.wanderRadius * Math.cos(instancevars.currentAngle);
+    instancevars.y =
+      instancevars.baseY +
+      instancevars.wanderRadius * Math.sin(instancevars.currentAngle);
+  }
+}
+
+function movestraight(instancevars) {
+  if (!instancevars.locked) return;
+  instancevars.x -= instancevars.speed * Math.cos(instancevars.angle);
+  instancevars.y -= instancevars.speed * Math.sin(instancevars.angle);
+}
+
+function GoToBase(instancevars) {
+  reAlingBase(instancevars);
+  instancevars.x -= instancevars.speed * Math.cos(instancevars.angle);
+  instancevars.y -= instancevars.speed * Math.sin(instancevars.angle);
+}
+
+function isAtTarget(instancevars) {
+  instancevars.reachedTarget =
+    Math.abs(instancevars.x - instancevars.targetX) < instancevars.speed * 7 &&
+    Math.abs(instancevars.y - instancevars.targetY) < instancevars.speed * 7 &&
+    !instancevars.locked;
+}
+
+function reAling(instancevars) {
+  instancevars.angle = Math.atan2(
+    instancevars.y - instancevars.targetY,
+    instancevars.x - instancevars.targetX
+  );
+}
+function reAlingBase(instancevars) {
+  instancevars.angle = Math.atan2(
+    instancevars.y - instancevars.baseY,
+    instancevars.x - instancevars.baseX
+  );
+}
+
+function getRandomRole(end, start) {
+  return Math.floor(getRandom(end, start)) === 1;
+}
+
+function Wanderer( // class but what ever
+  x,
+  y,
+  wanderRadius,
+  baseX,
+  baseY,
+  speed,
+  wanderType = "straight",
+  {
+    bound = true,
+    frameSpeed = 2,
+    waitTime = { low: 0.1, high: 0.3 },
+    reAlingcheckSpeed = 4,
+    allowInner = true,
+    minimumWanderDistance = 5,
+    arcSpeed = 0.01,
+    AngleDiffrence = 50,
+    Direction = "positive",
+    crissCross = false,
+    randomCrossInterval = getRandomRole(0, 3),
+  } = {}
+) {
+  var instancevars = {
+    randomCrossInterval: () => {
+      return getRandomRole(0, 3);
+    },
+  };
+  instancevars.x = x;
+  instancevars.y = y;
+  instancevars.wanderRadius = wanderRadius;
+  instancevars.baseX = baseX;
+  instancevars.baseY = baseY;
+  instancevars.speed = speed;
+  instancevars.targetX = x + speed * 8;
+  instancevars.targetY = y + speed * 8;
+  instancevars.angle = 0.1;
+  instancevars.reachedTarget = false;
+  instancevars.bound = bound;
+  instancevars.frame = 0;
+  instancevars.frameSpeed = frameSpeed;
+  instancevars.waitTime = waitTime;
+  instancevars.lastTime = Date.now();
+  instancevars.locked = false;
+  instancevars.reAlingcheckSpeed = reAlingcheckSpeed;
+  instancevars.wanderType = wanderType;
+  instancevars.crissCross = crissCross;
+  if (instancevars.wanderType === "straight") {
+    instancevars.allowInner = allowInner;
+    if (instancevars.allowInner) {
+      instancevars.minimumWanderDistance = minimumWanderDistance;
+    }
+  } else if (instancevars.wanderType === "arc") {
+    instancevars.allowInner = false;
+    instancevars.arcStartAngle = 0;
+    instancevars.currentAngle = instancevars.arcStartAngle;
+    instancevars.arcEndAngle = 1;
+    instancevars.arcSpeed = arcSpeed;
+    instancevars.AngleDiffrence = AngleDiffrence * (Math.PI / 180);
+    instancevars.Direction = Direction;
+  } else {
+    throw Error("wander type must be [arc] or [straight]");
+  }
+  this.think = function () {
+    if (
+      MathHypotenuse(
+        instancevars.x - instancevars.targetX,
+        instancevars.y - instancevars.targetY
+      ) < instancevars.wanderRadius
+    ) {
+      isAtTarget(instancevars);
+      if (instancevars.wanderType === "arc") {
+        moveAngle(instancevars);
+      }
+      move(instancevars);
+      if (instancevars.reachedTarget) {
+        newtarget(instancevars);
+      }
+      instancevars.frame += instancevars.frameSpeed;
+      if (
+        instancevars.frame % instancevars.reAlingcheckSpeed &&
+        instancevars.wanderType !== "arc"
+      ) {
+        reAling(instancevars);
+      }
+    } else {
+      GoToBase(instancevars);
+    }
+  };
+  this.returnXY = function () {
+    return { x: instancevars.x, y: instancevars.y };
+  };
+  this.setBaseXY = function (x, y) {
+    instancevars.x = x;
+    instancevars.y = y;
+    instancevars.baseX = x;
+    instancevars.baseY = y;
+  };
+}
+
 var angle = 0;
 
 const algorithm = "aes-256-cbc";
@@ -1246,8 +1505,6 @@ const connections = [];
 // Initialize a logging counter
 let logCounter = 0;
 const LOG_LIMIT = 1300; // Maximum number of logs
-
-console.log("userbase", userbase);
 
 wss.on("connection", (socket) => {
   let connection = { socket: socket, playerId: null };
@@ -1297,7 +1554,7 @@ wss.on("connection", (socket) => {
           var _player = userbase.find((_player) => {
             return Math.abs(_player.userid - data.userId) < 0.001;
           });
-          console.log("_player", _player);
+
           if (_player !== undefined) {
             let score__$ = _player.scores.reduce((a, b) => {
               return a + b.score;
@@ -1412,13 +1669,13 @@ wss.on("connection", (socket) => {
             statecycle: statecycle,
             playerID: data.id,
           };
-          //console.log(players[data.id].state);
           emit("statecycleUpdate", _data__);
         }, 50);
 
         setTimeout(() => {
           start = null;
           state = "normal";
+          players[data.id].state = state;
           let _data = {
             state: state,
             statecycle: statecycle,
@@ -1426,7 +1683,6 @@ wss.on("connection", (socket) => {
           };
           if (players[data.id]) {
             players[data.id].state = _data.state;
-            //console.log(players[data.id].state);
             emit("statechangeUpdate", _data, socket);
             setTimeout(() => {
               players[data.id].state = _data.state;
@@ -1558,7 +1814,6 @@ wss.on("connection", (socket) => {
       }
 
       case "playerLeftTeam": {
-        console.log(data);
         let MYteam = teamlist.find((team) => {
           return team.teamID === players[data.id]?.team;
         });
@@ -3198,9 +3453,14 @@ setInterval(() => {
       if (bullet.target && bullet.target?.distance > 40 && __angle !== 0) {
         var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
         var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
+      } else if (bullet.target?.distance > 40 && __angle !== 0) {
+        var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
+        var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
       } else {
-        var newX = bullet.x;
-        var newY = bullet.y;
+        bullet.wander.think();
+        let { x, y } = bullet.wander.returnXY();
+        var newX = x;
+        var newY = y;
       }
     } else {
       var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
@@ -3868,13 +4128,13 @@ setInterval(() => {
         }
       }
       let __angle = Math.atan2(target.y - item.y, target.x - item.x);
-      //console.log(__angle)
       let newX = item.x + item.speed * Math.cos(__angle);
       let newY = item.y + item.speed * Math.sin(__angle);
       item.centerX = newX;
       item.centerY = newY;
       item.x = newX;
       item.y = newY;
+      item.updateXY(item.randomID,newX,newY)
     }
     if (item.type === "pentagon") {
       item.angle += 0.25;
@@ -3954,6 +4214,15 @@ setInterval(() => {
             id: cannon.id,
             uniqueid: randID,
             boundtype: "square",
+            wander: new Wanderer(
+              cannon.x,
+              cannon.y,
+              item.size * 1.5,
+              cannon.x,
+              cannon.y,
+              2,
+              "arc"
+            ),
           };
 
           tempBulletToPush.push(bullet____);
@@ -3976,8 +4245,8 @@ setInterval(() => {
     if (item.subtype === "Enemyboss:Triangle") {
       realtype = "triangle:boss";
       let points = midpointCalc(item.vertices);
-      item.cannons[0].x = points[0].x;
-      item.cannons[0].y = points[0].y;
+      item.cannons[0].x = points[1].x;
+      item.cannons[0].y = points[1].y;
       item.cannons.forEach((cannon, i) => {
         if (cannon.canfire && cannon.current < cannon.maxbullets) {
           cannon.current += 1;
@@ -4005,6 +4274,15 @@ setInterval(() => {
             id: cannon.id,
             uniqueid: randID,
             boundtype: "triangle",
+            wander: new Wanderer(
+              cannon.x,
+              cannon.y,
+              item.size * 1.5,
+              cannon.x,
+              cannon.y,
+              2,
+              "arc"
+            ),
           };
           tempBulletToPush.push(bullet____);
           let boss = bosses.find((boss_) => item.randomID === boss_.id);
@@ -4625,6 +4903,11 @@ async function createAndSendGameObjects(playerArray) {
 function createBoss(type_) {
   var boss = {};
   var fooditem = {};
+  var updateXY = (id,x,y) => {
+    let thisBoss = bosses.find((boss) => boss.id === id);
+    thisBoss.x = x;
+    thisBoss.y = y;
+  }
   switch (type_) {
     case "Necromancer":
       let x = 0;
@@ -4653,10 +4936,13 @@ function createBoss(type_) {
         color: color,
         score_add: 3500,
         randomID: randID,
+        updateXY:updateXY
       };
       boss = {
         id: randID,
         score: 0,
+        x: x,
+        y: y,
         cannons: [
           { cannonW: 0, canfire: true },
           { cannonW: 0, canfire: true },
@@ -4735,10 +5021,13 @@ function createBoss(type_) {
         color: color,
         score_add: 3000,
         randomID: randID2,
+        updateXY:updateXY
       };
       boss = {
         id: randID2,
         score: 0,
+        x: x2,
+        y: y2,
         cannons: [{ cannonW: 0, canfire: true }],
       };
 
@@ -4756,7 +5045,6 @@ function createBoss(type_) {
       ];
       break;
   }
-  console.log(boss, fooditem);
   bosses.push(boss);
   food_squares.push(fooditem);
 }
@@ -4833,7 +5121,6 @@ function requestEmit(type, data2) {
       if (request.owner === conn.playerId) {
         request.callbackID = Math.random() * 7;
         PendingJoinRequests.push(request);
-        console.log(PendingJoinRequests);
         splices.push(i);
       }
       return request.owner === conn.playerId;
@@ -4857,7 +5144,6 @@ function smartbroadcast(type, data, senderConn) {
     }
   });
 }
-
-const listener = server.listen(process.env.PORT, function () {
+const listener = server.listen(3000, function () {
   console.log("Your app is listening on port " + listener.address().port);
 });
