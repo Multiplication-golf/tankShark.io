@@ -97,7 +97,7 @@
   function ongame() {
     const socket =
       new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(
-        "https://deip-io3.glitch.me/"
+        "wss://deip-io3.glitch.me/"
       );
     socket.binaryType = "arraybuffer";
     const schema = `
@@ -806,7 +806,6 @@
                 newname.innerText = players[requests[0].requester].username;
                 conteiner.appendChild(newname);
                 var yes, no;
-                console.log(requests);
                 yes = () => {
                   send("allowYes", requests[0]);
                   requests.shift();
@@ -1103,10 +1102,6 @@
               }
               break;
             }
-            case "FoodUpdate": {
-              food_list = data;
-              break;
-            }
             case "colorUpgrades": {
               colorUpgrades = data;
               break;
@@ -1343,7 +1338,7 @@
               break;
             }
             default: {
-              console.log("Empty action received.");
+              console.log("Empty action received.", type);
               break;
             }
           }
@@ -2452,8 +2447,6 @@
         this.shovespeed = shovespeed;
         this.shovespeed5 = shovespeed * 5;
         this.boundrectH10 = this.boundrectH - 10;
-        //console.log(canvas.width,canvas.height)
-        //Object.getOwnPropertyNames(this).forEach((item) => {console.log(this[item])})
       }
       run() {
         var shovedown = 50;
@@ -2462,12 +2455,9 @@
         var exW = 1; // scale factors
         var exH = 1; // scale factors
         var i = 0;
-        //console.log(this.announcements)
         this.announcements.forEach((anoucment) => {
           if (Date.now() <= anoucment.shovedowndate) {
             i++;
-            //console.log(announcements)
-            //console.log(anoucment)
             var shovedownper = 0;
             this.ctx.globalAlpha = anoucment.trans;
             this.ctx.fillStyle = anoucment.color;
@@ -3546,14 +3536,13 @@
       let currentFPS = 1 / deltaTime;
       frameTimes.push(currentFPS);
 
-      // Keep the last 60 frames for a smoother average
       if (frameTimes.length > 60) {
         frameTimes.shift();
       }
 
       fps = Math.round(frameTimes.reduce((a, b) => a + b) / frameTimes.length);
 
-      //console.log("FPS:", fps); // Display smoothed FPS
+      //console.log("FPS:", fps);
       ctx.lineJoin = "round";
       food_list.forEach((item) => {
         var realx = item.x;
@@ -3566,7 +3555,6 @@
           realy - item.size < canvas.height + cavansY &&
           item.health >= 0
         ) {
-          //console.log("item");
           ctx.save();
           if (item.transparency) {
             ctx.globalAlpha = item.transparency;
@@ -4904,7 +4892,6 @@
         if (!leader_board[0].score) {
           totalwidth = 1;
         }
-        console.log(upscaleX);
         drawRoundedLevelBar(
           ctx,
           canvas.width - 237.5 * upscaleX,
@@ -4924,7 +4911,7 @@
         ctx.fillStyle = "black";
         ctx.fillText(
           `${entre.name} ➠ ${entre.score}`,
-          (canvas.width - 125) * upscaleX,
+          canvas.width - 125 * upscaleX,
           72 + i * 30 * upscaleY
         );
       });
