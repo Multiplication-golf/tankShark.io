@@ -901,7 +901,14 @@ function rotatePointAroundPlayer(cannonOffsetX, cannonOffsetY, playerRotation) {
 }
 
 function findThisBoss(id) {
-  return bosses.find((boss) => id === boss.id);
+  let boss = bosses.find((boss) => {
+    let found = false;
+    boss.cannons.forEach((cannon) => {
+      found = id === cannon.id;
+    });
+    return found;
+  });
+  return boss;
 }
 
 function isTargetInSwivelRange(
@@ -1224,6 +1231,19 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
   food_squares.push(fooditem);
 }
 
+function checkTarget(instancevars) {
+  if (!instancevars.reachedTarget) {
+    isAtTarget(instancevars);
+    if (instancevars.reachedTarget) {
+      getTarget(instancevars);
+    } else {
+      setTimeout(() => {
+        checkTarget(instancevars);
+      }, 76); // Retry after 50ms
+    }
+  }
+}
+
 function newtarget(instancevars) {
   instancevars.locked = true;
   if (!instancevars.crissCross) {
@@ -1238,17 +1258,20 @@ function newtarget(instancevars) {
         instancevars.wanderRadius * Math.cos(instancevars.angle);
       instancevars.targetY +=
         instancevars.wanderRadius * Math.sin(instancevars.angle);
-      while (!instancevars.reachedTarget) {
-        if (instancevars.reachedTarget) {
-          instancevars.locked = false;
-        }
-        isAtTarget(instancevars);
-        movestraight(instancevars);
-      }
+      instancevars.reachedTarget = false;
+      checkTarget(instancevars);
     } else {
+      instancevars.goingStriaght = false;
       getTarget(instancevars);
     }
   }
+}
+
+function setFirstTarget(instancevars) {
+  instancevars.targetX +=
+    instancevars.wanderRadius * Math.cos(instancevars.angle);
+  instancevars.targetY +=
+    instancevars.wanderRadius * Math.sin(instancevars.angle);
 }
 
 function getTarget(instancevars) {
@@ -1276,6 +1299,7 @@ function getTarget(instancevars) {
     if (instancevars.wanderType === "arc") {
       instancevars.arcEndAngle = instancevars.angle;
     }
+    console.log(instancevars.angle);
     instancevars.locked = false;
   }, getRandomTime(instancevars));
 }
@@ -1286,11 +1310,18 @@ function getRandomAngle(instancevars) {
     let max = Math.PI;
     return Math.random() * (max - min + 1) + min;
   } else if (instancevars.wanderType === "arc") {
+    let dividen = instancevars.angle === 0 ? 0.01 : instancevars.angle;
     var plusminusangle = getRandom(
       instancevars.AngleDiffrence,
-      Math.PI - (Math.PI % instancevars.angle),
-      instancevars
+      Math.PI - (Math.PI % dividen)
     );
+    if (typeof instancevars.angle !== "number" || isNaN(instancevars.angle)) {
+      console.error(
+        "Error: instancevars.angle is invalid!",
+        instancevars.angle
+      );
+      instancevars.angle = 0.01; // Assign a default valid value
+    }
     if (instancevars.Direction === "positive") {
       plusminusangle = Math.abs(plusminusangle);
       instancevars.arcEndAngle = instancevars.angle + plusminusangle;
@@ -1320,7 +1351,7 @@ function getRandomTime(instancevars) {
   return (Math.random() * (max - min + 1) + min) * 1000;
 }
 
-function getRandom(min, max, instancevars) {
+function getRandom(min, max) {
   return Math.random() * (max - min + 1) + min;
 }
 
@@ -1355,12 +1386,20 @@ function move(instancevars) {
 
 function movestraight(instancevars) {
   if (!instancevars.locked) return;
+  instancevars.goingStriaght = true;
+  instancevars.x -= instancevars.speed * Math.cos(instancevars.angle);
+  instancevars.y -= instancevars.speed * Math.sin(instancevars.angle);
+}
+
+function unlockedMovestraight(instancevars) {
   instancevars.x -= instancevars.speed * Math.cos(instancevars.angle);
   instancevars.y -= instancevars.speed * Math.sin(instancevars.angle);
 }
 
 function GoToBase(instancevars) {
-  reAlingBase(instancevars);
+  instancevars.angle = reAlingBase(instancevars);
+  instancevars.currentAngle = instancevars.angle;
+  instancevars.arcEndAngle = instancevars.angle;
   instancevars.x -= instancevars.speed * Math.cos(instancevars.angle);
   instancevars.y -= instancevars.speed * Math.sin(instancevars.angle);
 }
@@ -1377,9 +1416,22 @@ function reAling(instancevars) {
     instancevars.y - instancevars.targetY,
     instancevars.x - instancevars.targetX
   );
+  if (isNaN(instancevars.angle)) console.error("NAN Angle");
 }
+
+function reAlingBase2(instancevars) {
+  return (
+    Math.PI %
+    (Math.PI +
+      Math.atan2(
+        instancevars.y - instancevars.baseY,
+        instancevars.x - instancevars.baseX
+      ))
+  );
+}
+
 function reAlingBase(instancevars) {
-  instancevars.angle = Math.atan2(
+  return Math.atan2(
     instancevars.y - instancevars.baseY,
     instancevars.x - instancevars.baseX
   );
@@ -1422,8 +1474,11 @@ function Wanderer( // class but what ever
   instancevars.baseX = baseX;
   instancevars.baseY = baseY;
   instancevars.speed = speed;
-  instancevars.targetX = x + speed * 8;
-  instancevars.targetY = y + speed * 8;
+  if (!isFinite(instancevars.x) || !isFinite(instancevars.y)) {
+    console.error("Invalid cannon position:", instancevars);
+  }
+  instancevars.targetX = x + speed * 4;
+  instancevars.targetY = y + speed * 4;
   instancevars.angle = 0.1;
   instancevars.reachedTarget = false;
   instancevars.bound = bound;
@@ -1431,10 +1486,11 @@ function Wanderer( // class but what ever
   instancevars.frameSpeed = frameSpeed;
   instancevars.waitTime = waitTime;
   instancevars.lastTime = Date.now();
-  instancevars.locked = false;
+  instancevars.locked = true;
   instancevars.reAlingcheckSpeed = reAlingcheckSpeed;
   instancevars.wanderType = wanderType;
   instancevars.crissCross = crissCross;
+  instancevars.goingStriaght = false;
   if (instancevars.wanderType === "straight") {
     instancevars.allowInner = allowInner;
     if (instancevars.allowInner) {
@@ -1451,27 +1507,54 @@ function Wanderer( // class but what ever
   } else {
     throw Error("wander type must be [arc] or [straight]");
   }
+  
+  instancevars.angle = reAlingBase2(instancevars);
+  instancevars.currentAngle = instancevars.angle;
+  instancevars.arcEndAngle = instancevars.angle;
+  unlockedMovestraight(instancevars);
+  setFirstTarget(instancevars);
   this.think = function () {
     if (
       MathHypotenuse(
-        instancevars.x - instancevars.targetX,
-        instancevars.y - instancevars.targetY
-      ) < instancevars.wanderRadius
+        instancevars.x - instancevars.baseX,
+        instancevars.y - instancevars.baseY
+      ) <
+      instancevars.wanderRadius + speed * 3
     ) {
-      isAtTarget(instancevars);
-      if (instancevars.wanderType === "arc") {
-        moveAngle(instancevars);
-      }
-      move(instancevars);
-      if (instancevars.reachedTarget) {
-        newtarget(instancevars);
-      }
-      instancevars.frame += instancevars.frameSpeed;
       if (
-        instancevars.frame % instancevars.reAlingcheckSpeed &&
-        instancevars.wanderType !== "arc"
+        MathHypotenuse(
+          instancevars.baseX - instancevars.x,
+          instancevars.baseY - instancevars.y
+        ) <
+        instancevars.wanderRadius - speed * 5
       ) {
-        reAling(instancevars);
+        instancevars.angle = reAlingBase2(instancevars);
+        instancevars.currentAngle = instancevars.angle;
+        instancevars.arcEndAngle = instancevars.angle;
+        unlockedMovestraight(instancevars);
+        isAtTarget(instancevars);
+        if (instancevars.reachedTarget) {
+          newtarget(instancevars);
+        }
+      } else {
+        isAtTarget(instancevars);
+        if (instancevars.wanderType === "arc") {
+          moveAngle(instancevars);
+        }
+        if (instancevars.wanderType === "arc" && instancevars.crissCross) {
+          movestraight(instancevars);
+        }
+        move(instancevars);
+        if (instancevars.reachedTarget) {
+          newtarget(instancevars);
+        }
+        instancevars.frame += instancevars.frameSpeed;
+        if (
+          instancevars.frame % instancevars.reAlingcheckSpeed &&
+          instancevars.wanderType !== "arc"
+        ) {
+          reAling(instancevars);
+        }
       }
     } else {
       GoToBase(instancevars);
@@ -1481,10 +1564,12 @@ function Wanderer( // class but what ever
     return { x: instancevars.x, y: instancevars.y };
   };
   this.setBaseXY = function (x, y) {
-    instancevars.x = x;
-    instancevars.y = y;
     instancevars.baseX = x;
     instancevars.baseY = y;
+  };
+  this.setXY = function (x, y) {
+    instancevars.x = x;
+    instancevars.y = y;
   };
 }
 
@@ -1527,7 +1612,6 @@ wss.on("connection", (socket) => {
         var badge;
         console.log(players);
         emit("playerJoined", data); // Emit playerJoined event to notify all clients
-        emit("FoodUpdate", food_squares); // Emit FoodUpdate event to update food squares
         emit("autoCannonUPDATE-ADD", autocannons);
         emit("colorUpgrades", ColorUpgrades);
         emit("Levels", levels);
@@ -2071,11 +2155,6 @@ wss.on("connection", (socket) => {
         let cannon = autocannons[cannon__index];
         cannon.autoindex = autoindex;
         emit("autoCannonUPDATE-ADD", autocannons);
-        break;
-      }
-
-      case "getFood": {
-        emit("FoodUpdate", food_squares);
         break;
       }
 
@@ -2698,11 +2777,6 @@ wss.on("connection", (socket) => {
           data.playerHealTime > players[data.ID].Regenspeed &&
           players[data.ID].health < players[data.ID].maxhealth
         ) {
-          emit("playerHealing", {
-            playerID: data.ID,
-            playerHealTime: data.playerHealTime,
-          });
-
           let healer = setInterval(function () {
             if (!players[data.ID]) {
               clearInterval(healer);
@@ -3309,9 +3383,11 @@ wss.on("connection", (socket) => {
       console.log(e);
     }
     try {
-      var _player = userbase.find((_player) => {
+      console.log("userbase", userbase);
+      var _player = userbase.find((_player_) => {
         return (
-          Math.abs(_player.userid - players[connection.playerId].userId) < 0.001
+          Math.abs(_player_.userid - players[connection.playerId].userId) <
+          0.001
         );
       });
       _player.scores.push({
@@ -3381,12 +3457,14 @@ wss.on("connection", (socket) => {
 let loglimit = 10000;
 let tempToPush = [];
 let tempBulletToPush = [];
+var limit = 0;
 
 setInterval(() => {
   frame++;
   // Filter and update bullets
   var deadlist = [];
-  bullets = bullets.filter((bullet) => {
+  bullets = bullets.filter((bullet, i) => {
+    let WanderControlled = false;
     if (bullet.type === "directer") {
       try {
         let recipracailFOV = 1 + (1 - players[bullet.id].FOV);
@@ -3425,7 +3503,8 @@ setInterval(() => {
     if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
       // choose a player to attak
       if (frame % 3 === 0) {
-        var maxdistance = 1300;
+        var maxdistance = 600;
+        var maxfov = 2400;
         var target = { x: bullet.x, y: bullet.y };
         var foundTarget = false;
         for (const playerId in players) {
@@ -3434,33 +3513,68 @@ setInterval(() => {
             player.x - bullet.x,
             player.y - bullet.y
           );
-          if (newdistance < maxdistance) {
+          if (newdistance < maxfov) {
             target = { x: player.x, y: player.y, distance: newdistance };
             newdistance = maxdistance;
             foundTarget = true;
           }
         }
-        if (foundTarget) {
+        if (foundTarget && distance < maxdistance) {
           bullet.target = target;
-        } else {
-          bullet.target = undefined;
+        } else if (foundTarget) {
+          bullet.target = target;
+        } else if (!foundTarget) {
+          bullet.target = { x: 0, y: 0, distance: 4000 };
         }
 
-        var __angle = Math.atan2(target.y - bullet.y, target.x - bullet.x);
+        var __angle = Math.atan2(
+          bullet.target.y - bullet.y,
+          bullet.target.x - bullet.x
+        );
 
         bullet.angle = __angle;
       }
-      if (bullet.target && bullet.target?.distance > 40 && __angle !== 0) {
+      if (bullet.target && bullet.target?.distance < 40 && __angle !== 0) {
         var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
         var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
-      } else if (bullet.target?.distance > 40 && __angle !== 0) {
-        var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
+        bullet.wander.setXY(bullet.x, bullet.y);
+      } else if (bullet.target?.distance < 600) {
+        /*var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
         var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
-      } else {
+        bullet.wander.setXY(bullet.x, bullet.y);*/
+        WanderControlled = true;
+        var boss = findThisBoss(bullet.id);
+        bullet.wander.setBaseXY(boss.x, boss.y);
+        //console.log("Before think:", bullet.wander.returnXY());
         bullet.wander.think();
-        let { x, y } = bullet.wander.returnXY();
-        var newX = x;
-        var newY = y;
+        let { x: x__, y: y__ } = bullet.wander.returnXY();
+        //console.log("After think:", x__, y__);
+        //if (isNaN(x__)) throw Error("NaN")
+        var newX = x__;
+        var newY = y__;
+      } else if (
+        bullet.target &&
+        bullet.target?.distance > 600 &&
+        bullet.target?.distance < 2400
+      ) {
+        WanderControlled = true;
+        var boss = findThisBoss(bullet.id);
+        bullet.wander.setBaseXY(boss.x, boss.y);
+        //console.log("Before think:", bullet.wander.returnXY());
+        bullet.wander.think();
+        let { x: x__, y: y__ } = bullet.wander.returnXY();
+        //console.log("After think:", x__, y__);
+        //if (isNaN(x__)) throw Error("NaN")
+        if (i === 0) {
+          console.log(x__, y__);
+        }
+        var newX = x__;
+        var newY = y__;
+        //console.log(x__,y__)
+      } else {
+        bullet.wander.setXY(bullet.x, bullet.y);
+        var newX = bullet.x;
+        var newY = bullet.y;
       }
     } else {
       var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
@@ -3499,12 +3613,13 @@ setInterval(() => {
           bullet.y - bullet_.y
         );
 
-        if (distance > 50) return;
+        if (distance > 50 || WanderControlled) return;
         var bullet_speed = bullet.speed;
 
         if (
           distance < bullet.size * 2 + bullet_.size * 2 &&
           bullet.id !== bullet_.id &&
+          !WanderControlled &&
           !(
             players[bullet?.id]?.team === players[bullet_?.id]?.team &&
             players[bullet?.id]?.team !== null &&
@@ -3557,7 +3672,8 @@ setInterval(() => {
           bullet.id === bullet_.id &&
           bullet.uniqueid !== bullet_.uniqueid &&
           bullet.type === bullet_.type &&
-          (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm")
+          (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") &&
+          !WanderControlled
         ) {
           var realangle =
             bullet_.angle === 0 ? bullet_.angle : getRandomInt(-pi, pi);
@@ -3707,7 +3823,9 @@ setInterval(() => {
                 bullet.id
               );
             } else {
-              var boss = bosses.find((boss_) => boss_.id === bullet.id);
+              var boss = bosses.find(
+                (boss_) => boss_.cannons[0].id === bullet.id
+              );
               boss.score += reward;
             }
             emit("playerDied", {
@@ -3776,7 +3894,7 @@ setInterval(() => {
         }
       }
     }
-    if (bullet.distanceTraveled < bullet.bullet_distance) {
+    if (bullet.distanceTraveled <= bullet.bullet_distance) {
       bullet.x = newX;
       bullet.y = newY;
       if (collied) {
@@ -3791,7 +3909,7 @@ setInterval(() => {
       emit("dronekilled", { droneID: bullet.id });
     }
 
-    if (bullet.type === "FreeNecromancer") {
+    if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
       deadlist.push(bullet.id);
     }
 
@@ -4134,7 +4252,7 @@ setInterval(() => {
       item.centerY = newY;
       item.x = newX;
       item.y = newY;
-      item.updateXY(item.randomID,newX,newY)
+      item.updateXY(item.randomID, item.x, item.y);
     }
     if (item.type === "pentagon") {
       item.angle += 0.25;
@@ -4200,26 +4318,26 @@ setInterval(() => {
             bullet_distance: 1000,
             speed: 2,
             size: 50,
-            angle: 0,
+            angle: 0.1,
             bullet_damage: 6,
             distanceTraveled: 0,
             vertices: null,
             bullet_pentration: 1,
-            x: cannon.x,
-            y: cannon.y,
+            x: item.x,
+            y: item.y,
             lifespan: 0,
             health: 10,
-            xstart: cannon.x,
-            ystart: cannon.y,
+            xstart: item.x,
+            ystart: item.y,
             id: cannon.id,
             uniqueid: randID,
             boundtype: "square",
             wander: new Wanderer(
-              cannon.x,
-              cannon.y,
-              item.size * 1.5,
-              cannon.x,
-              cannon.y,
+              item.x,
+              item.y,
+              item.size,
+              item.x,
+              item.y,
               2,
               "arc"
             ),
@@ -4237,9 +4355,13 @@ setInterval(() => {
           }
         }
         if (deadlist.length !== 0) console.log(deadlist);
-        if (deadlist.some((itemx) => cannon.id === itemx)) {
-          cannon.current -= 1;
-        }
+        deadlist.filter((itemx) => {
+          if (cannon.id === itemx) {
+            cannon.current -= 1;
+            return false;
+          }
+          return true;
+        });
       });
     }
     if (item.subtype === "Enemyboss:Triangle") {
@@ -4248,6 +4370,7 @@ setInterval(() => {
       item.cannons[0].x = points[1].x;
       item.cannons[0].y = points[1].y;
       item.cannons.forEach((cannon, i) => {
+        //console.log(cannon)
         if (cannon.canfire && cannon.current < cannon.maxbullets) {
           cannon.current += 1;
           cannon.canfire = false;
@@ -4260,27 +4383,27 @@ setInterval(() => {
             bullet_distance: 400,
             speed: 4,
             size: 5,
-            angle: 0,
+            angle: 0.1,
             bullet_damage: 4.5,
             distanceTraveled: 0,
             vertices: null,
             bullet_pentration: 1,
-            x: cannon.x,
-            y: cannon.y,
+            x: item.x,
+            y: item.y,
             lifespan: 0,
             health: 10,
-            xstart: cannon.x,
-            ystart: cannon.y,
+            xstart: item.x,
+            ystart: item.y,
             id: cannon.id,
             uniqueid: randID,
             boundtype: "triangle",
             wander: new Wanderer(
-              cannon.x,
-              cannon.y,
-              item.size * 1.5,
-              cannon.x,
-              cannon.y,
-              2,
+              item.x,
+              item.y,
+              item.size,
+              item.x,
+              item.y,
+              3,
               "arc"
             ),
           };
@@ -4296,9 +4419,13 @@ setInterval(() => {
           }
         }
         if (deadlist.length !== 0) console.log(deadlist);
-        if (deadlist.some((itemx) => cannon.id === itemx)) {
-          cannon.current -= 1;
-        }
+        deadlist.filter((itemx) => {
+          if (cannon.id === itemx) {
+            cannon.current -= 1;
+            return false;
+          }
+          return true;
+        });
       });
     }
     let return_ = true;
@@ -4866,6 +4993,10 @@ setInterval(() => {
   createAndSendGameObjects(food_squares);
 }, UPDATE_INTERVAL);
 
+setInterval(() => {
+  //console.log(bullets[0])
+}, 1000);
+
 async function createAndSendGameObjects(playerArray) {
   // Load and compile the Protobuf schema
   const root = await protobuf.parse(schema).root;
@@ -4893,21 +5024,19 @@ async function createAndSendGameObjects(playerArray) {
 
   const gameObjectList = { objects: gameObjects };
 
-  // Now encode the entire list properly
   const messageBuffer = GameObjectList.encode(gameObjectList).finish();
 
-  // Send the binary message using smartemit()
   smartemitBinary("gameUpdate", messageBuffer);
 }
 
 function createBoss(type_) {
   var boss = {};
   var fooditem = {};
-  var updateXY = (id,x,y) => {
+  var updateXY = (id, x, y) => {
     let thisBoss = bosses.find((boss) => boss.id === id);
     thisBoss.x = x;
     thisBoss.y = y;
-  }
+  };
   switch (type_) {
     case "Necromancer":
       let x = 0;
@@ -4936,18 +5065,19 @@ function createBoss(type_) {
         color: color,
         score_add: 3500,
         randomID: randID,
-        updateXY:updateXY
+        updateXY: updateXY,
       };
+      var cannonID = Math.random() * 3 * Date.now();
       boss = {
         id: randID,
         score: 0,
         x: x,
         y: y,
         cannons: [
-          { cannonW: 0, canfire: true },
-          { cannonW: 0, canfire: true },
-          { cannonW: 0, canfire: true },
-          { cannonW: 0, canfire: true },
+          { cannonW: 0, canfire: true, id: cannonID },
+          { cannonW: 0, canfire: true, id: cannonID },
+          { cannonW: 0, canfire: true, id: cannonID },
+          { cannonW: 0, canfire: true, id: cannonID },
         ],
       };
 
@@ -4960,7 +5090,7 @@ function createBoss(type_) {
           maxbullets: 10,
           current: 0,
           canfire: true,
-          id: Math.random() * 3 * Date.now(),
+          id: cannonID,
         },
         {
           type: "necromancerDrone",
@@ -4970,7 +5100,7 @@ function createBoss(type_) {
           maxbullets: 10,
           current: 0,
           canfire: true,
-          id: Math.random() * 3 * Date.now(),
+          id: cannonID * 2,
         },
         {
           type: "necromancerDrone",
@@ -4980,7 +5110,7 @@ function createBoss(type_) {
           maxbullets: 10,
           current: 0,
           canfire: true,
-          id: Math.random() * 3 * Date.now(),
+          id: cannonID * 3,
         },
         {
           type: "necromancerDrone",
@@ -4990,7 +5120,7 @@ function createBoss(type_) {
           maxbullets: 10,
           current: 0,
           canfire: true,
-          id: Math.random() * 3 * Date.now(),
+          id: cannonID * 4,
         },
       ];
       break;
@@ -5021,14 +5151,15 @@ function createBoss(type_) {
         color: color,
         score_add: 3000,
         randomID: randID2,
-        updateXY:updateXY
+        updateXY: updateXY,
       };
+      var cannonID = Math.random() * 3 * Date.now();
       boss = {
         id: randID2,
         score: 0,
         x: x2,
         y: y2,
-        cannons: [{ cannonW: 0, canfire: true }],
+        cannons: [{ cannonW: 0, canfire: true, id: cannonID }],
       };
 
       fooditem.cannons = [
@@ -5040,7 +5171,7 @@ function createBoss(type_) {
           maxbullets: 100,
           current: 0,
           canfire: true,
-          id: Math.random() * 3 * Date.now(),
+          id: cannonID,
         },
       ];
       break;

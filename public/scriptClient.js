@@ -745,8 +745,6 @@
 
         send("newPlayer", playerData);
 
-        send("getFood", {});
-
         send("getTankMeta", {});
 
         send("HANDSHAKE", {});
