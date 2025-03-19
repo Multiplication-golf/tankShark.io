@@ -204,6 +204,7 @@
     var pubteams = [];
     var level = 0;
     var xp = 0;
+    var teamOver = false;
     var buttton140 = 0.07291666666 * canvas.width;
     var button275 = 0.14322916666 * canvas.width;
     var button475 = 0.24739583333 * canvas.width;
@@ -243,6 +244,8 @@
     var current_angle = 0;
     var MouseX_ = 0;
     var MouseY_ = 0;
+    var MouseX = 0;
+    var MouseY = 0;
     var typedtext = "";
     var mapLeft = -5000;
     var mapRight = 5000;
@@ -378,9 +381,10 @@
 
     function getMousePos(canvas, evt) {
       const rect = boundrectcanvas;
+      console.log(evt.clientX, evt.clientY);
       return {
-        x: evt.clientX - rect.left,
-        y: evt.clientY - rect.top,
+        x: evt.clientX,
+        y: evt.clientY,
       };
     }
 
@@ -410,8 +414,8 @@
     }
     const getCannonAngle = () => {
       return Math.atan2(
-        Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-        Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
+        MouseY_ - window.innerHeight / 2,
+        MouseX_ - window.innerWidth / 2
       );
     };
 
@@ -489,7 +493,7 @@
               lockautoRotating = true;
             }
             if (tankdata.fov !== 0) {
-              byby(tankdata.fov);
+              scaleby(tankdata.fov);
             }
 
             send("typeChange", {
@@ -589,12 +593,7 @@
                       if (tankdatacannon__[cannon_]["offSet-x-multpliyer"]) {
                         offSet_x *= -1;
                       }
-                      let angle0 = Math.atan2(
-                        Math.abs(MouseY_) -
-                          (canvas.height / 2 - playerSize * FOV),
-                        Math.abs(MouseX_) -
-                          (canvas.width / 2 - playerSize * FOV)
-                      );
+                      let angle0 = getCannonAngle();
                       if (
                         tankdatacannon__[cannon_].type === "SwivelAutoCannon"
                       ) {
@@ -689,6 +688,75 @@
           let tankdata = tankmeta[__type__];
           levelUpgrader(tankdata);
         }
+      }
+    }
+
+    function buildTeamList() {
+      if (!joinedTeam) {
+        pubteams.forEach((team) => {
+          var teamcontainer = document.getElementById("teamcontainer");
+          var item = document.createElement("div");
+          item.classList.add("team");
+          item.innerText = team.name;
+          teamcontainer.appendChild(item);
+          item.addEventListener("click", () => {
+            Array.from(teamcontainer.children).forEach((child) => {
+              child.classList.remove("glow");
+            });
+
+            item.classList.add("glow");
+
+            selected_class = team.teamID;
+          });
+        });
+      } else {
+        let MYteam = pubteams.find((team) => {
+          return team.teamID === players[playerId].team;
+        });
+        MYteam.players.forEach((player) => {
+          var teamcontainer = document.getElementById("teamcontainer");
+          var item = document.createElement("div");
+          item.classList.add("team");
+          if (player.id === MYteam.owner.id) {
+            item.innerText = player.username + " -";
+          } else {
+            item.innerText = player.username;
+          }
+          if (player.id === MYteam.owner.id) {
+            var crown = document.createElement("img");
+            crown.src = "assets/crownIcon.png";
+            item.appendChild(crown);
+            crown.style.width = "1.6em";
+            crown.style.height = "1.3em";
+            crown.style["margin-left"] = "5px";
+            crown.style["margin-top"] = "0px";
+            crown.style["margin-bottom"] = "-5px";
+          }
+
+          teamcontainer.appendChild(item);
+          if (MYteam.owner.id === playerId && player.id !== MYteam.owner.id) {
+            item.addEventListener("mouseover", () => {
+              if (teamOver) return 
+              teamOver = true
+              var kick = document.createElement("img");
+              kick.src = "assets/kickButton.png";
+              kick.style.width = "1.5em";
+              kick.style.height = "1.5em";
+              kick.style["text-align"] = "left";
+              kick.addEventListener("click", () => {
+                send("kickplayer", {
+                  id: player.id,
+                  team: MYteam.teamID,
+                });
+              });
+              item.appendChild(kick);
+              item.addEventListener("mouseleave", () => {
+                teamOver = false
+                item.children[0].remove();
+              });
+            });
+          }
+        });
       }
     }
 
@@ -799,6 +867,7 @@
                 var allowYes = document.getElementById("allowYes");
                 var allowNo = document.getElementById("allowNo");
                 conteiner.style.display = "block";
+                if (conteiner.children[1]) conteiner.children[1].remove()
                 var newname = document.createElement("p");
                 newname.style = "color: #00ffff; font-size: 16px";
                 newname.innerText = players[requests[0].requester].username;
@@ -1141,51 +1210,7 @@
               pubteams = data;
               var teamcontainer = document.getElementById("teamcontainer");
               teamcontainer.innerHTML = "";
-              if (!joinedTeam) {
-                pubteams.forEach((team) => {
-                  var teamcontainer = document.getElementById("teamcontainer");
-                  var item = document.createElement("div");
-                  item.classList.add("team");
-                  item.innerText = team.name;
-                  teamcontainer.appendChild(item);
-                  item.addEventListener("click", () => {
-                    // Remove the "glow" class from all children
-                    Array.from(teamcontainer.children).forEach((child) => {
-                      child.classList.remove("glow");
-                    });
-                    item.classList.add("glow");
-
-                    // Set the selected class
-                    selected_class = team.teamID;
-                  });
-                });
-              } else {
-                let MYteam = pubteams.find((team) => {
-                  return team.teamID === players[playerId].team;
-                });
-                MYteam.players.forEach((player) => {
-                  var teamcontainer = document.getElementById("teamcontainer");
-                  var item = document.createElement("div");
-                  item.classList.add("team");
-                  if (player.id === MYteam.owner.id) {
-                    item.innerText = player.username + " -";
-                  } else {
-                    item.innerText = player.username;
-                  }
-                  if (player.id === MYteam.owner.id) {
-                    var crown = document.createElement("img");
-                    crown.src = "assets/crownIcon.png";
-                    item.appendChild(crown);
-                    crown.style.width = "1.6em";
-                    crown.style.height = "1.3em";
-                    crown.style["margin-left"] = "5px";
-                    crown.style["margin-top"] = "0px";
-                    crown.style["margin-bottom"] = "-5px";
-                    //
-                  }
-                  teamcontainer.appendChild(item);
-                });
-              }
+              buildTeamList();
               break;
             }
             case "JoinTeamSuccess": {
@@ -1429,20 +1454,20 @@
         });
 
         document.addEventListener("mousemove", (evt) => {
-          if (autoRotating || lockautoRotating) return;
           var mousepos = getMousePos(window, evt);
-          MouseX_ = mousepos.x;
-          MouseY_ = mousepos.y;
-          let __angle__ = Math.atan2(
-            Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
-            Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
-          );
-          send("playerCannonMoved", {
-            id: playerId,
-            cannon_angle: __angle__,
-            MouseX: MouseX_,
-            MouseY: MouseY_,
-          });
+          if (!autoRotating && !lockautoRotating) {
+            MouseX_ = mousepos.x;
+            MouseY_ = mousepos.y;
+            let __angle__ = getCannonAngle();
+            send("playerCannonMoved", {
+              id: playerId,
+              cannon_angle: __angle__,
+              MouseX: MouseX_,
+              MouseY: MouseY_,
+            });
+          }
+          MouseX = mousepos.x;
+          MouseY = mousepos.y;
         });
 
         function generateRandomNumber(min, max) {
@@ -1474,7 +1499,7 @@
           });
           owner_of_team = true;
         });
-        
+
         function bounceBackAndRecoil(i, Bsize, Bspeed, anlge_) {
           cannonWidth[i] = cannonWidth[i] || 0;
           for (let l = 0; l < 10; l++) {
@@ -1494,16 +1519,8 @@
             }, 20 * l); // Updated to prevent overlap
           }
 
-          let recoilX = -(
-            (Bsize / 10) *
-            Bspeed *
-            Math.cos(anlge_)
-          );
-          let recoilY = -(
-            (Bsize / 10) *
-            Bspeed *
-            Math.sin(anlge_)
-          );
+          let recoilX = -((Bsize / 10) * Bspeed * Math.cos(anlge_));
+          let recoilY = -((Bsize / 10) * Bspeed * Math.sin(anlge_));
           for (let i = 0; i < playerSpeed; i++) {
             setTimeout(() => {
               movePlayer(recoilX / 15, recoilY / 15, i == playerSpeed - 1);
@@ -1518,10 +1535,7 @@
             if (evt.button === 2) return;
           }
 
-          var angle = Math.atan2(
-            Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
-            Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
-          );
+          var angle = getCannonAngle();
 
           tankdatacannon.forEach((cannon, i) => {
             if (!cannonFireData[i]) return;
@@ -1578,7 +1592,7 @@
               let identdfire = Date.now() + Math.random();
               let bullet_speed__ = bullet_speed * cannon["bulletSpeed"];
 
-              bounceBackAndRecoil(i,bullet_size_l,bullet_speed__,angle_)
+              bounceBackAndRecoil(i, bullet_size_l, bullet_speed__, angle_);
 
               let vertices = 0;
               if (
@@ -1665,12 +1679,7 @@
             firingInterval = setInterval(
               (event = evt, MouseY__ = MouseY_, MouseX__ = MouseX_) => {
                 canFire2 = false;
-                let angle = Math.atan2(
-                  Math.abs(MouseY__) -
-                    (window.innerHeight / 2 - playerSize * FOV),
-                  Math.abs(MouseX__) -
-                    (window.innerWidth / 2 - playerSize * FOV)
-                );
+                let angle = getCannonAngle();
                 if (autoFiring) return;
 
                 let tankdatacannondata = tankdatacannon[i];
@@ -1736,8 +1745,8 @@
                   let identdfire = Date.now() + Math.random();
                   let bullet_speed__ = bullet_speed * cannon["bulletSpeed"];
 
-                  bounceBackAndRecoil(i,bullet_size_l,bullet_speed__,angle_)
-                  
+                  bounceBackAndRecoil(i, bullet_size_l, bullet_speed__, angle_);
+
                   let vertices = 0;
                   if (
                     cannon["type"] === "basicCannon" ||
@@ -1868,10 +1877,10 @@
 
         document.addEventListener("mousedown", (evt) => {
           if (
-            window.innerWidth - 475 < MouseX_ &&
-            MouseX_ < window.innerWidth - 275 &&
-            MouseY_ > 10 &&
-            MouseY_ < 110 &&
+            window.innerWidth - 475 < MouseX &&
+            MouseX < window.innerWidth - 275 &&
+            MouseY > 10 &&
+            MouseY < 110 &&
             !teampanelopen
           ) {
             teampanelopen = true;
@@ -1885,72 +1894,7 @@
               window.innerHeight / 2 - innerteamheightreal / 2 + "px";
             teamcontainer.style.height = innerteamheightreal - 100 + "px";
             teamcontainer.innerHTML = "";
-            if (!joinedTeam) {
-              pubteams.forEach((team) => {
-                var teamcontainer = document.getElementById("teamcontainer");
-                var item = document.createElement("div");
-                item.classList.add("team");
-                item.innerText = team.name;
-                teamcontainer.appendChild(item);
-                item.addEventListener("click", () => {
-                  Array.from(teamcontainer.children).forEach((child) => {
-                    child.classList.remove("glow");
-                  });
-
-                  item.classList.add("glow");
-
-                  selected_class = team.teamID;
-                });
-              });
-            } else {
-              let MYteam = pubteams.find((team) => {
-                return team.teamID === players[playerId].team;
-              });
-              MYteam.players.forEach((player) => {
-                var teamcontainer = document.getElementById("teamcontainer");
-                var item = document.createElement("div");
-                item.classList.add("team");
-                if (player.id === MYteam.owner.id) {
-                  item.innerText = player.username + " -";
-                } else {
-                  item.innerText = player.username;
-                }
-                if (player.id === MYteam.owner.id) {
-                  var crown = document.createElement("img");
-                  crown.src = "assets/crownIcon.png";
-                  item.appendChild(crown);
-                  crown.style.width = "1.6em";
-                  crown.style.height = "1.3em";
-                  crown.style["margin-left"] = "5px";
-                  crown.style["margin-top"] = "0px";
-                  crown.style["margin-bottom"] = "-5px";
-                }
-
-                teamcontainer.appendChild(item);
-                if (
-                  MYteam.owner.id === playerId &&
-                  player.id !== MYteam.owner.id
-                ) {
-                  item.addEventListener("mouseover", () => {
-                    var kick = document.createElement("img");
-                    kick.src = "assets/kickButton.png";
-                    kick.style.width = "1em";
-                    kick.style.height = "1em";
-                    kick.style["text-align"] = "left";
-                    kick.addEventListener("click", () => {
-                      send("kickplayer", {
-                        id: player.id,
-                        team: MYteam.teamID,
-                      });
-                    });
-                    item.appendChild(kick);
-                    item.addEventListener("mouseout", () => {
-                      item.children[0].remove();
-                    });
-                  });
-                }
-              });
-            }
+            buildTeamList();
 
             return;
           }
@@ -1959,17 +1903,17 @@
             const textHeight = 16;
 
             const withinX =
-              MouseX_ >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
-              MouseX_ <=
+              MouseX >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
+              MouseX <=
                 window.innerWidth / 2 + innerteamwidthreal / 2 - 15 + textWidth;
 
             const withinY =
-              MouseY_ >=
+              MouseY >=
                 window.innerHeight / 2 -
                   innerteamheightreal / 2 +
                   26 -
                   textHeight &&
-              MouseY_ <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
+              MouseY <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
             if (withinX && withinY) {
               teampanelopen = false;
               var teamcontainer = document.getElementById("teamcontainer");
@@ -1980,13 +1924,12 @@
             }
 
             const withinX3 =
-              MouseX_ >= window.innerWidth / 2 - innerteamwidthreal / 2 + 10 &&
-              MouseX_ <=
+              MouseX >= window.innerWidth / 2 - innerteamwidthreal / 2 + 10 &&
+              MouseX <=
                 window.innerWidth / 2 - innerteamwidthreal / 2 + 10 + 80;
             const withinY3 =
-              MouseY_ >=
-                window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
-              MouseY_ <=
+              MouseY >= window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
+              MouseY <=
                 window.innerHeight / 2 + innerteamheightreal / 2 - 50 + 40;
             if (withinX3 && withinY3) {
               if (!joinedTeam) {
@@ -2010,13 +1953,12 @@
             }
 
             const withinX2 =
-              MouseX_ >= window.innerWidth / 2 + innerteamwidthreal / 2 - 150 &&
-              MouseX_ <=
+              MouseX >= window.innerWidth / 2 + innerteamwidthreal / 2 - 150 &&
+              MouseX <=
                 window.innerWidth / 2 + innerteamwidthreal / 2 - 150 + 140;
             const withinY2 =
-              MouseY_ >=
-                window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
-              MouseY_ <=
+              MouseY >= window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
+              MouseY <=
                 window.innerHeight / 2 + innerteamheightreal / 2 - 50 + 40;
             if (withinX2 && withinY2) {
               if (!owner_of_team) {
@@ -2142,7 +2084,6 @@
       cavansY += dy;
       playerX += dx;
 
-      //if (i in nolist) return; // just roll with it
       send("playerMoved", {
         id: playerId,
         x: playerX,
@@ -2355,6 +2296,7 @@
         screenH: oHieght,
         id: playerId,
       });
+      boundrectcanvas = Ghostcanvas.getBoundingClientRect();
       var canW1 = canW;
       var canH1 = canH;
       canW = canvas.width;
@@ -2525,12 +2467,10 @@
     var newnotify = new notify(ctx, announcements);
 
     function drawself(exW, exH) {
+      pentarotate += 0.1;
       newnotify.announcements = announcements;
       ctx.fillStyle = squareColor;
-      let angle = Math.atan2(
-        Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
-        Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
-      );
+      let angle = getCannonAngle();
       if (!messaging) {
         if (canmove) {
           if (keysPressed["]"]) {
@@ -2879,15 +2819,12 @@
           });
           var offSet_x = tankdatacannondata["offSet-x"];
           if (tankdatacannondata["offSet-x"] === "playerX") {
-            offSet_x = playerSize * 40 * FOV;
+            offSet_x = playerSize * 40;
           }
           if (tankdatacannondata["offSet-x-multpliyer"]) {
             offSet_x *= -1;
           }
-          let angle0 = Math.atan2(
-            Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-            Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
-          );
+          let angle0 = getCannonAngle();
           var [x, y] = rotatePointAroundPlayer(
             offSet_x,
             0,
@@ -3125,15 +3062,12 @@
           ctx.save();
           var offSet_x = tankdatacannondata["offSet-x"];
           if (tankdatacannondata["offSet-x"] === "playerX") {
-            offSet_x = playerSize * 40 * FOV;
+            offSet_x = playerSize * 40;
           }
           if (tankdatacannondata["offSet-x-multpliyer"]) {
             offSet_x *= -1;
           }
-          let angle0 = Math.atan2(
-            Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-            Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
-          );
+          let angle0 = getCannonAngle();
           var [x, y] = rotatePointAroundPlayer(
             offSet_x,
             0,
@@ -3194,7 +3128,7 @@
 
       ctx.save();
 
-      ctx.translate((canW - 150) * exW, (canH - 150) * exW);
+      ctx.translate(canW - 150 * exW, canH - 150 * exW);
       ctx.fillStyle = "#fcfafa";
       ctx.beginPath();
       ctx.roundRect(0, 0, 125 * exW, 125 * exW, 5);
@@ -3225,6 +3159,7 @@
       ctx.closePath();
 
       ctx.textAlign = "center";
+      console.log(exW, exH);
       ctx.strokeText(
         "players: " + Object.keys(players).length,
         (125 / 2) * exW,
@@ -3344,10 +3279,10 @@
         }
       }
       if (
-        canvas.width - button475 < MouseX_ &&
-        MouseX_ < canvas.width - button275 &&
-        MouseY_ > button10 &&
-        MouseY_ < button110
+        window.innerWidth - 475 < MouseX &&
+        MouseX < window.innerWidth - 275 &&
+        MouseY > 10 &&
+        MouseY < 110
       ) {
         ctx.strokeStyle = "#4fe5ff";
         ctx.lineWidth = 7;
@@ -3395,7 +3330,7 @@
           canvas.height / 2 - teamheight / 2,
           teamwidth,
           teamheight,
-          7.5
+          7.5 * scaleFactor
         );
         ctx.fillStyle = "#45bbff";
         ctx.strokeStyle = "#4fe5ff";
@@ -3411,7 +3346,7 @@
           canvas.height / 2 - innerteamheight / 2,
           innerteamwidth,
           innerteamheight,
-          5
+          5 * scaleFactor
         );
         ctx.fillStyle = "#00a0fd";
         ctx.closePath();
@@ -3426,7 +3361,7 @@
               canvas.height / 2 + innerteamheight / 2 - button10 * 5,
               buttton140,
               button40,
-              5
+              5 * scaleFactor
             );
           }
         } else {
@@ -3435,7 +3370,7 @@
             canvas.height / 2 + innerteamheight / 2 - button10 * 5,
             buttton140,
             button40,
-            5
+            5 * scaleFactor
           );
         }
         ctx.fill();
@@ -3447,7 +3382,7 @@
           canvas.height / 2 + innerteamheight / 2 - button10 * 5,
           button80,
           button40,
-          5
+          5 * scaleFactor
         );
         ctx.closePath();
         ctx.fill();
@@ -3465,7 +3400,9 @@
         ctx.fillText(
           text_,
           canvas.width / 2 - innerteamwidth / 2 + button10 * 5,
-          canvas.height / 2 + innerteamheight / 2 - 17.5
+          canvas.height / 2 +
+            innerteamheight / 2 -
+            17.5 * (1 + (1 - scaleFactor))
         );
         ctx.font = `bold ${21 * exW}px Nunito`;
         var text2;
@@ -3487,12 +3424,12 @@
         }
         ctx.textAlign = "left";
         const withinX =
-          MouseX_ >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
-          MouseX_ <= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 + 16;
+          MouseX >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
+          MouseX <= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 + 16;
         const withinY =
-          MouseY_ >=
+          MouseY >=
             window.innerHeight / 2 - innerteamheightreal / 2 + 26 - 16 &&
-          MouseY_ <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
+          MouseY <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
         if (withinX && withinY) {
           ctx.fillStyle = "red";
         }
@@ -4700,15 +4637,12 @@
               });
               var offSet_x = tankdatacannondata["offSet-x"];
               if (tankdatacannondata["offSet-x"] === "playerX") {
-                offSet_x = playerSize * 40 * FOV;
+                offSet_x = playerSize * 40;
               }
               if (tankdatacannondata["offSet-x-multpliyer"]) {
                 offSet_x *= -1;
               }
-              let angle0 = Math.atan2(
-                Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-                Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
-              );
+              let angle0 = getCannonAngle();
               var [x, y] = rotatePointAroundPlayer(
                 offSet_x,
                 0,
@@ -4791,10 +4725,7 @@
 
       ctx.fillStyle = squareColor;
 
-      let angle = Math.atan2(
-        Math.abs(MouseY_) - (canvas.height / 2 - playerSize),
-        Math.abs(MouseX_) - (canvas.width / 2 - playerSize)
-      );
+      let angle = getCannonAngle();
       if (!dead) {
         drawself(upscaleX, upscaleY);
       }

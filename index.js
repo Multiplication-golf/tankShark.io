@@ -106,29 +106,79 @@ app.use(
 
 app.use(express.static(path.join(__dirname, "public")));
 var port = process.env.PORT;
+
+/*
+ * documention is needed for each of these arrays/objects
+ * An exsample object should be provided
+ */
+
 let players = {};
+/**/
+
 let bullets = [];
+/**/
+
 let food_squares = [];
+/**/
+
 let cors_taken = [];
+/**/
+
 let leader_board = { shown: [], hidden: [] };
+/**/
+
 let autocannons = [];
+/**/
+
 let bullet_intervals = [];
+/**/
+
 let hidden_broswers = [];
+/**/
+
 let messages = [];
+/**/
+
 let teamlist = [];
+/**/
+
 let bosses = [];
+/**/
+
 let playersjoined = [];
+/**/
+
 let userbase = [];
-let food_squares_ = [];
+/**/
+
 let player_array = [];
+/**/
+
 let deadplayers = [];
+/**/
+
 let announcements = [];
+/**/
+
 let JoinRequests = [];
+/**/
+
 let PendingJoinRequests = [];
+/**/
+
 let joinPlayers = [];
+/**/
+
+let explosions = [];
+/**/
+
 /* warning very senstive*/
 let purge_limit = 5;
+
 let frame = 0;
+
+const UPDATE_INTERVAL = 75;
+
 let ColorUpgrades = [
   "#f54242",
   "#fa8050",
@@ -784,7 +834,7 @@ function createAnnocment(
   } = {}
 ) {
   var randID = Math.random() * Date.now();
-  var newannouncements = {
+  var newAnnouncement = {
     text: text,
     color: color,
     rounding: rounding,
@@ -797,7 +847,7 @@ function createAnnocment(
     id: randID,
     sender: sender,
   };
-  announcements.push(newannouncements);
+  announcements.push(newAnnouncement);
 }
 
 function between(x, min, max) {
@@ -911,6 +961,16 @@ function findThisBoss(id) {
   return boss;
 }
 
+function log(...a) {
+  var v = JSON.stringify(a);
+  v = v.slice(1, v.length - 1);
+  console.log(v);
+}
+
+/*var reg = /^\D\w*@\D\w*\.com$/
+var str = "abc@gmail.com"
+console.log(reg.test(str))*/
+
 function isTargetInSwivelRange(
   playerRotation,
   targetAngle,
@@ -933,6 +993,53 @@ function isTargetInSwivelRange(
     return targetAngle >= minSwivelAngle || targetAngle <= maxSwivelAngle;
   }
 }
+
+function createExsplosion({
+  damage = 1,
+  startTime = Date.now(),
+  lifeSpan = 700,
+  size = 100,
+  maxsize = 300,
+  layers = [
+    { color: "red", size: 5, transMinus: 0.09 },
+    { color: "orange", size: 4, transMinus: 0.05 },
+    { color: "yellow", size: 1, transMinus: -0.1 },
+  ],
+  trans = 0.7,
+  fading = 0.0,
+  fadingRate = 0.04,
+} = {}) {
+  var rings = [];
+
+  var totalSize = layers.reduce((a, c) => (a += c.size), 0);
+
+  layers.forEach((item) => {
+    rings.push({
+      color: item.color,
+      size: size * (item.size / totalSize),
+      tarnsMinus: item.transMinus,
+    });
+  });
+
+  let newExsposion = {
+    damage: damage,
+    startTime: startTime,
+    endTime: startTime + lifeSpan,
+    rings: rings,
+    trans: trans,
+    fading: fading,
+    fadingRate: fadingRate,
+    size: size,
+    maxsize: maxsize,
+    exspandRate: lifeSpan / UPDATE_INTERVAL / (maxsize - size),
+    innerRadius: 0,
+    totalRingSize: totalSize,
+  };
+  explosions.push(newExsposion);
+}
+
+createExsplosion();
+log(explosions);
 
 function isBulletCollidingWithPolygon(circle, polygonVertices) {
   var circleSAT;
@@ -1292,8 +1399,10 @@ function straightMoveTarget(instancevars) {
 }
 
 function isAtTarget(instancevars) {
-  return Math.abs(instancevars.x - instancevars.targetX) < instancevars.speed * 2 &&
-    Math.abs(instancevars.y - instancevars.targetY) < instancevars.speed * 2;
+  return (
+    Math.abs(instancevars.x - instancevars.targetX) < instancevars.speed * 2 &&
+    Math.abs(instancevars.y - instancevars.targetY) < instancevars.speed * 2
+  );
 }
 
 function getRandomRole(end, start) {
@@ -1301,7 +1410,10 @@ function getRandomRole(end, start) {
 }
 
 function reAling(instancevars) {
-  return Math.atan2(instancevars.targetY - instancevars.y, instancevars.targetX - instancevars.x);
+  return Math.atan2(
+    instancevars.targetY - instancevars.y,
+    instancevars.targetX - instancevars.x
+  );
 }
 
 function reAling2(instancevars) {
@@ -1330,7 +1442,7 @@ function Wanderer( // class but what ever
     arcSpeed = 0.01266667901,
     AngleDiffrence = 50,
     Direction = "positive",
-    crissCross = false,
+    crissCross = true,
     randomCrossInterval = getRandomRole(0, 3),
   } = {}
 ) {
@@ -1405,7 +1517,6 @@ var serverseed = crypto.randomUUID();
 
 var invaled_requests = [];
 
-const UPDATE_INTERVAL = 75;
 let speed = 0.00001;
 const connections = [];
 
@@ -1739,6 +1850,11 @@ wss.on("connection", (socket) => {
               teamID: MYteam.teamID,
               playerid: teamplayers[0].id,
             });
+            PendingJoinRequests.forEach((_request) => {
+              if (_request.owner === data.id) {
+                _request.owner = teamplayers[0].id;
+              }
+            });
           } else {
             teamplayers.forEach((player) => {
               emit("playerJoinedTeam", { id: player.id, teamId: null });
@@ -1802,25 +1918,24 @@ wss.on("connection", (socket) => {
           }
         });
         emit("pubteamlist", public_teams);
+        break;
       }
 
       case "rotate": {
         var autoAngle = data.autoAngle;
         var turnhide = setInterval(() => {
-          autoAngle += 1;
+          autoAngle += 4;
           if (359.8 <= autoAngle) {
             autoAngle = 0;
           }
           let radians = autoAngle * (Math.PI / 180);
           var MouseX_ =
-            50 * Math.cos(radians) +
-            (data.canvaswidth / 2 - players[data.id].size * data.FOV);
+            50 * Math.cos(radians) + players[data.id].screenWidth / 2;
           var MouseY_ =
-            50 * Math.sin(radians) +
-            (data.canvasheight / 2 - players[data.id].size * data.FOV);
+            50 * Math.sin(radians) + players[data.id].screenHeight / 2;
           let angle = Math.atan2(
-            MouseY_ - (data.canvasheight / 2 - data.playerSize * data.FOV),
-            MouseX_ - (data.canvaswidth / 2 - data.playerSize * data.FOV)
+            MouseY_ - players[data.id].screenHeight / 2,
+            MouseX_ - players[data.id].screenWidth / 2
           );
           if (!players[data.id]) {
             invaled_requests.push(data.id);
@@ -3089,8 +3204,8 @@ wss.on("connection", (socket) => {
 
       case "resize": {
         if (!players[data.id]) break;
-        players[data.id].screenWidth = data.screenWidth;
-        players[data.id].screenHeight = data.screenHeight;
+        players[data.id].canvasW = data.screenWidth;
+        players[data.id].canvasH = data.screenHeight;
         break;
       }
 
@@ -3111,12 +3226,19 @@ wss.on("connection", (socket) => {
         let player = players[data.id];
         player.canvasW = data.canvasW;
         player.canvasH = data.canvasH;
-        player.screenWidth = data.oWidth;
-        player.screenHeight = data.oHieght;
+        player.screenWidth = data.screenW;
+        player.screenHeight = data.screenH;
         break;
       }
 
       case "playerDied": {
+        hidden_broswers.filter((interval) => {
+          if (connection.playerId === interval.id) {
+            clearInterval(interval.interval);
+            return false;
+          }
+          return true;
+        });
         players = Object.entries(players).reduce((newPlayers, [key, value]) => {
           if (key !== connection.playerId) {
             newPlayers[key] = value;
@@ -3139,6 +3261,11 @@ wss.on("connection", (socket) => {
               emit("newOwner", {
                 teamID: team.teamID,
                 playerid: teamplayers[0].id,
+              });
+              PendingJoinRequests.forEach((_request) => {
+                if (_request.owner === connection.playerId) {
+                  _request.owner = teamplayers[0].id;
+                }
               });
             } else {
               return false;
@@ -3183,6 +3310,13 @@ wss.on("connection", (socket) => {
     }
   }, 5000);
   socket.on("close", () => {
+    hidden_broswers.filter((interval) => {
+      if (connection.playerId === interval.id) {
+        clearInterval(interval.interval);
+        return false;
+      }
+      return true;
+    });
     const index = connections.indexOf(socket);
     deadplayers = deadplayers.splice(
       deadplayers.indexOf(connection.playerId),
@@ -3247,6 +3381,11 @@ wss.on("connection", (socket) => {
           emit("newOwner", {
             teamID: team.teamID,
             playerid: teamplayers[0].id,
+          });
+          PendingJoinRequests.forEach((_request) => {
+            if (_request.owner === connection.playerId) {
+              _request.owner = teamplayers[0].id;
+            }
           });
         } else {
           return false;
@@ -3361,6 +3500,7 @@ setInterval(() => {
         var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
         bullet.wander.setXY(bullet.x, bullet.y);
       } else if (bullet.target?.distance < 600) {
+        var boss = findThisBoss(bullet.id);
         bullet.wander.setBaseXY(boss.x, boss.y);
         var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
         var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
@@ -4122,7 +4262,7 @@ setInterval(() => {
           let bullet____ = {
             type: "FreeNecromancer",
             bullet_distance: 1000,
-            speed: 2,
+            speed: 3,
             size: 50,
             angle: 0.1,
             bullet_damage: 6,
@@ -4144,7 +4284,7 @@ setInterval(() => {
               item.size,
               item.x,
               item.y,
-              2,
+              3,
               cannon.current,
               "arc"
             ),
@@ -4210,7 +4350,7 @@ setInterval(() => {
               item.size,
               item.x,
               item.y,
-              2,
+              4,
               cannon.current,
               "arc"
             ),
@@ -4787,12 +4927,26 @@ setInterval(() => {
     food_squares.push(item);
   });
 
+  explosions.filter((explosion) => {
+    explosion.trans -= explosion.fadingRate;
+    explosion.innerRadius += explosion.exspandRate;
+    size += explosion.exspandRate;
+    explosion.rings.forEach((item) => {
+      item.size += explosion.exspandRate;
+    });
+    if (Date.now() > explosion.endTime) {
+      return false;
+    }
+    return true;
+  });
+
   tempBulletToPush.forEach((item) => {
     bullets.push(item);
   });
 
   emit("bulletUpdate", bullets);
   emit("bossUpdate", bosses);
+  emit("explosionUpdate", explosions);
   announcements = announcements.filter(
     (message) => message.killtime > Date.now()
   );
