@@ -70,14 +70,12 @@
       },
     };
 
-    // Parse the schema and create the root object
     // ignore error; does not interfer with aplication
     const root = protobuf.Root.fromJSON(schema);
 
-    // Look up the GameObjectList type definition
     const GameObjectList = root.lookupType("GameObjectList");
 
-    return GameObjectList; // Return the GameObjectList type
+    return GameObjectList;
   }
 
   // Function to decode the Protobuf message and return the type and data
@@ -137,10 +135,7 @@
 
     document.getElementsByTagName("body")[0].style.cursor =
       "url('https://deip-io3.glitch.me/targetpointer1.cur'), auto";
-    // 0.() values decrease
-    // delay which cannon fires first
     var pi180 = Math.PI / 180;
-    // reload 0.() values increase
     let lastTime = performance.now();
     let frameTimes = [];
     let fps = 0;
@@ -224,7 +219,7 @@
     var playerY = canvas.height / 2;
     var cavansX = 0;
     var cavansY = 0;
-    var dronetanks = ["directer"];
+    var explosions = [];
     var playerHealTime = 0;
     var playerHealth = 100;
     var playerSpeed = 10;
@@ -283,6 +278,7 @@
     var zlevelbullets = [];
     var colorUpgrades = [];
     var upgradePoints = 0;
+    var baseFireInterval = 750;
     var playerMessages = [];
     var maxUP = 8;
     var container = document.getElementById("container");
@@ -309,6 +305,7 @@
     var userId = getCookie("userId");
     var bosses = [];
     var prescore = -1;
+    var scaleUp = 0
     var setprogress = 0;
     var requests = [];
     var dead = false;
@@ -372,6 +369,7 @@
       "Bullet Reload": 1,
       Speed: 1,
     };
+
     function waitpls() {
       setTimeout(() => {
         canKeyPress = true;
@@ -412,6 +410,7 @@
         errors++;
       }
     }
+
     const getCannonAngle = () => {
       return Math.atan2(
         MouseY_ - window.innerHeight / 2,
@@ -517,13 +516,9 @@
               maxhealth: maxhealth,
               playerReheal: playerReheal,
               FOV: scaleFactor,
-              canvasW: canvas.width,
-              canvasH: canvas.height,
               MouseX: MouseX_,
               Regenspeed: Regenspeed,
               MouseY: MouseY_,
-              screenWidth: canvas.width,
-              screenHeight: canvas.height,
               visible: true,
               statsTree: {
                 Health: statsTree.Health,
@@ -638,11 +633,11 @@
                     }
                     setTimeout(() => {
                       cannonINT();
-                    }, 750 * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
+                    }, baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
                   }
                   setTimeout(() => {
                     cannonINT();
-                  }, 750 * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
+                  }, baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
                   autoIntevals.push({ cannonINT: cannonINT, autoID: autoID });
                 }
               }
@@ -655,7 +650,9 @@
     const generateUniquePlayerId = () => {
       return "player-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
     };
+
     let levelpro = [];
+
     function levelHANDLER() {
       let tonextlevel = levels[level] - levels[level - 1];
       setprogress =
@@ -675,13 +672,15 @@
           (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
         playerSize += playerSize * 0.005;
         send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
-        scaleby(0.008);
+        console.log(scaleUp)
+        scaleby(scaleUp);
         while (score / levels[level] >= 1) {
           level += 1;
           upgradePoints += 1;
           playerSize += playerSize * 0.005;
           send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
-          scaleby(0.008);
+          console.log(scaleUp)
+          scaleby(scaleUp);
           progress = 0;
           setprogress =
             (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
@@ -736,8 +735,8 @@
           teamcontainer.appendChild(item);
           if (MYteam.owner.id === playerId && player.id !== MYteam.owner.id) {
             item.addEventListener("mouseover", () => {
-              if (teamOver) return 
-              teamOver = true
+              if (teamOver) return;
+              teamOver = true;
               var kick = document.createElement("img");
               kick.src = "assets/kickButton.png";
               kick.style.width = "1.5em";
@@ -751,7 +750,7 @@
               });
               item.appendChild(kick);
               item.addEventListener("mouseleave", () => {
-                teamOver = false
+                teamOver = false;
                 item.children[0].remove();
               });
             });
@@ -797,6 +796,9 @@
           screenWidth: canvas.width,
           screenHeight: canvas.height,
           visible: true,
+          team: teamOn,
+          userId: userId,
+          autoFiring:autoFiring,
           statsTree: {
             Health: 1,
             "Body Damage": 1,
@@ -807,8 +809,6 @@
             "Bullet Reload": 1,
             Speed: 1,
           },
-          team: teamOn,
-          userId: userId,
         };
 
         send("newPlayer", playerData);
@@ -857,6 +857,15 @@
               playerX += data.x;
               break;
             }
+            case "explosionUpdate": {
+              explosions = data;
+              break;
+            }
+            case "Config": {
+              baseFireInterval = data.baseFireInterval;
+              scaleUp = data.scaleUp;
+              break
+            }
             case "requests": {
               function requester() {
                 var conteiner = document.getElementById("requestJoin");
@@ -867,7 +876,7 @@
                 var allowYes = document.getElementById("allowYes");
                 var allowNo = document.getElementById("allowNo");
                 conteiner.style.display = "block";
-                if (conteiner.children[1]) conteiner.children[1].remove()
+                if (conteiner.children[1]) conteiner.children[1].remove();
                 var newname = document.createElement("p");
                 newname.style = "color: #00ffff; font-size: 16px";
                 newname.innerText = players[requests[0].requester].username;
@@ -1133,6 +1142,7 @@
                   MouseY: MouseY_,
                   screenWidth: canvas.width,
                   screenHeight: canvas.height,
+                  autoFiring:autoFiring,
                   statsTree: {
                     Health: 1,
                     "Body Damage": 1,
@@ -1656,14 +1666,15 @@
                 ystart: playerY,
                 id: playerId,
                 uniqueid: identdfire,
+                cannonIndex:i
               };
 
               send("bulletFired", bullet);
             }, cannon.delay * 1000);
-            if (!(cannonFireData[i] || dronetanks.includes(__type__))) {
+            if (!(cannonFireData[i] || tankmeta.dronetanks.includes(__type__))) {
               setTimeout(() => {
                 cannonFireData[i] = true;
-              }, 750 * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
+              }, baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
             }
           });
         }
@@ -1814,11 +1825,12 @@
                     ystart: playerY,
                     id: playerId,
                     uniqueid: identdfire,
+                    cannonIndex:i
                   };
                   send("bulletFired", bullet);
                 }, tankdatacannondata["delay"] * 1000);
               },
-              750 * tankdata["reaload-m"] * cannon["reloadM"] * __reload__
+              baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__
             );
             name = JSON.stringify(firingInterval + i);
             firingIntervals[name] = firingInterval;
@@ -1843,7 +1855,7 @@
 
         function autoengine() {
           __tankdata__ = tankmeta[__type__];
-          if (!dronetanks.includes(__type__) && autoFiring) {
+          if (!tankmeta.dronetanks.includes(__type__) && autoFiring) {
             __tankdata__ = tankmeta[__type__];
             if (firingInterval) {
               clearInterval(firingInterval);
@@ -1851,7 +1863,7 @@
             }
             fireOnce();
           }
-          if (dronetanks.includes(__type__)) {
+          if (tankmeta.dronetanks.includes(__type__)) {
             let i = 0;
             for (var cannon in tankmeta[__type__]["cannons"]) {
               if (
@@ -1868,12 +1880,12 @@
 
           setTimeout(() => {
             autoengine();
-          }, 750 * __tankdata__["reaload-m"] * __reload__);
+          }, baseFireInterval * __tankdata__["reaload-m"] * __reload__);
         }
 
         setTimeout(() => {
           autoengine();
-        }, 750 * __tankdata__["reaload-m"] * __reload__);
+        }, baseFireInterval * __tankdata__["reaload-m"] * __reload__);
 
         document.addEventListener("mousedown", (evt) => {
           if (
@@ -1969,7 +1981,7 @@
             }
             return;
           }
-          if (!dronetanks.includes(__type__) && !teampanelopen && !dead) {
+          if (!tankmeta.dronetanks.includes(__type__) && !teampanelopen && !dead) {
             FireIntervale(evt);
           } else {
             if (evt.button === 2 && !dead) {
@@ -1988,7 +2000,7 @@
 
           send("MousestateUpdate", { id: playerId });
         });
-      }, 100);
+      }, 0);
     };
 
     function drawRoundedLevelBar(
@@ -2277,6 +2289,7 @@
     }
 
     var scaleFactor = 1;
+
     function scaleby(scaleDown) {
       scaleFactor -= scaleDown;
       oWidth = window.innerWidth;
@@ -2296,6 +2309,8 @@
         screenH: oHieght,
         id: playerId,
       });
+      Ghostcanvas.width = oWidth;
+      Ghostcanvas.height = oHieght;
       boundrectcanvas = Ghostcanvas.getBoundingClientRect();
       var canW1 = canW;
       var canH1 = canH;
@@ -2337,11 +2352,6 @@
       document.getElementById("grid").childNodes.forEach((node) => {
         node.style.width = `${999 * scaleFactor}px`;
         node.style.height = `${999 * scaleFactor}px`;
-      });
-      send("resize", {
-        id: playerId,
-        screenWidth: canvas.width,
-        screenHeight: canvas.height,
       });
     }
 
@@ -2602,6 +2612,7 @@
           } else if (keysPressed["="]) {
             FOV += 0.1;
           } else if (keysPressed["e"]) {
+            send("autoFiringUpdate",{autoFiring:!autoFiring,id:playerId})
             if (lockautoRotating) return;
             autoFiring = !autoFiring;
             if (!autoFiring) {
@@ -3478,6 +3489,45 @@
       fps = Math.round(frameTimes.reduce((a, b) => a + b) / frameTimes.length);
 
       //console.log("FPS:", fps);
+
+      explosions.forEach((exsplosion) => {
+        if (
+          exsplosion.x + exsplosion.size > 0 + cavansX &&
+          exsplosion.x < canvas.width + cavansX + exsplosion.size &&
+          exsplosion.y - cavansY > 0 - exsplosion.size &&
+          exsplosion.y - exsplosion.size < canvas.height + cavansY
+        ) {
+          exsplosion.rings.reduce((a, ring) => {
+            ctx.beginPath();
+            ctx.arc(
+              exsplosion.x - cavansX,
+              exsplosion.y - cavansY,
+              exsplosion.size + a,
+              0,
+              Math.PI * 2
+            );
+            ctx.fillStyle = ring.color;
+            ctx.strokeStyle = ring.color;
+            ctx.globalAlpha =
+              exsplosion.trans - ring.transMinus <= 0
+                ? 0.001
+                : exsplosion.trans - ring.transMinus;
+            ctx.lineWidth = ring.size;
+            ctx.stroke();
+            ctx.closePath();
+            console.log(
+              exsplosion.trans,
+              ring.transMinus,
+              Date.now(),
+              exsplosion.endTime
+            );
+            a += ring.size;
+            ctx.globalAlpha = 1;
+            return a;
+          }, 0);
+        }
+      });
+
       ctx.lineJoin = "round";
       food_list.forEach((item) => {
         var realx = item.x;
