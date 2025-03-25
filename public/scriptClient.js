@@ -70,14 +70,12 @@
       },
     };
 
-    // Parse the schema and create the root object
     // ignore error; does not interfer with aplication
     const root = protobuf.Root.fromJSON(schema);
 
-    // Look up the GameObjectList type definition
     const GameObjectList = root.lookupType("GameObjectList");
 
-    return GameObjectList; // Return the GameObjectList type
+    return GameObjectList;
   }
 
   // Function to decode the Protobuf message and return the type and data
@@ -137,10 +135,7 @@
 
     document.getElementsByTagName("body")[0].style.cursor =
       "url('https://deip-io3.glitch.me/targetpointer1.cur'), auto";
-    // 0.() values decrease
-    // delay which cannon fires first
     var pi180 = Math.PI / 180;
-    // reload 0.() values increase
     let lastTime = performance.now();
     let frameTimes = [];
     let fps = 0;
@@ -204,6 +199,7 @@
     var pubteams = [];
     var level = 0;
     var xp = 0;
+    var teamOver = false;
     var buttton140 = 0.07291666666 * canvas.width;
     var button275 = 0.14322916666 * canvas.width;
     var button475 = 0.24739583333 * canvas.width;
@@ -223,7 +219,7 @@
     var playerY = canvas.height / 2;
     var cavansX = 0;
     var cavansY = 0;
-    var dronetanks = ["directer"];
+    var explosions = [];
     var playerHealTime = 0;
     var playerHealth = 100;
     var playerSpeed = 10;
@@ -243,6 +239,8 @@
     var current_angle = 0;
     var MouseX_ = 0;
     var MouseY_ = 0;
+    var MouseX = 0;
+    var MouseY = 0;
     var typedtext = "";
     var mapLeft = -5000;
     var mapRight = 5000;
@@ -280,6 +278,7 @@
     var zlevelbullets = [];
     var colorUpgrades = [];
     var upgradePoints = 0;
+    var baseFireInterval = 750;
     var playerMessages = [];
     var maxUP = 8;
     var container = document.getElementById("container");
@@ -306,6 +305,7 @@
     var userId = getCookie("userId");
     var bosses = [];
     var prescore = -1;
+    var scaleUp = 0
     var setprogress = 0;
     var requests = [];
     var dead = false;
@@ -369,6 +369,7 @@
       "Bullet Reload": 1,
       Speed: 1,
     };
+
     function waitpls() {
       setTimeout(() => {
         canKeyPress = true;
@@ -378,9 +379,10 @@
 
     function getMousePos(canvas, evt) {
       const rect = boundrectcanvas;
+      console.log(evt.clientX, evt.clientY);
       return {
-        x: evt.clientX - rect.left,
-        y: evt.clientY - rect.top,
+        x: evt.clientX,
+        y: evt.clientY,
       };
     }
 
@@ -408,10 +410,11 @@
         errors++;
       }
     }
+
     const getCannonAngle = () => {
       return Math.atan2(
-        Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-        Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
+        MouseY_ - window.innerHeight / 2,
+        MouseX_ - window.innerWidth / 2
       );
     };
 
@@ -489,7 +492,7 @@
               lockautoRotating = true;
             }
             if (tankdata.fov !== 0) {
-              byby(tankdata.fov);
+              scaleby(tankdata.fov);
             }
 
             send("typeChange", {
@@ -513,13 +516,9 @@
               maxhealth: maxhealth,
               playerReheal: playerReheal,
               FOV: scaleFactor,
-              canvasW: canvas.width,
-              canvasH: canvas.height,
               MouseX: MouseX_,
               Regenspeed: Regenspeed,
               MouseY: MouseY_,
-              screenWidth: canvas.width,
-              screenHeight: canvas.height,
               visible: true,
               statsTree: {
                 Health: statsTree.Health,
@@ -589,12 +588,7 @@
                       if (tankdatacannon__[cannon_]["offSet-x-multpliyer"]) {
                         offSet_x *= -1;
                       }
-                      let angle0 = Math.atan2(
-                        Math.abs(MouseY_) -
-                          (canvas.height / 2 - playerSize * FOV),
-                        Math.abs(MouseX_) -
-                          (canvas.width / 2 - playerSize * FOV)
-                      );
+                      let angle0 = getCannonAngle();
                       if (
                         tankdatacannon__[cannon_].type === "SwivelAutoCannon"
                       ) {
@@ -639,11 +633,11 @@
                     }
                     setTimeout(() => {
                       cannonINT();
-                    }, 750 * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
+                    }, baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
                   }
                   setTimeout(() => {
                     cannonINT();
-                  }, 750 * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
+                  }, baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
                   autoIntevals.push({ cannonINT: cannonINT, autoID: autoID });
                 }
               }
@@ -656,7 +650,9 @@
     const generateUniquePlayerId = () => {
       return "player-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
     };
+
     let levelpro = [];
+
     function levelHANDLER() {
       let tonextlevel = levels[level] - levels[level - 1];
       setprogress =
@@ -676,19 +672,90 @@
           (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
         playerSize += playerSize * 0.005;
         send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
-        scaleby(0.008);
+        console.log(scaleUp)
+        scaleby(scaleUp);
         while (score / levels[level] >= 1) {
           level += 1;
           upgradePoints += 1;
           playerSize += playerSize * 0.005;
           send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
-          scaleby(0.008);
+          console.log(scaleUp)
+          scaleby(scaleUp);
           progress = 0;
           setprogress =
             (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
           let tankdata = tankmeta[__type__];
           levelUpgrader(tankdata);
         }
+      }
+    }
+
+    function buildTeamList() {
+      if (!joinedTeam) {
+        pubteams.forEach((team) => {
+          var teamcontainer = document.getElementById("teamcontainer");
+          var item = document.createElement("div");
+          item.classList.add("team");
+          item.innerText = team.name;
+          teamcontainer.appendChild(item);
+          item.addEventListener("click", () => {
+            Array.from(teamcontainer.children).forEach((child) => {
+              child.classList.remove("glow");
+            });
+
+            item.classList.add("glow");
+
+            selected_class = team.teamID;
+          });
+        });
+      } else {
+        let MYteam = pubteams.find((team) => {
+          return team.teamID === players[playerId].team;
+        });
+        MYteam.players.forEach((player) => {
+          var teamcontainer = document.getElementById("teamcontainer");
+          var item = document.createElement("div");
+          item.classList.add("team");
+          if (player.id === MYteam.owner.id) {
+            item.innerText = player.username + " -";
+          } else {
+            item.innerText = player.username;
+          }
+          if (player.id === MYteam.owner.id) {
+            var crown = document.createElement("img");
+            crown.src = "assets/crownIcon.png";
+            item.appendChild(crown);
+            crown.style.width = "1.6em";
+            crown.style.height = "1.3em";
+            crown.style["margin-left"] = "5px";
+            crown.style["margin-top"] = "0px";
+            crown.style["margin-bottom"] = "-5px";
+          }
+
+          teamcontainer.appendChild(item);
+          if (MYteam.owner.id === playerId && player.id !== MYteam.owner.id) {
+            item.addEventListener("mouseover", () => {
+              if (teamOver) return;
+              teamOver = true;
+              var kick = document.createElement("img");
+              kick.src = "assets/kickButton.png";
+              kick.style.width = "1.5em";
+              kick.style.height = "1.5em";
+              kick.style["text-align"] = "left";
+              kick.addEventListener("click", () => {
+                send("kickplayer", {
+                  id: player.id,
+                  team: MYteam.teamID,
+                });
+              });
+              item.appendChild(kick);
+              item.addEventListener("mouseleave", () => {
+                teamOver = false;
+                item.children[0].remove();
+              });
+            });
+          }
+        });
       }
     }
 
@@ -729,6 +796,9 @@
           screenWidth: canvas.width,
           screenHeight: canvas.height,
           visible: true,
+          team: teamOn,
+          userId: userId,
+          autoFiring:autoFiring,
           statsTree: {
             Health: 1,
             "Body Damage": 1,
@@ -739,8 +809,6 @@
             "Bullet Reload": 1,
             Speed: 1,
           },
-          team: teamOn,
-          userId: userId,
         };
 
         send("newPlayer", playerData);
@@ -789,6 +857,15 @@
               playerX += data.x;
               break;
             }
+            case "explosionUpdate": {
+              explosions = data;
+              break;
+            }
+            case "Config": {
+              baseFireInterval = data.baseFireInterval;
+              scaleUp = data.scaleUp;
+              break
+            }
             case "requests": {
               function requester() {
                 var conteiner = document.getElementById("requestJoin");
@@ -799,6 +876,7 @@
                 var allowYes = document.getElementById("allowYes");
                 var allowNo = document.getElementById("allowNo");
                 conteiner.style.display = "block";
+                if (conteiner.children[1]) conteiner.children[1].remove();
                 var newname = document.createElement("p");
                 newname.style = "color: #00ffff; font-size: 16px";
                 newname.innerText = players[requests[0].requester].username;
@@ -1064,6 +1142,7 @@
                   MouseY: MouseY_,
                   screenWidth: canvas.width,
                   screenHeight: canvas.height,
+                  autoFiring:autoFiring,
                   statsTree: {
                     Health: 1,
                     "Body Damage": 1,
@@ -1141,51 +1220,7 @@
               pubteams = data;
               var teamcontainer = document.getElementById("teamcontainer");
               teamcontainer.innerHTML = "";
-              if (!joinedTeam) {
-                pubteams.forEach((team) => {
-                  var teamcontainer = document.getElementById("teamcontainer");
-                  var item = document.createElement("div");
-                  item.classList.add("team");
-                  item.innerText = team.name;
-                  teamcontainer.appendChild(item);
-                  item.addEventListener("click", () => {
-                    // Remove the "glow" class from all children
-                    Array.from(teamcontainer.children).forEach((child) => {
-                      child.classList.remove("glow");
-                    });
-                    item.classList.add("glow");
-
-                    // Set the selected class
-                    selected_class = team.teamID;
-                  });
-                });
-              } else {
-                let MYteam = pubteams.find((team) => {
-                  return team.teamID === players[playerId].team;
-                });
-                MYteam.players.forEach((player) => {
-                  var teamcontainer = document.getElementById("teamcontainer");
-                  var item = document.createElement("div");
-                  item.classList.add("team");
-                  if (player.id === MYteam.owner.id) {
-                    item.innerText = player.username + " -";
-                  } else {
-                    item.innerText = player.username;
-                  }
-                  if (player.id === MYteam.owner.id) {
-                    var crown = document.createElement("img");
-                    crown.src = "assets/crownIcon.png";
-                    item.appendChild(crown);
-                    crown.style.width = "1.6em";
-                    crown.style.height = "1.3em";
-                    crown.style["margin-left"] = "5px";
-                    crown.style["margin-top"] = "0px";
-                    crown.style["margin-bottom"] = "-5px";
-                    //
-                  }
-                  teamcontainer.appendChild(item);
-                });
-              }
+              buildTeamList();
               break;
             }
             case "JoinTeamSuccess": {
@@ -1429,20 +1464,20 @@
         });
 
         document.addEventListener("mousemove", (evt) => {
-          if (autoRotating || lockautoRotating) return;
           var mousepos = getMousePos(window, evt);
-          MouseX_ = mousepos.x;
-          MouseY_ = mousepos.y;
-          let __angle__ = Math.atan2(
-            Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
-            Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
-          );
-          send("playerCannonMoved", {
-            id: playerId,
-            cannon_angle: __angle__,
-            MouseX: MouseX_,
-            MouseY: MouseY_,
-          });
+          if (!autoRotating && !lockautoRotating) {
+            MouseX_ = mousepos.x;
+            MouseY_ = mousepos.y;
+            let __angle__ = getCannonAngle();
+            send("playerCannonMoved", {
+              id: playerId,
+              cannon_angle: __angle__,
+              MouseX: MouseX_,
+              MouseY: MouseY_,
+            });
+          }
+          MouseX = mousepos.x;
+          MouseY = mousepos.y;
         });
 
         function generateRandomNumber(min, max) {
@@ -1474,7 +1509,7 @@
           });
           owner_of_team = true;
         });
-        
+
         function bounceBackAndRecoil(i, Bsize, Bspeed, anlge_) {
           cannonWidth[i] = cannonWidth[i] || 0;
           for (let l = 0; l < 10; l++) {
@@ -1494,16 +1529,8 @@
             }, 20 * l); // Updated to prevent overlap
           }
 
-          let recoilX = -(
-            (Bsize / 10) *
-            Bspeed *
-            Math.cos(anlge_)
-          );
-          let recoilY = -(
-            (Bsize / 10) *
-            Bspeed *
-            Math.sin(anlge_)
-          );
+          let recoilX = -((Bsize / 10) * Bspeed * Math.cos(anlge_));
+          let recoilY = -((Bsize / 10) * Bspeed * Math.sin(anlge_));
           for (let i = 0; i < playerSpeed; i++) {
             setTimeout(() => {
               movePlayer(recoilX / 15, recoilY / 15, i == playerSpeed - 1);
@@ -1518,10 +1545,7 @@
             if (evt.button === 2) return;
           }
 
-          var angle = Math.atan2(
-            Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
-            Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
-          );
+          var angle = getCannonAngle();
 
           tankdatacannon.forEach((cannon, i) => {
             if (!cannonFireData[i]) return;
@@ -1578,7 +1602,7 @@
               let identdfire = Date.now() + Math.random();
               let bullet_speed__ = bullet_speed * cannon["bulletSpeed"];
 
-              bounceBackAndRecoil(i,bullet_size_l,bullet_speed__,angle_)
+              bounceBackAndRecoil(i, bullet_size_l, bullet_speed__, angle_);
 
               let vertices = 0;
               if (
@@ -1642,14 +1666,15 @@
                 ystart: playerY,
                 id: playerId,
                 uniqueid: identdfire,
+                cannonIndex:i
               };
 
               send("bulletFired", bullet);
             }, cannon.delay * 1000);
-            if (!(cannonFireData[i] || dronetanks.includes(__type__))) {
+            if (!(cannonFireData[i] || tankmeta.dronetanks.includes(__type__))) {
               setTimeout(() => {
                 cannonFireData[i] = true;
-              }, 750 * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
+              }, baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
             }
           });
         }
@@ -1665,12 +1690,7 @@
             firingInterval = setInterval(
               (event = evt, MouseY__ = MouseY_, MouseX__ = MouseX_) => {
                 canFire2 = false;
-                let angle = Math.atan2(
-                  Math.abs(MouseY__) -
-                    (window.innerHeight / 2 - playerSize * FOV),
-                  Math.abs(MouseX__) -
-                    (window.innerWidth / 2 - playerSize * FOV)
-                );
+                let angle = getCannonAngle();
                 if (autoFiring) return;
 
                 let tankdatacannondata = tankdatacannon[i];
@@ -1736,8 +1756,8 @@
                   let identdfire = Date.now() + Math.random();
                   let bullet_speed__ = bullet_speed * cannon["bulletSpeed"];
 
-                  bounceBackAndRecoil(i,bullet_size_l,bullet_speed__,angle_)
-                  
+                  bounceBackAndRecoil(i, bullet_size_l, bullet_speed__, angle_);
+
                   let vertices = 0;
                   if (
                     cannon["type"] === "basicCannon" ||
@@ -1805,11 +1825,12 @@
                     ystart: playerY,
                     id: playerId,
                     uniqueid: identdfire,
+                    cannonIndex:i
                   };
                   send("bulletFired", bullet);
                 }, tankdatacannondata["delay"] * 1000);
               },
-              750 * tankdata["reaload-m"] * cannon["reloadM"] * __reload__
+              baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__
             );
             name = JSON.stringify(firingInterval + i);
             firingIntervals[name] = firingInterval;
@@ -1834,7 +1855,7 @@
 
         function autoengine() {
           __tankdata__ = tankmeta[__type__];
-          if (!dronetanks.includes(__type__) && autoFiring) {
+          if (!tankmeta.dronetanks.includes(__type__) && autoFiring) {
             __tankdata__ = tankmeta[__type__];
             if (firingInterval) {
               clearInterval(firingInterval);
@@ -1842,7 +1863,7 @@
             }
             fireOnce();
           }
-          if (dronetanks.includes(__type__)) {
+          if (tankmeta.dronetanks.includes(__type__)) {
             let i = 0;
             for (var cannon in tankmeta[__type__]["cannons"]) {
               if (
@@ -1859,19 +1880,19 @@
 
           setTimeout(() => {
             autoengine();
-          }, 750 * __tankdata__["reaload-m"] * __reload__);
+          }, baseFireInterval * __tankdata__["reaload-m"] * __reload__);
         }
 
         setTimeout(() => {
           autoengine();
-        }, 750 * __tankdata__["reaload-m"] * __reload__);
+        }, baseFireInterval * __tankdata__["reaload-m"] * __reload__);
 
         document.addEventListener("mousedown", (evt) => {
           if (
-            window.innerWidth - 475 < MouseX_ &&
-            MouseX_ < window.innerWidth - 275 &&
-            MouseY_ > 10 &&
-            MouseY_ < 110 &&
+            window.innerWidth - 475 < MouseX &&
+            MouseX < window.innerWidth - 275 &&
+            MouseY > 10 &&
+            MouseY < 110 &&
             !teampanelopen
           ) {
             teampanelopen = true;
@@ -1885,72 +1906,7 @@
               window.innerHeight / 2 - innerteamheightreal / 2 + "px";
             teamcontainer.style.height = innerteamheightreal - 100 + "px";
             teamcontainer.innerHTML = "";
-            if (!joinedTeam) {
-              pubteams.forEach((team) => {
-                var teamcontainer = document.getElementById("teamcontainer");
-                var item = document.createElement("div");
-                item.classList.add("team");
-                item.innerText = team.name;
-                teamcontainer.appendChild(item);
-                item.addEventListener("click", () => {
-                  Array.from(teamcontainer.children).forEach((child) => {
-                    child.classList.remove("glow");
-                  });
-
-                  item.classList.add("glow");
-
-                  selected_class = team.teamID;
-                });
-              });
-            } else {
-              let MYteam = pubteams.find((team) => {
-                return team.teamID === players[playerId].team;
-              });
-              MYteam.players.forEach((player) => {
-                var teamcontainer = document.getElementById("teamcontainer");
-                var item = document.createElement("div");
-                item.classList.add("team");
-                if (player.id === MYteam.owner.id) {
-                  item.innerText = player.username + " -";
-                } else {
-                  item.innerText = player.username;
-                }
-                if (player.id === MYteam.owner.id) {
-                  var crown = document.createElement("img");
-                  crown.src = "assets/crownIcon.png";
-                  item.appendChild(crown);
-                  crown.style.width = "1.6em";
-                  crown.style.height = "1.3em";
-                  crown.style["margin-left"] = "5px";
-                  crown.style["margin-top"] = "0px";
-                  crown.style["margin-bottom"] = "-5px";
-                }
-
-                teamcontainer.appendChild(item);
-                if (
-                  MYteam.owner.id === playerId &&
-                  player.id !== MYteam.owner.id
-                ) {
-                  item.addEventListener("mouseover", () => {
-                    var kick = document.createElement("img");
-                    kick.src = "assets/kickButton.png";
-                    kick.style.width = "1em";
-                    kick.style.height = "1em";
-                    kick.style["text-align"] = "left";
-                    kick.addEventListener("click", () => {
-                      send("kickplayer", {
-                        id: player.id,
-                        team: MYteam.teamID,
-                      });
-                    });
-                    item.appendChild(kick);
-                    item.addEventListener("mouseout", () => {
-                      item.children[0].remove();
-                    });
-                  });
-                }
-              });
-            }
+            buildTeamList();
 
             return;
           }
@@ -1959,17 +1915,17 @@
             const textHeight = 16;
 
             const withinX =
-              MouseX_ >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
-              MouseX_ <=
+              MouseX >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
+              MouseX <=
                 window.innerWidth / 2 + innerteamwidthreal / 2 - 15 + textWidth;
 
             const withinY =
-              MouseY_ >=
+              MouseY >=
                 window.innerHeight / 2 -
                   innerteamheightreal / 2 +
                   26 -
                   textHeight &&
-              MouseY_ <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
+              MouseY <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
             if (withinX && withinY) {
               teampanelopen = false;
               var teamcontainer = document.getElementById("teamcontainer");
@@ -1980,13 +1936,12 @@
             }
 
             const withinX3 =
-              MouseX_ >= window.innerWidth / 2 - innerteamwidthreal / 2 + 10 &&
-              MouseX_ <=
+              MouseX >= window.innerWidth / 2 - innerteamwidthreal / 2 + 10 &&
+              MouseX <=
                 window.innerWidth / 2 - innerteamwidthreal / 2 + 10 + 80;
             const withinY3 =
-              MouseY_ >=
-                window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
-              MouseY_ <=
+              MouseY >= window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
+              MouseY <=
                 window.innerHeight / 2 + innerteamheightreal / 2 - 50 + 40;
             if (withinX3 && withinY3) {
               if (!joinedTeam) {
@@ -2010,13 +1965,12 @@
             }
 
             const withinX2 =
-              MouseX_ >= window.innerWidth / 2 + innerteamwidthreal / 2 - 150 &&
-              MouseX_ <=
+              MouseX >= window.innerWidth / 2 + innerteamwidthreal / 2 - 150 &&
+              MouseX <=
                 window.innerWidth / 2 + innerteamwidthreal / 2 - 150 + 140;
             const withinY2 =
-              MouseY_ >=
-                window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
-              MouseY_ <=
+              MouseY >= window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
+              MouseY <=
                 window.innerHeight / 2 + innerteamheightreal / 2 - 50 + 40;
             if (withinX2 && withinY2) {
               if (!owner_of_team) {
@@ -2027,7 +1981,7 @@
             }
             return;
           }
-          if (!dronetanks.includes(__type__) && !teampanelopen && !dead) {
+          if (!tankmeta.dronetanks.includes(__type__) && !teampanelopen && !dead) {
             FireIntervale(evt);
           } else {
             if (evt.button === 2 && !dead) {
@@ -2046,7 +2000,7 @@
 
           send("MousestateUpdate", { id: playerId });
         });
-      }, 100);
+      }, 0);
     };
 
     function drawRoundedLevelBar(
@@ -2142,7 +2096,6 @@
       cavansY += dy;
       playerX += dx;
 
-      //if (i in nolist) return; // just roll with it
       send("playerMoved", {
         id: playerId,
         x: playerX,
@@ -2336,6 +2289,7 @@
     }
 
     var scaleFactor = 1;
+
     function scaleby(scaleDown) {
       scaleFactor -= scaleDown;
       oWidth = window.innerWidth;
@@ -2355,6 +2309,9 @@
         screenH: oHieght,
         id: playerId,
       });
+      Ghostcanvas.width = oWidth;
+      Ghostcanvas.height = oHieght;
+      boundrectcanvas = Ghostcanvas.getBoundingClientRect();
       var canW1 = canW;
       var canH1 = canH;
       canW = canvas.width;
@@ -2395,11 +2352,6 @@
       document.getElementById("grid").childNodes.forEach((node) => {
         node.style.width = `${999 * scaleFactor}px`;
         node.style.height = `${999 * scaleFactor}px`;
-      });
-      send("resize", {
-        id: playerId,
-        screenWidth: canvas.width,
-        screenHeight: canvas.height,
       });
     }
 
@@ -2525,12 +2477,10 @@
     var newnotify = new notify(ctx, announcements);
 
     function drawself(exW, exH) {
+      pentarotate += 0.1;
       newnotify.announcements = announcements;
       ctx.fillStyle = squareColor;
-      let angle = Math.atan2(
-        Math.abs(MouseY_) - (window.innerHeight / 2 - playerSize * FOV),
-        Math.abs(MouseX_) - (window.innerWidth / 2 - playerSize * FOV)
-      );
+      let angle = getCannonAngle();
       if (!messaging) {
         if (canmove) {
           if (keysPressed["]"]) {
@@ -2662,6 +2612,7 @@
           } else if (keysPressed["="]) {
             FOV += 0.1;
           } else if (keysPressed["e"]) {
+            send("autoFiringUpdate",{autoFiring:!autoFiring,id:playerId})
             if (lockautoRotating) return;
             autoFiring = !autoFiring;
             if (!autoFiring) {
@@ -2879,15 +2830,12 @@
           });
           var offSet_x = tankdatacannondata["offSet-x"];
           if (tankdatacannondata["offSet-x"] === "playerX") {
-            offSet_x = playerSize * 40 * FOV;
+            offSet_x = playerSize * 40;
           }
           if (tankdatacannondata["offSet-x-multpliyer"]) {
             offSet_x *= -1;
           }
-          let angle0 = Math.atan2(
-            Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-            Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
-          );
+          let angle0 = getCannonAngle();
           var [x, y] = rotatePointAroundPlayer(
             offSet_x,
             0,
@@ -3125,15 +3073,12 @@
           ctx.save();
           var offSet_x = tankdatacannondata["offSet-x"];
           if (tankdatacannondata["offSet-x"] === "playerX") {
-            offSet_x = playerSize * 40 * FOV;
+            offSet_x = playerSize * 40;
           }
           if (tankdatacannondata["offSet-x-multpliyer"]) {
             offSet_x *= -1;
           }
-          let angle0 = Math.atan2(
-            Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-            Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
-          );
+          let angle0 = getCannonAngle();
           var [x, y] = rotatePointAroundPlayer(
             offSet_x,
             0,
@@ -3194,7 +3139,7 @@
 
       ctx.save();
 
-      ctx.translate((canW - 150) * exW, (canH - 150) * exW);
+      ctx.translate(canW - 150 * exW, canH - 150 * exW);
       ctx.fillStyle = "#fcfafa";
       ctx.beginPath();
       ctx.roundRect(0, 0, 125 * exW, 125 * exW, 5);
@@ -3225,6 +3170,7 @@
       ctx.closePath();
 
       ctx.textAlign = "center";
+      console.log(exW, exH);
       ctx.strokeText(
         "players: " + Object.keys(players).length,
         (125 / 2) * exW,
@@ -3344,10 +3290,10 @@
         }
       }
       if (
-        canvas.width - button475 < MouseX_ &&
-        MouseX_ < canvas.width - button275 &&
-        MouseY_ > button10 &&
-        MouseY_ < button110
+        window.innerWidth - 475 < MouseX &&
+        MouseX < window.innerWidth - 275 &&
+        MouseY > 10 &&
+        MouseY < 110
       ) {
         ctx.strokeStyle = "#4fe5ff";
         ctx.lineWidth = 7;
@@ -3395,7 +3341,7 @@
           canvas.height / 2 - teamheight / 2,
           teamwidth,
           teamheight,
-          7.5
+          7.5 * scaleFactor
         );
         ctx.fillStyle = "#45bbff";
         ctx.strokeStyle = "#4fe5ff";
@@ -3411,7 +3357,7 @@
           canvas.height / 2 - innerteamheight / 2,
           innerteamwidth,
           innerteamheight,
-          5
+          5 * scaleFactor
         );
         ctx.fillStyle = "#00a0fd";
         ctx.closePath();
@@ -3426,7 +3372,7 @@
               canvas.height / 2 + innerteamheight / 2 - button10 * 5,
               buttton140,
               button40,
-              5
+              5 * scaleFactor
             );
           }
         } else {
@@ -3435,7 +3381,7 @@
             canvas.height / 2 + innerteamheight / 2 - button10 * 5,
             buttton140,
             button40,
-            5
+            5 * scaleFactor
           );
         }
         ctx.fill();
@@ -3447,7 +3393,7 @@
           canvas.height / 2 + innerteamheight / 2 - button10 * 5,
           button80,
           button40,
-          5
+          5 * scaleFactor
         );
         ctx.closePath();
         ctx.fill();
@@ -3465,7 +3411,9 @@
         ctx.fillText(
           text_,
           canvas.width / 2 - innerteamwidth / 2 + button10 * 5,
-          canvas.height / 2 + innerteamheight / 2 - 17.5
+          canvas.height / 2 +
+            innerteamheight / 2 -
+            17.5 * (1 + (1 - scaleFactor))
         );
         ctx.font = `bold ${21 * exW}px Nunito`;
         var text2;
@@ -3487,12 +3435,12 @@
         }
         ctx.textAlign = "left";
         const withinX =
-          MouseX_ >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
-          MouseX_ <= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 + 16;
+          MouseX >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
+          MouseX <= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 + 16;
         const withinY =
-          MouseY_ >=
+          MouseY >=
             window.innerHeight / 2 - innerteamheightreal / 2 + 26 - 16 &&
-          MouseY_ <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
+          MouseY <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
         if (withinX && withinY) {
           ctx.fillStyle = "red";
         }
@@ -3541,6 +3489,45 @@
       fps = Math.round(frameTimes.reduce((a, b) => a + b) / frameTimes.length);
 
       //console.log("FPS:", fps);
+
+      explosions.forEach((exsplosion) => {
+        if (
+          exsplosion.x + exsplosion.size > 0 + cavansX &&
+          exsplosion.x < canvas.width + cavansX + exsplosion.size &&
+          exsplosion.y - cavansY > 0 - exsplosion.size &&
+          exsplosion.y - exsplosion.size < canvas.height + cavansY
+        ) {
+          exsplosion.rings.reduce((a, ring) => {
+            ctx.beginPath();
+            ctx.arc(
+              exsplosion.x - cavansX,
+              exsplosion.y - cavansY,
+              exsplosion.size + a,
+              0,
+              Math.PI * 2
+            );
+            ctx.fillStyle = ring.color;
+            ctx.strokeStyle = ring.color;
+            ctx.globalAlpha =
+              exsplosion.trans - ring.transMinus <= 0
+                ? 0.001
+                : exsplosion.trans - ring.transMinus;
+            ctx.lineWidth = ring.size;
+            ctx.stroke();
+            ctx.closePath();
+            console.log(
+              exsplosion.trans,
+              ring.transMinus,
+              Date.now(),
+              exsplosion.endTime
+            );
+            a += ring.size;
+            ctx.globalAlpha = 1;
+            return a;
+          }, 0);
+        }
+      });
+
       ctx.lineJoin = "round";
       food_list.forEach((item) => {
         var realx = item.x;
@@ -4700,15 +4687,12 @@
               });
               var offSet_x = tankdatacannondata["offSet-x"];
               if (tankdatacannondata["offSet-x"] === "playerX") {
-                offSet_x = playerSize * 40 * FOV;
+                offSet_x = playerSize * 40;
               }
               if (tankdatacannondata["offSet-x-multpliyer"]) {
                 offSet_x *= -1;
               }
-              let angle0 = Math.atan2(
-                Math.abs(MouseY_) - (canvas.height / 2 - playerSize * FOV),
-                Math.abs(MouseX_) - (canvas.width / 2 - playerSize * FOV)
-              );
+              let angle0 = getCannonAngle();
               var [x, y] = rotatePointAroundPlayer(
                 offSet_x,
                 0,
@@ -4791,10 +4775,7 @@
 
       ctx.fillStyle = squareColor;
 
-      let angle = Math.atan2(
-        Math.abs(MouseY_) - (canvas.height / 2 - playerSize),
-        Math.abs(MouseX_) - (canvas.width / 2 - playerSize)
-      );
+      let angle = getCannonAngle();
       if (!dead) {
         drawself(upscaleX, upscaleY);
       }
