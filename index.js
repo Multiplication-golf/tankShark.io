@@ -166,19 +166,6 @@ let purge_limit = 5;
 
 let frame = 0;
 
-const UPDATE_INTERVAL = 75;
-
-let ColorUpgrades = [
-  "#f54242",
-  "#fa8050",
-  "#fab350",
-  "#fcf25b",
-  "#57f75c",
-  "#42fcf6",
-  "#5181fc",
-  "#5c14f7",
-];
-
 const levels = {
   0: 15,
   1: 28,
@@ -312,6 +299,20 @@ const CONFIG = {
   bossLookUpRange: 1300,
   playerPlayerSightRange: 5000,
   playerItemSightRange: 1300,
+  fadeRate: 150,
+  itemCollisionRangeMultiplyer: 1.5,
+  playerCollisionRangeMultiplyer: 2,
+  map: { size: 5000, innersize: 4500, x: 0, y: 0, boundRange: 50 },
+  colorUpgardes: [
+    "#f54242",
+    "#fa8050",
+    "#fab350",
+    "#fcf25b",
+    "#57f75c",
+    "#42fcf6",
+    "#5181fc",
+    "#5c14f7",
+  ],
 };
 
 Object.freeze(CONFIG);
@@ -1118,8 +1119,16 @@ function confirmplayerradia(_x, _y) {
   for (const player in players) {
     let player_ = players[player];
     if (
-      between(player_.x, _x - (player_.size + 50), _x + (player_.size + 50)) &&
-      between(player_.y, _y - (player_.size + 50), _y + (player_.size + 50))
+      between(
+        player_.x,
+        _x - (player_.size + CONFIG.map.boundRange),
+        _x + (player_.size + CONFIG.map.boundRange)
+      ) &&
+      between(
+        player_.y,
+        _y - (player_.size + CONFIG.map.boundRange),
+        _y + (player_.size + CONFIG.map.boundRange)
+      )
     ) {
       return false; // Overlap detected
     }
@@ -1165,15 +1174,23 @@ function moveCannonAngle(cannon) {
 
 for (let i = 0; i < getRandomInt(400, 500); i++) {
   var randID = Math.random() * i * Date.now();
-  let x = getRandomInt(-5000, 5000);
-  let y = getRandomInt(-5000, 5000);
+  let x = getRandomInt(-CONFIG.map.size, CONFIG.map.size);
+  let y = getRandomInt(-CONFIG.map.size, CONFIG.map.size);
   for (let j = 0; j < cors_taken.length; j++) {
     if (
-      between(x, cors_taken[j].x - 50, cors_taken[j].x + 50) &&
-      between(y, cors_taken[j].y - 50, cors_taken[j].y + 50)
+      between(
+        x,
+        cors_taken[j].x - CONFIG.map.boundRange,
+        cors_taken[j].x + CONFIG.map.boundRange
+      ) &&
+      between(
+        y,
+        cors_taken[j].y - CONFIG.map.boundRange,
+        cors_taken[j].y + CONFIG.map.boundRange
+      )
     ) {
-      x = getRandomInt(-5000, 5000);
-      y = getRandomInt(-5000, 5000);
+      x = getRandomInt(-CONFIG.map.size, CONFIG.map.size);
+      y = getRandomInt(-CONFIG.map.size, CONFIG.map.size);
     }
   }
   cors_taken.push({ x: x, y: y, id: randID });
@@ -1266,8 +1283,16 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
   var randID = Math.random() * i * Date.now();
   for (let j = 0; j < cors_taken.length; j++) {
     if (
-      between(x, cors_taken[j].x - 50, cors_taken[j].x + 50) &&
-      between(y, cors_taken[j].y - 50, cors_taken[j].y + 50)
+      between(
+        x,
+        cors_taken[j].x - CONFIG.map.boundRange,
+        cors_taken[j].x + CONFIG.map.boundRange
+      ) &&
+      between(
+        y,
+        cors_taken[j].y - CONFIG.map.boundRange,
+        cors_taken[j].y + CONFIG.map.boundRange
+      )
     ) {
       x = getRandomInt(-1000, 1000);
       y = getRandomInt(-1000, 1000);
@@ -1478,6 +1503,7 @@ function Wanderer( // class but what ever
   instancevars.crissCross = crissCross;
   instancevars.goingStriaght = false;
   instancevars.realAngle = 0;
+  instancevars.waitTime = waitTime;
   if (instancevars.wanderType === "straight") {
     instancevars.allowInner = allowInner;
     if (instancevars.allowInner) {
@@ -1561,10 +1587,11 @@ wss.on("connection", (socket) => {
         console.log("players", players);
         emit("playerJoined", data); // Emit playerJoined event to notify all clients
         emit("autoCannonUPDATE-ADD", autocannons);
-        emit("colorUpgrades", ColorUpgrades);
+        emit("colorUpgrades", CONFIG.colorUpgardes);
         emit("Levels", levels);
         emit("NewMessages", messages);
         emit("Config", CONFIG);
+        socket.send(JSON.stringify({ type: "RETURNtankmeta", data: tankmeta }));
         var public_teams = [];
         teamlist.forEach((team) => {
           if (!team.hidden) {
@@ -1574,12 +1601,21 @@ wss.on("connection", (socket) => {
         emit("pubteamlist", public_teams);
         let x, y;
         do {
-          x = getRandomInt(-4500, 4500);
-          y = getRandomInt(-4500, 4500);
+          x = getRandomInt(-CONFIG.map.innersize, CONFIG.map.innersize);
+          y = getRandomInt(-CONFIG.map.innersize, CONFIG.map.innersize);
         } while (
           cors_taken.some(
             (c) =>
-              between(x, c.x - 50, c.x + 50) && between(y, c.y - 50, c.y + 50)
+              between(
+                x,
+                c.x - CONFIG.map.boundRange,
+                c.x + CONFIG.map.boundRange
+              ) &&
+              between(
+                y,
+                c.y - CONFIG.map.boundRange,
+                c.y + CONFIG.map.boundRange
+              )
           ) ||
           !confirmplayerradia(x, y)
         );
@@ -2718,11 +2754,6 @@ wss.on("connection", (socket) => {
         break;
       }
 
-      case "getTankMeta": {
-        socket.send(JSON.stringify({ type: "RETURNtankmeta", data: tankmeta }));
-        break;
-      }
-
       case "healrate": {
         if (!players[data.id]) {
           invaled_requests.push(data.id);
@@ -2866,18 +2897,19 @@ wss.on("connection", (socket) => {
           data.wander = new Wanderer(
             data.xstart,
             data.ystart,
-            players[data.id].size * 50,
+            players[data.id].size * 120,
             players[data.id].x,
             players[data.id].y,
             data.speed,
-            101
+            101,
+            "arc",
+            { arcSpeed: 0.006 }
           );
           data.setBaseXY = () => {
             for (const playerid in players) {
               if (playerid === data.id) {
                 var player = players[playerid];
-                data.wander.baseX = player.x;
-                data.wander.baseX = player.y;
+                data.wander.setBaseXY(player.x, player.y);
               }
             }
           };
@@ -3278,6 +3310,7 @@ wss.on("connection", (socket) => {
         player.canvasH = data.canvasH;
         player.screenWidth = data.screenW;
         player.screenHeight = data.screenH;
+        player.FOV = data.scaleFactor;
         break;
       }
 
@@ -3483,27 +3516,26 @@ setInterval(() => {
         if (!players[bullet.id].autoFiring) {
           let recipracailFOV = 1 + (1 - players[bullet.id].FOV);
           let dx =
-            (players[bullet.id].MouseX * recipracailFOV +
             players[bullet.id].x -
-            (players[bullet.id].screenWidth * players[bullet.id].FOV) / 2 -
-            bullet.x) -
-            (players[bullet.id].canvasW - players[bullet.id].screenWidth);
-          
-          dx = players[bullet.id].x - players[bullet.id].MouseX * recipracailFOV
-          
+            players[bullet.id].canvasW / 2 +
+            players[bullet.id].MouseX / players[bullet.id].FOV;
+
           let dy =
-            (players[bullet.id].MouseY * recipracailFOV +
             players[bullet.id].y -
-            (players[bullet.id].screenHeight * players[bullet.id].FOV) / 2 -
-            bullet.y) -
-            (players[bullet.id].canvasH - players[bullet.id].screenHeight);
-          
-          dx = players[bullet.id].MouseY * recipracailFOV
-          
-          let angle = Math.atan2(dy, dx);
-          bullet.angle = angle;
-          if (players[bullet.id]?.mousestate === "held") {
-            bullet.angle = -angle + pi / 2;
+            players[bullet.id].canvasH / 2 +
+            players[bullet.id].MouseY / players[bullet.id].FOV;
+
+          let angle = Math.atan2(dy - bullet.y, dx - bullet.x);
+          if (
+            Math.abs(players[bullet.id].y - dy) < bullet.speed * 2 &&
+            Math.abs(players[bullet.id].x - dx) < bullet.speed * 2
+          ) {
+            bullet.angle += 1;
+          } else {
+            bullet.angle = angle;
+            if (players[bullet.id]?.mousestate === "held") {
+              bullet.angle = angle + pi / 2;
+            }
           }
         } else if (players[bullet.id].autoFiring) {
           let buildframe = {
@@ -3583,11 +3615,12 @@ setInterval(() => {
             var newY = bullet.y + bullet.speed * Math.sin(pointerAngle);
           }
           if (!fire_at_) {
+            bullet.wander.think();
             bullet.setBaseXY();
-            var pointerAngle = bullet.wander.returnAngle();
-            bullet.angle = pointerAngle;
-            var newX = bullet.x + bullet.speed * Math.cos(pointerAngle);
-            var newY = bullet.y + bullet.speed * Math.sin(pointerAngle);
+            var pointerAngle_ = bullet.wander.returnAngle();
+            bullet.angle = pointerAngle_;
+            var newX = bullet.x + bullet.speed * Math.cos(pointerAngle_);
+            var newY = bullet.y + bullet.speed * Math.sin(pointerAngle_);
           }
         } else {
           throw Error("dirty player state");
@@ -4465,7 +4498,6 @@ setInterval(() => {
       item.cannons[0].x = points[1].x;
       item.cannons[0].y = points[1].y;
       item.cannons.forEach((cannon, i) => {
-        //console.log(cannon)
         if (cannon.canfire && cannon.current < cannon.maxbullets) {
           cannon.current += 1;
           cannon.canfire = false;
@@ -4526,12 +4558,16 @@ setInterval(() => {
     }
     let return_ = true;
     if (item.isdead) {
-      item.transparency = 1 - (Date.now() - item.deathtime) / 150;
+      item.transparency = 1 - (Date.now() - item.deathtime) / CONFIG.fadeRate;
     }
     for (const playerId in players) {
       var player = players[playerId];
       let distance = MathHypotenuse(item.x - player.x, item.y - player.y);
-      let size__ = player.size * 80 + item.size * 1.5;
+      let size__ =
+        player.size *
+          CONFIG.playerBaseSize *
+          CONFIG.playerCollisionRangeMultiplyer +
+        item.size * CONFIG.itemCollisionRangeMultiplyer;
 
       if (distance < size__) {
         var collisionCheck = isPlayerCollidingWithPolygon(
@@ -4620,7 +4656,7 @@ setInterval(() => {
               }
             });
 
-            let respawnrai = item["respawn-raidis"] || 4500;
+            let respawnrai = item["respawn-raidis"] || CONFIG.map.innersize;
             let x, y;
             do {
               x = getRandomInt(-respawnrai, respawnrai);
@@ -4628,8 +4664,16 @@ setInterval(() => {
             } while (
               cors_taken.some(
                 (c) =>
-                  between(x, c.x - 50, c.x + 50) &&
-                  between(y, c.y - 50, c.y + 50)
+                  between(
+                    x,
+                    c.x - CONFIG.map.boundRange,
+                    c.x + CONFIG.map.boundRange
+                  ) &&
+                  between(
+                    y,
+                    c.y - CONFIG.map.boundRange,
+                    c.y + CONFIG.map.boundRange
+                  )
               )
             );
             let randID = Math.random() * index * Date.now();
@@ -4773,7 +4817,7 @@ setInterval(() => {
         const damage =
           (bullet.bullet_damage / (item.size + bulletSpeed) +
             bullet.bullet_pentration) /
-          5; //
+          5;
 
         if (
           damage >= item.health &&
@@ -4828,7 +4872,7 @@ setInterval(() => {
             }
           });
 
-          let respawnrai = item["respawn-raidis"] || 4500;
+          let respawnrai = item["respawn-raidis"] || CONFIG.map.innersize;
           let x, y;
           do {
             x = getRandomInt(-respawnrai, respawnrai);
@@ -4836,7 +4880,16 @@ setInterval(() => {
           } while (
             cors_taken.some(
               (c) =>
-                between(x, c.x - 50, c.x + 50) && between(y, c.y - 50, c.y + 50)
+                between(
+                  x,
+                  c.x - CONFIG.map.boundRange,
+                  c.x + CONFIG.map.boundRange
+                ) &&
+                between(
+                  y,
+                  c.y - CONFIG.map.boundRange,
+                  c.y + CONFIG.map.boundRange
+                )
             ) ||
             !confirmplayerradia(x, y)
           );
@@ -5103,6 +5156,7 @@ setInterval(() => {
   createAndSendGameObjects(food_squares);
 }, CONFIG.updateInterval);
 
+// debuging
 setInterval(() => {
   //console.log(bullets[0])
 }, 1000);
