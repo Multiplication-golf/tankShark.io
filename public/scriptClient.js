@@ -3,24 +3,7 @@
   function generateRandomNumber(min, max) {
     return Math.random() * (max - min) + min;
   }
-  var username = "Unamed tank";
-
-  for (let i = 0; i < 10; i++) {
-    for (let j = 0; j < 10; j++) {
-      const div = document.createElement("div");
-      const img = document.createElement("img");
-      img.style.width = "100%";
-      img.style.height = "100%";
-      img.src = "assets/hexbackground.png";
-      let divstyle = div.style;
-      divstyle.width = "999px";
-      divstyle.height = "999px";
-      divstyle.backgroundColor = "white";
-      divstyle.border = "1px solid black";
-      div.appendChild(img);
-      document.getElementById("grid").appendChild(div);
-    }
-  }
+  var username;
 
   const schema = `
     syntax = "proto3";
@@ -43,6 +26,7 @@
       repeated GameObject objects = 1;
     }
     `;
+
   function loadProto() {
     // Define the schema directly as a JSON object
     const schema = {
@@ -155,7 +139,9 @@
         cannons: [],
       },
     };
+
     var grid = document.getElementById("grid");
+
     var types = [
       "basic",
       "twin",
@@ -191,15 +177,113 @@
       null: [{ null: "LOL" }],
     };
 
-    var players = {};
-    var boardbullets = [];
-    var bullets = [];
     var food_list = [];
-    var autocannons = [];
-    var pubteams = [];
-    var level = 0;
+
+    // 🎮 Player-Related Variables
+    var players = {};
+    var playerX = canvas.width / 2;
+    var playerY = canvas.height / 2;
+    var playerMovementX = 0;
+    var playerMovementY = 0;
+    var playerHealth = 100;
+    var maxhealth = 100;
+    var playerHealTime = 0;
+    var playerReheal = 1;
+    var playerSpeed = 10;
+    var playerSize = 1;
+    var playerBaseSize = 40;
+    var bodyDamage = 3;
+    var __type__ = "basic";
+    var typeindex = 0;
+    var selected_class = null;
     var xp = 0;
-    var teamOver = false;
+    var level = 0;
+    var upgradePoints = 0;
+    var maxUP = 8;
+    var dead = false;
+    var joinedTeam = false;
+    var teamOn = null;
+    var owner_of_team = false;
+    var score = 0;
+    var prescore = -1;
+    var announcements = [];
+    var playerMessages = [];
+    var messaging = false;
+    var hidden = false;
+    var blinking = false;
+
+    // 🕹️ Movement & Controls
+    var canmove = true;
+    var canKeyPress = true;
+    var canFire = true;
+    var canFire2 = true;
+    var keysPressed = {};
+    var keyevents = [];
+    var movementTimeouts = [];
+    var autoRotating = false;
+    var lockautoRotating = false;
+    var autoAngle = 0;
+    var current_angle = 0;
+    var MouseX_ = 0;
+    var MouseY_ = 0;
+    var MouseX = 0;
+    var MouseY = 0;
+    var firingIntervals = {};
+    var firingInterval = null;
+
+    // 💥 Combat & Weapons
+    var bullets = [];
+    var boardbullets = [];
+    var zlevelbullets = [];
+    var autoFiring = false;
+    var autoIntevals = [];
+    var baseFireInterval = 750;
+    var cannonFireData = [true];
+    var bullet_damage = 10;
+    var bullet_speed = 4;
+    var bullet_size = 15;
+    var bullet_pentration = 2;
+    var cannonWidth = [0];
+    var drones = 0;
+    var autocannons = [];
+
+    // 🗺️ Map & Environment
+    var mapLeft = -5000;
+    var mapRight = 5000;
+    var mapTop = -5000;
+    var mapBottom = 5000;
+    var boundrectcanvas = Ghostcanvas.getBoundingClientRect();
+    var cavansX = 0;
+    var cavansY = 0;
+    var canW = canvas.width;
+    var canH = canvas.height;
+    var FOV = 1; // sensitive
+    var gridstyle = grid.style;
+    var sqrt23 = Math.sqrt(3) / 2;
+    var pi = Math.PI;
+    var pentarotate = 0;
+
+    // 🛡️ UI & Interface
+    var container = document.getElementById("container");
+    var state = "start";
+    var statecycle = 0;
+    var progress = 0.0;
+    var setprogress = 0;
+    var barWidth = 0.3125 * canvas.width;
+    var barHeight = 0.02909796314 * canvas.height;
+    var borderRadius = 10;
+    var teamwidth = 0.15625 * canvas.width;
+    var teamheight = 0.33333333333333333333333333 * canvas.height;
+    var innerteamwidth = 0.14322916666 * canvas.width;
+    var innerteamheight = 0.308333333333333333333 * canvas.height;
+    var innerteamwidthreal = 0.14322916666 * window.innerWidth;
+    var innerteamheightreal = 0.308333333333333333333 * window.innerHeight;
+    var teampanelopen = false;
+    var leader_board = [];
+    var badge = "";
+    var img = null;
+
+    // 🎯 Buttons & Controls
     var buttton140 = 0.07291666666 * canvas.width;
     var button275 = 0.14322916666 * canvas.width;
     var button475 = 0.24739583333 * canvas.width;
@@ -209,155 +293,46 @@
     var button40 = 0.03879728419 * canvas.height;
     var button10 = 0.00969932104 * canvas.height;
     var button110 = 0.10669253152 * canvas.height;
-    var FOV = 1; // senstive
-    var gridstyle = grid.style;
-    var autoFiring = false;
-    var autoRotating = false;
-    var lockautoRotating = false;
-    var autoAngle = 0;
-    var playerX = canvas.width / 2;
-    var playerY = canvas.height / 2;
-    var cavansX = 0;
-    var cavansY = 0;
-    var explosions = [];
-    var playerHealTime = 0;
-    var playerHealth = 100;
-    var playerSpeed = 10;
-    var playerSize = 1;
-    var bodyDamage = 3;
-    var __type__ = "basic";
-    var bullet_damage = 10;
-    var bullet_speed = 4;
-    var bullet_size = 15;
-    var sqrt23 = Math.sqrt(3) / 2;
-    var vertices = [];
-    var cannonFireData = [true];
-    var __reload__ = 1;
-    var bullet_pentration = 2;
-    var cannonWidth = [0];
-    var drones = 0;
-    var current_angle = 0;
-    var MouseX_ = 0;
-    var MouseY_ = 0;
-    var MouseX = 0;
-    var MouseY = 0;
-    var typedtext = "";
-    var mapLeft = -5000;
-    var mapRight = 5000;
-    var mapTop = -5000;
-    var mapBottom = 5000;
-    var playerMovementX = 0;
-    var playerMovementY = 0;
-    var score = 0;
-    var announcements = [];
-    var leader_board = [];
+    var nolist = [3, 5, 7, 8, 10, 11, 13];
+
+    // 🕰️ Timers & Intervals
+    var Regenspeed = 30;
     var firingIntervals = {};
-    var barWidth = 0.3125 * canvas.width;
-    var barHeight = 0.02909796314 * canvas.height;
-    var borderRadius = 10;
-    var playerReheal = 1;
-    var maxhealth = 100;
+    var firingInterval = null;
+    var autoIntevals = [];
+    var movementTimeouts = [];
+
+    // 👾 Enemies, Bosses, & NPCs
+    var bosses = [];
+    var explosions = [];
+    var requests = [];
+
+    // 🏢 Teams & Multiplayer
+    var teamlist = [];
+    var pubteams = [];
+    var teamOver = false;
+    var userId = getCookie("userId");
+
+    // 🧠 Miscellaneous / Game Logic
+    var vertices = [];
+    var errors = 0;
+    var cannonFireData = [true];
+    var cannonWidth = [0];
+    var sqrt23 = Math.sqrt(3) / 2;
+    var squareColor = "grey";
+    var nolist = [3, 5, 7, 8, 10, 11, 13];
+    var __reload__ = 1;
+    var colorUpgrades = [];
+    var scaleUp = 0;
     var state = "start";
     var statecycle = 0;
     var progress = 0.0;
-    var boundrectcanvas = Ghostcanvas.getBoundingClientRect();
-    var canmove = true;
-    var nolist = [3, 5, 7, 8, 10, 11, 13];
-    var keysPressed = {};
-    var vertices = [];
-    var typeindex = 0;
-    var canFire = true;
-    var canFire2 = true;
-    var canKeyPress = true;
-    var firingInterval = null;
-    var movementTimeouts = [];
-    var canW = canvas.width;
-    var canH = canvas.height;
-    var squareColor = "grey";
-    var autoIntevals = [];
-    var zlevelbullets = [];
-    var colorUpgrades = [];
-    var upgradePoints = 0;
-    var baseFireInterval = 750;
-    var playerMessages = [];
-    var maxUP = 8;
-    var container = document.getElementById("container");
-    var errors = 0;
-    var Regenspeed = 30;
-    var messaging = false;
-    var hidden = false;
-    var blinking = false;
-    var pi = Math.PI;
-    var pentarotate = 0;
     var keyevents = [];
-    var teampanelopen = false;
-    var teamwidth = 0.15625 * canvas.width;
-    var teamheight = 0.33333333333333333333333333 * canvas.height;
-    var innerteamwidth = 0.14322916666 * canvas.width;
-    var innerteamheight = 0.308333333333333333333 * canvas.height;
-    var innerteamwidthreal = 0.14322916666 * window.innerWidth;
-    var innerteamheightreal = 0.308333333333333333333 * window.innerHeight;
-    var teamlist = [];
-    var teamOn = null;
-    var joinedTeam = false;
-    var selected_class = null;
-    var owner_of_team = false;
-    var userId = getCookie("userId");
-    var bosses = [];
-    var prescore = -1;
-    var scaleUp = 0
-    var setprogress = 0;
+    var pentarotate = 0;
+    var boundrectcanvas = Ghostcanvas.getBoundingClientRect();
     var requests = [];
-    var dead = false;
-    var badge = "";
-    var img = null;
     var levels = {
       0: 15,
-      1: 28,
-      2: 44,
-      3: 67,
-      4: 99,
-      5: 143,
-      6: 202,
-      7: 279,
-      8: 377,
-      9: 500,
-      10: 649,
-      11: 829,
-      12: 1042,
-      13: 1290,
-      14: 1578,
-      15: 1908,
-      16: 2283,
-      17: 2706,
-      18: 3179,
-      19: 3707,
-      20: 4292,
-      21: 4937,
-      22: 5645,
-      23: 6419,
-      24: 7262,
-      25: 8177,
-      26: 9167,
-      27: 10235,
-      28: 11384,
-      29: 12617,
-      30: 13937,
-      31: 15348,
-      32: 16851,
-      33: 18451,
-      34: 20149,
-      35: 21950,
-      36: 23855,
-      37: 25869,
-      38: 27993,
-      39: 30231,
-      40: 32586,
-      41: 35061,
-      42: 37659,
-      43: 40383,
-      44: 43236,
-      45: 46221,
     };
     let statsTree = {
       Health: 1,
@@ -379,7 +354,6 @@
 
     function getMousePos(canvas, evt) {
       const rect = boundrectcanvas;
-      console.log(evt.clientX, evt.clientY);
       return {
         x: evt.clientX,
         y: evt.clientY,
@@ -583,7 +557,7 @@
                       }
                       var offSet_x = tankdatacannon__[cannon_]["offSet-x"];
                       if (tankdatacannon__[cannon_]["offSet-x"] === "playerX") {
-                        offSet_x = playerSize * 40 * FOV;
+                        offSet_x = playerSize * playerBaseSize * FOV;
                       }
                       if (tankdatacannon__[cannon_]["offSet-x-multpliyer"]) {
                         offSet_x *= -1;
@@ -672,14 +646,12 @@
           (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
         playerSize += playerSize * 0.005;
         send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
-        console.log(scaleUp)
         scaleby(scaleUp);
         while (score / levels[level] >= 1) {
           level += 1;
           upgradePoints += 1;
           playerSize += playerSize * 0.005;
           send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
-          console.log(scaleUp)
           scaleby(scaleUp);
           progress = 0;
           setprogress =
@@ -766,6 +738,30 @@
             playerId = generateUniquePlayerId();
           })();
         })();
+        console.time("preconnect");
+        let resolveDraw, rejectDraw;
+        let resolveDraw2, rejectDraw2;
+        let resolveDraw3, rejectDraw3;
+
+        var configPromise = new Promise((resolve, reject) => {
+          resolveDraw = resolve;
+          rejectDraw = reject;
+        });
+        var tankmetaPromise = new Promise((resolve, reject) => {
+          resolveDraw2 = resolve;
+          rejectDraw2 = reject;
+        });
+        var levelPromise = new Promise((resolve, reject) => {
+          resolveDraw3 = resolve;
+          rejectDraw3 = reject;
+        });
+
+        var recivedData = [configPromise, tankmetaPromise, levelPromise];
+
+        Promise.allSettled(recivedData).then(() => {
+          console.timeEnd("preconnect");
+          draw();
+        });
 
         const playerData = {
           id: playerId,
@@ -798,7 +794,7 @@
           visible: true,
           team: teamOn,
           userId: userId,
-          autoFiring:autoFiring,
+          autoFiring: autoFiring,
           statsTree: {
             Health: 1,
             "Body Damage": 1,
@@ -812,8 +808,6 @@
         };
 
         send("newPlayer", playerData);
-
-        send("getTankMeta", {});
 
         send("HANDSHAKE", {});
 
@@ -864,7 +858,25 @@
             case "Config": {
               baseFireInterval = data.baseFireInterval;
               scaleUp = data.scaleUp;
-              break
+              playerBaseSize = data.playerBaseSize;
+              for (let i = 0; i < data.map.size / 500; i++) {
+                for (let j = 0; j < data.map.size / 500; j++) {
+                  const div = document.createElement("div");
+                  const img = document.createElement("img");
+                  img.style.width = "100%";
+                  img.style.height = "100%";
+                  img.src = "assets/hexbackground.png";
+                  let divstyle = div.style;
+                  divstyle.width = "999px";
+                  divstyle.height = "999px";
+                  divstyle.backgroundColor = "white";
+                  divstyle.border = "1px solid black";
+                  div.appendChild(img);
+                  document.getElementById("grid").appendChild(div);
+                }
+              }
+              resolveDraw();
+              break;
             }
             case "requests": {
               function requester() {
@@ -903,7 +915,7 @@
             }
             case "RETURNtankmeta": {
               tankmeta = data;
-              draw();
+              resolveDraw2();
               break;
             }
             case "NewMessages": {
@@ -930,6 +942,7 @@
             }
             case "Levels": {
               levels = data;
+              resolveDraw3();
               break;
             }
             case "handshake": {
@@ -1142,7 +1155,7 @@
                   MouseY: MouseY_,
                   screenWidth: canvas.width,
                   screenHeight: canvas.height,
-                  autoFiring:autoFiring,
+                  autoFiring: autoFiring,
                   statsTree: {
                     Health: 1,
                     "Body Damage": 1,
@@ -1666,12 +1679,14 @@
                 ystart: playerY,
                 id: playerId,
                 uniqueid: identdfire,
-                cannonIndex:i
+                cannonIndex: i,
               };
 
               send("bulletFired", bullet);
             }, cannon.delay * 1000);
-            if (!(cannonFireData[i] || tankmeta.dronetanks.includes(__type__))) {
+            if (
+              !(cannonFireData[i] || tankmeta.dronetanks.includes(__type__))
+            ) {
               setTimeout(() => {
                 cannonFireData[i] = true;
               }, baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
@@ -1825,12 +1840,15 @@
                     ystart: playerY,
                     id: playerId,
                     uniqueid: identdfire,
-                    cannonIndex:i
+                    cannonIndex: i,
                   };
                   send("bulletFired", bullet);
                 }, tankdatacannondata["delay"] * 1000);
               },
-              baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__
+              baseFireInterval *
+                tankdata["reaload-m"] *
+                cannon["reloadM"] *
+                __reload__
             );
             name = JSON.stringify(firingInterval + i);
             firingIntervals[name] = firingInterval;
@@ -1981,7 +1999,11 @@
             }
             return;
           }
-          if (!tankmeta.dronetanks.includes(__type__) && !teampanelopen && !dead) {
+          if (
+            !tankmeta.dronetanks.includes(__type__) &&
+            !teampanelopen &&
+            !dead
+          ) {
             FireIntervale(evt);
           } else {
             if (evt.button === 2 && !dead) {
@@ -2116,7 +2138,8 @@
         let distance = MathHypotenuse(player.x - playerX, player.y - playerY);
 
         if (
-          distance < player.size * 40 + playerSize * 40 &&
+          distance <
+            player.size * playerBaseSize + playerSize * playerBaseSize &&
           playerId_ !== playerId &&
           !(
             players[playerId_]?.team === players[playerId]?.team &&
@@ -2166,7 +2189,8 @@
           }
           // Reverse the last movement
         } else if (
-          distance < player.size * 40 + playerSize * 40 &&
+          distance <
+            player.size * playerBaseSize + playerSize * playerBaseSize &&
           playerId_ !== playerId
         ) {
           canmove = false;
@@ -2612,7 +2636,7 @@
           } else if (keysPressed["="]) {
             FOV += 0.1;
           } else if (keysPressed["e"]) {
-            send("autoFiringUpdate",{autoFiring:!autoFiring,id:playerId})
+            send("autoFiringUpdate", { autoFiring: !autoFiring, id: playerId });
             if (lockautoRotating) return;
             autoFiring = !autoFiring;
             if (!autoFiring) {
@@ -2830,7 +2854,7 @@
           });
           var offSet_x = tankdatacannondata["offSet-x"];
           if (tankdatacannondata["offSet-x"] === "playerX") {
-            offSet_x = playerSize * 40;
+            offSet_x = playerSize * playerBaseSize;
           }
           if (tankdatacannondata["offSet-x-multpliyer"]) {
             offSet_x *= -1;
@@ -2902,7 +2926,7 @@
           ctx.arc(
             basex + 40 + cannon_widthFOV / 4,
             basey + cannon_heightFOV / 2,
-            (playerSize * FOV * 40) / 4,
+            (playerSize * FOV * playerBaseSize) / 4,
             0,
             2 * Math.PI,
             false
@@ -3019,7 +3043,7 @@
       ctx.arc(
         canvas.width / 2,
         canvas.height / 2,
-        playerSize * 40,
+        playerSize * playerBaseSize,
         0,
         2 * Math.PI,
         false
@@ -3073,7 +3097,7 @@
           ctx.save();
           var offSet_x = tankdatacannondata["offSet-x"];
           if (tankdatacannondata["offSet-x"] === "playerX") {
-            offSet_x = playerSize * 40;
+            offSet_x = playerSize * playerBaseSize;
           }
           if (tankdatacannondata["offSet-x-multpliyer"]) {
             offSet_x *= -1;
@@ -3170,7 +3194,6 @@
       ctx.closePath();
 
       ctx.textAlign = "center";
-      console.log(exW, exH);
       ctx.strokeText(
         "players: " + Object.keys(players).length,
         (125 / 2) * exW,
@@ -3488,8 +3511,6 @@
 
       fps = Math.round(frameTimes.reduce((a, b) => a + b) / frameTimes.length);
 
-      //console.log("FPS:", fps);
-
       explosions.forEach((exsplosion) => {
         if (
           exsplosion.x + exsplosion.size > 0 + cavansX &&
@@ -3515,18 +3536,13 @@
             ctx.lineWidth = ring.size;
             ctx.stroke();
             ctx.closePath();
-            console.log(
-              exsplosion.trans,
-              ring.transMinus,
-              Date.now(),
-              exsplosion.endTime
-            );
             a += ring.size;
             ctx.globalAlpha = 1;
             return a;
           }, 0);
         }
       });
+      ctx.globalAlpha = 1;
 
       ctx.lineJoin = "round";
       food_list.forEach((item) => {
@@ -4043,7 +4059,7 @@
             }
             ctx.save();
             ctx.translate(realx - cavansX, realy - cavansY);
-            ctx.rotate(bullet.angle);
+            ctx.rotate(bullet.angle + 90 * (pi / 180));
             let realitemsize = bullet.size * 3 * FOV;
             const h = realitemsize * sqrt23;
 
@@ -4434,7 +4450,7 @@
               ctx.arc(
                 basex + 40 + cannon_widthFOV / 4,
                 basey + cannon_heightFOV / 2,
-                (playerSize * FOV * 40) / 4,
+                (playerSize * FOV * playerBaseSize) / 4,
                 0,
                 2 * Math.PI,
                 false
@@ -4687,7 +4703,7 @@
               });
               var offSet_x = tankdatacannondata["offSet-x"];
               if (tankdatacannondata["offSet-x"] === "playerX") {
-                offSet_x = playerSize * 40;
+                offSet_x = playerSize * playerBaseSize;
               }
               if (tankdatacannondata["offSet-x-multpliyer"]) {
                 offSet_x *= -1;
