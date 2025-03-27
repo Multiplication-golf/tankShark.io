@@ -312,6 +312,7 @@
     var pubteams = [];
     var teamOver = false;
     var userId = getCookie("userId");
+    var typedtext = "";
 
     // 🧠 Miscellaneous / Game Logic
     var vertices = [];
@@ -534,6 +535,7 @@
                     playerid: playerId,
                     angle: 0,
                     _type_: cannon.type,
+                    cannonWidth: 0,
                   });
                   let cannon__ = cannon;
                   let tankdata = tankmeta[__type__];
@@ -542,6 +544,7 @@
                     playerid: playerId,
                     angle: 0,
                     _type_: cannon.type,
+                    cannonWidth: 0,
                   };
                   function cannonINT() {
                     var __tankdata__ = tankmeta[__type__];
@@ -853,6 +856,15 @@
             }
             case "explosionUpdate": {
               explosions = data;
+              break;
+            }
+            case "CannonWidthUpdate": {
+              var cannon = autocannons.find(
+                (cannon_) => cannon_.CannonID === data.CannonID
+              );
+              // Were in ES6
+              console.log(data.cannonWidth);
+              cannon.cannonWidth = data.cannonWidth;
               break;
             }
             case "Config": {
@@ -2325,7 +2337,7 @@
       canvas.width *= upscaleX_;
       canvas.height *= upscaleY_;
       ctx.scale(scaleFactor, scaleFactor);
-      send("FOV-Update", {
+      send("FOVUpdate", {
         scaleFactor: scaleFactor,
         canvasW: canvas.width,
         canvasH: canvas.height,
@@ -2348,7 +2360,8 @@
       playerY -= canH / 2 - canH1 / 2;
       cavansX -= canW / 2 - canW1 / 2;
       cavansY -= canH / 2 - canH1 / 2;
-      teamwidth = 0.15625 * canvas.width;
+      var upscaleX2 = 1 + (1 - oWidth / canvas.width);
+      teamwidth = 0.15625 * canvas.width; // 297.1875
       teamheight = 0.33333333333333333333333333 * canvas.height;
       innerteamwidth = 0.14322916666 * canvas.width;
       innerteamheight = 0.308333333333333333333 * canvas.height;
@@ -2356,9 +2369,9 @@
       innerteamheightreal = 0.308333333333333333333 * window.innerHeight;
       buttton140 = 0.07291666666 * canvas.width; // tested screen height is 1031x1920
       button275 = 0.14322916666 * canvas.width;
-      button475 = 0.24739583333 * canvas.width;
-      button462_5 = 0.24088541666 * canvas.width;
-      button375 = 0.1953125 * canvas.width;
+      button375 = 137.499999994 * upscaleX_ + 237.5 * upscaleX_;
+      button462_5 = 87.5 * upscaleX_ + button375;
+      button475 = 100 * upscaleX_ + button375;
       button80 = 0.07759456838 * canvas.height;
       button40 = 0.03879728419 * canvas.height;
       button10 = 0.00969932104 * canvas.height;
@@ -2847,9 +2860,11 @@
         if (tankdatacannondata["type"] === "SwivelAutoCannon") {
           ctx.save();
           let cannonangle;
+          let cannonWidth_
           autocannons.forEach((cannonA) => {
             if (cannonA.playerid === playerId && cannonA.autoindex === i) {
               cannonangle = cannonA.angle;
+              cannonWidth_ = cannonA.cannonWidth;
             }
           });
           var offSet_x = tankdatacannondata["offSet-x"];
@@ -2874,15 +2889,14 @@
           ctx.rotate(angle + angle_offset);
           // Draw the square
 
-          let basex =
-            -cannon_widthFOV / 2 + cannon_heightFOV + 0 - cannonWidth[i];
+          let basex = -cannon_widthFOV / 2 + cannon_heightFOV + 0;
           let basey = -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
 
           ctx.beginPath();
           ctx.fillRect(
             basex - 5,
             basey - 2.5,
-            cannon_widthFOV + 10,
+            cannon_widthFOV + 10 - cannonWidth_,
             cannon_heightFOV + 5
           );
 
@@ -2891,7 +2905,7 @@
           ctx.strokeRect(
             basex - 5,
             basey - 2.5,
-            cannon_widthFOV + 10,
+            cannon_widthFOV + 10 - cannonWidth_,
             cannon_heightFOV + 5
           ); // Draw the border
           // Restore the previous transformation matrix
@@ -3088,9 +3102,11 @@
         let cannon_widthFOV = tankdatacannondata["cannon-width"] * FOVplayerz;
         let cannon_heightFOV = tankdatacannondata["cannon-height"] * FOVplayerz;
         let cannonangle;
+        var cannonWidth_
         autocannons.forEach((cannonA) => {
           if (cannonA.playerid === playerId && cannonA.autoindex === i) {
             cannonangle = cannonA.angle;
+            cannonWidth_ = cannonA.cannonWidth;
           }
         });
         if (tankdatacannondata["type"] === "autoCannon") {
@@ -3118,14 +3134,14 @@
           // Draw the square
 
           let basex =
-            -cannon_widthFOV / 2 + cannon_heightFOV + 0 - cannonWidth[i];
+            -cannon_widthFOV / 2 + cannon_heightFOV + 0;
           let basey = -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
 
           ctx.beginPath();
           ctx.fillRect(
             basex - 5,
             basey - 2.5,
-            cannon_widthFOV + 10,
+            cannon_widthFOV + 10 - cannonWidth_,
             cannon_heightFOV + 5
           );
 
@@ -3134,7 +3150,7 @@
           ctx.strokeRect(
             basex - 5,
             basey - 2.5,
-            cannon_widthFOV + 10,
+            cannon_widthFOV + 10 - cannonWidth_,
             cannon_heightFOV + 5
           ); // Draw the border
           // Restore the previous transformation matrix
@@ -3350,7 +3366,7 @@
       ctx.fill();
       ctx.closePath();
       ctx.textAlign = "center";
-      ctx.font = `bold ${40 * exW}px Nunito`;
+      ctx.font = `bold ${40 * (2 - scaleFactor)}px Nunito`;
       ctx.fillStyle = "black";
       ctx.fillText("Teams", canvas.width - button375, button10 * 7.5);
       if (teampanelopen) {
@@ -3473,6 +3489,7 @@
           canvas.height / 2 - innerteamheight / 2 + 26
         );
       }
+
       if (setprogress > progress) {
         progress += 0.07;
         if (setprogress === 0 || setprogress > 1) {
@@ -3542,7 +3559,7 @@
           }, 0);
         }
       });
-      ctx.globalAlpha = 1;
+      ctx.lineWidth = 1;
 
       ctx.lineJoin = "round";
       food_list.forEach((item) => {
@@ -4118,6 +4135,7 @@
             autocannons.forEach((can) => {
               if (can.playerid === bullet.uniqueid) {
                 autoCAN_ = can;
+                var cannonWidth = can.cannonWidth;
               }
             });
             ctx.save();
@@ -4128,7 +4146,7 @@
             var cannon_widthFOV = bullet.size / 2;
             var cannon_heightFOV = bullet.size / 2;
             ctx.rotate(autoCAN_.angle);
-            let basex = -cannon_widthFOV / 2 + cannon_heightFOV;
+            let basex = -cannon_widthFOV / 2 + cannon_heightFOV - cannonWidth;
             let basey = -cannon_heightFOV / 2;
 
             ctx.fillStyle = "#b3b3b3";
@@ -4641,9 +4659,11 @@
             let cannon_heightFOV =
               tankdatacannondata["cannon-height"] * FOVplayerz;
             let cannonangle;
+            var cannonWidth_
             autocannons.forEach((cannonA) => {
               if (cannonA.playerid === playerId__ && cannonA.autoindex === i) {
                 cannonangle = cannonA.angle;
+                cannonWidth_ = cannonA.cannonWidth;
               }
             });
             if (tankdatacannondata["type"] === "autoCannon") {
@@ -4658,14 +4678,10 @@
 
               var offSet_x = tankdatacannondata["offSet-x"];
               if (tankdatacannondata["offSet-x"] === "playerX") {
-                offSet_x = player.size * FOV * 2;
+                offSet_x = player.size * 2;
               }
 
-              let basex =
-                -cannon_widthFOV / 2 +
-                cannon_heightFOV +
-                offSet_x -
-                player.cannonW[i];
+              let basex = -cannon_widthFOV / 2 + cannon_heightFOV + offSet_x;
               let basey =
                 -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
 
@@ -4673,7 +4689,7 @@
               ctx.fillRect(
                 basex - 5,
                 basey - 2.5,
-                cannon_widthFOV + 10,
+                cannon_widthFOV + 10 - cannonWidth_,
                 cannon_heightFOV + 5
               );
 
@@ -4682,7 +4698,7 @@
               ctx.strokeRect(
                 basex - 5,
                 basey - 2.5,
-                cannon_widthFOV + 10,
+                cannon_widthFOV + 10 - cannonWidth_,
                 cannon_heightFOV + 5
               ); // Draw the border
               // Restore the previous transformation matrix
@@ -4696,9 +4712,11 @@
             } else if (tankdatacannondata["type"] === "SwivelAutoCannon") {
               ctx.save();
               let cannonangle;
+              let cannonWidth_
               autocannons.forEach((cannonA) => {
                 if (cannonA.playerid === player.id && cannonA.autoindex === i) {
                   cannonangle = cannonA.angle;
+                  cannonWidth_ = cannonA.cannonWidth
                 }
               });
               var offSet_x = tankdatacannondata["offSet-x"];
@@ -4724,7 +4742,7 @@
               // Draw the square
 
               let basex =
-                -cannon_widthFOV / 2 + cannon_heightFOV + 0 - cannonWidth[i];
+                -cannon_widthFOV / 2 + cannon_heightFOV + 0;
               let basey =
                 -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
 
@@ -4732,7 +4750,7 @@
               ctx.fillRect(
                 basex - 5,
                 basey - 2.5,
-                cannon_widthFOV + 10,
+                cannon_widthFOV + 10 - cannonWidth_,
                 cannon_heightFOV + 5
               );
 
@@ -4741,7 +4759,7 @@
               ctx.strokeRect(
                 basex - 5,
                 basey - 2.5,
-                cannon_widthFOV + 10,
+                cannon_widthFOV + 10 - cannonWidth_,
                 cannon_heightFOV + 5
               ); // Draw the border
               // Restore the previous transformation matrix
