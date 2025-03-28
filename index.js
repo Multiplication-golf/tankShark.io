@@ -3865,6 +3865,16 @@ setInterval(() => {
         newX - bullet.x,
         newY - bullet.y
       );
+      if (
+        !(
+          item.x >= room.bounds?.x1 &&
+          item.x <= room.bounds?.x2 &&
+          item.y >= room.bounds?.y1 &&
+          item.y <= room.bounds?.y2
+        )
+      ) {
+        bullet.sedoRoomKey = getKeyRoom(newX,newY);
+      }
     }
 
     if (
