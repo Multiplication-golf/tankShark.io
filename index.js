@@ -9,7 +9,7 @@ const { setTimeout } = require("timers");
 const WebSocket = require("ws");
 const crypto = require("crypto");
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({server});
 const fs = require("fs");
 const helmet = require("helmet");
 const protobuf = require("protobufjs");
@@ -89,7 +89,13 @@ app.use(
       imgSrc: ["'self'", "https://images.com"],
       connectSrc: [
         "'self'",
-        "wss://71.73.66.5:270",
+        "ws://71.73.66.5:42534",
+        "ws://71.73.66.5:4000",
+        "ws://71.73.66.5:42534/public/index.html/ws",
+        "ws://71.73.66.5:4000/",
+        "ws://127.0.0.1:4000",
+        "wss://71.73.66.5:4000",
+        "ws://192.168.9.1:4000",
         "wss://deip-io3.glitch.me/",
       ], // Restrict fetch/XHR/WebSockets
       frameAncestors: ["'none'"],
@@ -179,7 +185,7 @@ function reassignRoom(item) {
       thisroom = room;
     }
   }
-  thisroom.items.push(item);
+  thisroom?.items?.push(item);
 }
 
 let players = {};
@@ -3865,12 +3871,13 @@ setInterval(() => {
         newX - bullet.x,
         newY - bullet.y
       );
+
       if (
         !(
-          item.x >= room.bounds?.x1 &&
-          item.x <= room.bounds?.x2 &&
-          item.y >= room.bounds?.y1 &&
-          item.y <= room.bounds?.y2
+          bullet.x >= room.bounds?.x1 &&
+          bullet.x <= room.bounds?.x2 &&
+          bullet.y >= room.bounds?.y1 &&
+          bullet.y <= room.bounds?.y2
         )
       ) {
         bullet.sedoRoomKey = getKeyRoom(newX,newY);
@@ -5636,6 +5643,6 @@ function smartbroadcast(type, data, senderConn) {
   });
 }
 
-const listener = server.listen(3000, function () {
+const listener = server.listen(4000, "0.0.0.0", function () {
   console.log("Your app is listening on port " + listener.address().port);
 });
