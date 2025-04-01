@@ -9,7 +9,7 @@ const { setTimeout } = require("timers");
 const WebSocket = require("ws");
 const crypto = require("crypto");
 const server = http.createServer(app);
-const wss = new WebSocket.Server({server});
+const wss = new WebSocket.Server({ server });
 const fs = require("fs");
 const helmet = require("helmet");
 const protobuf = require("protobufjs");
@@ -398,6 +398,55 @@ const CONFIG = {
     "#5181fc",
     "#5c14f7",
   ],
+  govermentTypes: ["Anarchy", "Democracy", "Communist", "Constitutional"],
+  default: "Anarchy",
+  canVote: ["Democracy", "Constitutional"],
+  powers: {
+    Anarchy: {
+      canKick: true,
+      canTakeScore: false,
+      supportsCoOwners: false,
+      canChangeConstitution: undefined,
+      canDedicatePower: null,
+      Lowerlevelpowers: undefined,
+    },
+    Democracy: {
+      canKick: null,
+      canTakeScore: true,
+      supportsCoOwners: { Samelevel: false, Lowerlevel: true },
+      canChangeConstitution: undefined,
+      canDedicatePower: false,
+      Lowerlevelpowers: {
+        canDedicatePower: null,
+        canKick: false,
+        canTakeScore: false,
+      },
+    },
+    Communist: {
+      canKick: true,
+      canTakeScore: true,
+      supportsCoOwners: { Samelevel: true, Lowerlevel: true },
+      canChangeConstitution: undefined,
+      canDedicatePower: true,
+      Lowerlevelpowers: {
+        canDedicatePower: "choose",
+        canKick: false,
+        canTakeScore: false,
+      },
+    },
+    Constitutional: {
+      canKick: { definedPower: null },
+      canTakeScore: { definedPower: null },
+      supportsCoOwners: { Samelevel: false, Lowerlevel: false },
+      canChangeConstitution: { definedPower: null },
+      canDedicatePower: null,
+      Lowerlevelpowers: {
+        canDedicatePower: null,
+        canKick: null,
+        canTakeScore: null,
+      },
+    },
+  },
 };
 
 let currentx = -CONFIG.map.size;
@@ -1914,9 +1963,47 @@ wss.on("connection", (socket) => {
         data.players = [
           { id: data.owner.id, username: players[data.owner.id].username },
         ];
+
+        /* defualts to: Anarchy, Democracy, Communist, and Constitutnal */
+
+        let govType = CONFIG.default;
+        govType ??= data.govType;
+
+        data.rules = {
+          govermentType: govType,
+          overthroughAllowed: true,
+          vote: () => {
+            if (govType in CONFIG.canVote) {
+              socket.send("Vote", { teamID });
+            }
+          },
+        };
+
+        if (data.taxes) {
+          data.rules.taxes = {
+            complex: data.complex,
+            foodKills: 0,
+            playerKills: 0,
+            bossKills: 0,
+          };
+        }
+
+        if (data.complex) {
+          data.rules.foodKills = data.foodKills;
+          data.rules.playerKills = data.playerKills;
+          data.rules.bossKills = data.bossKills;
+        } else {
+          data.rules.foodKills = data.flatRate;
+          data.rules.playerKills = data.flatRate;
+          data.rules.bossKills = data.flatRate;
+        }
+
         teamlist.push(data);
         players[data.owner.id].team = data.teamID;
-        emit("playerJoinedTeam", { id: data.owner.id, teamId: data.teamID });
+        emit("playerJoinedTeam", {
+          id: data.owner.id,
+          teamId: data.teamID,
+        });
         var public_teams = [];
         teamlist.forEach((team) => {
           if (!team.hidden) {
@@ -3047,9 +3134,9 @@ wss.on("connection", (socket) => {
             }
           };
         }
-        
-        var sedoRoom = getKeyRoom(data.x,data.y)
-        data.sedoRoomKey = sedoRoom
+
+        var sedoRoom = getKeyRoom(data.x, data.y);
+        data.sedoRoomKey = sedoRoom;
 
         let damageUP = 0;
         if (players[data.id].statsTree["Bullet Damage"] !== 1) {
@@ -3874,13 +3961,13 @@ setInterval(() => {
 
       if (
         !(
-          bullet.x >= room.bounds?.x1 &&
-          bullet.x <= room.bounds?.x2 &&
-          bullet.y >= room.bounds?.y1 &&
-          bullet.y <= room.bounds?.y2
+          bullet.x >= food_squares[bullet.sedoRoomKey].bounds?.x1 &&
+          bullet.x <= food_squares[bullet.sedoRoomKey].bounds?.x2 &&
+          bullet.y >= food_squares[bullet.sedoRoomKey].bounds?.y1 &&
+          bullet.y <= food_squares[bullet.sedoRoomKey].bounds?.y2
         )
       ) {
-        bullet.sedoRoomKey = getKeyRoom(newX,newY);
+        bullet.sedoRoomKey = getKeyRoom(newX, newY);
       }
     }
 
@@ -4983,7 +5070,7 @@ setInterval(() => {
         }
       }
       bullets.forEach((bullet) => {
-        if (bullet.sedoRoomKey !== roomkey) return
+        if (bullet.sedoRoomKey !== roomkey) return;
         let distance = MathHypotenuse(item.x - bullet.x, item.y - bullet.y);
         if (distance < 400) {
           let collisionCheck = isBulletCollidingWithPolygon(
@@ -5372,7 +5459,7 @@ setInterval(() => {
   requestEmit("requests", JoinRequests);
   messageEmit("announcements", announcements);
   createAndSendGameObjects(buildArray);
-  buildArray = []
+  buildArray = [];
 }, CONFIG.updateInterval);
 
 // debuging

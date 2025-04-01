@@ -1537,21 +1537,21 @@
 
         function bounceBackAndRecoil(i, Bsize, Bspeed, anlge_) {
           cannonWidth[i] = cannonWidth[i] || 0;
-          for (let l = 0; l < 10; l++) {
+          for (let i = 0; i < 10; i++) {
             setTimeout(() => {
               cannonWidth[i] -= 1;
               send("playerCannonWidth", {
                 id: playerId,
                 cannonW: cannonWidth,
               });
-            }, 10 * l);
+            }, 10 * i);
             setTimeout(() => {
               cannonWidth[i] += 1;
               send("playerCannonWidth", {
                 id: playerId,
                 cannonW: cannonWidth,
               });
-            }, 20 * l); // Updated to prevent overlap
+            }, 20 * i); // Updated to prevent overlap
           }
 
           let recoilX = -((Bsize / 10) * Bspeed * Math.cos(anlge_));
@@ -1917,6 +1917,51 @@
           autoengine();
         }, baseFireInterval * __tankdata__["reaload-m"] * __reload__);
 
+        var Xbutton = document.getElementById("Xbutton");
+
+        Xbutton.addEventListener("click", () => {
+          teampanelopen = false;
+          var teamcontainer = document.getElementById("teamcontainer");
+          var teamMain = document.getElementById("teamMain");
+          teamcontainer.style.display = "none";
+          teamMain.style.display = "none";
+          document.getElementById("teambox").style.display = "none";
+          document.getElementsByTagName("body")[0].style.cursor =
+            "url('https://deip-io3.glitch.me/targetpointer1.cur'), auto";
+        });
+        
+        var joinLeave = document.getElementById("join/leave");
+        joinLeave.addEventListener("click", () => {
+          if (!joinedTeam) {
+            if (selected_class !== null) {
+              send("playerJoinedTeam", {
+                id: playerId,
+                teamId: selected_class,
+              });
+            }
+          } else {
+            send("playerLeftTeam", {
+              id: playerId,
+              teamId: players[playerId].team,
+            });
+            if (owner_of_team) {
+              owner_of_team = false;
+            }
+            joinedTeam = false;
+            selected_class = null;
+          }
+        });
+
+        var createDelete = document.getElementById("create/delete");
+
+        createDelete.addEventListener("click", () => {
+          if (!owner_of_team) {
+            document.getElementById("teambox").style.display = "block";
+          } else if (owner_of_team && joinedTeam) {
+            send("deleteTeam", { teamID: teamOn, playerId: playerId });
+          }
+        });
+
         document.addEventListener("mousedown", (evt) => {
           if (
             window.innerWidth - 475 < MouseX &&
@@ -1926,6 +1971,8 @@
             !teampanelopen
           ) {
             teampanelopen = true;
+            var teamcontainer_ = document.getElementById("teamMain");
+            teamcontainer_.style.display = "block";
             selected_class = null;
             document.getElementsByTagName("body")[0].style.cursor = "auto";
             var teamcontainer = document.getElementById("teamcontainer");
@@ -1941,74 +1988,6 @@
             return;
           }
           if (teampanelopen) {
-            const textWidth = ctx.measureText("X").width;
-            const textHeight = 16;
-
-            const withinX =
-              MouseX >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
-              MouseX <=
-                window.innerWidth / 2 + innerteamwidthreal / 2 - 15 + textWidth;
-
-            const withinY =
-              MouseY >=
-                window.innerHeight / 2 -
-                  innerteamheightreal / 2 +
-                  26 -
-                  textHeight &&
-              MouseY <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
-            if (withinX && withinY) {
-              teampanelopen = false;
-              var teamcontainer = document.getElementById("teamcontainer");
-              teamcontainer.style.display = "none";
-              document.getElementById("teambox").style.display = "none";
-              document.getElementsByTagName("body")[0].style.cursor =
-                "url('https://deip-io3.glitch.me/targetpointer1.cur'), auto";
-            }
-
-            const withinX3 =
-              MouseX >= window.innerWidth / 2 - innerteamwidthreal / 2 + 10 &&
-              MouseX <=
-                window.innerWidth / 2 - innerteamwidthreal / 2 + 10 + 80;
-            const withinY3 =
-              MouseY >= window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
-              MouseY <=
-                window.innerHeight / 2 + innerteamheightreal / 2 - 50 + 40;
-            if (withinX3 && withinY3) {
-              if (!joinedTeam) {
-                if (selected_class !== null) {
-                  send("playerJoinedTeam", {
-                    id: playerId,
-                    teamId: selected_class,
-                  });
-                }
-              } else {
-                send("playerLeftTeam", {
-                  id: playerId,
-                  teamId: players[playerId].team,
-                });
-                if (owner_of_team) {
-                  owner_of_team = false;
-                }
-                joinedTeam = false;
-                selected_class = null;
-              }
-            }
-
-            const withinX2 =
-              MouseX >= window.innerWidth / 2 + innerteamwidthreal / 2 - 150 &&
-              MouseX <=
-                window.innerWidth / 2 + innerteamwidthreal / 2 - 150 + 140;
-            const withinY2 =
-              MouseY >= window.innerHeight / 2 + innerteamheightreal / 2 - 50 &&
-              MouseY <=
-                window.innerHeight / 2 + innerteamheightreal / 2 - 50 + 40;
-            if (withinX2 && withinY2) {
-              if (!owner_of_team) {
-                document.getElementById("teambox").style.display = "block";
-              } else if (owner_of_team && joinedTeam) {
-                send("deleteTeam", { teamID: teamOn, playerId: playerId });
-              }
-            }
             return;
           }
           if (
@@ -2860,7 +2839,7 @@
         if (tankdatacannondata["type"] === "SwivelAutoCannon") {
           ctx.save();
           let cannonangle;
-          let cannonWidth_
+          let cannonWidth_;
           autocannons.forEach((cannonA) => {
             if (cannonA.playerid === playerId && cannonA.autoindex === i) {
               cannonangle = cannonA.angle;
@@ -3102,7 +3081,7 @@
         let cannon_widthFOV = tankdatacannondata["cannon-width"] * FOVplayerz;
         let cannon_heightFOV = tankdatacannondata["cannon-height"] * FOVplayerz;
         let cannonangle;
-        var cannonWidth_
+        var cannonWidth_;
         autocannons.forEach((cannonA) => {
           if (cannonA.playerid === playerId && cannonA.autoindex === i) {
             cannonangle = cannonA.angle;
@@ -3133,8 +3112,7 @@
           ctx.rotate(angle + angle_offset);
           // Draw the square
 
-          let basex =
-            -cannon_widthFOV / 2 + cannon_heightFOV + 0;
+          let basex = -cannon_widthFOV / 2 + cannon_heightFOV + 0;
           let basey = -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
 
           ctx.beginPath();
@@ -3369,7 +3347,7 @@
       ctx.font = `bold ${40 * (2 - scaleFactor)}px Nunito`;
       ctx.fillStyle = "black";
       ctx.fillText("Teams", canvas.width - button375, button10 * 7.5);
-      if (teampanelopen) {
+      /*if (teampanelopen) {
         ctx.globalAlpha = 0.5;
         ctx.fillStyle = "#a3a3a3";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -3488,7 +3466,7 @@
           canvas.width / 2 + innerteamwidth / 2 - button10 * 1.5,
           canvas.height / 2 - innerteamheight / 2 + 26
         );
-      }
+      }*/
 
       if (setprogress > progress) {
         progress += 0.07;
@@ -4659,7 +4637,7 @@
             let cannon_heightFOV =
               tankdatacannondata["cannon-height"] * FOVplayerz;
             let cannonangle;
-            var cannonWidth_
+            var cannonWidth_;
             autocannons.forEach((cannonA) => {
               if (cannonA.playerid === playerId__ && cannonA.autoindex === i) {
                 cannonangle = cannonA.angle;
@@ -4712,11 +4690,11 @@
             } else if (tankdatacannondata["type"] === "SwivelAutoCannon") {
               ctx.save();
               let cannonangle;
-              let cannonWidth_
+              let cannonWidth_;
               autocannons.forEach((cannonA) => {
                 if (cannonA.playerid === player.id && cannonA.autoindex === i) {
                   cannonangle = cannonA.angle;
-                  cannonWidth_ = cannonA.cannonWidth
+                  cannonWidth_ = cannonA.cannonWidth;
                 }
               });
               var offSet_x = tankdatacannondata["offSet-x"];
@@ -4741,8 +4719,7 @@
               ctx.rotate(angle + angle_offset);
               // Draw the square
 
-              let basex =
-                -cannon_widthFOV / 2 + cannon_heightFOV + 0;
+              let basex = -cannon_widthFOV / 2 + cannon_heightFOV + 0;
               let basey =
                 -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
 
