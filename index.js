@@ -401,6 +401,8 @@ const CONFIG = {
   govermentTypes: ["Anarchy", "Democracy", "Communist", "Constitutional"],
   default: "Anarchy",
   canVote: ["Democracy", "Constitutional"],
+  PayesSelfTaxes: ["Anarchy", "Democracy", "Constitutional"],
+  PayesSelfStrictTaxes: ["Democracy", "Constitutional"],
   powers: {
     Anarchy: {
       canKick: true,
@@ -1904,7 +1906,8 @@ wss.on("connection", (socket) => {
           emit("statecycleUpdate", _data__);
         }, CONFIG.updateInterval);
 
-        setTimeout(() => {
+        console.log(data.id,players[data.id])
+        players[data.id].stateTimeout = setTimeout(() => {
           start = null;
           state = "normal";
           players[data.id].state = state ?? "start";
@@ -1967,7 +1970,7 @@ wss.on("connection", (socket) => {
         /* defualts to: Anarchy, Democracy, Communist, and Constitutnal */
 
         let govType = CONFIG.default;
-        govType ??= data.govType;
+        govType = data.govType ?? govType;
 
         data.rules = {
           govermentType: govType,
@@ -1979,24 +1982,65 @@ wss.on("connection", (socket) => {
           },
         };
 
-        if (data.taxes) {
-          data.rules.taxes = {
-            complex: data.complex,
-            foodKills: 0,
-            playerKills: 0,
-            bossKills: 0,
-          };
+        if (govType in CONFIG.PayesSelfStrictTaxes) {
+          createAnnocment("Some configs were overridden due to team type",data.owner.id, {color: "orange", delay: 4000})
+          data.createTeamScore = true;
         }
 
-        if (data.complex) {
-          data.rules.foodKills = data.foodKills;
-          data.rules.playerKills = data.playerKills;
-          data.rules.bossKills = data.bossKills;
-        } else {
-          data.rules.foodKills = data.flatRate;
-          data.rules.playerKills = data.flatRate;
-          data.rules.bossKills = data.flatRate;
+        if (govType === "Constitutional") {
+          var powers = CONFIG.powers.Constitutional;
+          `
+            Constitution of ${data.teamname}
+            =========================
+            
+            Preamble:
+            This document establishes the foundation and governance structure of ${data.teamname}, ensuring fairness, transparency, and growth for all members.
+            
+            Article I - General Information:
+            - Founder: ${data.owner.username} (ID: ${data.owner.id})
+            - Description: ${data.description}
+            - Government Type: ${data.govType}
+            - Private: ${data.isPrivate ? "Yes" : "No"}
+            - Hidden: ${data.hidden ? "Yes" : "No"}
+            
+            Article II - Economic Policy:
+            - Creation Score Required: ${data.createTeamScore ? "Enabled" : "Disabled"}
+            - Simple Tax Rate: ${data.simpleTax}%
+            - Player-Based Tax Rate: ${data.playerTax}%
+            - Scheduled Tax: ${data.ScheduledBasedTax ? `Yes (Interval: ${data.ScheduledBasedTaxInterval})` : "No"}
+            
+            Article III - Amendments:
+            Future amendments to this constitution shall be proposed and voted upon by members according to the governing structure defined herein.
+
+            Article IIII - Departments:
+            Future players apointed by ${data.owner.username} will have power defined by here after. Appointed players will be apoint these powers: ${powers.Lowerlevelpowers.canDedicatePower ? "Dedicate Power" : "No Dedication"}, ${powers.Lowerlevelpowers.canKick ? "Kick Members" : "No Kicking"}.
+            
+            Ratified by ${data.owner.username} on ${new Date().toLocaleDateString()}.
+            `;
         }
+
+        if (data.createTeamScore) {
+          data.teamScore = 0;
+        }
+        data.taxInterval = setInterval(() => {
+          data.players.forEach((player) => {
+            if (players[player].score > 0 && data.owner.id !== player) {
+              players[player].score = players[player].score
+               - players[player].score * data.ScheduledBasedTax;
+              if (data.createTeamScore) {
+                data.teamScore += players[player].score * data.ScheduledBasedTax;
+                createAnnocment(`Tax Taken ${data.ScheduledBasedTax}%`,player, {color:"red"})
+              } else {
+                data.owner.id += players[player].score * data.ScheduledBasedTax;
+              }
+            }
+          })
+        }, data.ScheduledBasedTaxInterval)
+
+        data.lowerLevelPlayers = {};
+
+        data.powers = CONFIG.powers[data.govType];
+        
 
         teamlist.push(data);
         players[data.owner.id].team = data.teamID;
@@ -2117,6 +2161,7 @@ wss.on("connection", (socket) => {
             teamplayers.forEach((player) => {
               emit("playerJoinedTeam", { id: player.id, teamId: null });
             });
+            clearInterval(MYteam.taxInterval)
             teamlist.splice(teamlist.indexOf(MYteam, 1));
           }
         }
@@ -2145,6 +2190,7 @@ wss.on("connection", (socket) => {
         MYteam.players.forEach((player) => {
           emit("playerJoinedTeam", { id: player.id, teamId: null });
         });
+        clearInterval(MYteam.taxInterval)
         teamlist.splice(teamlist.indexOf(MYteam, 1));
         let public_teams = [];
         teamlist.forEach((team) => {
@@ -3135,7 +3181,7 @@ wss.on("connection", (socket) => {
           };
         }
 
-        var sedoRoom = getKeyRoom(data.x, data.y);
+        var sedoRoom = getKeyRoom(data.x, data.y) ?? "room-0";
         data.sedoRoomKey = sedoRoom;
 
         let damageUP = 0;
@@ -3666,11 +3712,10 @@ wss.on("connection", (socket) => {
       console.log(e);
     }
     try {
-      console.log("userbase", userbase);
       var _player = userbase.find((_player_) => {
         return (
           Math.abs(_player_.userid - players[connection.playerId]?.userId) <
-          0.001
+          0.01
         );
       });
       _player.scores.push({
@@ -3693,6 +3738,7 @@ wss.on("connection", (socket) => {
       console.log(e);
     }
     clearInterval(stateupdate);
+    clearTimeout(players[connection.playerId].stateTimeout);
     teamlist = teamlist.filter((team) => {
       var teamplayers = team.players;
       teamplayers = teamplayers.filter((player) => {
@@ -3700,6 +3746,7 @@ wss.on("connection", (socket) => {
       });
       team.players = teamplayers;
       if (teamplayers.length === 0) {
+        clearInterval(team.taxInterval)
         return false;
       }
       if (team.owner.id === connection.playerId) {
@@ -3715,6 +3762,7 @@ wss.on("connection", (socket) => {
             }
           });
         } else {
+          clearInterval(team.taxInterval)
           return false;
         }
       }
@@ -3961,13 +4009,13 @@ setInterval(() => {
 
       if (
         !(
-          bullet.x >= food_squares[bullet.sedoRoomKey].bounds?.x1 &&
-          bullet.x <= food_squares[bullet.sedoRoomKey].bounds?.x2 &&
-          bullet.y >= food_squares[bullet.sedoRoomKey].bounds?.y1 &&
-          bullet.y <= food_squares[bullet.sedoRoomKey].bounds?.y2
+          bullet.x >= food_squares[bullet.sedoRoomKey]?.bounds?.x1 &&
+          bullet.x <= food_squares[bullet.sedoRoomKey]?.bounds?.x2 &&
+          bullet.y >= food_squares[bullet.sedoRoomKey]?.bounds?.y1 &&
+          bullet.y <= food_squares[bullet.sedoRoomKey]?.bounds?.y2
         )
       ) {
-        bullet.sedoRoomKey = getKeyRoom(newX, newY);
+        bullet.sedoRoomKey = getKeyRoom(newX, newY) ?? bullet.sedoRoomKey;
       }
     }
 
@@ -4191,10 +4239,31 @@ setInterval(() => {
               var reward = Math.round(
                 player.score / (20 + players[bullet.id].score / 10000)
               );
+              if (player.team !== null) {
+                var team = teamlist.find((team) => team.teamID === player.team)
+                if (team.owner.id !== player.id || team.createTeamScore) {
+                  reward -= reward * team.simpleTax
+                }
+                if (team.createTeamScore) {
+                  team.teamScore += (reward * team.simpleTax) / 2;
+                } else {
+                  emit("playerScore", { bulletId: team.owner.id, socrepluse: reward * team.simpleTax });
+                }
+                var complexTax = reward * ((player.score / 100000) * playerTax);
+                if (team.owner.id !== player.id || team.createTeamScore) {
+                  reward -= complexTax
+                }
+                if (team.createTeamScore) {
+                  team.teamScore += complexTax / 1.5;
+                } else {
+                  emit("playerScore", { bulletId: team.owner.id, socrepluse: complexTax });
+                }
+              } 
             } catch (e) {
               console.log(bullet.id);
             }
             if (players[bullet.id]) {
+              player.score += reward;
               emit("playerScore", { bulletId: bullet.id, socrepluse: reward });
               createAnnocment(
                 `You killed ${player.username}'s ${player.__type__}`,
@@ -4885,10 +4954,31 @@ setInterval(() => {
               }, 50 * i);
             }
             if (0 >= item.health) {
-              player.score += item.score_add;
+              var reward = item.score_add;
+              if (player.team !== null) {
+                var team = teamlist.find((team) => team.teamID === player.team)
+                if (team.owner.id !== player.id || team.createTeamScore) {
+                  reward -= reward * team.simpleTax
+                }
+                if (team.createTeamScore) {
+                  team.teamScore += (reward * team.simpleTax) / 2;
+                } else {
+                  emit("playerScore", { bulletId: team.owner.id, socrepluse: reward * team.simpleTax });
+                }
+                var complexTax = reward * ((player.score / 100000) * playerTax);
+                if (team.owner.id !== player.id || team.createTeamScore) {
+                  reward -= complexTax
+                }
+                if (team.createTeamScore) {
+                  team.teamScore += complexTax / 1.5;
+                } else {
+                  emit("playerScore", { bulletId: team.owner.id, socrepluse: complexTax });
+                }
+              }
+              player.score += reward;
               emit("playerScore", {
                 bulletId: player.id,
-                socrepluse: item.score_add,
+                socrepluse: reward,
               });
               leader_board.hidden.forEach((__index__) => {
                 if (__index__.id === player.id) {

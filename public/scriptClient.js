@@ -377,11 +377,12 @@
         }
       } else {
         setTimeout(() => {
-          window.location.reload();
+          //window.location.reload();
         }, 1);
         setTimeout(() => {
-          alert("There is a disconnection.");
+          alert(`There is a disconnection. ${socket.readyState}`);
         }, 0);
+        console.log(type,data)
         errors++;
       }
     }
@@ -763,6 +764,7 @@
 
         Promise.allSettled(recivedData).then(() => {
           console.timeEnd("preconnect");
+          scaleby(0);
           draw();
         });
 
@@ -1511,13 +1513,16 @@
 
         document.getElementById("teamButton").addEventListener("click", () => {
           var teamname = document.getElementById("teamname").value;
-          var checked, checked2;
+          var checked, checked2, checked3;
+
           try {
             var checkedValue = document.querySelector(".null:checked").value;
             checked = true;
           } catch {
             checked = false;
           }
+          var description = document.getElementById("teamDescription").value;
+
           try {
             var checkedValue = document.querySelector(".null2:checked").value;
             checked2 = true;
@@ -1525,12 +1530,33 @@
             checked2 = false;
           }
 
+          var govType = document.querySelector('input[name="teamType"]:checked').value;
+
+          try {
+            var checkedValue = document.querySelector(".null3:checked").value;
+            checked3 = true;
+          } catch {
+            checked3 = false;
+          }
+
+          var ScheduledBasedTax = document.getElementById("ScheduledBased").value;
+
+          var ScheduledBasedTaxInterval = document.getElementById("time-select").value;
+
+          var description = document.getElementById("Simple").value;
           document.getElementById("teambox").style.display = "none";
           send("newTeamCreated", {
             owner: { id: playerId, username: username },
             private: checked2,
             hidden: checked,
             name: teamname,
+            description: description,
+            govType: govType,
+            createTeamScore: checked3,
+            simpleTax: document.getElementById("Simple").value,
+            playerTax: document.getElementById("scoreBased").value,
+            ScheduledBasedTax,
+            ScheduledBasedTaxInterval,
           });
           owner_of_team = true;
         });
@@ -1977,11 +2003,8 @@
             document.getElementsByTagName("body")[0].style.cursor = "auto";
             var teamcontainer = document.getElementById("teamcontainer");
             teamcontainer.style.display = "block";
-            teamcontainer.style.left =
-              window.innerWidth / 2 - innerteamwidthreal / 2 + "px";
-            teamcontainer.style.top =
-              window.innerHeight / 2 - innerteamheightreal / 2 + "px";
-            teamcontainer.style.height = innerteamheightreal - 100 + "px";
+            teamcontainer.style.height = "95%";
+            teamcontainer.style.margin = "5px";
             teamcontainer.innerHTML = "";
             buildTeamList();
 
@@ -3347,126 +3370,6 @@
       ctx.font = `bold ${40 * (2 - scaleFactor)}px Nunito`;
       ctx.fillStyle = "black";
       ctx.fillText("Teams", canvas.width - button375, button10 * 7.5);
-      /*if (teampanelopen) {
-        ctx.globalAlpha = 0.5;
-        ctx.fillStyle = "#a3a3a3";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.globalAlpha = 0.8;
-        ctx.beginPath();
-        ctx.roundRect(
-          canvas.width / 2 - teamwidth / 2,
-          canvas.height / 2 - teamheight / 2,
-          teamwidth,
-          teamheight,
-          7.5 * scaleFactor
-        );
-        ctx.fillStyle = "#45bbff";
-        ctx.strokeStyle = "#4fe5ff";
-        ctx.lineWidth = 5;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.stroke();
-        ctx.closePath();
-        ctx.globalAlpha = 0.9;
-        ctx.beginPath();
-        ctx.roundRect(
-          canvas.width / 2 - innerteamwidth / 2,
-          canvas.height / 2 - innerteamheight / 2,
-          innerteamwidth,
-          innerteamheight,
-          5 * scaleFactor
-        );
-        ctx.fillStyle = "#00a0fd";
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = "#4f84ff";
-        if (joinedTeam) {
-          if (owner_of_team) {
-            ctx.roundRect(
-              canvas.width / 2 + innerteamwidth / 2 - button10 * 15,
-              canvas.height / 2 + innerteamheight / 2 - button10 * 5,
-              buttton140,
-              button40,
-              5 * scaleFactor
-            );
-          }
-        } else {
-          ctx.roundRect(
-            canvas.width / 2 + innerteamwidth / 2 - button10 * 15,
-            canvas.height / 2 + innerteamheight / 2 - button10 * 5,
-            buttton140,
-            button40,
-            5 * scaleFactor
-          );
-        }
-        ctx.fill();
-        ctx.closePath();
-        ctx.beginPath();
-        ctx.fillStyle = "#4f84ff";
-        ctx.roundRect(
-          canvas.width / 2 - innerteamwidth / 2 + button10,
-          canvas.height / 2 + innerteamheight / 2 - button10 * 5,
-          button80,
-          button40,
-          5 * scaleFactor
-        );
-        ctx.closePath();
-        ctx.fill();
-        ctx.textAlign = "center";
-        ctx.font = `bold ${35 * exW}px Nunito`;
-        ctx.fillStyle = "black";
-        var text_;
-        if (joinedTeam) {
-          ctx.font = `bold ${35 * exW}px Nunito`;
-          text_ = "Leave";
-        } else {
-          ctx.font = `bold ${35 * exW}px Nunito`;
-          text_ = "Join";
-        }
-        ctx.fillText(
-          text_,
-          canvas.width / 2 - innerteamwidth / 2 + button10 * 5,
-          canvas.height / 2 +
-            innerteamheight / 2 -
-            17.5 * (1 + (1 - scaleFactor))
-        );
-        ctx.font = `bold ${21 * exW}px Nunito`;
-        var text2;
-        if (joinedTeam) {
-          if (owner_of_team) {
-            text2 = "Delete team";
-          } else {
-            text2 = null;
-          }
-        } else {
-          text2 = "Create team";
-        }
-        if (text2 !== null) {
-          ctx.fillText(
-            text2,
-            canvas.width / 2 - innerteamwidth / 2 + button10 * 19.5,
-            canvas.height / 2 + innerteamheight / 2 - 22.5
-          );
-        }
-        ctx.textAlign = "left";
-        const withinX =
-          MouseX >= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 &&
-          MouseX <= window.innerWidth / 2 + innerteamwidthreal / 2 - 15 + 16;
-        const withinY =
-          MouseY >=
-            window.innerHeight / 2 - innerteamheightreal / 2 + 26 - 16 &&
-          MouseY <= window.innerHeight / 2 - innerteamheightreal / 2 + 26;
-        if (withinX && withinY) {
-          ctx.fillStyle = "red";
-        }
-        ctx.fillText(
-          "X",
-          canvas.width / 2 + innerteamwidth / 2 - button10 * 1.5,
-          canvas.height / 2 - innerteamheight / 2 + 26
-        );
-      }*/
 
       if (setprogress > progress) {
         progress += 0.07;
