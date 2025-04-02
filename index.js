@@ -15,6 +15,10 @@ const helmet = require("helmet");
 const protobuf = require("protobufjs");
 
 // Define the Protobuf schema
+
+
+console.log("logger version 2")
+
 const schema = `
 syntax = "proto3";
 
@@ -1214,6 +1218,17 @@ function createExsplosion(
   explosions.push(newExsposion);
 }
 
+function calculateTax(score, maxScore) {
+  // Ensure score doesn't exceed maxScore
+  score = Math.min(score, maxScore);
+
+  // Use a quadratic growth function for a smoother, slower increase
+  let tax = Math.pow(score / maxScore, 1.5); // Adjust exponent for smoother growth
+
+  // Ensuring the tax rate stays within 0 to 1
+  return Math.min(1, Math.max(0, tax));
+}
+
 createExsplosion("ksiejf48jfo910q");
 log(explosions);
 
@@ -1908,7 +1923,7 @@ wss.on("connection", (socket) => {
           emit("statecycleUpdate", _data__);
         }, CONFIG.updateInterval);
 
-        console.log(data.id,players[data.id])
+        console.log(data.id, players[data.id]);
         players[data.id].stateTimeout = setTimeout(() => {
           start = null;
           state = "normal";
@@ -1984,8 +1999,12 @@ wss.on("connection", (socket) => {
           },
         };
 
-        if (govType in CONFIG.PayesSelfStrictTaxes) {
-          createAnnocment("Some configs were overridden due to team type",data.owner.id, {color: "orange", delay: 4000})
+        if (CONFIG.PayesSelfStrictTaxes.includes(govType)) {
+          createAnnocment(
+            "Some configerations were overridden due to team type",
+            data.owner.id,
+            { color: "orange", delay: 4000 }
+          );
           data.createTeamScore = true;
         }
 
@@ -1996,7 +2015,9 @@ wss.on("connection", (socket) => {
             =========================
             
             Preamble:
-            This document establishes the foundation and governance structure of ${data.teamname}, ensuring fairness, transparency, and growth for all members.
+            This document establishes the foundation and governance structure of ${
+              data.teamname
+            }, ensuring fairness, transparency, and growth for all members.
             
             Article I - General Information:
             - Founder: ${data.owner.username} (ID: ${data.owner.id})
@@ -2006,18 +2027,32 @@ wss.on("connection", (socket) => {
             - Hidden: ${data.hidden ? "Yes" : "No"}
             
             Article II - Economic Policy:
-            - Creation Score Required: ${data.createTeamScore ? "Enabled" : "Disabled"}
+            - Creation Score Required: ${
+              data.createTeamScore ? "Enabled" : "Disabled"
+            }
             - Simple Tax Rate: ${data.simpleTax}%
             - Player-Based Tax Rate: ${data.playerTax}%
-            - Scheduled Tax: ${data.ScheduledBasedTax ? `Yes (Interval: ${data.ScheduledBasedTaxInterval})` : "No"}
+            - Scheduled Tax: ${
+              data.ScheduledBasedTax
+                ? `Yes (Interval: ${data.ScheduledBasedTaxInterval})`
+                : "No"
+            }
             
             Article III - Amendments:
             Future amendments to this constitution shall be proposed and voted upon by members according to the governing structure defined herein.
 
             Article IIII - Departments:
-            Future players apointed by ${data.owner.username} will have power defined by here after. Appointed players will be apoint these powers: ${powers.Lowerlevelpowers.canDedicatePower ? "Dedicate Power" : "No Dedication"}, ${powers.Lowerlevelpowers.canKick ? "Kick Members" : "No Kicking"}.
+            Future players apointed by ${
+              data.owner.username
+            } will have power defined by here after. Appointed players will be apoint these powers: ${
+            powers.Lowerlevelpowers.canDedicatePower
+              ? "Dedicate Power"
+              : "No Dedication"
+          }, ${powers.Lowerlevelpowers.canKick ? "Kick Members" : "No Kicking"}.
             
-            Ratified by ${data.owner.username} on ${new Date().toLocaleDateString()}.
+            Ratified by ${
+              data.owner.username
+            } on ${new Date().toLocaleDateString()}.
             `;
         }
 
@@ -2026,23 +2061,88 @@ wss.on("connection", (socket) => {
         }
         data.taxInterval = setInterval(() => {
           data.players.forEach((player) => {
-            if (players[player].score > 0 && data.owner.id !== player) {
-              players[player].score = players[player].score
-               - players[player].score * data.ScheduledBasedTax;
+            console.log(player);
+            if (!players[player.id]) return;
+            if (players[player.id].score > 0 && data.owner.id !== player.id) {
+              var Scheduledtax = players[player.id].score * data.ScheduledBasedTax;
+              players[player.id].score =
+                players[player.id].score -
+                Scheduledtax;
               if (data.createTeamScore) {
-                data.teamScore += players[player].score * data.ScheduledBasedTax;
-                createAnnocment(`Tax Taken ${data.ScheduledBasedTax}%`,player, {color:"red"})
+                data.teamScore +=
+                Scheduledtax;
+                createAnnocment(
+                  `Tax Taken ${data.ScheduledBasedTax}%`,
+                  player.id,
+                  { color: "red" }
+                );
+                emit("playerScore", {
+                  bulletId: data.owner.id,
+                  socrepluse:
+                    -Scheduledtax,
+                });
               } else {
-                data.owner.id += players[player].score * data.ScheduledBasedTax;
+                data.owner.id +=
+                Scheduledtax;
+                leader_board.hidden.forEach((__index__) => {
+                  if (__index__.id === data.owner.id) {
+                    let isshown = false;
+                    __index__.score += Scheduledtax;
+                    leader_board.shown.forEach(() => {
+                      if (__index__.id === data.owner.id) {
+                        isshown = true;
+                      }
+                    });
+                    if (leader_board.shown[10]) {
+                      if (leader_board.shown[10].score < __index__.score) {
+                        leader_board.shown[10] = __index__;
+                      }
+                    } else if (!leader_board.shown[10] && !isshown) {
+                      leader_board.shown.push(__index__);
+                    }
+                  }
+                });
+                leader_board.shown.forEach((__index__) => {
+                  if (__index__.id === data.owner.id) {
+                    __index__.score += Scheduledtax;
+                  }
+                });
+                emit("playerScore", {
+                  bulletId: data.owner.id,
+                  socrepluse:
+                    -Scheduledtax,
+                });
               }
+              leader_board.hidden.forEach((__index__) => {
+                if (__index__.id === player.id) {
+                  let isshown = false;
+                  __index__.score -= Scheduledtax;
+                  leader_board.shown.forEach(() => {
+                    if (__index__.id === player.id) {
+                      isshown = true;
+                    }
+                  });
+                  if (leader_board.shown[10]) {
+                    if (leader_board.shown[10].score < __index__.score) {
+                      leader_board.shown[10] = __index__;
+                    }
+                  } else if (!leader_board.shown[10] && !isshown) {
+                    leader_board.shown.push(__index__);
+                  }
+                }
+              });
+              leader_board.shown.forEach((__index__) => {
+                if (__index__.id === player.id) {
+                  __index__.score -= Scheduledtax;
+                }
+              });
             }
-          })
-        }, data.ScheduledBasedTaxInterval)
+          });
+        }, data.ScheduledBasedTaxInterval * 500 * 30);
 
         data.lowerLevelPlayers = {};
 
         data.powers = CONFIG.powers[data.govType];
-        
 
         teamlist.push(data);
         players[data.owner.id].team = data.teamID;
@@ -2058,7 +2158,7 @@ wss.on("connection", (socket) => {
             team.powers = {};
             return team;
           }
-        }) 
+        });
 
         var PlayerTeam = teamlist.find((team) => team.teamID === id);
         if (PlayerTeam.hidden) {
@@ -2137,7 +2237,7 @@ wss.on("connection", (socket) => {
             team.powers = {};
             return team;
           }
-        }) 
+        });
         emit("pubteamlist", public_teams);
         break;
       }
@@ -2171,7 +2271,7 @@ wss.on("connection", (socket) => {
             teamplayers.forEach((player) => {
               emit("playerJoinedTeam", { id: player.id, teamId: null });
             });
-            clearInterval(MYteam.taxInterval)
+            clearInterval(MYteam.taxInterval);
             teamlist.splice(teamlist.indexOf(MYteam, 1));
           }
         }
@@ -2202,7 +2302,7 @@ wss.on("connection", (socket) => {
         MYteam.players.forEach((player) => {
           emit("playerJoinedTeam", { id: player.id, teamId: null });
         });
-        clearInterval(MYteam.taxInterval)
+        clearInterval(MYteam.taxInterval);
         teamlist.splice(teamlist.indexOf(MYteam, 1));
         let public_teams = [];
         public_teams = teamlist.map((team) => {
@@ -3764,7 +3864,7 @@ wss.on("connection", (socket) => {
       });
       team.players = teamplayers;
       if (teamplayers.length === 0) {
-        clearInterval(team.taxInterval)
+        clearInterval(team.taxInterval);
         return false;
       }
       if (team.owner.id === connection.playerId) {
@@ -3780,7 +3880,7 @@ wss.on("connection", (socket) => {
             }
           });
         } else {
-          clearInterval(team.taxInterval)
+          clearInterval(team.taxInterval);
           return false;
         }
       }
@@ -4260,25 +4360,31 @@ setInterval(() => {
                 player.score / (20 + players[bullet.id].score / 10000)
               );
               if (player.team !== null) {
-                var team = teamlist.find((team) => team.teamID === player.team)
+                var team = teamlist.find((team) => team.teamID === player.team);
                 if (team.owner.id !== player.id || team.createTeamScore) {
-                  reward -= reward * team.simpleTax
+                  reward -= reward * team.simpleTax;
                 }
                 if (team.createTeamScore) {
                   team.teamScore += (reward * team.simpleTax) / 2;
                 } else {
-                  emit("playerScore", { bulletId: team.owner.id, socrepluse: reward * team.simpleTax });
+                  emit("playerScore", {
+                    bulletId: team.owner.id,
+                    socrepluse: reward * team.simpleTax,
+                  });
                 }
                 var complexTax = reward * ((player.score / 100000) * playerTax);
                 if (team.owner.id !== player.id || team.createTeamScore) {
-                  reward -= complexTax
+                  reward -= complexTax;
                 }
                 if (team.createTeamScore) {
                   team.teamScore += complexTax / 1.5;
                 } else {
-                  emit("playerScore", { bulletId: team.owner.id, socrepluse: complexTax });
+                  emit("playerScore", {
+                    bulletId: team.owner.id,
+                    socrepluse: complexTax,
+                  });
                 }
-              } 
+              }
             } catch (e) {
               console.log(bullet.id);
             }
@@ -4976,23 +5082,36 @@ setInterval(() => {
             if (0 >= item.health) {
               var reward = item.score_add;
               if (player.team !== null) {
-                var team = teamlist.find((team) => team.teamID === player.team)
+                var team = teamlist.find((team) => team.teamID === player.team);
                 if (team.owner.id !== player.id || team.createTeamScore) {
-                  reward -= reward * team.simpleTax
+                  reward -= reward * team.simpleTax;
                 }
                 if (team.createTeamScore) {
                   team.teamScore += (reward * team.simpleTax) / 2;
                 } else {
-                  emit("playerScore", { bulletId: team.owner.id, socrepluse: reward * team.simpleTax });
+                  emit("playerScore", {
+                    bulletId: team.owner.id,
+                    socrepluse: reward * team.simpleTax,
+                  });
                 }
-                var complexTax = reward * ((player.score / 100000) * playerTax);
+  
+                console.log(reward * team.simpleTax)
+  
+                var complexTax =
+                  reward *
+                  (calculateTax(player.score, 10000000) / team.playerTax);
                 if (team.owner.id !== player.id || team.createTeamScore) {
-                  reward -= complexTax
+                  console.log(complexTax)
+                  reward -= complexTax;
                 }
                 if (team.createTeamScore) {
                   team.teamScore += complexTax / 1.5;
                 } else {
-                  emit("playerScore", { bulletId: team.owner.id, socrepluse: complexTax });
+                  emit("playerScore", {
+                    bulletId: team.owner.id,
+                    socrepluse: complexTax,
+                  });
+                  players[team.owner.id].score += complexTax;
                 }
               }
               player.score += reward;
@@ -5002,7 +5121,7 @@ setInterval(() => {
               });
               leader_board.hidden.forEach((__index__) => {
                 if (__index__.id === player.id) {
-                  __index__.score += item.score_add;
+                  __index__.score += reward;
                   let isshown = false;
                   leader_board.shown.forEach(() => {
                     if (__index__.id === player.id) {
@@ -5020,7 +5139,7 @@ setInterval(() => {
               });
               leader_board.shown.forEach((__index__) => {
                 if (__index__.id === player.id) {
-                  __index__.score += item.score_add;
+                  __index__.score += reward;
                 }
               });
               rearrange();
@@ -5210,10 +5329,47 @@ setInterval(() => {
               console.log(players);
               return;
             }
-            players[bullet.id].score += item.score_add;
+            var reward = item.score_add;
+
+            if (player.team !== null) {
+              var team = teamlist.find((team) => team.teamID === player.team);
+              if (team.owner.id !== player.id || team.createTeamScore) {
+                reward -= reward * team.simpleTax;
+              }
+              if (team.createTeamScore) {
+                team.teamScore += (reward * team.simpleTax) / 2;
+              } else {
+                emit("playerScore", {
+                  bulletId: team.owner.id,
+                  socrepluse: reward * team.simpleTax,
+                });
+              }
+
+              console.log(reward * team.simpleTax)
+
+              var complexTax =
+                reward *
+                (calculateTax(player.score, 10000000) / team.playerTax);
+              if (team.owner.id !== player.id || team.createTeamScore) {
+                console.log(complexTax)
+                reward -= complexTax;
+              }
+              if (team.createTeamScore) {
+                team.teamScore += complexTax / 1.5;
+              } else {
+                emit("playerScore", {
+                  bulletId: team.owner.id,
+                  socrepluse: complexTax,
+                });
+                players[team.owner.id].score += complexTax;
+              }
+            }
+
+            players[bullet.id].score += reward;
+
             leader_board.hidden.forEach((__index__) => {
               if (__index__.id === bullet.id) {
-                __index__.score += item.score_add;
+                __index__.score += reward;
                 let isshown = false;
                 leader_board.shown.forEach(() => {
                   if (__index__.id === bullet.id) {
@@ -5231,7 +5387,7 @@ setInterval(() => {
             });
             leader_board.shown.forEach((__index__) => {
               if (__index__.id === bullet.id) {
-                __index__.score += item.score_add;
+                __index__.score += reward;
               }
             });
             rearrange();
@@ -5240,7 +5396,7 @@ setInterval(() => {
             });
             emit("playerScore", {
               bulletId: bullet.id,
-              socrepluse: item.score_add,
+              socrepluse: reward,
             });
 
             var randID = Math.random() * index * Date.now();

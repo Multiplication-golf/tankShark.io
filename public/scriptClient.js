@@ -1543,6 +1543,8 @@
 
           var description = document.getElementById("Simple").value;
           document.getElementById("teambox").style.display = "none";
+
+          createDelete.innerText = "Delete";
           send("newTeamCreated", {
             owner: { id: playerId, username: username },
             private: checked2,
@@ -1892,6 +1894,7 @@
         }
 
         document.addEventListener("mousedown", (evt) => {
+          if (teampanelopen) return;
           fireOnce(evt, false);
         });
 
@@ -1962,14 +1965,19 @@
                 id: playerId,
                 teamId: selected_class,
               });
+              joinLeave.innerText = "Leave"
+              createDelete.style.display = "none";
             }
           } else {
             send("playerLeftTeam", {
               id: playerId,
               teamId: players[playerId].team,
             });
+            createDelete.style.display = "block";
+            createDelete.innerText = "Create";
             if (owner_of_team) {
               owner_of_team = false;
+              joinLeave.innerText = "Join"
             }
             joinedTeam = false;
             selected_class = null;
