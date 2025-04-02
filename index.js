@@ -1757,9 +1757,11 @@ wss.on("connection", (socket) => {
         emit("Config", CONFIG);
         socket.send(JSON.stringify({ type: "RETURNtankmeta", data: tankmeta }));
         var public_teams = [];
-        teamlist.forEach((team) => {
+        public_teams = teamlist.map((team) => {
           if (!team.hidden) {
-            public_teams.push(team);
+            team.taxInterval = null;
+            team.powers = {};
+            return team;
           }
         });
         emit("pubteamlist", public_teams);
@@ -1989,7 +1991,7 @@ wss.on("connection", (socket) => {
 
         if (govType === "Constitutional") {
           var powers = CONFIG.powers.Constitutional;
-          `
+          data.constitution = `
             Constitution of ${data.teamname}
             =========================
             
@@ -2049,11 +2051,15 @@ wss.on("connection", (socket) => {
           teamId: data.teamID,
         });
         var public_teams = [];
-        teamlist.forEach((team) => {
+
+        public_teams = teamlist.map((team) => {
           if (!team.hidden) {
-            public_teams.push(team);
+            team.taxInterval = null;
+            team.powers = {};
+            return team;
           }
-        });
+        }) 
+
         var PlayerTeam = teamlist.find((team) => team.teamID === id);
         if (PlayerTeam.hidden) {
           let code = Math.floor(100000 * Math.random());
@@ -2077,9 +2083,11 @@ wss.on("connection", (socket) => {
           socket.send(JSON.stringify({ type: "JoinTeamSuccess", data: {} }));
           emit("playerJoinedTeam", { id: data.id, teamId: data.teamId });
           var public_teams = [];
-          teamlist.forEach((team) => {
+          public_teams = teamlist.map((team) => {
             if (!team.hidden) {
-              public_teams.push(team);
+              team.taxInterval = null;
+              team.powers = {};
+              return team;
             }
           });
           emit("pubteamlist", public_teams);
@@ -2123,11 +2131,13 @@ wss.on("connection", (socket) => {
         });
         emit("playerJoinedTeam", { id: data.requester, teamId: data.teamID });
         var public_teams = [];
-        teamlist.forEach((team) => {
+        public_teams = teamlist.map((team) => {
           if (!team.hidden) {
-            public_teams.push(team);
+            team.taxInterval = null;
+            team.powers = {};
+            return team;
           }
-        });
+        }) 
         emit("pubteamlist", public_teams);
         break;
       }
@@ -2167,9 +2177,11 @@ wss.on("connection", (socket) => {
         }
         emit("playerJoinedTeam", { id: data.id, teamId: null });
         let public_teams = [];
-        teamlist.forEach((team) => {
+        public_teams = teamlist.map((team) => {
           if (!team.hidden) {
-            public_teams.push(team);
+            team.taxInterval = null;
+            team.powers = {};
+            return team;
           }
         });
         emit("pubteamlist", public_teams);
@@ -2193,9 +2205,11 @@ wss.on("connection", (socket) => {
         clearInterval(MYteam.taxInterval)
         teamlist.splice(teamlist.indexOf(MYteam, 1));
         let public_teams = [];
-        teamlist.forEach((team) => {
+        public_teams = teamlist.map((team) => {
           if (!team.hidden) {
-            public_teams.push(team);
+            team.taxInterval = null;
+            team.powers = {};
+            return team;
           }
         });
         emit("pubteamlist", public_teams);
@@ -2216,9 +2230,11 @@ wss.on("connection", (socket) => {
         );
         emit("playerJoinedTeam", { id: data.id, teamId: null });
         let public_teams = [];
-        teamlist.forEach((team) => {
+        public_teams = teamlist.map((team) => {
           if (!team.hidden) {
-            public_teams.push(team);
+            team.taxInterval = null;
+            team.powers = {};
+            return team;
           }
         });
         emit("pubteamlist", public_teams);
@@ -3645,9 +3661,11 @@ wss.on("connection", (socket) => {
           return true;
         });
         var public_teams = [];
-        teamlist.forEach((team) => {
+        public_teams = teamlist.map((team) => {
           if (!team.hidden) {
-            public_teams.push(team);
+            team.taxInterval = null;
+            team.powers = {};
+            return team;
           }
         });
         emit("pubteamlist", public_teams);
@@ -3769,9 +3787,11 @@ wss.on("connection", (socket) => {
       return true;
     });
     var public_teams = [];
-    teamlist.forEach((team) => {
+    public_teams = teamlist.map((team) => {
       if (!team.hidden) {
-        public_teams.push(team);
+        team.taxInterval = null;
+        team.powers = {};
+        return team;
       }
     });
     emit("pubteamlist", public_teams);

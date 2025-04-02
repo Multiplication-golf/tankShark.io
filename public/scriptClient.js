@@ -272,27 +272,17 @@
     var barWidth = 0.3125 * canvas.width;
     var barHeight = 0.02909796314 * canvas.height;
     var borderRadius = 10;
-    var teamwidth = 0.15625 * canvas.width;
-    var teamheight = 0.33333333333333333333333333 * canvas.height;
-    var innerteamwidth = 0.14322916666 * canvas.width;
-    var innerteamheight = 0.308333333333333333333 * canvas.height;
-    var innerteamwidthreal = 0.14322916666 * window.innerWidth;
-    var innerteamheightreal = 0.308333333333333333333 * window.innerHeight;
     var teampanelopen = false;
     var leader_board = [];
     var badge = "";
     var img = null;
 
     // 🎯 Buttons & Controls
-    var buttton140 = 0.07291666666 * canvas.width;
-    var button275 = 0.14322916666 * canvas.width;
     var button475 = 0.24739583333 * canvas.width;
     var button462_5 = 0.24088541666 * canvas.width;
     var button375 = 0.1953125 * canvas.width;
-    var button80 = 0.07759456838 * canvas.height;
     var button40 = 0.03879728419 * canvas.height;
     var button10 = 0.00969932104 * canvas.height;
-    var button110 = 0.10669253152 * canvas.height;
     var nolist = [3, 5, 7, 8, 10, 11, 13];
 
     // 🕰️ Timers & Intervals
@@ -671,6 +661,14 @@
         pubteams.forEach((team) => {
           var teamcontainer = document.getElementById("teamcontainer");
           var item = document.createElement("div");
+          var downArrow = document.createElement("img");
+          downArrow.src = "assets/expand.png";
+          item.appendChild(downArrow);
+          downArrow.style.width = "1.6em";
+          downArrow.style.height = "1.3em";
+          downArrow.style["margin-left"] = "5px";
+          downArrow.style["margin-top"] = "0px";
+          downArrow.style["margin-bottom"] = "-5px";
           item.classList.add("team");
           item.innerText = team.name;
           teamcontainer.appendChild(item);
