@@ -372,7 +372,7 @@
         setTimeout(() => {
           alert(`There is a disconnection. ${socket.readyState}`);
         }, 0);
-        console.log(type,data)
+        console.log(type, data);
         errors++;
       }
     }
@@ -615,14 +615,7 @@
       }
     }
 
-    const generateUniquePlayerId = () => {
-      return "player-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-    };
-
-    let levelpro = [];
-
     function levelHANDLER() {
-      let tonextlevel = levels[level] - levels[level - 1];
       setprogress =
         (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
       setprogress =
@@ -634,7 +627,6 @@
         let tankdata = tankmeta[__type__];
         levelUpgrader(tankdata);
         level += 1;
-        let tonextlevel = levels[level] - levels[level - 1];
         progress = 0;
         setprogress =
           (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
@@ -663,15 +655,46 @@
           var item = document.createElement("div");
           var downArrow = document.createElement("img");
           downArrow.src = "assets/expand.png";
-          item.appendChild(downArrow);
-          downArrow.style.width = "1.6em";
-          downArrow.style.height = "1.3em";
-          downArrow.style["margin-left"] = "5px";
-          downArrow.style["margin-top"] = "0px";
-          downArrow.style["margin-bottom"] = "-5px";
           item.classList.add("team");
           item.innerText = team.name;
           teamcontainer.appendChild(item);
+          item.appendChild(downArrow);
+          var infoConteiner = document.createElement("div");
+          var info = document.createElement("p");
+          info.innerText = `
+          Team type: ${team.govType}
+          Taxes: 
+          Flat rate ${team.simpleTax}
+          Player based rate ${team.playerTax}
+          ScheduledBased based rate ${team.ScheduledBasedTax} per ${
+            team.ScheduledBasedTaxInterval * 60 * 1000
+          } minet interval
+          `;
+
+          if (team.govType === "Constitutional") {
+            info.innerText += `${team.constitution}`;
+          }
+
+          infoConteiner.classList.add("team");
+          infoConteiner.style.height = "50%";
+          infoConteiner.style.overflow = "auto";
+          infoConteiner.style.display = "none";
+
+          teamcontainer.appendChild(infoConteiner);
+          infoConteiner.appendChild(info);
+
+          downArrow.style.width = "1.6em";
+          downArrow.style.height = "1.3em";
+          downArrow.style["margin-top"] = "0px";
+          downArrow.style["margin-bottom"] = "-5px";
+          downArrow.style["margin-right"] = "3px";
+          downArrow.style.float = "right";
+          let isDown = false;
+          downArrow.addEventListener("click", () => {
+            downArrow.style.rotate = isDown ? "180deg" : "0deg";
+            infoConteiner.style.display = isDown ? "none" : "block";
+            isDown = !isDown;
+          });
           item.addEventListener("click", () => {
             Array.from(teamcontainer.children).forEach((child) => {
               child.classList.remove("glow");
@@ -685,6 +708,10 @@
       } else {
         let MYteam = pubteams.find((team) => {
           return team.teamID === players[playerId].team;
+        });
+        var amLower = MYteam.lowerLevelPlayers.includes({
+          id: playerId,
+          username: username,
         });
         MYteam.players.forEach((player) => {
           var teamcontainer = document.getElementById("teamcontainer");
@@ -707,7 +734,11 @@
           }
 
           teamcontainer.appendChild(item);
-          if (MYteam.owner.id === playerId && player.id !== MYteam.owner.id) {
+          if (
+            MYteam.owner.id === playerId &&
+            player.id !== MYteam.owner.id &&
+            MYteam.powers.canKick
+          ) {
             item.addEventListener("mouseover", () => {
               if (teamOver) return;
               teamOver = true;
@@ -729,36 +760,102 @@
               });
             });
           }
+          if (MYteam.owner.id === playerId || amLower) {
+            var canPremote = amLower
+              ? MYteam.powers.lowerlevelpowers.canDedicatePower
+              : MYteam.powers.canDedicatePower;
+
+            var canDemote = amLower
+              ? MYteam.powers.lowerlevelpowers.canDededicatePower
+              : MYteam.powers.canDededicatePower;
+
+            if (canPremote && MYteam.owner.id !== player.id) {
+              if (!MYteam.lowerLevelPlayers.includes(player)) {
+                var premoteArrow = document.createElement("img");
+                premoteArrow.src = "assets/premoteArrow.png";
+                item.appendChild(premoteArrow);
+                premoteArrow.style.width = "1.6em";
+                premoteArrow.style.height = "1.3em";
+                premoteArrow.style["margin-left"] = "5px";
+                premoteArrow.style["margin-top"] = "0px";
+                premoteArrow.style["margin-bottom"] = "-5px";
+                premoteArrow.style["float"] = "right";
+
+                const addplayer = () => {
+                  send("premotePlayer", {
+                    premote: player,
+                    premotor: MYteam.owner,
+                    MYteamID: MYteam.teamID,
+                  });
+                  premoteArrow.removeEventListener("click", addplayer);
+                };
+
+                premoteArrow.addEventListener("click", addplayer);
+              }
+            }
+            if (canDemote && MYteam.owner.id !== player.id) {
+              if (MYteam.lowerLevelPlayers.includes(player)) {
+                var demoteArrow = document.createElement("img");
+                demoteArrow.src = "assets/demoteArrow.png";
+                item.appendChild(premoteArrow);
+                demoteArrow.style.width = "1.6em";
+                demoteArrow.style.height = "1.3em";
+                demoteArrow.style["margin-left"] = "5px";
+                demoteArrow.style["margin-top"] = "0px";
+                demoteArrow.style["margin-bottom"] = "-5px";
+                premdemoteArrowoteArrow.style["float"] = "right";
+
+                const addplayer = () => {
+                  send("demotePlayer", {
+                    premote: player,
+                    premotor: MYteam.owner,
+                    MYteamID: MYteam.teamID,
+                  });
+                  demoteArrow.removeEventListener("click", addplayer);
+                };
+
+                demoteArrow.addEventListener("click", addplayer);
+              }
+            }
+          }
         });
       }
     }
 
     socket.onopen = function () {
       setTimeout(() => {
-        (function () {
-          (function a() {
-            playerId = generateUniquePlayerId();
-          })();
-        })();
         console.time("preconnect");
         let resolveDraw, rejectDraw;
         let resolveDraw2, rejectDraw2;
         let resolveDraw3, rejectDraw3;
+        let resolveDraw4, rejectDraw4;
 
         var configPromise = new Promise((resolve, reject) => {
           resolveDraw = resolve;
           rejectDraw = reject;
         });
+
         var tankmetaPromise = new Promise((resolve, reject) => {
           resolveDraw2 = resolve;
           rejectDraw2 = reject;
         });
+
         var levelPromise = new Promise((resolve, reject) => {
           resolveDraw3 = resolve;
           rejectDraw3 = reject;
         });
 
-        var recivedData = [configPromise, tankmetaPromise, levelPromise];
+        var IDPromise = new Promise((resolve, reject) => {
+          resolveDraw4 = resolve;
+          rejectDraw4 = reject;
+        });
+
+        var recivedData = [
+          configPromise,
+          tankmetaPromise,
+          levelPromise,
+          IDPromise,
+        ];
 
         Promise.allSettled(recivedData).then(() => {
           console.timeEnd("preconnect");
@@ -767,7 +864,7 @@
         });
 
         const playerData = {
-          id: playerId,
+          id: null,
           x: playerX,
           y: playerY,
           health: playerHealth,
@@ -841,6 +938,12 @@
             return;
           }
           switch (type) {
+            case "newId": {
+              playerId = data;
+              resolveDraw4();
+              break;
+            }
+
             case "playerUpdated": {
               players[data.id] = data; // Update the local player data
               console.log("Player updated:", data); // Log the update
@@ -862,8 +965,6 @@
               var cannon = autocannons.find(
                 (cannon_) => cannon_.CannonID === data.CannonID
               );
-              // Were in ES6
-              console.log(data.cannonWidth);
               cannon.cannonWidth = data.cannonWidth;
               break;
             }
@@ -1528,7 +1629,9 @@
             checked2 = false;
           }
 
-          var govType = document.querySelector('input[name="teamType"]:checked').value;
+          var govType = document.querySelector(
+            'input[name="teamType"]:checked'
+          ).value;
 
           try {
             var checkedValue = document.querySelector(".null3:checked").value;
@@ -1537,12 +1640,16 @@
             checked3 = false;
           }
 
-          var ScheduledBasedTax = document.getElementById("ScheduledBased").value;
+          var ScheduledBasedTax =
+            document.getElementById("ScheduledBased").value;
 
-          var ScheduledBasedTaxInterval = document.getElementById("time-select").value;
+          var ScheduledBasedTaxInterval =
+            document.getElementById("time-select").value;
 
           var description = document.getElementById("Simple").value;
           document.getElementById("teambox").style.display = "none";
+
+          joinLeave.innerText = "Leave";
 
           createDelete.innerText = "Delete";
           send("newTeamCreated", {
@@ -1563,21 +1670,21 @@
 
         function bounceBackAndRecoil(i, Bsize, Bspeed, anlge_) {
           cannonWidth[i] = cannonWidth[i] || 0;
-          for (let i = 0; i < 10; i++) {
+          for (let t = 0; t < 10; t++) {
             setTimeout(() => {
               cannonWidth[i] -= 1;
               send("playerCannonWidth", {
                 id: playerId,
                 cannonW: cannonWidth,
               });
-            }, 10 * i);
+            }, 10 * t);
             setTimeout(() => {
               cannonWidth[i] += 1;
               send("playerCannonWidth", {
                 id: playerId,
                 cannonW: cannonWidth,
               });
-            }, 20 * i); // Updated to prevent overlap
+            }, 20 * t); // Updated to prevent overlap
           }
 
           let recoilX = -((Bsize / 10) * Bspeed * Math.cos(anlge_));
@@ -1956,7 +2063,7 @@
           document.getElementsByTagName("body")[0].style.cursor =
             "url('https://deip-io3.glitch.me/targetpointer1.cur'), auto";
         });
-        
+
         var joinLeave = document.getElementById("join/leave");
         joinLeave.addEventListener("click", () => {
           if (!joinedTeam) {
@@ -1965,7 +2072,7 @@
                 id: playerId,
                 teamId: selected_class,
               });
-              joinLeave.innerText = "Leave"
+              joinLeave.innerText = "Leave";
               createDelete.style.display = "none";
             }
           } else {
@@ -1977,8 +2084,8 @@
             createDelete.innerText = "Create";
             if (owner_of_team) {
               owner_of_team = false;
-              joinLeave.innerText = "Join"
             }
+            joinLeave.innerText = "Join";
             joinedTeam = false;
             selected_class = null;
           }
@@ -3545,6 +3652,7 @@
               ctx.lineTo(vertices[i].x, vertices[i].y);
             }
             ctx.closePath();
+            ctx.lineWidth = 5;
             ctx.stroke();
 
             // Rotate context back to original position (if needed)
@@ -3992,6 +4100,7 @@
             ctx.closePath();
 
             ctx.fill();
+            ctx.lineWidth = 5;
             ctx.stroke();
           } else if (bullet.type === "AutoBullet") {
             var sameTeam =

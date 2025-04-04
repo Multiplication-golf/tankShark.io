@@ -131,21 +131,23 @@
         id="ghostCanvas"
         style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh"
       ></canvas>
-      <div class="outer-box" id="teamMain">
-        <div class="inner-box">
-            <span class="close-btn" id="Xbutton">X</span>
-            <div class="containerA" id="teamcontainer">
-              <div class="team">Team1</div>
-              <div class="team">Team2</div>
-              <div class="team">Team3</div>
-              <div class="team">Team4</div>
+      <div style="width:100vw; text-align: center;">
+          <div class="outer-box" id="teamMain">
+            <div class="inner-box">
+                <span class="close-btn" id="Xbutton">X</span>
+                <div class="containerA" id="teamcontainer">
+                  <div class="team">Team1</div>
+                  <div class="team">Team2</div>
+                  <div class="team">Team3</div>
+                  <div class="team">Team4</div>
+                </div>
+            </div>
+            <div class="button-container">
+                <button class="btn btn-join" id="join/leave">Join</button>
+                <button class="btn btn-create" id="create/delete">Create team</button>
             </div>
         </div>
-        <div class="button-container">
-            <button class="btn btn-join" id="join/leave">Join</button>
-            <button class="btn btn-create" id="create/delete">Create team</button>
-        </div>
-    </div>
+      </div>
       <div
         style="
           text-align: center;
@@ -212,7 +214,7 @@
           display: none;
           position: absolute;
           top: calc(50vh - 155px);
-          left: calc(50vw - 220px);
+          left: calc(50vw - 200px);
         "
       >
         <h1 style="z-index: 10">Your team name</h1>

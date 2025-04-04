@@ -7,7 +7,7 @@ const path = require("path");
 const SAT = require("sat");
 const { setTimeout } = require("timers");
 const WebSocket = require("ws");
-const crypto = require("crypto");
+//const crypto = require("crypto");
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 const fs = require("fs");
@@ -16,8 +16,7 @@ const protobuf = require("protobufjs");
 
 // Define the Protobuf schema
 
-
-console.log("logger version 2")
+console.log("logger version 3");
 
 const schema = `
 syntax = "proto3";
@@ -208,6 +207,9 @@ let leader_board = { shown: [], hidden: [] };
 /**/
 
 let autocannons = [];
+/**/
+
+let badIP = {};
 /**/
 
 let bullet_intervals = [];
@@ -413,20 +415,23 @@ const CONFIG = {
       canTakeScore: false,
       supportsCoOwners: false,
       canChangeConstitution: undefined,
-      canDedicatePower: null,
-      Lowerlevelpowers: undefined,
+      canDedicatePower: false,
+      lowerlevelpowers: undefined,
+      canDededicatePower: false,
     },
     Democracy: {
       canKick: null,
       canTakeScore: true,
       supportsCoOwners: { Samelevel: false, Lowerlevel: true },
       canChangeConstitution: undefined,
-      canDedicatePower: false,
-      Lowerlevelpowers: {
-        canDedicatePower: null,
+      canDedicatePower: true,
+      lowerlevelpowers: {
+        canDedicatePower: true,
         canKick: false,
         canTakeScore: false,
+        canDededicatePower: false,
       },
+      canDededicatePower: false,
     },
     Communist: {
       canKick: true,
@@ -434,23 +439,27 @@ const CONFIG = {
       supportsCoOwners: { Samelevel: true, Lowerlevel: true },
       canChangeConstitution: undefined,
       canDedicatePower: true,
-      Lowerlevelpowers: {
-        canDedicatePower: "choose",
+      lowerlevelpowers: {
+        canDedicatePower: false,
         canKick: false,
-        canTakeScore: false,
+        canTakeScore: { can: true, limit: 5000 },
+        canDededicatePower: true,
       },
+      canDededicatePower: true,
     },
     Constitutional: {
       canKick: { definedPower: null },
       canTakeScore: { definedPower: null },
       supportsCoOwners: { Samelevel: false, Lowerlevel: false },
       canChangeConstitution: { definedPower: null },
-      canDedicatePower: null,
-      Lowerlevelpowers: {
-        canDedicatePower: null,
-        canKick: null,
-        canTakeScore: null,
+      canDedicatePower: true,
+      lowerlevelpowers: {
+        canDedicatePower: false,
+        canKick: false,
+        canTakeScore: false,
+        canDededicatePower: false,
       },
+      canDededicatePower: false,
     },
   },
 };
@@ -1725,10 +1734,6 @@ function Wanderer( // class but what ever
 
 var angle = 0;
 
-const algorithm = "aes-256-cbc";
-const key = crypto.randomBytes(32);
-const iv = crypto.randomBytes(16);
-
 var serverseed = crypto.randomUUID();
 
 var invaled_requests = [];
@@ -1739,7 +1744,7 @@ const connections = [];
 let logCounter = 0;
 const LOG_LIMIT = 1300; // Maximum number of logs
 
-wss.on("connection", (socket) => {
+wss.on("connection", (socket, req) => {
   let connection = { socket: socket, playerId: null };
   let handshaked = false;
   connections.push(connection);
@@ -1750,16 +1755,19 @@ wss.on("connection", (socket) => {
 
     switch (type) {
       case "newPlayer": {
-        Object.defineProperty(players, `${data.id}`, {
+        var newId = crypto.randomUUID();
+        Object.defineProperty(players, `${newId}`, {
           value: data,
           writable: false,
           configurable: false,
           enumerable: true,
         });
-        connection.playerId = data.id;
+        players[newId].id = newId;
+        socket.send(JSON.stringify({type:"newId",data:newId}));
+        connection.playerId = newId;
         connections.forEach((con) => {
           if (con.socket === connection.socket) {
-            con.playerId = data.id;
+            con.playerId = newId;
           }
         });
         var badge;
@@ -1775,7 +1783,6 @@ wss.on("connection", (socket) => {
         public_teams = teamlist.map((team) => {
           if (!team.hidden) {
             team.taxInterval = null;
-            team.powers = {};
             return team;
           }
         });
@@ -1836,10 +1843,7 @@ wss.on("connection", (socket) => {
               Date.now() * Math.random() +
               Date.now() / 213984238 +
               Math.random();
-            socket.send(
-              JSON.stringify({ type: "newid", data: { newid: newid } })
-            );
-            players[data.id].userId = newid;
+            players[newId].userId = newid;
             userbase.push({ userid: newid, scores: [] });
             badge = "/badges/1.png";
           }
@@ -1852,26 +1856,26 @@ wss.on("connection", (socket) => {
           socket.send(
             JSON.stringify({ type: "newid", data: { newid: newid } })
           );
+          players[newId].userId = newid;
           userbase.push({ userid: newid, scores: [] });
           badge = "/badges/1.png";
-          players[data.id].userId = newid;
         }
         socket.send(
           JSON.stringify({ type: "badgeToplayer", data: { badge: badge } })
         );
-        emit("new_X_Y", { x: x, y: y, id: data.id });
-        players[data.id].x = x;
-        players[data.id].y = y;
+        emit("new_X_Y", { x: x, y: y, id: newId });
+        players[newId].x = x;
+        players[newId].y = y;
         createExsplosion("ksiejf48jfq", x + 400, y + 400);
         leader_board.hidden.push({
-          id: data.id,
+          id: newId,
           score: 0,
           name: data.username,
           badge: badge,
         });
         if (!leader_board.shown[10]) {
           leader_board.shown.push({
-            id: data.id,
+            id: newId,
             score: 0,
             name: data.username,
             badge: badge,
@@ -1880,7 +1884,7 @@ wss.on("connection", (socket) => {
         if (leader_board.shown[10]) {
           if (0 > leader_board.shown[10].score) {
             leader_board.shown.push({
-              id: data.id,
+              id: newId,
               score: 0,
               name: data.username,
               badge: badge,
@@ -1888,7 +1892,7 @@ wss.on("connection", (socket) => {
           }
           if (0 > leader_board.shown[10].score) {
             leader_board.shown[10] = {
-              id: data.id,
+              id: newId,
               score: 0,
               name: data.username,
               badge: badge,
@@ -1903,10 +1907,10 @@ wss.on("connection", (socket) => {
         let state = "start";
         var start = setInterval(() => {
           try {
-            players[data.id].state = data.state;
+            players[newId].state = data.state;
             let _data = {
               state: state,
-              playerID: data.id,
+              playerID: newId,
             };
             emit("statechangeUpdate", _data, socket);
           } catch {
@@ -1918,26 +1922,26 @@ wss.on("connection", (socket) => {
           let _data__ = {
             state: state,
             statecycle: statecycle,
-            playerID: data.id,
+            playerID: newId,
           };
           emit("statecycleUpdate", _data__);
         }, CONFIG.updateInterval);
 
-        console.log(data.id, players[data.id]);
-        players[data.id].stateTimeout = setTimeout(() => {
+        console.log(newId, players[newId]);
+        players[newId].stateTimeout = setTimeout(() => {
           start = null;
           state = "normal";
-          players[data.id].state = state ?? "start";
+          players[newId].state = state ?? "start";
           let _data = {
             state: state,
             statecycle: statecycle,
-            playerID: data.id,
+            playerID: newId,
           };
-          if (players[data.id]) {
-            players[data.id].state = _data.state;
+          if (players[newId]) {
+            players[newId].state = _data.state;
             emit("statechangeUpdate", _data, socket);
             setTimeout(() => {
-              players[data.id].state = _data.state;
+              players[newId].state = _data.state;
               emit("statechangeUpdate", _data, socket);
             }, 300);
           }
@@ -1970,6 +1974,160 @@ wss.on("connection", (socket) => {
 
       case "autoFiringUpdate": {
         players[data.id].autoFiring = data.autoFiring;
+        break;
+      }
+      /*send("premotePlayer", {premote:player.id,premotor: MYteam.owner}) */
+      case "premotePlayer": {
+        if (
+          !data.players.includes(data.player) ||
+          data.lowerLevelPlayers.includes(data.player)
+        ) {
+          badIP[req.socket.remoteAddress].warnings ??= 0;
+          badIP[req.socket.remoteAddress].warnings += 1;
+          createAnnocment(
+            `ID Error: id not indexed or has all ready premoted; Your IP has been logged you have ${
+              badIP[req.socket.remoteAddress].warnings
+            } warnings`,
+            data.id,
+            { color: "red", delay: 20000 }
+          );
+          break;
+        }
+        let myTeam = teamlist.find((team) => team.teamID === data.myTeamID);
+        if (data.premotor.id === MYteam.owner.id) {
+          if (!myTeam.powers.canDedicatePower) {
+            badIP[req.socket.remoteAddress].warnings ??= 0;
+            badIP[req.socket.remoteAddress].warnings += 1;
+            createAnnocment(
+              `Premission Error: premission denied; Your IP has been logged you have ${
+                badIP[req.socket.remoteAddress].warnings
+              } warnings`,
+              data.id,
+              { color: "red", delay: 20000 }
+            );
+            break;
+          }
+          data.lowerLevelPlayers.push(data.player);
+          createAnnocment(
+            `You have successfully promoted ${
+              players[data.player.id].username
+            } to a higher level player in ${myTeam.teamname}.`,
+            data.player.id,
+            { color: "green", delay: 5000 }
+          );
+        }
+        if (data.lowerLevelPlayers.includes(data.premotor)) {
+          if (!myTeam.powers.lowerlevelpowers.canDedicatePower) {
+            badIP[req.socket.remoteAddress].warnings ??= 0;
+            badIP[req.socket.remoteAddress].warnings += 1;
+            createAnnocment(
+              `Premission Error: premission denied; Your IP has been logged you have ${
+                badIP[req.socket.remoteAddress].warnings
+              } warnings`,
+              data.id,
+              { color: "red", delay: 20000 }
+            );
+            break;
+          }
+          data.lowerLevelPlayers.push(data.player);
+          createAnnocment(
+            `You have successfully promoted ${
+              players[data.player.id].username
+            } to a higher level player in ${myTeam.teamname}, by ${
+              data.premotor.username
+            }.`,
+            data.player.id,
+            { color: "green", delay: 5000 }
+          );
+        }
+        var public_teams = [];
+        public_teams = teamlist.map((team) => {
+          if (!team.hidden) {
+            team.taxInterval = null;
+            return team;
+          }
+        });
+        emit("pubteamlist", public_teams);
+
+        break;
+      }
+
+      case "demotePlayer": {
+        if (
+          !data.players.includes(data.player) ||
+          !data.lowerLevelPlayers.includes(data.player)
+        ) {
+          badIP[req.socket.remoteAddress].warnings ??= 0;
+          badIP[req.socket.remoteAddress].warnings += 1;
+          createAnnocment(
+            `ID Error: id not indexed or not found the highrank lists; Your IP has been logged you have ${
+              badIP[req.socket.remoteAddress].warnings
+            } warnings`,
+            data.id,
+            { color: "red", delay: 20000 }
+          );
+          break;
+        }
+        let myTeam = teamlist.find((team) => team.teamID === data.myTeamID);
+        if (data.premotor.id === MYteam.owner.id) {
+          if (!myTeam.powers.canDededicatePower) {
+            badIP[req.socket.remoteAddress].warnings ??= 0;
+            badIP[req.socket.remoteAddress].warnings += 1;
+            createAnnocment(
+              `Premission Error: premission denied; Your IP has been logged you have ${
+                badIP[req.socket.remoteAddress].warnings
+              } warnings`,
+              data.id,
+              { color: "red", delay: 20000 }
+            );
+            break;
+          }
+          data.lowerLevelPlayers.splice(
+            data.lowerLevelPlayers.indexOf(data.player),
+            1
+          );
+          createAnnocment(
+            `You have demoted ${players[data.player.id].username} by ${
+              data.premotor.username
+            }.`,
+            data.player.id,
+            { color: "orange", delay: 5000 }
+          );
+        }
+        if (data.lowerLevelPlayers.includes(data.premotor)) {
+          if (!myTeam.powers.lowerlevelpowers.canDededicatePower) {
+            badIP[req.socket.remoteAddress].warnings ??= 0;
+            badIP[req.socket.remoteAddress].warnings += 1;
+            createAnnocment(
+              `Premission Error: premission denied; Your IP has been logged you have ${
+                badIP[req.socket.remoteAddress].warnings
+              } warnings`,
+              data.id,
+              { color: "red", delay: 20000 }
+            );
+            break;
+          }
+          data.lowerLevelPlayers.splice(
+            data.lowerLevelPlayers.indexOf(data.player),
+            1
+          );
+          createAnnocment(
+            `You have demoted ${players[data.player.id].username} by ${
+              data.premotor.username
+            }.`,
+            data.player.id,
+            { color: "orange", delay: 5000 }
+          );
+        }
+        var public_teams = [];
+        public_teams = teamlist.map((team) => {
+          if (!team.hidden) {
+            team.taxInterval = null;
+            return team;
+          }
+        });
+        emit("pubteamlist", public_teams);
+
         break;
       }
 
@@ -2045,10 +2203,10 @@ wss.on("connection", (socket) => {
             Future players apointed by ${
               data.owner.username
             } will have power defined by here after. Appointed players will be apoint these powers: ${
-            powers.Lowerlevelpowers.canDedicatePower
+            powers.lowerlevelpowers.canDedicatePower
               ? "Dedicate Power"
               : "No Dedication"
-          }, ${powers.Lowerlevelpowers.canKick ? "Kick Members" : "No Kicking"}.
+          }, ${powers.lowerlevelpowers.canKick ? "Kick Members" : "No Kicking"}.
             
             Ratified by ${
               data.owner.username
@@ -2064,13 +2222,12 @@ wss.on("connection", (socket) => {
             console.log(player);
             if (!players[player.id]) return;
             if (players[player.id].score > 0 && data.owner.id !== player.id) {
-              var Scheduledtax = players[player.id].score * data.ScheduledBasedTax;
+              var Scheduledtax =
+                players[player.id].score * data.ScheduledBasedTax;
               players[player.id].score =
-                players[player.id].score -
-                Scheduledtax;
+                players[player.id].score - Scheduledtax;
               if (data.createTeamScore) {
-                data.teamScore +=
-                Scheduledtax;
+                data.teamScore += Scheduledtax;
                 createAnnocment(
                   `Tax Taken ${data.ScheduledBasedTax}%`,
                   player.id,
@@ -2078,12 +2235,10 @@ wss.on("connection", (socket) => {
                 );
                 emit("playerScore", {
                   bulletId: data.owner.id,
-                  socrepluse:
-                    -Scheduledtax,
+                  socrepluse: -Scheduledtax,
                 });
               } else {
-                data.owner.id +=
-                Scheduledtax;
+                data.owner.id += Scheduledtax;
                 leader_board.hidden.forEach((__index__) => {
                   if (__index__.id === data.owner.id) {
                     let isshown = false;
@@ -2109,8 +2264,7 @@ wss.on("connection", (socket) => {
                 });
                 emit("playerScore", {
                   bulletId: data.owner.id,
-                  socrepluse:
-                    -Scheduledtax,
+                  socrepluse: -Scheduledtax,
                 });
               }
               leader_board.hidden.forEach((__index__) => {
@@ -2138,11 +2292,14 @@ wss.on("connection", (socket) => {
               });
             }
           });
-        }, data.ScheduledBasedTaxInterval * 500 * 30);
-
-        data.lowerLevelPlayers = {};
+        }, data.ScheduledBasedTaxInterval * 60 * 1000);
 
         data.powers = CONFIG.powers[data.govType];
+
+        if (data.powers.canDedicatePower) {
+          console.log("Created lowerLevelPlayers")
+          data.lowerLevelPlayers = [];
+        }
 
         teamlist.push(data);
         players[data.owner.id].team = data.teamID;
@@ -2155,7 +2312,6 @@ wss.on("connection", (socket) => {
         public_teams = teamlist.map((team) => {
           if (!team.hidden) {
             team.taxInterval = null;
-            team.powers = {};
             return team;
           }
         });
@@ -2234,7 +2390,6 @@ wss.on("connection", (socket) => {
         public_teams = teamlist.map((team) => {
           if (!team.hidden) {
             team.taxInterval = null;
-            team.powers = {};
             return team;
           }
         });
@@ -2280,7 +2435,6 @@ wss.on("connection", (socket) => {
         public_teams = teamlist.map((team) => {
           if (!team.hidden) {
             team.taxInterval = null;
-            team.powers = {};
             return team;
           }
         });
@@ -2308,7 +2462,6 @@ wss.on("connection", (socket) => {
         public_teams = teamlist.map((team) => {
           if (!team.hidden) {
             team.taxInterval = null;
-            team.powers = {};
             return team;
           }
         });
@@ -2320,6 +2473,17 @@ wss.on("connection", (socket) => {
         let MYteam = teamlist.find((team) => {
           return team.teamID === players[data.id].team;
         });
+        if (!MYteam.powers.canKick) {
+          badIP[req.socket.remoteAddress].warnings ??= 0;
+          badIP[req.socket.remoteAddress].warnings += 1;
+          createAnnocment(
+            `Premission Error: premission denied; Your IP has been logged you have ${
+              badIP[req.socket.remoteAddress].warnings
+            } warnings`,
+            data.id,
+            { color: "red", delay: 20000 }
+          );
+        }
         players[data.id].team = null;
         MYteam.players.splice(
           MYteam.players.indexOf({
@@ -2333,7 +2497,6 @@ wss.on("connection", (socket) => {
         public_teams = teamlist.map((team) => {
           if (!team.hidden) {
             team.taxInterval = null;
-            team.powers = {};
             return team;
           }
         });
@@ -3726,12 +3889,6 @@ wss.on("connection", (socket) => {
           }
           return true;
         });
-        players = Object.entries(players).reduce((newPlayers, [key, value]) => {
-          if (key !== connection.playerId) {
-            newPlayers[key] = value;
-          }
-          return newPlayers;
-        }, {});
         deadplayers.push(connection.playerId);
         teamlist = teamlist.filter((team) => {
           var teamplayers = team.players;
@@ -3764,7 +3921,6 @@ wss.on("connection", (socket) => {
         public_teams = teamlist.map((team) => {
           if (!team.hidden) {
             team.taxInterval = null;
-            team.powers = {};
             return team;
           }
         });
@@ -3836,11 +3992,12 @@ wss.on("connection", (socket) => {
           0.01
         );
       });
-      _player.scores.push({
+      if (players[connection.playerId]) _player.scores.push({
         score: players[connection.playerId].score,
         Date: Date.now(),
       });
       _player.scores.sort(function (a, b) {
+        if (!a || !b) return false;
         return a.score - b.score;
       });
       _player.scores.reverse();
@@ -3856,7 +4013,7 @@ wss.on("connection", (socket) => {
       console.log(e);
     }
     clearInterval(stateupdate);
-    clearTimeout(players[connection.playerId].stateTimeout);
+    if (players[connection.playerId]) {clearTimeout(players[connection.playerId]?.stateTimeout);}
     teamlist = teamlist.filter((team) => {
       var teamplayers = team.players;
       teamplayers = teamplayers.filter((player) => {
@@ -4454,15 +4611,6 @@ setInterval(() => {
             emit("boardUpdate", {
               leader_board: leader_board.shown,
             });
-            players = Object.entries(players).reduce(
-              (newPlayers, [key, value]) => {
-                if (key !== player.id) {
-                  newPlayers[key] = value;
-                }
-                return newPlayers;
-              },
-              {}
-            );
           }
         }
       }
@@ -5094,14 +5242,14 @@ setInterval(() => {
                     socrepluse: reward * team.simpleTax,
                   });
                 }
-  
-                console.log(reward * team.simpleTax)
-  
+
+                console.log(reward * team.simpleTax);
+
                 var complexTax =
                   reward *
                   (calculateTax(player.score, 10000000) / team.playerTax);
                 if (team.owner.id !== player.id || team.createTeamScore) {
-                  console.log(complexTax)
+                  console.log(complexTax);
                   reward -= complexTax;
                 }
                 if (team.createTeamScore) {
@@ -5345,13 +5493,13 @@ setInterval(() => {
                 });
               }
 
-              console.log(reward * team.simpleTax)
+              console.log(reward * team.simpleTax);
 
               var complexTax =
                 reward *
                 (calculateTax(player.score, 10000000) / team.playerTax);
               if (team.owner.id !== player.id || team.createTeamScore) {
-                console.log(complexTax)
+                console.log(complexTax);
                 reward -= complexTax;
               }
               if (team.createTeamScore) {
