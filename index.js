@@ -2,15 +2,22 @@
 
 const express = require("express");
 const app = express();
-const http = require("http");
+const https = require('https');
+const fs = require('fs');
 const path = require("path");
 const SAT = require("sat");
 const { setTimeout } = require("timers");
 const WebSocket = require("ws");
-//const crypto = require("crypto");
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-const fs = require("fs");
+
+const options = {
+  key: fs.readFileSync('C:/Certs/websocket/websocketpointer.duckdns.org-key.pem'),
+  cert: fs.readFileSync('C:/Certs/websocket/websocketpointer.duckdns.org-chain.pem'),
+  passphrase: "justGiveMeTLS321"
+};
+
+const serverHttps = https.createServer(options);
+
+const wss = new WebSocket.Server({ server: serverHttps });
 const helmet = require("helmet");
 const protobuf = require("protobufjs");
 
@@ -64,7 +71,7 @@ async function runProtobufExample() {
 
 runProtobufExample();
 
-app.use(helmet.noSniff());
+/*app.use(helmet.noSniff());
 
 app.use(
   helmet.hsts({
@@ -92,13 +99,11 @@ app.use(
       imgSrc: ["'self'", "https://images.com"],
       connectSrc: [
         "'self'",
-        "ws://71.73.66.5:42534",
-        "ws://71.73.66.5:4000",
-        "ws://71.73.66.5:42534/public/index.html/ws",
-        "ws://71.73.66.5:4000/",
+        "ws://71.73.66.5:443",
+        "wss://71.73.66.5:443",
         "ws://127.0.0.1:4000",
-        "wss://71.73.66.5:4000",
-        "ws://192.168.9.1:4000",
+        "wss://127.0.0.1:4000",
+        "wss://websocketpointer.duckdns.org:443",
         "wss://deip-io3.glitch.me/",
       ], // Restrict fetch/XHR/WebSockets
       frameAncestors: ["'none'"],
@@ -109,10 +114,10 @@ app.use(
       ],
     },
   })
-);
+);*/
 
 app.use(express.static(path.join(__dirname, "public")));
-var port = process.env.PORT;
+
 
 /*
  * documention is needed for each of these arrays/objects
@@ -1740,11 +1745,19 @@ var invaled_requests = [];
 
 const connections = [];
 
+
+serverHttps.on('request', () => console.log('HTTP request'));
+serverHttps.on('upgrade', (req, socket, head) => {
+  console.log('Upgrade request');
+});
+
+serverHttps.on('request', app);
+
 // Initialize a logging counter
 let logCounter = 0;
 const LOG_LIMIT = 1300; // Maximum number of logs
 
-wss.on("connection", (socket, req) => {
+wss.on('connection', (socket, req) => {
   let connection = { socket: socket, playerId: null };
   let handshaked = false;
   connections.push(connection);
@@ -6144,6 +6157,6 @@ function smartbroadcast(type, data, senderConn) {
   });
 }
 
-const listener = server.listen(4000, "0.0.0.0", function () {
+const listener = serverHttps.listen(4000, "0.0.0.0", function () {
   console.log("Your app is listening on port " + listener.address().port);
 });

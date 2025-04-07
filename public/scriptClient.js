@@ -79,7 +79,7 @@
   function ongame() {
     const socket =
       new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(
-        "ws://127.0.0.1:4000"
+        "wss://127.0.0.1:4000"
       );
     socket.binaryType = "arraybuffer";
     const schema = `
