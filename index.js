@@ -12,9 +12,8 @@ const WebSocket = require("ws");
 const options = {
   key: fs.readFileSync('C:/Certs/websocket/websocketpointer.duckdns.org-key.pem'),
   cert: fs.readFileSync('C:/Certs/websocket/websocketpointer.duckdns.org-chain.pem'),
-  passphrase: "justGiveMeTLS321"
+  passphrase: fs.readFileSync( 'C:/Certs/websocket/authkey.txt', 'utf8').trim()
 };
-
 const serverHttps = https.createServer(options);
 
 const wss = new WebSocket.Server({ server: serverHttps });
@@ -71,7 +70,7 @@ async function runProtobufExample() {
 
 runProtobufExample();
 
-/*app.use(helmet.noSniff());
+app.use(helmet.noSniff());
 
 app.use(
   helmet.hsts({
@@ -81,7 +80,7 @@ app.use(
   })
 );
 
-app.use(
+/*app.use(
   helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: ["'self'"], // Only allow content from the same origin
