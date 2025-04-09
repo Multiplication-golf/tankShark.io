@@ -14,20 +14,44 @@
       content="A fun open world game were everyone is foe. Enjoy lots of fun with loads of new tanks and shapes."
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="/favicons/favicon.ico" />
+    <link
+      rel="icon"
+      id="icon"
+      type="image/x-icon"
+      href="/favicons/favicon.ico"
+    />
   </head>
   <body>
-    <div id="start" class="container">
-      <h1>Welcome to TankShark!</h1>
-      <input
-        type="text"
-        id="username"
-        placeholder="Enter your username"
-        autocomplete="given-name"
-        maxlength="11"
-      />
-      <button id="playButton">Play</button>
-    </div>
+    <header class="landing-page" id="landing-page">
+      <div class="center100">
+        <div id="start" class="container">
+          <h1>Welcome to TankShark!</h1>
+          <input
+            type="text"
+            id="username"
+            placeholder="Enter your username"
+            autocomplete="given-name"
+            maxlength="11"
+          />
+          <button id="playButton">Play</button>
+        </div>
+      </div>
+      <div class="badgeLevelDiv" id="badgeLevelDiv"></div>
+      <div class="center100">
+        <footer class="botton-footer">
+          <select name="ip" id="IP" class="ip-slecet">
+            <option value="wss://websocketpointer.duckdns.org">
+              wss://websocketpointer.duckdns.org
+            </option>
+            <option value="ws://127.0.0.1:400">ws://127.0.0.1:4500</option>
+            <option value="ws://192.168.9.100:4500">
+              ws://192.168.9.100:4500
+            </option>
+            <option value="ws://localhost:4500">ws://localhost:4500</option>
+          </select>
+        </footer>
+      </div>
+    </header>
     <div
       id="game"
       style="
@@ -131,21 +155,23 @@
         id="ghostCanvas"
         style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh"
       ></canvas>
-      <div style="width:100vw; text-align: center;">
-          <div class="outer-box" id="teamMain">
-            <div class="inner-box">
-                <span class="close-btn" id="Xbutton">X</span>
-                <div class="containerA" id="teamcontainer">
-                  <div class="team">Team1</div>
-                  <div class="team">Team2</div>
-                  <div class="team">Team3</div>
-                  <div class="team">Team4</div>
-                </div>
+      <div style="width: 100vw; text-align: center">
+        <div class="outer-box" id="teamMain">
+          <div class="inner-box">
+            <span class="close-btn" id="Xbutton">X</span>
+            <div class="containerA" id="teamcontainer">
+              <div class="team">Team1</div>
+              <div class="team">Team2</div>
+              <div class="team">Team3</div>
+              <div class="team">Team4</div>
             </div>
-            <div class="button-container">
-                <button class="btn btn-join" id="join/leave">Join</button>
-                <button class="btn btn-create" id="create/delete">Create team</button>
-            </div>
+          </div>
+          <div class="button-container">
+            <button class="btn btn-join" id="join/leave">Join</button>
+            <button class="btn btn-create" id="create/delete">
+              Create team
+            </button>
+          </div>
         </div>
       </div>
       <div
@@ -200,149 +226,190 @@
         >
       </div>
 
-      <div style="width: 100%;">
-      <div
-        id="teambox"
-        style="
-          text-align: center;
-          background: #fff;
-          padding: -10px 20px 20px 20px;
-          border-radius: 8px;
-          z-index: 9;
-          width: 400px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          display: none;
-          position: absolute;
-          top: calc(50vh - 155px);
-          left: calc(50vw - 200px);
-        "
-      >
-        <h1 style="z-index: 10">Your team name</h1>
-        <label class="label" for="checkbox">Hidden:</label>
-        <label class="switch" id="checkbox">
-          <input type="checkbox" id="hidden" class="null" />
-          <span class="slider round" id="getval"></span>
-        </label>
-        <br /><br />
-        <label class="label" for="checkbox2">Private:</label>
-        <label class="switch" id="checkbox2">
-          <input type="checkbox" id="private" class="null2" />
-          <span class="slider round" id="getval2"></span>
-        </label>
+      <div style="width: 100%">
+        <div
+          id="teambox"
+          style="
+            text-align: center;
+            background: #fff;
+            padding: -10px 20px 20px 20px;
+            border-radius: 8px;
+            z-index: 9;
+            width: 400px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: none;
+            position: absolute;
+            top: calc(50vh - 155px);
+            left: calc(50vw - 200px);
+          "
+        >
+          <h1 style="z-index: 10">Your team name</h1>
+          <label class="label" for="checkbox">Hidden:</label>
+          <label class="switch" id="checkbox">
+            <input type="checkbox" id="hidden" class="null" />
+            <span class="slider round" id="getval"></span>
+          </label>
+          <br /><br />
+          <label class="label" for="checkbox2">Private:</label>
+          <label class="switch" id="checkbox2">
+            <input type="checkbox" id="private" class="null2" />
+            <span class="slider round" id="getval2"></span>
+          </label>
 
-        <h2>Config</h2>
-        <div class="configDiv">
+          <h2>Config</h2>
+          <div class="scrollDiv" id="scrollDiv">
+            <div class="configDiv">
+              <div style="width: 100%; text-align: center; margin-bottom: 10px">
+                <img src="assets/gear.png" style="width: 5vw; height: 5vw" />
+              </div>
+              <label class="label" for="teamDescription"
+                >Team Description:</label
+              >
+              <input
+                type="text"
+                id="teamDescription"
+                placeholder="Enter your team's description"
+                autocomplete=""
+                maxlength="200"
+              />
+              <br />
+              <label class="label" for="teamSelcetor">Team type:</label>
+              <br />
+              <div id="teamSelcetor" style="text-align: left">
+                <div>
+                  <input
+                    type="radio"
+                    id="Anarchy"
+                    name="teamType"
+                    value="Anarchy"
+                    class="inlineRadio"
+                    checked
+                  />
+                  <label for="Anarchy">Anarchy</label>
+                </div>
 
-          <label class="label" for="teamDescription">Team Description:</label>
+                <div>
+                  <input
+                    type="radio"
+                    id="Democracy"
+                    name="teamType"
+                    value="Democracy"
+                    class="inlineRadio"
+                  />
+                  <label for="Democracy">Democracy</label>
+                </div>
+
+                <div>
+                  <input
+                    type="radio"
+                    id="Communist"
+                    name="teamType"
+                    value="Communist"
+                    class="inlineRadio"
+                  />
+                  <label for="Communist">Communist</label>
+                </div>
+
+                <div>
+                  <input
+                    type="radio"
+                    id="Constitutional"
+                    name="teamType"
+                    value="Constitutional"
+                    class="inlineRadio"
+                  />
+                  <label for="Constitutional">Constitutional</label>
+                </div>
+              </div>
+
+              <div id="taxContiener" style="margin-top: 10%"></div>
+              <div class="centerer">
+                <div class="coolLineBreak"></div>
+              </div>
+              <h1>Taxes D:</h1>
+              <label class="label" for="teamScore">Create a team score:</label>
+              <label class="switch" id="teamScore">
+                <input type="checkbox" id="teamScore" class="null3" />
+                <span class="slider round" id="getTeamScore"></span> </label
+              ><br />
+              <p class="addedInfo">
+                Not creating a team score will foward the 50% of the score to
+                you
+              </p>
+              <br />
+              <input
+                type="range"
+                id="Simple"
+                name="Simple"
+                min="0"
+                max="1.00"
+                value="0.05"
+                step="0.01"
+                class="taxRange"
+                list="markers"
+              />
+              <p for="Simple" class="taxLable">Flat tax rate</p>
+              <br />
+              <input
+                type="range"
+                id="scoreBased"
+                name="scoreBased"
+                min="0"
+                max="1.00"
+                value="0"
+                step="0.01"
+                class="taxRange"
+                list="markers"
+              />
+              <p for="scoreBased" class="taxLable">
+                Player's score based tax rate
+              </p>
+              <br />
+              <input
+                type="range"
+                id="ScheduledBased"
+                name="ScheduledBased"
+                min="0"
+                max="1.00"
+                value="0"
+                step="0.01"
+                class="taxRange"
+                list="markers"
+              />
+              <br />
+              <select id="time-select">
+                <option value="1">1m</option>
+                <option value="2">2m</option>
+                <option value="4">4m</option>
+                <option value="8">8m</option>
+                <option value="16">16m</option>
+                <option value="0.00016666666">0.01s (do it I dare you)</option>
+              </select>
+              <br />
+              <p for="scoreBased">Scheduled tax rate</p>
+
+              <datalist id="markers">
+                <option value="0"></option>
+                <option value="0.25"></option>
+                <option value="0.50"></option>
+                <option value="0.75"></option>
+                <option value="1.00"></option>
+              </datalist>
+            </div>
+          </div>
+
           <input
             type="text"
-            id="teamDescription"
-            placeholder="Enter your team's description"
-            autocomplete=""
-            maxlength="200"
+            id="teamname"
+            style="z-index: 10"
+            placeholder="Enter your team name"
+            autocomplete="given-lastname"
+            maxlength="11"
           />
-          <br>
-          <label class="label" for="teamSelcetor">Team type:</label>
-          <br>
-          <div id="teamSelcetor" style="text-align: left;">
-          <div>
-            <input type="radio" id="Anarchy" name="teamType" value="Anarchy" class="inlineRadio" checked />
-            <label for="Anarchy">Anarchy</label>
-          </div>
-        
-          <div>
-            <input type="radio" id="Democracy" name="teamType" value="Democracy" class="inlineRadio"/>
-            <label for="Democracy">Democracy</label>
-          </div>
-        
-          <div>
-            <input type="radio" id="Communist" name="teamType" value="Communist" class="inlineRadio"/>
-            <label for="Communist">Communist</label>
-          </div>
-
-          <div>
-            <input type="radio" id="Constitutional" name="teamType" value="Constitutional" class="inlineRadio"/>
-            <label for="Constitutional">Constitutional</label>
-          </div>
+          <button id="teamButton" style="z-index: 10; margin-bottom: 8px">
+            Create team
+          </button>
         </div>
-
-        <div id="taxContiener" style="margin-top: 10%;"></div>
-          <div class="centerer">
-            <div class="coolLineBreak"></div>
-          </div>
-          <h1>Taxes D:</h1>
-          <label class="label" for="teamScore">Create a team score:</label>
-          <label class="switch" id="teamScore">
-            <input type="checkbox" id="teamScore" class="null3" />
-            <span class="slider round" id="getTeamScore"></span>
-          </label><br>
-          <p class="addedInfo">Not creating a team score will foward the 50% of the score to you</p>
-          <br>
-          <input
-            type="range"
-            id="Simple"
-            name="Simple"
-            min="0"
-            max="1.00"
-            value="0.05"
-            step="0.01"
-            class="taxRange"
-            list="markers" />
-          <p for="Simple" class="taxLable">Flat tax rate</p>
-          <br>
-          <input
-            type="range"
-            id="scoreBased"
-            name="scoreBased"
-            min="0"
-            max="1.00"
-            value="0"
-            step="0.01"
-            class="taxRange"
-            list="markers" />
-          <p for="scoreBased" class="taxLable">Player's score based tax rate</p>
-          <br>
-          <input
-            type="range"
-            id="ScheduledBased"
-            name="ScheduledBased"
-            min="0"
-            max="1.00"
-            value="0"
-            step="0.01"
-            class="taxRange"
-            list="markers" />
-          <br>
-          <select id="time-select">
-            <option value="1">1m</option>
-            <option value="2">2m</option>
-            <option value="4">4m</option>
-            <option value="8">8m</option>
-            <option value="16">16m</option>
-            <option value="0.00016666666">0.01s (do it I dare you)</option>
-          </select>
-          <br>
-          <p for="scoreBased">Scheduled tax rate</p>
-
-          <datalist id="markers">
-            <option value="0"></option>
-            <option value="0.25"></option>
-            <option value="0.50"></option>
-            <option value="0.75"></option>
-            <option value="1.00"></option>
-          </datalist>
-        </div>
-
-        <input
-          type="text"
-          id="teamname"
-          style="z-index: 10"
-          placeholder="Enter your team name"
-          autocomplete="given-lastname"
-          maxlength="11"
-        />
-        <button id="teamButton" style="z-index: 10; margin-bottom: 8px;">Create team</button>
-      </div>
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/light/protobuf.min.js"></script>

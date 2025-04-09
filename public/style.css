@@ -13,6 +13,8 @@ body {
   background: #ffffff;
   padding: 20px;
   border-radius: 8px;
+  width: 33%;
+  margin: auto;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -83,17 +85,41 @@ option {
   margin-top:-5%;
 }
 
+.scrollDiv {
+  width: calc("100% + 9px")
+}
+
+.center100 {
+  width:100%; 
+  text-align: center;
+}
+
+.badgeLevelDiv {
+  line-height: 18px;
+  height: 65%;
+  margin-top: 2.5%;
+  margin-bottom: 2.5%;
+  margin-left: 5%;
+  background-color: white;
+  position: fixed;
+  width: 20%;
+  float: left;
+  overflow: auto;
+  border: rgb(226, 226, 226) solid 8px;
+  border-radius: 2vw;
+}
+
 .configDiv {
   line-height: 18px;
   height: 20vh;
-  margin-top: 5%;
-  margin-bottom: 5%;
-  padding-top: 5%;
-  padding-bottom: 5%;
+  margin: 5%;
+  float: left;
   overflow: auto;
   border-top: black solid 2px;
   border-bottom: black solid 2px;
 }
+
+.configDiv::-webkit-scrollbar { display: none;}
 
 .inlineRadio {
   display: inline-block; 
@@ -230,6 +256,11 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
+.landing-page {
+  width: 100%;
+  height: 100%;
+}
+
 .outer-box {
   position: absolute;
   top: calc(50vh - 208px);
@@ -242,6 +273,37 @@ input:checked + .slider:before {
   border-radius: 12px;
   padding: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  border-left: black solid 2px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #01b4fa7e; 
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #63f8fd7e; 
+}
+
+.ip-slecet {
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.botton-footer {
+  position:absolute;
+  bottom: 0;
 }
 
 .inner-box {

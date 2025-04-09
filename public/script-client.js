@@ -3,6 +3,23 @@
   function generateRandomNumber(min, max) {
     return Math.random() * (max - min) + min;
   }
+
+  function getCookie(cname) {
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(";");
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == " ") {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
   var username;
 
   const schema = `
@@ -77,9 +94,12 @@
   }
 
   function ongame() {
+
+    let getIP = document.getElementById("IP").value;
+
     const socket =
       new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(
-        "wss://127.0.0.1:4000"
+        getIP
       );
     socket.binaryType = "arraybuffer";
     const schema = `
@@ -118,7 +138,7 @@
     canvas.style.left = "0";
 
     document.getElementsByTagName("body")[0].style.cursor =
-      "url('https://deip-io3.glitch.me/targetpointer1.cur'), auto";
+      `url('${window.location.origin}/targetpointer1.cur'), auto`;
     var pi180 = Math.PI / 180;
     let lastTime = performance.now();
     let frameTimes = [];
@@ -155,22 +175,6 @@
       "autobasic",
     ];
 
-    function getCookie(cname) {
-      let name = cname + "=";
-      let decodedCookie = decodeURIComponent(document.cookie);
-      let ca = decodedCookie.split(";");
-      for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) == " ") {
-          c = c.substring(1);
-        }
-        if (c.indexOf(name) == 0) {
-          return c.substring(name.length, c.length);
-        }
-      }
-      return "";
-    }
-
     var HANDSHAKE = {
       null: [{ null: null }],
       null: [{ null: null }],
@@ -183,8 +187,6 @@
     var players = {};
     var playerX = canvas.width / 2;
     var playerY = canvas.height / 2;
-    var playerMovementX = 0;
-    var playerMovementY = 0;
     var playerHealth = 100;
     var maxhealth = 100;
     var playerHealTime = 0;
@@ -196,7 +198,6 @@
     var __type__ = "basic";
     var typeindex = 0;
     var selected_class = null;
-    var xp = 0;
     var level = 0;
     var upgradePoints = 0;
     var maxUP = 8;
@@ -303,6 +304,7 @@
     var teamOver = false;
     var userId = getCookie("userId");
     var typedtext = "";
+    var radiusConfig = {};
 
     // 🧠 Miscellaneous / Game Logic
     var vertices = [];
@@ -971,6 +973,8 @@
             case "Config": {
               baseFireInterval = data.baseFireInterval;
               scaleUp = data.scaleUp;
+              radiusConfig = data.colorGradeint;
+              console.log(radiusConfig)
               playerBaseSize = data.playerBaseSize;
               for (let i = 0; i < data.map.size / 500; i++) {
                 for (let j = 0; j < data.map.size / 500; j++) {
@@ -2834,6 +2838,27 @@
         });
       }
 
+      
+      let gradient = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, playerSize * playerBaseSize, canvas.width / 2, canvas.height / 2, radiusConfig.radius);
+
+      gradient.addColorStop(radiusConfig.build[0], "#00000000");
+      gradient.addColorStop(radiusConfig.build[1], "#61f7ff");
+      
+
+      ctx.beginPath();
+      ctx.arc(
+        canvas.width / 2,
+        canvas.height / 2,
+        radiusConfig.radius,
+        0,
+        2 * Math.PI,
+        false
+      );
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      ctx.closePath();
+
       for (let i = 0; i < Object.keys(tankdatacannon).length; i++) {
         ctx.fillStyle = "#b3b3b3";
         let tankdatacannondata = tankdatacannon[i];
@@ -3185,14 +3210,14 @@
             ? statecycle % 10
             : backwardsObj[(statecycle % 10) - 5];
         percentage /= 10;
-        let newrgb = mix([0, 0, 255], [255, 255, 255], percentage);
+        let newrgb = mix([130, 130, 130], [255, 255, 255], percentage);
         ctx.fillStyle = `rgb(${newrgb[0]} ${newrgb[1]} ${newrgb[2]})`;
       } else {
-        ctx.fillStyle = "blue";
+        ctx.fillStyle = "#828282";
       }
       ctx.fill();
       ctx.lineWidth = 5;
-      ctx.strokeStyle = "darkblue";
+      ctx.strokeStyle = "#aaaaaa";
       ctx.stroke();
 
       // Draw background bar
@@ -4290,6 +4315,30 @@
             });
           }
 
+          let gradient = ctx.createRadialGradient(playerX - cavansX, playerY - cavansY, player.size * playerBaseSize, playerX - cavansX, playerY - cavansY, radiusConfig.radius);
+
+          gradient.addColorStop(radiusConfig.build[0], "#00000000");
+          if (sameTeam) {
+            gradient.addColorStop(radiusConfig.build[1], "#61f7ff");
+          } else {
+            gradient.addColorStop(radiusConfig.build[1], "#ff2121");
+          }
+          
+
+          ctx.beginPath();
+          ctx.arc(
+            playerX - cavansX,
+            playerY - cavansY,
+            radiusConfig.radius,
+            0,
+            2 * Math.PI,
+            false
+          );
+          ctx.fillStyle = gradient;
+          ctx.fill();
+
+          ctx.closePath();
+
           for (let i = 0; i < Object.keys(tankdatacannon).length; i++) {
             ctx.fillStyle = "#b3b3b3";
             let tankdatacannondata = tankdatacannon[i];
@@ -4547,57 +4596,38 @@
           }
 
           ctx.beginPath();
-          ctx.fillStyle = squareColor;
+
           ctx.arc(
             playerX - cavansX,
             playerY - cavansY,
-            player.size * FOV * 40,
+            player.size * playerBaseSize,
             0,
             2 * Math.PI,
             false
           );
-          let num = player.statecycle % 10;
+
           var sameTeam =
             players[player.id].team === players[playerId].team &&
             players[player.id].team !== null &&
             players[playerId].team !== null;
           if (
-            num === 0 &&
-            (player.state === "start" || player.state === "damaged")
+            player.state === "start" || player.state === "damaged"
           ) {
-            if (!sameTeam) {
-              let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
-              let percentage =
-                player.statecycle % 10 <= 5
-                  ? player.statecycle % 10
-                  : backwardsObj[(player.statecycle % 10) - 5];
-              percentage /= 10;
-              let newrgb = mix([255, 0, 0], [255, 255, 255], percentage);
-              ctx.fillStyle = `rgb(${newrgb[0]} ${newrgb[1]} ${newrgb[2]})`;
-            } else {
-              let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
-              let percentage =
-                player.statecycle % 10 <= 5
-                  ? player.statecycle % 10
-                  : backwardsObj[(player.statecycle % 10) - 5];
-              percentage /= 10;
-              let newrgb = mix([0, 0, 255], [255, 255, 255], percentage);
-              ctx.fillStyle = `rgb(${newrgb[0]} ${newrgb[1]} ${newrgb[2]})`;
-            }
-          } else if (!sameTeam) {
-            ctx.fillStyle = "red";
-            ctx.strokeStyle = "darkred";
-          } else if (sameTeam) {
-            ctx.fillStyle = "blue";
-            ctx.strokeStyle = "darkblue";
+            let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
+            let percentage =
+              player.statecycle % 10 <= 5
+                ? player.statecycle % 10
+                : backwardsObj[(player.statecycle % 10) - 5];
+            percentage /= 10;
+            let newrgb2 = mix([130, 130, 130], [255, 255, 255], percentage);
+            ctx.fillStyle = `rgb(${newrgb2[0]} ${newrgb2[1]} ${newrgb2[2]})`;
+          } else {
+            ctx.fillStyle = "#828282";
+            ctx.strokeStyle = "#aaaaaa";
           }
           ctx.fill();
           ctx.lineWidth = 5;
-          //ctx.strokeStyle = "darkblue";
-          ctx.stroke();
 
-          ctx.fill();
-          ctx.lineWidth = 5;
           ctx.stroke();
           ctx.closePath();
 
@@ -4927,6 +4957,37 @@
       requestAnimationFrame(draw);
     }
   }
+
+  let getIP = document.getElementById("IP").value;
+  async function getBagdeData() {
+    const url = "http://localhost:4500/currentbadge";
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({userId: getCookie("userId")})
+      });
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+  
+      return await response.json();
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  async function t() {
+    console.log("fetching");
+    var data = await getBagdeData();
+    console.log("data:",data);
+  };
+
+  t();
+  
 
   document.getElementById("playButton").addEventListener("mousedown", () => {
     username = document.getElementById("username").value;

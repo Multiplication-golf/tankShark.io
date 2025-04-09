@@ -9,7 +9,7 @@ const path = require('path');
 const server = https.createServer({
     key: fs.readFileSync('C:/Certs/websocket/websocketpointer.duckdns.org-key.pem'),
     cert: fs.readFileSync('C:/Certs/websocket/websocketpointer.duckdns.org-chain.pem'),
-    passphrase: "justGiveMeTLS321"
+    passphrase: fs.readFileSync("C:/Certs/websocket/authkey.txt", "utf8").trim()
   });
 
 // Create WebSocket server attached to HTTPS server

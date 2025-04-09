@@ -2,21 +2,43 @@
 
 const express = require("express");
 const app = express();
-const https = require('https');
-const fs = require('fs');
+const https = require("https");
+const http = require("http");
+const fs = require("fs");
 const path = require("path");
 const SAT = require("sat");
 const { setTimeout } = require("timers");
 const WebSocket = require("ws");
 
 const options = {
-  key: fs.readFileSync('C:/Certs/websocket/websocketpointer.duckdns.org-key.pem'),
-  cert: fs.readFileSync('C:/Certs/websocket/websocketpointer.duckdns.org-chain.pem'),
-  passphrase: fs.readFileSync( 'C:/Certs/websocket/authkey.txt', 'utf8').trim()
+  key: fs.readFileSync(
+    "C:/Certs/websocket/websocketpointer.duckdns.org-key.pem"
+  ),
+  cert: fs.readFileSync(
+    "C:/Certs/websocket/websocketpointer.duckdns.org-chain.pem"
+  ),
+  passphrase: fs.readFileSync("C:/Certs/websocket/authkey.txt", "utf8").trim(),
 };
+
+const httpServer = http.createServer();
 const serverHttps = https.createServer(options);
 
-const wss = new WebSocket.Server({ server: serverHttps });
+const wss = new WebSocket.Server({ noServer: true });
+
+function handleUpgrade(server, name) {
+  server.on("upgrade", (req, socket, head) => {
+    console.log(`[${name}] Upgrade request from`, req.socket.remoteAddress);
+
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit("connection", ws, req);
+    });
+  });
+}
+
+// Attach to both servers
+handleUpgrade(httpServer, "HTTP");
+handleUpgrade(serverHttps, "HTTPS");
+
 const helmet = require("helmet");
 const protobuf = require("protobufjs");
 
@@ -117,7 +139,6 @@ app.use(
 
 app.use(express.static(path.join(__dirname, "public")));
 
-
 /*
  * documention is needed for each of these arrays/objects
  * An example object should be provided
@@ -214,6 +235,9 @@ let autocannons = [];
 /**/
 
 let badIP = {};
+/**/
+
+let IPs = [];
 /**/
 
 let bullet_intervals = [];
@@ -388,6 +412,7 @@ const CONFIG = {
   playerPlayerSightRange: 5000,
   playerItemSightRange: 1300,
   fadeRate: 150,
+  deathTime: 200,
   itemCollisionRangeMultiplyer: 1.5,
   playerCollisionRangeMultiplyer: 2,
   map: {
@@ -398,6 +423,18 @@ const CONFIG = {
     boundRange: 50,
     buildSize: 1000,
   },
+  badgeLevels: [
+    { minScore: 50000000, maxScore: null, badge: "/badges/10.png" },
+    { minScore: 25000000, maxScore: 49999999, badge: "/badges/9.png" },
+    { minScore: 10000000, maxScore: 24999999, badge: "/badges/8.png" },
+    { minScore: 5000000, maxScore: 9999999, badge: "/badges/7.png" },
+    { minScore: 2500000, maxScore: 4999999, badge: "/badges/6.png" },
+    { minScore: 1000000, maxScore: 2499999, badge: "/badges/5.png" },
+    { minScore: 500000, maxScore: 999999, badge: "/badges/4.png" },
+    { minScore: 250000, maxScore: 499999, badge: "/badges/3.png" },
+    { minScore: 100000, maxScore: 249999, badge: "/badges/2.png" },
+    { minScore: 0, maxScore: 99999, badge: "/badges/1.png" },
+  ],
   colorUpgardes: [
     "#f54242",
     "#fa8050",
@@ -408,6 +445,7 @@ const CONFIG = {
     "#5181fc",
     "#5c14f7",
   ],
+  colorGradeint: { radius: 50, build: { 0: 1.0, 1: 0.0 } },
   govermentTypes: ["Anarchy", "Democracy", "Communist", "Constitutional"],
   default: "Anarchy",
   canVote: ["Democracy", "Constitutional"],
@@ -1744,27 +1782,103 @@ var invaled_requests = [];
 
 const connections = [];
 
-
-serverHttps.on('request', () => console.log('HTTP request'));
-serverHttps.on('upgrade', (req, socket, head) => {
-  console.log('Upgrade request');
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "http://127.0.0.1:5500");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
 });
 
-serverHttps.on('request', app);
+serverHttps.on("request", () => console.log("HTTP request"));
 
-// Initialize a logging counter
+serverHttps.on("upgrade", (req, socket, head) => {
+  console.log("Upgrade request");
+});
+
+serverHttps.on("request", app);
+httpServer.on("request", app);
+
 let logCounter = 0;
-const LOG_LIMIT = 1300; // Maximum number of logs
+const LOG_LIMIT = 1300;
 
-wss.on('connection', (socket, req) => {
-  let connection = { socket: socket, playerId: null };
+app.use(express.json());
+
+app.post("/currentbadge", (req, res) => {
+  console.log("currentbadge request", req.body.userId);
+  let badge = "";
+  let playerScore = 0;
+  if (req.body.userId) {
+    var _player = userbase.find((_player) => {
+      return Math.abs(_player.userid - req.body.userId) < 0.0001;
+    });
+
+    if (_player !== undefined) {
+      playerScore = _player.scores.reduce((a, b) => {
+        return a + b.score;
+      }, 0);
+      badge = CONFIG.badgeLevels.find((badgeLevel) => {
+        if (
+          between(
+            playerScore,
+            badgeLevel.minScore,
+            badgeLevel.maxScore !== null ? badgeLevel.maxScore : Infinity
+          )
+        ) {
+          return badgeLevel.badge;
+        }
+      });
+    } else {
+      badge = "/badges/1.png";
+    }
+  } else {
+    badge = "/badges/1.png";
+  }
+  res.send({
+    badge: badge,
+    playerScore: playerScore,
+    levelData: CONFIG.badgeLevels,
+  });
+});
+
+wss.on("connection", (socket, req) => {
+  let connection = {
+    socket: socket,
+    playerId: null,
+    IP: req.socket.remoteAddress,
+  };
   let handshaked = false;
   connections.push(connection);
+  IPs.push(req.socket.remoteAddress);
+
+  let duplicateIPs = IPs.filter((e, i, a) => a.indexOf(e) !== i);
+
+  if (
+    req.socket.remoteAddress !==
+      fs.readFileSync("C:/Certs/websocket/fetchIP.txt", "utf8") &&
+    duplicateIPs.length > 0
+  ) {
+    duplicateIPs.forEach((duplicateIP) => {
+      connections
+        .find((con) => con.IP === duplicateIP)
+        .socket.close(1000, "Duplicate IP detected");
+    });
+  }
+
+  let current = 0;
+
+  setInterval(() => {
+    current = 0;
+  }, 998);
 
   let stateupdate = null;
   socket.on("message", (message) => {
     const { type, data } = JSON.parse(message);
 
+    current++;
+    if (current >= 1000) {
+      socket.close(1000, "Too many requests");
+      return;
+    }
     switch (type) {
       case "newPlayer": {
         var newId = crypto.randomUUID();
@@ -1775,7 +1889,7 @@ wss.on('connection', (socket, req) => {
           enumerable: true,
         });
         players[newId].id = newId;
-        socket.send(JSON.stringify({type:"newId",data:newId}));
+        socket.send(JSON.stringify({ type: "newId", data: newId }));
         connection.playerId = newId;
         connections.forEach((con) => {
           if (con.socket === connection.socket) {
@@ -2154,8 +2268,6 @@ wss.on('connection', (socket, req) => {
           { id: data.owner.id, username: players[data.owner.id].username },
         ];
 
-        /* defualts to: Anarchy, Democracy, Communist, and Constitutnal */
-
         let govType = CONFIG.default;
         govType = data.govType ?? govType;
 
@@ -2309,7 +2421,7 @@ wss.on('connection', (socket, req) => {
         data.powers = CONFIG.powers[data.govType];
 
         if (data.powers.canDedicatePower) {
-          console.log("Created lowerLevelPlayers")
+          console.log("Created lowerLevelPlayers");
           data.lowerLevelPlayers = [];
         }
 
@@ -3913,16 +4025,29 @@ wss.on('connection', (socket, req) => {
           }
           if (team.owner.id === connection.playerId) {
             if (teamplayers.length !== 0) {
-              team.owner = teamplayers[0];
-              emit("newOwner", {
-                teamID: team.teamID,
-                playerid: teamplayers[0].id,
-              });
-              PendingJoinRequests.forEach((_request) => {
-                if (_request.owner === connection.playerId) {
-                  _request.owner = teamplayers[0].id;
-                }
-              });
+              if (team.lowerLevelPlayers.length > 0) {
+                team.owner = team.lowerLevelPlayers[0];
+                emit("newOwner", {
+                  teamID: team.teamID,
+                  playerid: team.lowerLevelPlayers[0].id,
+                });
+                PendingJoinRequests.forEach((_request) => {
+                  if (_request.owner === connection.playerId) {
+                    _request.owner = team.lowerLevelPlayers[0].id;
+                  }
+                });
+              } else {
+                team.owner = teamplayers[0];
+                emit("newOwner", {
+                  teamID: team.teamID,
+                  playerid: teamplayers[0].id,
+                });
+                PendingJoinRequests.forEach((_request) => {
+                  if (_request.owner === connection.playerId) {
+                    _request.owner = teamplayers[0].id;
+                  }
+                });
+              }
             } else {
               return false;
             }
@@ -4004,10 +4129,11 @@ wss.on('connection', (socket, req) => {
           0.01
         );
       });
-      if (players[connection.playerId]) _player.scores.push({
-        score: players[connection.playerId].score,
-        Date: Date.now(),
-      });
+      if (players[connection.playerId])
+        _player.scores.push({
+          score: players[connection.playerId].score,
+          Date: Date.now(),
+        });
       _player.scores.sort(function (a, b) {
         if (!a || !b) return false;
         return a.score - b.score;
@@ -4025,7 +4151,9 @@ wss.on('connection', (socket, req) => {
       console.log(e);
     }
     clearInterval(stateupdate);
-    if (players[connection.playerId]) {clearTimeout(players[connection.playerId]?.stateTimeout);}
+    if (players[connection.playerId]) {
+      clearTimeout(players[connection.playerId]?.stateTimeout);
+    }
     teamlist = teamlist.filter((team) => {
       var teamplayers = team.players;
       teamplayers = teamplayers.filter((player) => {
@@ -4038,16 +4166,29 @@ wss.on('connection', (socket, req) => {
       }
       if (team.owner.id === connection.playerId) {
         if (teamplayers.length !== 0) {
-          team.owner = teamplayers[0];
-          emit("newOwner", {
-            teamID: team.teamID,
-            playerid: teamplayers[0].id,
-          });
-          PendingJoinRequests.forEach((_request) => {
-            if (_request.owner === connection.playerId) {
-              _request.owner = teamplayers[0].id;
-            }
-          });
+          if (team.lowerLevelPlayers.length > 0) {
+            team.owner = team.lowerLevelPlayers[0];
+            emit("newOwner", {
+              teamID: team.teamID,
+              playerid: team.lowerLevelPlayers[0].id,
+            });
+            PendingJoinRequests.forEach((_request) => {
+              if (_request.owner === connection.playerId) {
+                _request.owner = team.lowerLevelPlayers[0].id;
+              }
+            });
+          } else {
+            team.owner = teamplayers[0];
+            emit("newOwner", {
+              teamID: team.teamID,
+              playerid: teamplayers[0].id,
+            });
+            PendingJoinRequests.forEach((_request) => {
+              if (_request.owner === connection.playerId) {
+                _request.owner = teamplayers[0].id;
+              }
+            });
+          }
         } else {
           clearInterval(team.taxInterval);
           return false;
@@ -4076,6 +4217,10 @@ wss.on('connection', (socket, req) => {
     });
     emit("autoCannonUPDATE-ADD", autocannons);
     emit("playerLeft", { playerID: connection.playerId });
+  });
+
+  socket.on("error", (error) => {
+    console.error("WebSocket error:", error);
   });
 });
 
@@ -5832,7 +5977,7 @@ setInterval(() => {
         return return_;
       }
       if (item.isdead) {
-        if (Date.now() >= item.deathtime + 150) {
+        if (Date.now() >= item.deathtime + CONFIG.deathTime) {
           return false;
         }
       }
@@ -5888,17 +6033,10 @@ setInterval(() => {
   buildArray = [];
 }, CONFIG.updateInterval);
 
-// debuging
-setInterval(() => {
-  //console.log(bullets[0])
-}, 1000);
-
 async function createAndSendGameObjects(playerArray) {
-  // Load and compile the Protobuf schema
   const root = await protobuf.parse(schema).root;
   const GameObject = root.lookupType("GameObject");
   const GameObjectList = root.lookupType("GameObjectList");
-  // Convert player array to GameObject format (DO NOT encode here)
 
   const gameObjectList = { objects: playerArray };
 
@@ -6158,4 +6296,8 @@ function smartbroadcast(type, data, senderConn) {
 
 const listener = serverHttps.listen(4000, "0.0.0.0", function () {
   console.log("Your app is listening on port " + listener.address().port);
+});
+
+const listener2 = httpServer.listen(4500, "0.0.0.0", function () {
+  console.log("Your app is listening on port " + listener2.address().port);
 });
