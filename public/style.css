@@ -1,13 +1,32 @@
+/* General Styles */
 body {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
   margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f0f0f0;
+  font-family: Nunito, Arial, sans-serif;
+  background-color: #f3f2f2;
 }
 
+::-webkit-scrollbar {
+  width: 8px;
+  border-left: black solid 2px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #01b4fa7e;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #63f8fd7e;
+}
+
+/* Container Styles */
 .container {
   text-align: center;
   background: #ffffff;
@@ -18,27 +37,92 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.label {
-  color: black;
-  font-size: 18px;
-  font-weight: bold;
+.center100 {
+  width: 100%;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
-input {
+.flexcenter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  float: left;
+  height: 100%;
+  width: 20%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Input and Button Styles */
+.inputMain {
   width: 80%;
-  padding: 10px;
-  margin: 10px 0;
+  padding: 3%;
+  margin: 3% 0;
   border: 1px solid #cccccc;
-  border-radius: 4px;
+  border-radius: 10px;
 }
 
-button {
-  padding: 10px 20px;
-  background-color: #6bfaff;
+.mainHeader {
+  font-size: 2em;
+  background: linear-gradient(0deg, rgba(0, 0, 255), rgb(0, 238, 255));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rotateBackground {
+  to {
+    --angle: 360deg;
+  }
+}
+.buttonMain {
+  background-image: none;
+  background-color: #0184ff;
+  border-radius: 10px;
+  width: 100%;
+  height: 100%;
+  font-family: Nunito;
+  font-weight: 1000;
   border: none;
-  border-radius: 4px;
   color: black;
-  font-size: 16px;
+  display: block;
+  font-size: 2em;
+  cursor: pointer;
+}
+
+.divMain {
+  display: inline-block;
+  animation: rotateBackground 1s linear infinite;
+
+  padding: 0.5% 1%;
+  width: 50%;
+  height: 20%;
+
+  background-color: #6bfaff;
+  border-radius: 10px;
+  color: black;
+  font-size: 2em;
+  --angle: 0deg;
+
+  background-origin: border-box;
+  
+  /* Remove the background-color to let gradient show */
+  background-image: 
+    linear-gradient(var(--angle), rgba(68, 0, 255, 0.8), rgba(255, 0, 0, 0) 70.71%),
+    linear-gradient(var(--angle), rgba(0, 217, 255, 0.8), rgba(0, 255, 0, 0) 70.71%);
+  border: 0.3rem solid transparent;
+  animation: rotateBackground 4s linear infinite;
   cursor: pointer;
 }
 
@@ -46,8 +130,43 @@ button:hover {
   background-color: #00d2d6;
 }
 
+/* Labels and Text Styles */
+.label {
+  color: black;
+  font-size: 18px;
+  font-weight: bold;
+}
+
 .addedInfo {
   font-size: 9;
+}
+
+.taxLable {
+  margin-top: -5%;
+}
+
+/* Scrollable Div Styles */
+.scrollDiv {
+  width: calc("100% + 9px");
+}
+
+.configDiv {
+  line-height: 18px;
+  height: 20vh;
+  margin: 5%;
+  float: left;
+  overflow: auto;
+  border-top: black solid 2px;
+  border-bottom: black solid 2px;
+}
+
+.configDiv::-webkit-scrollbar {
+  display: none;
+}
+
+/* Range Input Styles */
+.taxRange {
+  width: 30%;
 }
 
 datalist {
@@ -63,10 +182,166 @@ option {
   padding: 0;
 }
 
-.taxRange {
-  width:30%;
+/* Landing Page Styles */
+.landing-page {
+  width: 100%;
+  height: 100%;
 }
 
+/* Badge Level Div Styles */
+.badgeLevelDiv {
+  line-height: 18px;
+  height: 85%;
+  margin-top: 2.5%;
+  margin-bottom: 2.5%;
+  min-width: 250px;
+  margin-left: 5%;
+  background-color: white;
+  position: fixed;
+  width: 20%;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: end;
+  float: left;
+  overflow: auto;
+  border: rgb(226, 226, 226) solid 8px;
+  border-radius: 2vw;
+}
+
+.lineBreak::after {
+  content: "\A";
+  white-space: pre;
+}
+
+.disabledBadge {
+  background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4));
+  background-clip: border-box;
+  border-color: rgb(122, 122, 122) !important;
+}
+
+.levelContainer {
+  background-color: rgb(243, 243, 243);
+  border: rgb(226, 226, 226) solid 8px;
+  margin: 5px;
+  padding: 5px;
+  display: flex;
+  min-height: 10px;
+  border-radius: 2vw;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Team Box Styles */
+.outer-box {
+  position: absolute;
+  top: calc(50vh - 208px);
+  left: calc(50vw - 158px);
+  display: none;
+  z-index: 8;
+  width: 300px;
+  height: 400px;
+  background-color: #3fcfffa1;
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.inner-box {
+  width: 95%;
+  height: 80%;
+  background-color: #63f1f1;
+  border-radius: 8px;
+  padding: 5px;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  color: black;
+}
+
+.close-btn:hover {
+  color: rgb(255, 0, 0);
+}
+
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.btn {
+  width: 48%;
+  padding: 8px 0;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn-join {
+  background-color: #1eafff;
+  color: black;
+  font-weight: bold;
+}
+
+.btn-create {
+  background-color: #4287f5;
+  color: black;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+/* Team Styles */
+.containerA {
+  width: 90%;
+  height: 95%;
+  z-index: 9;
+  background-color: #5ce6e6;
+  border-radius: 10px;
+  padding: 5px;
+  margin: 5px;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  overflow-y: auto;
+  display: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.team {
+  background-color: #32baff;
+  color: black;
+  text-align: center;
+  padding: 10px 0;
+  width: 90%;
+  border-radius: 10px;
+  margin: 5%;
+  font-weight: bold;
+}
+
+/* Footer Styles */
+.botton-footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.ip-slecet {
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Miscellaneous Styles */
 .coolLineBreak {
   display: flex;
   justify-content: space-between;
@@ -81,127 +356,11 @@ option {
   align-items: center;
 }
 
-.taxLable {
-  margin-top:-5%;
-}
-
-.scrollDiv {
-  width: calc("100% + 9px")
-}
-
-.center100 {
-  width:100%; 
-  text-align: center;
-}
-
-.badgeLevelDiv {
-  line-height: 18px;
-  height: 65%;
-  margin-top: 2.5%;
-  margin-bottom: 2.5%;
-  margin-left: 5%;
-  background-color: white;
-  position: fixed;
-  width: 20%;
-  float: left;
-  overflow: auto;
-  border: rgb(226, 226, 226) solid 8px;
-  border-radius: 2vw;
-}
-
-.configDiv {
-  line-height: 18px;
-  height: 20vh;
-  margin: 5%;
-  float: left;
-  overflow: auto;
-  border-top: black solid 2px;
-  border-bottom: black solid 2px;
-}
-
-.configDiv::-webkit-scrollbar { display: none;}
-
-.inlineRadio {
-  display: inline-block; 
-  width: 20px;
-  margin-left: 5px;
-}
-
-.containerA {
-  width: 90%;
-  height: 95%;
-  z-index: 9;
-  background-color: #5ce6e6; /* Light blue for the container */
-  border-radius: 10px;
-  padding: 5px;
-  margin: 5px;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-  overflow-y: auto;
-  display: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-
-.team {
-  background-color: #32baff; /* Bright blue for the team boxes */
-  color: black;
-  text-align: center;
-  padding: 10px 0;
-  width: 90%;
-  border-radius: 10px;
-  margin:5%;
-  font-weight: bold;
-}
-
 .glow {
   border: thick double #1bfaf6;
 }
 
-.container_::-webkit-scrollbar {
-  width: 8px; /* Scrollbar width */
-}
-
-.container_::-webkit-scrollbar-track {
-  background: #5ce6e6; /* Scrollbar track color */
-  border-radius: 10px; /* Match container's border radius */
-}
-
-.container_::-webkit-scrollbar-thumb {
-  background: #32baff; /* Scrollbar thumb color */
-  border-radius: 10px; /* Rounded scrollbar thumb */
-  border: 2px solid #5ce6e6; /* Optional: adds spacing and blends with track */
-}
-
-.container_::-webkit-scrollbar-thumb:hover {
-  background: #2a9fe5; /* Slightly darker color on hover */
-}
-
-#grid-container {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
-#grid {
-  width: 500vw;
-  height: 500vw;
-  position: absolute;
-  top: -250vw;
-  left: -250vw;
-  -khtml-user-select: none;
-  -o-user-select: none;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  user-select: none;
-}
-.image-chunk {
-  width: 125vw; /* Adjusted for 16 chunks in total */
-  height: 125vw;
-  background-color: #f0f0f0; /* Placeholder background */
-  position: absolute;
-}
+/* Switch Styles */
 .switch {
   position: relative;
   display: inline-block;
@@ -247,113 +406,10 @@ input:checked + .slider:before {
   transform: translateX(26px);
 }
 
-/* Rounded sliders */
 .slider.round {
   border-radius: 34px;
 }
 
 .slider.round:before {
   border-radius: 50%;
-}
-
-.landing-page {
-  width: 100%;
-  height: 100%;
-}
-
-.outer-box {
-  position: absolute;
-  top: calc(50vh - 208px);
-  left: calc(50vw - 158px);
-  display: none;
-  z-index: 8;
-  width: 300px;
-  height: 400px;
-  background-color: #3fcfffa1; /* Middle box color */
-  border-radius: 12px;
-  padding: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-  border-left: black solid 2px;
-}
-
-/* Track */
-::-webkit-scrollbar-track {
-  background: #f1f1f1; 
-}
- 
-/* Handle */
-::-webkit-scrollbar-thumb {
-  background: #01b4fa7e; 
-}
-
-/* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
-  background: #63f8fd7e; 
-}
-
-.ip-slecet {
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.botton-footer {
-  position:absolute;
-  bottom: 0;
-}
-
-.inner-box {
-  width: 95%;
-  height: 80%;
-  background-color: #63f1f1; /* Inner box color */
-  border-radius: 8px;
-  padding:5px;
-  position: relative;
-}
-
-.close-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  font-size: 14px;
-  cursor: pointer;
-  color: black;
-}
-
-.close-btn:hover {
-  color: rgb(255, 0, 0);
-}
-
-.button-container {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-}
-
-.btn {
-  width: 48%;
-  padding: 8px 0;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.btn-join {
-  background-color: #1eafff;
-  color: black;
-  font-weight: bold;
-}
-
-.btn-create {
-  background-color: #4287f5;
-  color: black;
-}
-
-.btn:hover {
-  opacity: 0.9;
 }

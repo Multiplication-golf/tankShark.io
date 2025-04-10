@@ -35,6 +35,59 @@ function handleUpgrade(server, name) {
   });
 }
 
+function getAdjacentRoomKeys(roomkey, range = 1000) {
+  var structRooms = [];
+  var returnKeys = [];
+
+  var buildDistance = (range - (range % 1000)) / 1000
+
+  for (let i = 0; i < 10; i++) {
+    structRooms.push([]);
+    for (let c = 0; c < 10; c++) {
+      structRooms[i].push(`${i * 10 + c}`);
+    }
+  }
+  var indexI = (parseInt(roomkey) - (parseInt(roomkey) % 10)) / 10;
+  //console.log(indexI)
+  var indexC = parseInt(roomkey) % 10;
+
+  const rows = structRooms.length;
+  const cols = structRooms[indexI]?.length || 0;
+
+  for (let i = -buildDistance; i <= buildDistance; i++) {
+    for (let j = -buildDistance; j <= buildDistance; j++) {
+      if (i === 0 && j === 0) continue; // Skip the center element itself
+      const newRow = indexI + i;
+      const newCol = indexC + j;
+      if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols) {
+        returnKeys.push(structRooms[newRow][newCol]);
+      }
+    }
+  }
+  return returnKeys
+}
+
+function getRoomAndBounding(x,y) {
+  let room_ = null
+  for (const roomkey in food_squares) {
+    var room = food_squares[roomkey];
+    if (
+      x >= room.bounds?.x1 &&
+      x <= room.bounds?.x2 &&
+      y >= room.bounds?.y1 &&
+      y <= room.bounds?.y2
+    ) {
+      room_ = roomkey;
+    }
+  }
+  var baseItems = food_squares[room_]?.items || []
+  room_ ??= "0"
+  var otherRooms = getAdjacentRoomKeys(room_)
+  otherRooms.forEach((_room_) => {
+    baseItems.push(...food_squares[_room_].items);
+  })
+}
+
 // Attach to both servers
 handleUpgrade(httpServer, "HTTP");
 handleUpgrade(serverHttps, "HTTPS");
@@ -199,7 +252,7 @@ function getKeyRoom(x, y) {
   return thisroom;
 }
 
-function reassignRoom(item) {
+function reassignRoom(item,room) {
   let found = false;
   var thisroom = {};
   for (const roomkey in food_squares) {
@@ -275,6 +328,8 @@ let explosions = [];
 
 /* warning very senstive*/
 let purge_limit = 5;
+
+
 
 let frame = 0;
 
@@ -445,7 +500,7 @@ const CONFIG = {
     "#5181fc",
     "#5c14f7",
   ],
-  colorGradeint: { radius: 50, build: { 0: 1.0, 1: 0.0 } },
+  colorGradeint: { radius: 60, build: { 0: 0.0, 1: 0.4, 2: 1 } },
   govermentTypes: ["Anarchy", "Democracy", "Communist", "Constitutional"],
   default: "Anarchy",
   canVote: ["Democracy", "Constitutional"],
@@ -522,7 +577,7 @@ for (let i = 0; i < 10; i++) {
       },
       items: [],
     };
-    food_squares["room-" + k.toString()] = room;
+    food_squares[k.toString()] = room;
     currentx += CONFIG.map.buildSize;
     k++;
   }
@@ -535,6 +590,8 @@ food_squares.assignRoom = (item) => {
 };
 
 Object.freeze(CONFIG);
+
+console.log(getAdjacentRoomKeys("35"))
 
 const tankmeta = {
   basic: {
@@ -3209,7 +3266,7 @@ wss.on("connection", (socket, req) => {
           }
         }
         if (maxdistance > CONFIG.playerItemSightRange) {
-          getRoom(
+          getRoomAndBounding(
             players[data.playerId].x,
             players[data.playerId].y
           ).items.forEach((item) => {
@@ -3692,7 +3749,7 @@ wss.on("connection", (socket, req) => {
               }
             }
             if (maxdistance > CONFIG.playerItemSightRange) {
-              getRoom(bullet.x, bullet.y).items.forEach((item) => {
+              getRoomAndBounding(bullet.x, bullet.y).items.forEach((item) => {
                 var distance = MathHypotenuse(
                   item.x - bullet.x,
                   item.y - bullet.y
@@ -4929,7 +4986,7 @@ setInterval(() => {
       if (cannon._type_ === "bulletAuto") {
         var __parentBullet__ = findBullet(cannon.playerid);
       }
-      getRoom(
+      getRoomAndBounding(
         players[cannon.playerid].x,
         players[cannon.playerid].y
       ).items.forEach((item) => {
@@ -5117,7 +5174,7 @@ setInterval(() => {
           item.y <= room.bounds?.y2
         )
       ) {
-        reassignRoom(item);
+        reassignRoom(item,room);
         return false;
       }
       if (
@@ -5134,9 +5191,7 @@ setInterval(() => {
         var target = { x: item.x, y: item.y };
         for (const playerId in players) {
           var player = players[playerId];
-          let distanceX = Math.abs(player.x - item.x);
-          let distanceY = Math.abs(player.y - item.y);
-          let newdistance = MathHypotenuse(distanceX, distanceY);
+          let newdistance = MathHypotenuse(Math.abs(player.x - item.x), Math.abs(player.y - item.y));
           if (newdistance < maxdistance) {
             target = { x: player.x, y: player.y };
             newdistance = maxdistance;
@@ -5332,14 +5387,13 @@ setInterval(() => {
       }
       for (const playerId in players) {
         var player = players[playerId];
-        let distance = MathHypotenuse(item.x - player.x, item.y - player.y);
         let size__ =
           player.size *
             CONFIG.playerBaseSize *
             CONFIG.playerCollisionRangeMultiplyer +
           item.size * CONFIG.itemCollisionRangeMultiplyer;
 
-        if (distance < size__) {
+        if (Math.abs(item.x - player.x) < size__ && Math.abs(item.y - player.y) < size__) {
           var collisionCheck = isPlayerCollidingWithPolygon(
             player,
             item.vertices
@@ -5604,9 +5658,8 @@ setInterval(() => {
         }
       }
       bullets.forEach((bullet) => {
-        if (bullet.sedoRoomKey !== roomkey) return;
-        let distance = MathHypotenuse(item.x - bullet.x, item.y - bullet.y);
-        if (distance < 400) {
+
+        if (Math.abs(bullet.x-item.x) < item.size * 1.5 && Math.abs(bullet.y-item.y) < item.size * 1.5) {
           let collisionCheck = isBulletCollidingWithPolygon(
             bullet,
             item.vertices

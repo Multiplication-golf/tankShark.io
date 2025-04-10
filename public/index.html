@@ -23,22 +23,32 @@
   </head>
   <body>
     <header class="landing-page" id="landing-page">
+      <div class="flexcenter">
+        <div class="badgeLevelDiv" id="badgeLevelDiv">
+          <div class="levelContainer"></div>
+        </div>
+      </div>
       <div class="center100">
         <div id="start" class="container">
-          <h1>Welcome to TankShark!</h1>
+          <h1 class="mainHeader">Welcome to TankShark!</h1>
           <input
             type="text"
             id="username"
             placeholder="Enter your username"
             autocomplete="given-name"
             maxlength="11"
+            class="inputMain"
           />
-          <button id="playButton">Play</button>
+          <div class="divMain"><button class="buttonMain" id="playButton">Play</button></div>
+        </div>
+        <!-- um just doing all the things :S-->
+        <div style="float: right; margin-right: 0; height: 100%; width: 0px; display: flex; align-content: end; flex-wrap: wrap;">
+          <div style="width: 266px;height: 266px;margin-bottom: 2vw;margin-left: -2vw;transform: translateX(-100%);" id="buildBox">
+            <canvas width="250" height="250" id="playerCanvas" style="border: rgb(226, 226, 226) solid 8px; width: 250px; height: 100%; border-radius: 20px; margin-left:-2vw; background-repeat: repeat; background-origin: border-box;"></canvas>
+          </div>
         </div>
       </div>
-      <div class="badgeLevelDiv" id="badgeLevelDiv"></div>
-      <div class="center100">
-        <footer class="botton-footer">
+      <footer class="botton-footer">
           <select name="ip" id="IP" class="ip-slecet">
             <option value="wss://websocketpointer.duckdns.org">
               wss://websocketpointer.duckdns.org
@@ -49,8 +59,7 @@
             </option>
             <option value="ws://localhost:4500">ws://localhost:4500</option>
           </select>
-        </footer>
-      </div>
+      </footer>
     </header>
     <div
       id="game"

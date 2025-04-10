@@ -4,6 +4,25 @@
     return Math.random() * (max - min) + min;
   }
 
+  function getMousePos(canvas, evt) {
+    return {
+      x: evt.clientX,
+      y: evt.clientY,
+    };
+  }
+
+  function getMiddleOfElement(element) {
+    const rect = element.getBoundingClientRect();
+    const middleX = rect.left + rect.width / 2;
+    const middleY = rect.top + rect.height / 2;
+    return { x: middleX, y: middleY };
+  }
+
+  const getMouseAngle = (canvas, x, y) => {
+    var elePos = getMiddleOfElement(canvas);
+    return Math.atan2(y - elePos.y, x - elePos.x);
+  };
+
   function getCookie(cname) {
     let name = cname + "=";
     let decodedCookie = decodeURIComponent(document.cookie);
@@ -94,13 +113,10 @@
   }
 
   function ongame() {
-
     let getIP = document.getElementById("IP").value;
 
     const socket =
-      new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(
-        getIP
-      );
+      new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(getIP);
     socket.binaryType = "arraybuffer";
     const schema = `
           syntax = "proto3";
@@ -137,8 +153,9 @@
     canvas.style.top = "0";
     canvas.style.left = "0";
 
-    document.getElementsByTagName("body")[0].style.cursor =
-      `url('${window.location.origin}/targetpointer1.cur'), auto`;
+    document.getElementsByTagName(
+      "body"
+    )[0].style.cursor = `url('${window.location.origin}/public/targetpointer1.cur'), auto`;
     var pi180 = Math.PI / 180;
     let lastTime = performance.now();
     let frameTimes = [];
@@ -343,14 +360,6 @@
         canKeyPress = true;
       }, 300);
       canKeyPress = false;
-    }
-
-    function getMousePos(canvas, evt) {
-      const rect = boundrectcanvas;
-      return {
-        x: evt.clientX,
-        y: evt.clientY,
-      };
     }
 
     function send(type, data) {
@@ -974,7 +983,7 @@
               baseFireInterval = data.baseFireInterval;
               scaleUp = data.scaleUp;
               radiusConfig = data.colorGradeint;
-              console.log(radiusConfig)
+              console.log(radiusConfig);
               playerBaseSize = data.playerBaseSize;
               for (let i = 0; i < data.map.size / 500; i++) {
                 for (let j = 0; j < data.map.size / 500; j++) {
@@ -2838,12 +2847,18 @@
         });
       }
 
-      
-      let gradient = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, playerSize * playerBaseSize, canvas.width / 2, canvas.height / 2, radiusConfig.radius);
+      let gradient = ctx.createRadialGradient(
+        canvas.width / 2,
+        canvas.height / 2,
+        playerSize * playerBaseSize / 1.5,
+        canvas.width / 2,
+        canvas.height / 2,
+        radiusConfig.radius
+      );
 
-      gradient.addColorStop(radiusConfig.build[0], "#00000000");
+      gradient.addColorStop(radiusConfig.build[0], "#FFFFFF00");
       gradient.addColorStop(radiusConfig.build[1], "#61f7ff");
-      
+      gradient.addColorStop(radiusConfig.build[2], "#FFFFFF00");
 
       ctx.beginPath();
       ctx.arc(
@@ -4315,15 +4330,23 @@
             });
           }
 
-          let gradient = ctx.createRadialGradient(playerX - cavansX, playerY - cavansY, player.size * playerBaseSize, playerX - cavansX, playerY - cavansY, radiusConfig.radius);
-
-          gradient.addColorStop(radiusConfig.build[0], "#00000000");
+          let gradient = ctx.createRadialGradient(
+            canvas.width / 2,
+            canvas.height / 2,
+            playerSize * playerBaseSize / 1.5,
+            canvas.width / 2,
+            canvas.height / 2,
+            radiusConfig.radius
+          );
+    
+          gradient.addColorStop(radiusConfig.build[0], "#FFFFFF00");
           if (sameTeam) {
             gradient.addColorStop(radiusConfig.build[1], "#61f7ff");
           } else {
             gradient.addColorStop(radiusConfig.build[1], "#ff2121");
           }
-          
+
+          gradient.addColorStop(radiusConfig.build[2], "#FFFFFF00");
 
           ctx.beginPath();
           ctx.arc(
@@ -4610,9 +4633,7 @@
             players[player.id].team === players[playerId].team &&
             players[player.id].team !== null &&
             players[playerId].team !== null;
-          if (
-            player.state === "start" || player.state === "damaged"
-          ) {
+          if (player.state === "start" || player.state === "damaged") {
             let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
             let percentage =
               player.statecycle % 10 <= 5
@@ -4963,37 +4984,183 @@
     const url = "http://localhost:4500/currentbadge";
     try {
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({userId: getCookie("userId")})
+        body: JSON.stringify({ userId: getCookie("userId") }),
       });
       if (!response.ok) {
         throw new Error(`Response status: ${response.status}`);
       }
-  
+
       return await response.json();
     } catch (error) {
       console.error(error.message);
     }
   }
+  var levelData = null;
 
-  async function t() {
-    console.log("fetching");
-    var data = await getBagdeData();
-    console.log("data:",data);
+  async function build() {
+    levelData = await getBagdeData();
+    console.log(levelData);
+    badgeLevelDiv.innerHTML = "";
+
+    let lastBuilt = 0;
+    levelData.playerScore = 150000
+
+    levelData.levelData.reverse().forEach((level, i) => {
+      var imageDiv = document.createElement("div");
+      badgeLevelDiv.appendChild(imageDiv);
+
+      imageDiv.classList.add("levelContainer");
+      var imageForDiv = document.createElement("img");
+
+      if (level.maxScore >= levelData.playerScore || level.maxScore == null) {
+        imageDiv.classList.add("disabledBadge");
+      }
+      if (
+        level.maxScore >= levelData.playerScore &&
+        level.minScore <= levelData.playerScore
+      ) {
+        let minScore = level.minScore;
+        let maxScore = level.maxScore;
+        var clacPercetage =
+          255 * ((maxScore - levelData.playerScore) / (maxScore - minScore));
+
+        if (maxScore - levelData.playerScore === maxScore - minScore ) {
+          clacPercetage = 0
+        }
+
+        var appendStyle = `linear-gradient(0deg, rgba(${clacPercetage}, ${clacPercetage}, ${clacPercetage}, 0.4), rgba(0, 0, 0, 0.4))`;
+        
+        imageDiv.style.backgroundImage = appendStyle;
+        var progressBar = document.createElement("progress");
+        progressBar.value = ((maxScore - levelData.playerScore) / (maxScore - minScore));
+        progressBar.style.width = "100%";
+        progressBar.style.marginRight = "10px";
+        
+        imageDiv.appendChild(progressBar);
+        progressBar.classList.add("lineBreak");
+        progressBar.style.display = "block";
+      }
+
+      imageForDiv.src = `/public${level.badge}`;
+      imageDiv.appendChild(imageForDiv);
+      imageForDiv.style.height = "85%";
+      if (
+        level.maxScore >= levelData.playerScore &&
+        level.minScore <= levelData.playerScore
+      ) {
+        imageForDiv.style.height = "55%";
+      }
+      imageForDiv["aspect-ratio"] = "1 / 1";
+    });
+  }
+
+  let pointerAngle = 0;
+
+  build();
+
+  var canAnimateProfile = true;
+
+  var playerCanvas = document.getElementById("playerCanvas");
+  let profileCtx = playerCanvas.getContext("2d");
+
+  function createProfile() {
+    profileCtx.clearRect(0, 0, playerCanvas.width, playerCanvas.height);
+    let gradient = profileCtx.createRadialGradient(
+      playerCanvas.width / 2,
+      playerCanvas.height / 2,
+      40,
+      playerCanvas.width / 2,
+      playerCanvas.height / 2,
+      50
+    );
+
+    gradient.addColorStop(0.1, "#00000000");
+    gradient.addColorStop(0.5, "#61f7ff");
+    gradient.addColorStop(1, "#FFFFFF00");
+
+    profileCtx.beginPath();
+    profileCtx.arc(
+      playerCanvas.width / 2,
+      playerCanvas.height / 2,
+      50,
+      0,
+      2 * Math.PI,
+      false
+    );
+    profileCtx.fillStyle = gradient;
+    profileCtx.fill();
+
+    profileCtx.closePath();
+
+    profileCtx.fillStyle = "#b3b3b3";
+    profileCtx.save();
+    // Translate to the center of the square
+    profileCtx.translate(playerCanvas.width / 2, playerCanvas.height / 2);
+
+    profileCtx.rotate(pointerAngle);
+    let cannon_heightFOV = 30;
+    let cannon_widthFOV = 120;
+    // Draw the square
+    let basex = -cannon_widthFOV / 2 + cannon_heightFOV;
+
+    let basey = -cannon_heightFOV / 2;
+
+    profileCtx.fillRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
+    // Add a border to the cannon
+    profileCtx.strokeStyle = "lightgrey"; // Set border color
+    profileCtx.lineWidth = 3; // Set border width
+    profileCtx.strokeRect(basex, basey, cannon_widthFOV, cannon_heightFOV); // Draw the border
+    // Restore the previous transformation matrix
+    profileCtx.restore();
+    profileCtx.beginPath();
+    profileCtx.arc(
+      playerCanvas.width / 2,
+      playerCanvas.height / 2,
+      40,
+      0,
+      2 * Math.PI,
+      false
+    );
+    profileCtx.fillStyle = "#828282";
+    profileCtx.fill();
+    profileCtx.lineWidth = 5;
+
+    profileCtx.strokeStyle = "#aaaaaa";
+
+    profileCtx.stroke();
+    if (canAnimateProfile) requestAnimationFrame(createProfile);
+  }
+
+  requestAnimationFrame(createProfile);
+
+  const getProfilePointer = (evt) => {
+    var mousepos = getMousePos(playerCanvas, evt);
+    pointerAngle = getMouseAngle(playerCanvas, mousepos.x, mousepos.y);
   };
 
-  t();
-  
+  console.log(getMiddleOfElement(playerCanvas));
+
+  document.addEventListener("mousemove", (evt) => getProfilePointer(evt));
+
+  var badgeLevelDiv = document.getElementById("badgeLevelDiv");
+
+  playerCanvas.style[
+    "background-image"
+  ] = `url(${window.location.origin}/public/assets/hexbackground.png)`;
+  console.log(`url(${window.location.origin}/public/assets/hexbackground.png)`);
 
   document.getElementById("playButton").addEventListener("mousedown", () => {
     username = document.getElementById("username").value;
+    document.removeEventListener("mousemove", (evt) => getProfilePointer(evt));
+    canAnimateProfile = false;
     if (username) {
       setTimeout(() => {
-        document.getElementById("start").style.display = "none";
+        document.getElementById("landing-page").style.display = "none";
         document.getElementById("game").style.display = "block";
         if (username !== "A") {
           document.addEventListener("contextmenu", (event) =>
