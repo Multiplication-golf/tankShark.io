@@ -1,0 +1,121 @@
+.mainframe {
+    display: none;
+    width: 100vw;
+    position: absolute;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+}
+
+.death-screen {
+    width: 99.9vw;
+    position: absolute;
+    height: 99.9vh;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    display: none;
+}
+
+.background-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1000px);
+    grid-template-rows: repeat(10, 1000px);
+    grid-gap: 0px;
+    width: 10000px;
+    height: 10000px;
+    position: absolute;
+    top: -5000px;
+    left: -5000px;
+    -khtml-user-select: none;
+    -o-user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.UI-contaniner {
+    overflow: hidden;
+    width: 99.9vw;
+    height: 99.9vh;
+    top: 0;
+    left: 0;
+    position: absolute;
+}
+
+.bar-holder {
+    position: relative;
+    width: 45vw;
+    height: 05.140640155vh;
+    top: 95vh;
+    left: 27.5vw;
+    z-index: 6;
+}
+
+.bar-image {
+    width: 100%; 
+    height: 100%; 
+    user-select: none
+}
+
+@keyframes move {
+    0% {
+      transform: translateX(0);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(3vw);
+      opacity: 1;
+    }
+}
+
+.upgrade-tiles {
+    width: 25vw;
+    height: 15vw;
+    position: absolute;
+    top: 0;
+    left: -15vw;
+    display: none;
+    z-index: 2000;
+}
+
+.ghost-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw; 
+    height: 100vh;
+}
+
+.team-contaniner {
+    text-align: center;
+    background: #fff;
+    padding: -10px 20px 20px 20px;
+    border-radius: 8px;
+    z-index: 9;
+    width: 400px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+    position: absolute;
+    top: calc(50vh - 155px);
+    left: calc(50vw - 200px);
+}
+
+.create-team-button {
+    z-index: 10; 
+    margin-bottom: 8px
+}
+
+.high-index {
+    z-index: 10;
+}
+
+.aling-left {
+    text-align: left
+}
+.gear-holder {
+    width: 100%; 
+    text-align: center; 
+    margin-bottom: 10px
+}

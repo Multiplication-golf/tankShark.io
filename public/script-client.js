@@ -5000,6 +5000,24 @@
       console.error(error.message);
     }
   }
+  async function ping() {
+    const url = "http://localhost:4500/ping";
+    try {
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        window.location.href = "/server-down.html";
+        throw new Error(`Response status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  ping();
+
   var levelData = null;
 
   async function build() {

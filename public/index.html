@@ -3,6 +3,7 @@
   <head>
     <title>TankShark.IO</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="game-style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -61,108 +62,43 @@
           </select>
       </footer>
     </header>
-    <div
+    <main
       id="game"
-      style="
-        display: none;
-        width: 100vw;
-        position: absolute;
-        height: 100vh;
-        top: 0;
-        left: 0;
-        overflow: hidden;
-      "
+      class="mainframe"
     >
       <img
         src="assets/youDied.png"
-        style="
-          width: 99.9vw;
-          position: absolute;
-          height: 99.9vh;
-          z-index: 10;
-          top: 0;
-          left: 0;
-          display: none;
-        "
+        class="death-screen"
         id="die"
       />
       <div
-        style="
-          display: grid;
-          grid-template-columns: repeat(10, 1000px);
-          grid-template-rows: repeat(10, 1000px);
-          grid-gap: 0px;
-          width: 10000px;
-          height: 10000px;
-          position: absolute;
-          top: -5000px;
-          left: -5000px;
-          -khtml-user-select: none;
-          -o-user-select: none;
-          -moz-user-select: none;
-          -webkit-user-select: none;
-          user-select: none;
-        "
+        class="background-grid"
         id="grid"
       ></div>
       <div
-        style="
-          overflow: hidden;
-          width: 99.9vw;
-          height: 99.9vh;
-          top: 0;
-          left: 0;
-          position: absolute;
-        "
+        class="UI-contaniner"
         id="container"
       >
         <div
-          style="
-            position: relative;
-            width: 45vw;
-            height: 05.140640155vh;
-            top: 95vh;
-            left: 27.5vw;
-            z-index: 6;
-          "
+          class="bar-holder"
         >
           <img
             src="assets/barXP.png"
-            style="width: 100%; height: 100%; user-select: none"
+            class="bar-image"
           />
         </div>
-        <p
+        <!-- <p
           id="players"
           style="z-index: 100000000000; position: absolute; top: 0; left: 0"
-        ></p>
+        ></p> -->
       </div>
-      <style>
-        @keyframes move {
-          0% {
-            transform: translateX(0);
-            opacity: 0;
-          }
-          100% {
-            transform: translateX(3vw);
-            opacity: 1;
-          }
-        }
-      </style>
       <div
         id="tanktiles"
-        style="
-          width: 25vw;
-          height: 15vw;
-          position: absolute;
-          top: 0;
-          left: -15vw;
-          display: none;
-          z-index: 2000;
-        "
+        class="upgrade-tiles"
       ></div>
       <canvas
         id="ghostCanvas"
-        style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh"
+        class="ghost-canvas"
       ></canvas>
       <div style="width: 100vw; text-align: center">
         <div class="outer-box" id="teamMain">
@@ -238,21 +174,9 @@
       <div style="width: 100%">
         <div
           id="teambox"
-          style="
-            text-align: center;
-            background: #fff;
-            padding: -10px 20px 20px 20px;
-            border-radius: 8px;
-            z-index: 9;
-            width: 400px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            display: none;
-            position: absolute;
-            top: calc(50vh - 155px);
-            left: calc(50vw - 200px);
-          "
+          class="team-contaniner"
         >
-          <h1 style="z-index: 10">Your team name</h1>
+          <h1 class="high-index">Your team name</h1>
           <label class="label" for="checkbox">Hidden:</label>
           <label class="switch" id="checkbox">
             <input type="checkbox" id="hidden" class="null" />
@@ -268,7 +192,7 @@
           <h2>Config</h2>
           <div class="scrollDiv" id="scrollDiv">
             <div class="configDiv">
-              <div style="width: 100%; text-align: center; margin-bottom: 10px">
+              <div class="gear-holder">
                 <img src="assets/gear.png" style="width: 5vw; height: 5vw" />
               </div>
               <label class="label" for="teamDescription"
@@ -281,10 +205,10 @@
                 autocomplete=""
                 maxlength="200"
               />
-              <br />
+              <br/>
               <label class="label" for="teamSelcetor">Team type:</label>
-              <br />
-              <div id="teamSelcetor" style="text-align: left">
+              <br/>
+              <div id="teamSelcetor" class="aling-left">
                 <div>
                   <input
                     type="radio"
@@ -415,12 +339,12 @@
             autocomplete="given-lastname"
             maxlength="11"
           />
-          <button id="teamButton" style="z-index: 10; margin-bottom: 8px">
+          <button id="teamButton" class="create-team-button">
             Create team
           </button>
         </div>
       </div>
-    </div>
+    </main>
     <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/light/protobuf.min.js"></script>
     <script src="script-client.js"></script>
   </body>
