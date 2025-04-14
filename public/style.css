@@ -188,6 +188,19 @@ option {
   height: 100%;
 }
 
+.full-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 1);
+  font-size: 20px;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
 /* Badge Level Div Styles */
 .badgeLevelDiv {
   line-height: 18px;

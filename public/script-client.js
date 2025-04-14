@@ -448,8 +448,8 @@
           img__.src = "tanktiles/" + tileImg + ".png";
           img__.style = "width: 6vw; height: 6vw; margin: 10px; z-index: 100;";
 
-          img__.addEventListener("click", function () {
-            event.stopPropagation();
+          img__.addEventListener("click", function (evt) {
+            evt.stopPropagation();
             tankstiles.style.display = "none";
             __type__ = Object.keys(tankdata["upgrades"])[i];
             players[playerId].__type__ = __type__;
@@ -871,6 +871,7 @@
         Promise.allSettled(recivedData).then(() => {
           console.timeEnd("preconnect");
           scaleby(0);
+          document.getElementById("full-screen").style.display = "none";
           draw();
         });
 
@@ -3814,11 +3815,7 @@
 
             ctx.rotate(-item.angle * pi180);
             if (item.health < item.maxhealth) {
-              ctx.fillStyle = "black";
-              ctx.fillRect(-45, 35, 90 * FOV, 10);
-              const healthWidth = (item.health / item.maxhealth) * 90 * FOV;
-              ctx.fillStyle = "green";
-              ctx.fillRect(-45, 35, healthWidth, 10);
+              drawbar(item);
             }
             ctx.restore();
           }
@@ -3905,11 +3902,7 @@
             ctx.rotate(-item.angle * pi180 - 90 * pi180);
 
             if (item.health < item.maxhealth) {
-              ctx.fillStyle = "black";
-              ctx.fillRect(-45, 35, 90 * FOV, 10);
-              const healthWidth = (item.health / item.maxhealth) * 90 * FOV;
-              ctx.fillStyle = "green";
-              ctx.fillRect(-45, 35, healthWidth, 10);
+              drawbar(item);
             }
             ctx.restore();
           }
@@ -5219,6 +5212,7 @@
     username = document.getElementById("username").value;
     document.removeEventListener("mousemove", (evt) => getProfilePointer(evt));
     canAnimateProfile = false;
+    document.getElementById("full-screen").style.display = "flex";
     if (username) {
       setTimeout(() => {
         document.getElementById("landing-page").style.display = "none";

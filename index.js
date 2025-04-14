@@ -64,7 +64,7 @@ function getAdjacentRoomKeys(roomkey, range = 1000) {
       }
     }
   }
-  return returnKeys
+  return returnKeys;
 }
 
 function getRoomAndBounding(x,y) {
@@ -80,24 +80,21 @@ function getRoomAndBounding(x,y) {
       room_ = roomkey;
     }
   }
-  var baseItems = food_squares[room_]?.items || []
-  room_ ??= "0"
-  var otherRooms = getAdjacentRoomKeys(room_)
+  var baseItems = [...food_squares[room_]?.items] || [];
+  room_ ??= "0";
+  var otherRooms = getAdjacentRoomKeys(room_);
   otherRooms.forEach((_room_) => {
     baseItems.push(...food_squares[_room_].items);
-  })
+  });
+  return {items:baseItems};
 }
 
-// Attach to both servers
 handleUpgrade(httpServer, "HTTP");
 handleUpgrade(serverHttps, "HTTPS");
 
 const helmet = require("helmet");
 const protobuf = require("protobufjs");
 
-// Define the Protobuf schema
-
-console.log("logger version 3");
 
 const schema = `
 syntax = "proto3";
@@ -335,7 +332,8 @@ let frame = 0;
 
 var levels = {}
 fs.readFile("data/levelData.json", function (err, data) {
-  levels = data.levelData
+  levels = JSON.parse(data).levelData
+  console.log(levels);
 });
 
 const sqrt23 = Math.sqrt(3);
@@ -1731,6 +1729,8 @@ function Wanderer( // class but what ever
     instancevars.y = y;
   };
 }
+
+console.log("a",getRoomAndBounding(1000,2300).items.length)
 
 var angle = 0;
 
@@ -4057,6 +4057,7 @@ wss.on("connection", (socket, req) => {
   }, 5000);
 
   socket.on("close", () => {
+    IPs = IPs.splice(IPs.indexOf(req.socket.remoteAddress), 1)
     hidden_broswers.filter((interval) => {
       if (connection.playerId === interval.id) {
         clearInterval(interval.interval);
@@ -5379,6 +5380,7 @@ setInterval(() => {
                   players[team.owner.id].score += complexTax;
                 }
               }
+              console.log(reward)
               player.score += reward;
               emit("playerScore", {
                 bulletId: player.id,
@@ -5629,39 +5631,42 @@ setInterval(() => {
               }
             }
 
-            players[bullet.id].score += reward;
+            console.log(reward)
+            if (!item.isdead) {
+              players[bullet.id].score += reward;
 
-            leader_board.hidden.forEach((__index__) => {
-              if (__index__.id === bullet.id) {
-                __index__.score += reward;
-                let isshown = false;
-                leader_board.shown.forEach(() => {
-                  if (__index__.id === bullet.id) {
-                    isshown = true;
+              leader_board.hidden.forEach((__index__) => {
+                if (__index__.id === bullet.id) {
+                  __index__.score += reward;
+                  let isshown = false;
+                  leader_board.shown.forEach(() => {
+                    if (__index__.id === bullet.id) {
+                      isshown = true;
+                    }
+                  });
+                  if (leader_board.shown[10]) {
+                    if (leader_board.shown[10].score < __index__.score) {
+                      leader_board.shown[10] = __index__;
+                    }
+                  } else if (!leader_board.shown[10] && !isshown) {
+                    leader_board.shown.push(__index__);
                   }
-                });
-                if (leader_board.shown[10]) {
-                  if (leader_board.shown[10].score < __index__.score) {
-                    leader_board.shown[10] = __index__;
-                  }
-                } else if (!leader_board.shown[10] && !isshown) {
-                  leader_board.shown.push(__index__);
                 }
-              }
-            });
-            leader_board.shown.forEach((__index__) => {
-              if (__index__.id === bullet.id) {
-                __index__.score += reward;
-              }
-            });
-            rearrange();
-            emit("boardUpdate", {
-              leader_board: leader_board.shown,
-            });
-            emit("playerScore", {
-              bulletId: bullet.id,
-              socrepluse: reward,
-            });
+              });
+              leader_board.shown.forEach((__index__) => {
+                if (__index__.id === bullet.id) {
+                  __index__.score += reward;
+                }
+              });
+              rearrange();
+              emit("boardUpdate", {
+                leader_board: leader_board.shown,
+              });
+              emit("playerScore", {
+                bulletId: bullet.id,
+                socrepluse: reward,
+              });
+            }
 
             var randID = Math.random() * index * Date.now();
 
