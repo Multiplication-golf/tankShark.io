@@ -2850,7 +2850,7 @@
       let gradient = ctx.createRadialGradient(
         canvas.width / 2,
         canvas.height / 2,
-        playerSize * playerBaseSize / 1.5,
+        (playerSize * playerBaseSize) / 1.5,
         canvas.width / 2,
         canvas.height / 2,
         radiusConfig.radius
@@ -4333,12 +4333,12 @@
           let gradient = ctx.createRadialGradient(
             canvas.width / 2,
             canvas.height / 2,
-            playerSize * playerBaseSize / 1.5,
+            (playerSize * playerBaseSize) / 1.5,
             canvas.width / 2,
             canvas.height / 2,
             radiusConfig.radius
           );
-    
+
           gradient.addColorStop(radiusConfig.build[0], "#FFFFFF00");
           if (sameTeam) {
             gradient.addColorStop(radiusConfig.build[1], "#61f7ff");
@@ -5004,14 +5004,13 @@
     const url = "http://localhost:4500/ping";
     try {
       const response = await fetch(url);
-      
+
       if (!response.ok) {
-        window.location.href = "/public/server-down.html";
+        //window.location.href = "/public/server-down.html";
         throw new Error(`Response status: ${response.status}`);
       }
-
     } catch (error) {
-      window.location.href = "/public/server-down.html";
+      //window.location.href = "/public/server-down.html";
       console.error(error.message);
     }
   }
@@ -5026,8 +5025,9 @@
     badgeLevelDiv.innerHTML = "";
 
     let lastBuilt = 0;
-    levelData.playerScore = 150000
+    levelData.playerScore = 159999;
 
+    var buildOutEle = {};
     levelData.levelData.reverse().forEach((level, i) => {
       var imageDiv = document.createElement("div");
       badgeLevelDiv.appendChild(imageDiv);
@@ -5048,51 +5048,75 @@
         var clacPercetage =
           255 * ((maxScore - levelData.playerScore) / (maxScore - minScore));
 
-        if (maxScore - levelData.playerScore === maxScore - minScore ) {
-          clacPercetage = 0
+        if (maxScore - levelData.playerScore === maxScore - minScore) {
+          clacPercetage = 0;
         }
 
         var appendStyle = `linear-gradient(0deg, rgba(${clacPercetage}, ${clacPercetage}, ${clacPercetage}, 0.4), rgba(0, 0, 0, 0.4))`;
-        
+
         imageDiv.style.backgroundImage = appendStyle;
 
+        var strokeDashoffset =
+          45 *
+          2 *
+          Math.PI *
+          (1-(maxScore - levelData.playerScore) / (maxScore - minScore));
+        console.log(
+          strokeDashoffset,
+          (maxScore - levelData.playerScore),(maxScore - minScore),(1-(maxScore - levelData.playerScore) / (maxScore - minScore))
+        );
         imageDiv.innerHTML = `
-        <div style="height: 100%; width: 34px">
-          <svg width="68px" height="68px" style="margin-down:-10px">
-            <circle cx="34" cy="34" r="30" circle-html shadow-html stroke="black" stroke-width="8" fill="none"> </circle>
-            <circle cx="34" cy="34" r="30" class="meter-1" circle-html shadow-html> </circle>
+          <svg width="5vw" height="5vw" viewBox="0 0 100 100">
+            <g stroke-width="9" stroke="hsl(184, 100%, 50%)" fill="none">
+              <circle r="45" cx="50" cy="50" filter="url(#nnneon-filter)"></circle>
+              <circle r="45" cx="56.75" cy="50" filter="url(#nnneon-filter2)" opacity="0.25"></circle>
+              <circle r="45" cx="43.25" cy="50" filter="url(#nnneon-filter2)" opacity="0.25"></circle>
+              <circle r="45" cx="50" cy="50"></circle>
+            </g>
+            <circle cx="50" cy="50" r="45" stroke="black" stroke-width="8" fill="none"> </circle>
+            <circle cx="50" cy="50" r="45" class="meter-1" id="fillcircle"> </circle>
+            <image x="20" y="20" width="60" height="60" href='${
+              window.location.origin + "/public/" + level.badge
+            }'> </image>
           </svg>
-        </div>
         `;
-
+        document
+          .getElementById("fillcircle")
+          .style.setProperty("stroke-dashoffset", strokeDashoffset);
+        imageForDiv.style.opacity = "0.1";
+        imageForDiv.style.width = "0.1px";
         var progressBar = document.createElement("progress");
-        progressBar.value = ((maxScore - levelData.playerScore) / (maxScore - minScore));
+        progressBar.value =
+          (maxScore - levelData.playerScore) / (maxScore - minScore);
         progressBar.style.width = "100%";
         progressBar.style.marginRight = "10px";
-        
+
         //imageDiv.appendChild(progressBar);
         progressBar.classList.add("lineBreak");
         progressBar.style.display = "block";
         progressBar.style["background-color"] = "#0A0A0A";
-
+        buildOutEle = imageDiv;
       }
 
       imageForDiv.src = `/public${level.badge}`;
       imageDiv.appendChild(imageForDiv);
-      imageForDiv.style.height = "85%";
+      imageForDiv.style.height = "4.5vw";
+      imageForDiv.style.minHeight = "70px";
+      imageDiv.style.minHeight = "80px";
       if (
         level.maxScore >= levelData.playerScore &&
         level.minScore <= levelData.playerScore
       ) {
-        imageForDiv.style.height = "75%";
-        imageForDiv.style.transform = "translateX(-17px)";
+        imageForDiv.style.visibility = "hidden";
         imageDiv.style.setProperty(
           "border-color",
           "rgb(190, 190, 190)",
           "important"
         );
+      } else {
+        imageForDiv["aspect-ratio"] = "1 / 1";
+        console.log(i);
       }
-      imageForDiv["aspect-ratio"] = "1 / 1";
     });
   }
 

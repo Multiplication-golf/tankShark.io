@@ -1741,7 +1741,7 @@ var invaled_requests = [];
 const connections = [];
 
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://127.0.0.1:5500");
+  res.header("Access-Control-Allow-Origin", "http://127.0.0.1:5501");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type");
   next();
@@ -4362,8 +4362,8 @@ setInterval(() => {
         bullet.target?.distance < CONFIG.playerBaseSize &&
         __angle !== 0
       ) {
-        var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
-        var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
+        var newX = bullet.x;
+        var newY = bullet.y;
         bullet.wander.setXY(bullet.x, bullet.y);
       } else if (bullet.target?.distance < 600) {
         var boss = findThisBoss(bullet.id);
