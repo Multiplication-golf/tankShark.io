@@ -39,7 +39,7 @@ function getAdjacentRoomKeys(roomkey, range = 1000) {
   var structRooms = [];
   var returnKeys = [];
 
-  var buildDistance = (range - (range % 1000)) / 1000
+  var buildDistance = (range - (range % 1000)) / 1000;
 
   for (let i = 0; i < 10; i++) {
     structRooms.push([]);
@@ -67,8 +67,8 @@ function getAdjacentRoomKeys(roomkey, range = 1000) {
   return returnKeys;
 }
 
-function getRoomAndBounding(x,y) {
-  let room_ = null
+function getRoomAndBounding(x, y) {
+  let room_ = null;
   for (const roomkey in food_squares) {
     var room = food_squares[roomkey];
     if (
@@ -86,7 +86,7 @@ function getRoomAndBounding(x,y) {
   otherRooms.forEach((_room_) => {
     baseItems.push(...food_squares[_room_].items);
   });
-  return {items:baseItems};
+  return { items: baseItems };
 }
 
 handleUpgrade(httpServer, "HTTP");
@@ -94,7 +94,6 @@ handleUpgrade(serverHttps, "HTTPS");
 
 const helmet = require("helmet");
 const protobuf = require("protobufjs");
-
 
 const schema = `
 syntax = "proto3";
@@ -249,7 +248,7 @@ function getKeyRoom(x, y) {
   return thisroom;
 }
 
-function reassignRoom(item,room) {
+function reassignRoom(item, room) {
   let found = false;
   var thisroom = {};
   for (const roomkey in food_squares) {
@@ -326,13 +325,11 @@ let explosions = [];
 /* warning very senstive*/
 let purge_limit = 5;
 
-
-
 let frame = 0;
 
-var levels = {}
+var levels = {};
 fs.readFile("data/levelData.json", function (err, data) {
-  levels = JSON.parse(data).levelData
+  levels = JSON.parse(data).levelData;
   console.log(levels);
 });
 
@@ -490,7 +487,7 @@ food_squares.assignRoom = (item) => {
 
 Object.freeze(CONFIG);
 
-console.log(getAdjacentRoomKeys("35"))
+console.log(getAdjacentRoomKeys("35"));
 
 const tankmeta = {
   basic: {
@@ -1730,7 +1727,7 @@ function Wanderer( // class but what ever
   };
 }
 
-console.log("a",getRoomAndBounding(1000,2300).items.length)
+console.log("a", getRoomAndBounding(1000, 2300).items.length);
 
 var angle = 0;
 
@@ -1801,7 +1798,7 @@ app.post("/currentbadge", (req, res) => {
 // is the server open ^(*_*)^
 app.get("/ping", (req, res) => {
   res.send("pong");
-})
+});
 
 wss.on("connection", (socket, req) => {
   let connection = {
@@ -4057,7 +4054,7 @@ wss.on("connection", (socket, req) => {
   }, 5000);
 
   socket.on("close", () => {
-    IPs = IPs.splice(IPs.indexOf(req.socket.remoteAddress), 1)
+    IPs = IPs.splice(IPs.indexOf(req.socket.remoteAddress), 1);
     hidden_broswers.filter((interval) => {
       if (connection.playerId === interval.id) {
         clearInterval(interval.interval);
@@ -5081,7 +5078,7 @@ setInterval(() => {
           item.y <= room.bounds?.y2
         )
       ) {
-        reassignRoom(item,room);
+        reassignRoom(item, room);
         return false;
       }
       if (
@@ -5098,7 +5095,10 @@ setInterval(() => {
         var target = { x: item.x, y: item.y };
         for (const playerId in players) {
           var player = players[playerId];
-          let newdistance = MathHypotenuse(Math.abs(player.x - item.x), Math.abs(player.y - item.y));
+          let newdistance = MathHypotenuse(
+            Math.abs(player.x - item.x),
+            Math.abs(player.y - item.y)
+          );
           if (newdistance < maxdistance) {
             target = { x: player.x, y: player.y };
             newdistance = maxdistance;
@@ -5300,7 +5300,10 @@ setInterval(() => {
             CONFIG.playerCollisionRangeMultiplyer +
           item.size * CONFIG.itemCollisionRangeMultiplyer;
 
-        if (Math.abs(item.x - player.x) < size__ && Math.abs(item.y - player.y) < size__) {
+        if (
+          Math.abs(item.x - player.x) < size__ &&
+          Math.abs(item.y - player.y) < size__
+        ) {
           var collisionCheck = isPlayerCollidingWithPolygon(
             player,
             item.vertices
@@ -5380,7 +5383,7 @@ setInterval(() => {
                   players[team.owner.id].score += complexTax;
                 }
               }
-              console.log(reward)
+              console.log(reward);
               player.score += reward;
               emit("playerScore", {
                 bulletId: player.id,
@@ -5566,8 +5569,10 @@ setInterval(() => {
         }
       }
       bullets.forEach((bullet) => {
-
-        if (Math.abs(bullet.x-item.x) < item.size * 1.5 && Math.abs(bullet.y-item.y) < item.size * 1.5) {
+        if (
+          Math.abs(bullet.x - item.x) < item.size * 1.5 &&
+          Math.abs(bullet.y - item.y) < item.size * 1.5
+        ) {
           let collisionCheck = isBulletCollidingWithPolygon(
             bullet,
             item.vertices
@@ -5631,7 +5636,7 @@ setInterval(() => {
               }
             }
 
-            console.log(reward)
+            console.log(reward);
             if (!item.isdead) {
               players[bullet.id].score += reward;
 
