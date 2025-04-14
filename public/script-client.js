@@ -5006,12 +5006,12 @@
       const response = await fetch(url);
       
       if (!response.ok) {
-        window.location.href = "/server-down.html";
+        window.location.href = "/public/server-down.html";
         throw new Error(`Response status: ${response.status}`);
       }
 
-      return await response.json();
     } catch (error) {
+      window.location.href = "/public/server-down.html";
       console.error(error.message);
     }
   }
@@ -5037,6 +5037,7 @@
 
       if (level.maxScore >= levelData.playerScore || level.maxScore == null) {
         imageDiv.classList.add("disabledBadge");
+        imageForDiv.style.filter = "brightness(50%)";
       }
       if (
         level.maxScore >= levelData.playerScore &&
@@ -5054,14 +5055,26 @@
         var appendStyle = `linear-gradient(0deg, rgba(${clacPercetage}, ${clacPercetage}, ${clacPercetage}, 0.4), rgba(0, 0, 0, 0.4))`;
         
         imageDiv.style.backgroundImage = appendStyle;
+
+        imageDiv.innerHTML = `
+        <div style="height: 100%; width: 34px">
+          <svg width="68px" height="68px" style="margin-down:-10px">
+            <circle cx="34" cy="34" r="30" circle-html shadow-html stroke="black" stroke-width="8" fill="none"> </circle>
+            <circle cx="34" cy="34" r="30" class="meter-1" circle-html shadow-html> </circle>
+          </svg>
+        </div>
+        `;
+
         var progressBar = document.createElement("progress");
         progressBar.value = ((maxScore - levelData.playerScore) / (maxScore - minScore));
         progressBar.style.width = "100%";
         progressBar.style.marginRight = "10px";
         
-        imageDiv.appendChild(progressBar);
+        //imageDiv.appendChild(progressBar);
         progressBar.classList.add("lineBreak");
         progressBar.style.display = "block";
+        progressBar.style["background-color"] = "#0A0A0A";
+
       }
 
       imageForDiv.src = `/public${level.badge}`;
@@ -5071,7 +5084,13 @@
         level.maxScore >= levelData.playerScore &&
         level.minScore <= levelData.playerScore
       ) {
-        imageForDiv.style.height = "55%";
+        imageForDiv.style.height = "75%";
+        imageForDiv.style.transform = "translateX(-17px)";
+        imageDiv.style.setProperty(
+          "border-color",
+          "rgb(190, 190, 190)",
+          "important"
+        );
       }
       imageForDiv["aspect-ratio"] = "1 / 1";
     });

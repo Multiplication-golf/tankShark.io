@@ -219,6 +219,17 @@ option {
   border-color: rgb(122, 122, 122) !important;
 }
 
+.meter-1 {
+  fill: none;
+  stroke-width: 8.5px;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  stroke-dasharray: 360;
+  stroke-dashoffset: -100%;
+  stroke: aqua;
+}
+
 .levelContainer {
   background-color: rgb(243, 243, 243);
   border: rgb(226, 226, 226) solid 8px;
@@ -229,6 +240,8 @@ option {
   border-radius: 2vw;
   text-align: center;
   align-items: center;
+  background-origin: border-box;
+  background-clip: border-box;
   justify-content: center;
 }
 
