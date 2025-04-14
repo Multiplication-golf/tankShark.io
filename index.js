@@ -724,8 +724,7 @@ const tankmeta = {
     "BodyDamage-m": 1,
     "reaload-m": 0.7,
     "regen-m": 1,
-    upgradeLevel: 30,
-    upgrades: ["twin", "sniper"],
+    upgrades: {},
     cannons: [
       {
         type: "basicCannon",
@@ -765,6 +764,7 @@ const tankmeta = {
     "regen-m": 1.1,
     "max-traps": 10,
     "reaload-m": 1.5,
+    upgrades: {},
     cannons: [
       {
         type: "trap",
@@ -792,10 +792,7 @@ const tankmeta = {
     fov: 0, // change later when fov is working
     "BodyDamage-m": 1,
     "reaload-m": 1.5,
-    upgradeLevel: 15,
-    upgrades: {
-      twin: 1,
-    },
+    upgrades: {},
     cannons: [
       {
         type: "directer",
@@ -823,7 +820,6 @@ const tankmeta = {
     fov: 0,
     "BodyDamage-m": 1,
     "reaload-m": 1,
-    upgradeLevel: 30,
     upgrades: {},
     cannons: [
       {
@@ -864,7 +860,6 @@ const tankmeta = {
     AutoRoting: true,
     "BodyDamage-m": 1,
     "reaload-m": 1,
-    upgradeLevel: 30,
     upgrades: {},
     cannons: [
       {
@@ -905,7 +900,6 @@ const tankmeta = {
     fov: 0,
     "BodyDamage-m": 1,
     "reaload-m": 1,
-    upgradeLevel: 30,
     upgrades: {},
     cannons: [
       {
@@ -979,6 +973,45 @@ const tankmeta = {
         offsetX: 0,
         offsetY: 0,
         offsetAngle: 0.39269908169,
+      },
+    ],
+  },
+  paver: {
+    "size-m": 1,
+    "speed-m": 1.2,
+    "damage-m": 1,
+    "health-m": 1,
+    fov: 0,
+    "BodyDamage-m": 1,
+    "reaload-m": 0.7,
+    "regen-m": 1,
+    upgrades: {},
+    cannons: [
+      {
+        type: "basicCannon",
+        "cannon-width": 60,
+        "cannon-height": 30,
+        "offSet-x": 0,
+        "offSet-y": 0,
+        "offset-angle": -0.785398,
+        bulletSize: 1,
+        bulletSpeed: 0.5,
+        delay: 0,
+        reloadM: 1,
+        bullet_pentration: 0.3,
+      },
+      {
+        type: "basicCannon",
+        "cannon-width": 60,
+        "cannon-height": 30,
+        "offSet-x": 0,
+        "offSet-y": 0,
+        "offset-angle": 0.785398,
+        bulletSize: 1,
+        bulletSpeed: 0.5,
+        delay: 0,
+        reloadM: 1,
+        bullet_pentration: 0.3,
       },
     ],
   },

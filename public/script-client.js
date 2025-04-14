@@ -4994,17 +4994,27 @@
     }
   }
   async function ping() {
-    const url = "http://localhost:4500/ping";
-    try {
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        //window.location.href = "/public/server-down.html";
-        throw new Error(`Response status: ${response.status}`);
+    const urls = [
+      "http://localhost:4500/ping",
+      "https://websocketpointer.duckdns.org/ping",
+      "http://127.0.0.1:4000/ping",
+      "http://192.168.9.100:4500/ping",
+    ];
+    var passed = false;
+    urls.forEach(async (url) => {
+      try {
+        const response = await fetch(url);
+  
+        if (!response.ok) {
+          throw new Error(`Response status: ${response.status}`);
+        }
+        passed = true;
+      } catch (error) {
+        console.error(error.message);
       }
-    } catch (error) {
-      //window.location.href = "/public/server-down.html";
-      console.error(error.message);
+    })
+    if (!passed) {
+      window.location.href = "/public/server-down.html";
     }
   }
 
@@ -5053,10 +5063,12 @@
           45 *
           2 *
           Math.PI *
-          (1-(maxScore - levelData.playerScore) / (maxScore - minScore));
+          (1 - (maxScore - levelData.playerScore) / (maxScore - minScore));
         console.log(
           strokeDashoffset,
-          (maxScore - levelData.playerScore),(maxScore - minScore),(1-(maxScore - levelData.playerScore) / (maxScore - minScore))
+          maxScore - levelData.playerScore,
+          maxScore - minScore,
+          1 - (maxScore - levelData.playerScore) / (maxScore - minScore)
         );
         imageDiv.innerHTML = `
           <svg width="5vw" height="5vw" viewBox="0 0 100 100">
