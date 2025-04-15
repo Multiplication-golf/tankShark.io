@@ -179,19 +179,6 @@
 
     var grid = document.getElementById("grid");
 
-    var types = [
-      "basic",
-      "twin",
-      "flank",
-      "sniper",
-      "mechiane gun",
-      "spreader",
-      "rammer",
-      "traper",
-      "directer",
-      "autobasic",
-    ];
-
     var HANDSHAKE = {
       null: [{ null: null }],
       null: [{ null: null }],
@@ -213,7 +200,6 @@
     var playerBaseSize = 40;
     var bodyDamage = 3;
     var __type__ = "basic";
-    var typeindex = 0;
     var selected_class = null;
     var level = 0;
     var upgradePoints = 0;
@@ -223,7 +209,6 @@
     var teamOn = null;
     var owner_of_team = false;
     var score = 0;
-    var prescore = -1;
     var announcements = [];
     var playerMessages = [];
     var messaging = false;
@@ -233,15 +218,14 @@
     // 🕹️ Movement & Controls
     var canmove = true;
     var canKeyPress = true;
+    var speedBoost = 1;
     var canFire = true;
     var canFire2 = true;
     var keysPressed = {};
-    var keyevents = [];
     var movementTimeouts = [];
     var autoRotating = false;
     var lockautoRotating = false;
     var autoAngle = 0;
-    var current_angle = 0;
     var MouseX_ = 0;
     var MouseY_ = 0;
     var MouseX = 0;
@@ -251,8 +235,8 @@
 
     // 💥 Combat & Weapons
     var bullets = [];
-    var boardbullets = [];
     var zlevelbullets = [];
+    var roads = [];
     var autoFiring = false;
     var autoIntevals = [];
     var baseFireInterval = 750;
@@ -316,7 +300,6 @@
     var requests = [];
 
     // 🏢 Teams & Multiplayer
-    var teamlist = [];
     var pubteams = [];
     var teamOver = false;
     var userId = getCookie("userId");
@@ -337,9 +320,7 @@
     var state = "start";
     var statecycle = 0;
     var progress = 0.0;
-    var keyevents = [];
     var pentarotate = 0;
-    var boundrectcanvas = Ghostcanvas.getBoundingClientRect();
     var requests = [];
     var levels = {
       0: 15,
@@ -1250,6 +1231,11 @@
               bullets = data;
               break;
             }
+            case "roadUpdate": {
+              console.log(data);
+              roads = data;
+              break;
+            }
             case "playerJoined": {
               console.log(data); // Log the player data
               players[data.id] = data; // Update the local player list
@@ -1510,6 +1496,10 @@
               setCookie("userId", userId, 365);
               break;
             }
+            case "playerSpeedBoost": {
+              if (data.id === playerId) speedBoost = data.speedMultiplyer;
+              break;
+            }
             default: {
               console.log("Empty action received.", type);
               break;
@@ -1525,6 +1515,8 @@
         });
 
         const movePlayer = (dx, dy, last, i) => {
+          dx *= speedBoost;
+          dy *= speedBoost;
           movementTimeouts.shift();
           if (!canmove) return;
           cavansX += dx;
@@ -1749,16 +1741,16 @@
                   bullet_size_l * 2 -
                   (cannon["cannon-width-top"] / 2) * Math.random();
               } else if (cannon["type"] === "AutoBulletCannon") {
-                var xxx = cannon["cannon-width"] - bullet_size_l * 1.5;
-                var yyy = cannon["cannon-height"] - bullet_size_l * 2;
+                var xxx = cannon["cannon-width"] - bullet_size_l / 2;
+                var yyy = cannon["cannon-height"] - bullet_size_l / 2;
                 var angle_ = angle + cannon["offset-angle"];
               } else if (cannon["type"] === "rocketer") {
-                var xxx = cannon["cannon-width-bottom"] + bullet_size_l * 2;
+                var xxx = cannon["cannon-width-bottom"] + bullet_size_l / 2;
                 var yyy =
                   cannon["cannon-height"] - cannon["cannon-width-bottom"];
                 var angle_ = angle + cannon["offset-angle"];
               } else {
-                var xxx = cannon["cannon-height"] + bullet_size_l;
+                var xxx = cannon["cannon-height"] + bullet_size_l / 2;
                 var yyy = 0;
                 var angle_ = angle + cannon["offset-angle"];
               }
@@ -1814,6 +1806,10 @@
                 var bulletdistance = bullet_speed__ * 100 * (bullet_size / 5);
                 var type = "rocketer";
                 var health = 9;
+              } else if (cannon["type"] === "paver") {
+                var bulletdistance = bullet_speed__ * 100 * (bullet_size / 5);
+                var type = "roadMap";
+                var health = 6;
               }
 
               let cannon_life = cannon["life-time"] || 0;
@@ -1975,6 +1971,10 @@
                       bullet_speed__ * 100 * (bullet_size / 5);
                     var type = "rocketer";
                     var health = 9;
+                  } else if (cannon["type"] === "paver") {
+                    var bulletdistance = bullet_speed__ * 100 * (bullet_size / 5);
+                    var type = "roadMap";
+                    var health = 6;
                   }
 
                   let cannon_life = cannon["life-time"] || 0;
@@ -2953,7 +2953,7 @@
           ctx.restore();
         }
 
-        if (tankdatacannondata["type"] === "trap") {
+        if (tankdatacannondata["type"] === "trap"  || tankdatacannondata["type"] === "paver") {
           ctx.save();
           // Translate to the center of the square
           ctx.translate(canW / 2, canH / 2);
@@ -3012,6 +3012,32 @@
           ctx.closePath(); // Close the path
           ctx.stroke(); // Draw the border
           ctx.restore();
+          if (tankdatacannondata["type"] === "paver") {
+            cannon_widthFOV /= 2;
+            cannon_heightFOV /= 2;
+            ctx.save();
+            ctx.translate(canW / 2, canH / 2);
+
+            let angle_offset = tankdatacannondata["offset-angle"];
+            ctx.rotate(angle + angle_offset);
+            // Draw the square
+            let basex =
+              -cannon_widthFOV / 2 +
+              cannon_heightFOV +
+              tankdatacannondata["offSet-x"] -
+              cannonWidth[i];
+            let basey =
+              -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
+
+            ctx.fillRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
+
+            // Add a border to the cannon
+            ctx.strokeStyle = "lightgrey"; // Set border color
+            ctx.lineWidth = 3; // Set border width
+            ctx.strokeRect(basex, basey, cannon_widthFOV, cannon_heightFOV); // Draw the border
+            // Restore the previous transformation matrix
+            ctx.restore();
+          }
         }
         if (tankdatacannondata["type"] === "SwivelAutoCannon") {
           ctx.save();
@@ -3913,6 +3939,71 @@
 
       let unZbullets = [];
 
+      roads.forEach((road) => {
+        console.log(road)
+        /*
+            [
+              {
+                  "road": {
+                      "x": 3808.206557283408,
+                      "y": 2115.0409425360053,
+                      "id": "8483aa04-0618-47f6-9128-52aeeea3c6e2",
+                      "uniqueid": 1744756577974.232,
+                      "multiplyer": 1.02
+                  },
+                  "distance": 21.081130625354504
+              },
+              {
+                  "road": {
+                      "x": 3824.406311311279,
+                      "y": 2070.1444813730486,
+                      "id": "8483aa04-0618-47f6-9128-52aeeea3c6e2",
+                      "uniqueid": 1744756577974.2854,
+                      "multiplyer": 1.02
+                  },
+                  "distance": 31.392023800162615
+              },
+              {
+                  "road": {
+                      "x": 3842.7622611269103,
+                      "y": 2065.952387837666,
+                      "id": "8483aa04-0618-47f6-9128-52aeeea3c6e2",
+                      "uniqueid": 1744756576626.3406,
+                      "multiplyer": 1.02
+                  },
+                  "distance": 47.729699931178644
+              }
+          ]
+        */
+        var show = road.some((buildmap) => 
+          buildmap.road.x > 0 + cavansX &&
+          buildmap.road.x < canvas.width + cavansX &&
+          buildmap.road.y - cavansY > 0 &&
+          buildmap.road.y < canvas.height + cavansY
+        );
+        if (true) {
+          ctx.beginPath();
+          ctx.moveTo(road[2].road.x-cavansX,road[2].road.y-cavansY)
+          let sameTeam =
+            players[road[2].road.id].team === players[playerId].team &&
+            players[road[2].road.id].team !== null &&
+            players[playerId].team !== null;
+          if (road[2].road.id === playerId || sameTeam) {
+            ctx.fillStyle = "#3999f9";
+            ctx.strokeStyle = "#5f79f5";
+          }
+          road.forEach((mapMark) => {
+            ctx.lineTo(mapMark.road.x-cavansX,mapMark.road.y-cavansY)
+          });
+          ctx.globalAlpha = 0.8;
+          ctx.stroke();
+          ctx.globalAlpha = 0.3;
+          ctx.fill();
+          ctx.closePath();
+          ctx.globalAlpha = 1;
+        }
+      })
+
       bullets.forEach((bullet) => {
         var realstartx = bullet.xstart - (bullet.xstart - cavansX);
         var realstarty = bullet.ystart - (bullet.ystart - cavansY);
@@ -4116,6 +4207,36 @@
 
             ctx.fill();
             ctx.stroke();
+          } else if (bullet.type === "roadMap") {
+            var sameTeam =
+              players[bullet.id].team === players[playerId].team &&
+              players[bullet.id].team !== null &&
+              players[playerId].team !== null;
+            if (bullet.id === playerId || sameTeam) {
+              ctx.fillStyle = "blue";
+              ctx.strokeStyle = "darkblue";
+            } else {
+              ctx.fillStyle = "red";
+              ctx.strokeStyle = "darkred";
+            }
+            ctx.save();
+            ctx.translate(realx - cavansX, realy - cavansY);
+            for (let i = 0; i < 2; i++) {
+              
+              ctx.rotate(bullet.angle + i * 180 * (pi / 180));
+              //ctx.rotate(i * 90 * pi / 180)
+              let realitemsize = bullet.size * 3 * FOV;
+              const h = realitemsize * sqrt23;
+
+              ctx.beginPath();
+              ctx.moveTo(0, -h / 2);
+              ctx.lineTo(-realitemsize / 2, h / 2);
+              ctx.lineTo(realitemsize / 2, h / 2);
+              ctx.closePath();
+
+              ctx.fill();
+              ctx.stroke();
+            }
           } else if (bullet.type === "FreeSwarm") {
             ctx.fillStyle = "#ff7df8";
             ctx.strokeStyle = "#ff66f7";
@@ -4436,7 +4557,7 @@
               ctx.closePath(); // Close the path
               ctx.stroke(); // Draw the border
               ctx.restore();
-            } else if (tankdatacannondata["type"] === "trap") {
+            } else if (tankdatacannondata["type"] === "trap" || tankdatacannondata["type"] === "paver") {
               let cannonwidth = tankdatacannondata["cannon-width"];
               let cannonheight = tankdatacannondata["cannon-height"];
               ctx.save();
@@ -4501,6 +4622,33 @@
               ctx.closePath(); // Close the path
               ctx.stroke(); // Draw the border
               ctx.restore();
+              if (tankdatacannondata["type"] === "paver") {
+                cannon_widthFOV /= 2;
+                cannon_heightFOV /= 2;
+                ctx.save();
+                ctx.translate(playerX - cavansX, playerY - cavansY);
+                let angle = player.cannon_angle;
+
+                let angle_offset = tankdatacannondata["offset-angle"];
+                ctx.rotate(angle + angle_offset);
+                // Draw the square
+                let basex =
+                  -cannon_widthFOV / 2 +
+                  cannon_heightFOV +
+                  tankdatacannondata["offSet-x"] -
+                  player.cannonW[i];
+                let basey =
+                  -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
+
+                ctx.fillRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
+
+                // Add a border to the cannon
+                ctx.strokeStyle = "lightgrey"; // Set border color
+                ctx.lineWidth = 3; // Set border width
+                ctx.strokeRect(basex, basey, cannon_widthFOV, cannon_heightFOV); // Draw the border
+                // Restore the previous transformation matrix
+                ctx.restore();
+              }
             } else if (tankdatacannondata["type"] === "AutoBulletCannon") {
               ctx.save();
               ctx.translate(playerX - cavansX, playerY - cavansY);
@@ -5001,21 +5149,25 @@
       "http://192.168.9.100:4500/ping",
     ];
     var passed = false;
-    urls.forEach(async (url) => {
-      try {
-        const response = await fetch(url);
-  
-        if (!response.ok) {
-          throw new Error(`Response status: ${response.status}`);
+    Promise.all(
+      urls.map(async (url) => {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+          }
+          console.log("a");
+          passed = true;
+        } catch (error) {
+          console.error(error.message);
         }
-        passed = true;
-      } catch (error) {
-        console.error(error.message);
+      })
+    ).then(() => {
+      console.log("e");
+      if (!passed) {
+        window.location.href = "/public/server-down.html";
       }
-    })
-    if (!passed) {
-      window.location.href = "/public/server-down.html";
-    }
+    });
   }
 
   ping();

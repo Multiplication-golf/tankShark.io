@@ -94,6 +94,7 @@ handleUpgrade(serverHttps, "HTTPS");
 
 const helmet = require("helmet");
 const protobuf = require("protobufjs");
+const { connect } = require("http2");
 
 const schema = `
 syntax = "proto3";
@@ -313,6 +314,12 @@ let deadplayers = [];
 let announcements = [];
 /**/
 
+let roads = [];
+/**/
+
+let roadsectors = [];
+/**/
+
 let JoinRequests = [];
 /**/
 
@@ -366,6 +373,7 @@ const CONFIG = {
   deathTime: 200,
   itemCollisionRangeMultiplyer: 1.5,
   playerCollisionRangeMultiplyer: 2,
+  roadMaxConectLength: 300,
   map: {
     size: 5000,
     innersize: 4500,
@@ -513,6 +521,7 @@ const tankmeta = {
       autoShooter: { img: 11, level: 30 },
       rocketer: { img: 12, level: 30 },
       smasher: { img: 13, level: 30 },
+      paver: { img: 14, level: 3 },
     },
     cannons: [
       {
@@ -988,26 +997,30 @@ const tankmeta = {
     upgrades: {},
     cannons: [
       {
-        type: "basicCannon",
-        "cannon-width": 60,
+        type: "paver",
+        multiplyer: 1.02,
+        "trap-to-cannon-ratio": 0.8,
+        "cannon-width": 80,
         "cannon-height": 30,
         "offSet-x": 0,
         "offSet-y": 0,
         "offset-angle": -0.785398,
-        bulletSize: 1,
+        bulletSize: 0.5,
         bulletSpeed: 0.5,
         delay: 0,
         reloadM: 1,
         bullet_pentration: 0.3,
       },
       {
-        type: "basicCannon",
-        "cannon-width": 60,
+        type: "paver",
+        multiplyer: 1.02,
+        "trap-to-cannon-ratio": 0.8,
+        "cannon-width": 80,
         "cannon-height": 30,
         "offSet-x": 0,
         "offSet-y": 0,
         "offset-angle": 0.785398,
-        bulletSize: 1,
+        bulletSize: 0.5,
         bulletSpeed: 0.5,
         delay: 0,
         reloadM: 1,
@@ -1098,6 +1111,53 @@ function calculateRotatedPentagonVertices(cx, cy, r, rotation) {
   }
 
   return vertices;
+}
+
+function isPointInTriangle(p, a, b, c) {
+  const area =
+    0.5 * (-b.y * c.x + a.y * (-b.x + c.x) + a.x * (b.y - c.y) + b.x * c.y);
+  const s =
+    (1 / (2 * area)) *
+    (a.y * c.x - a.x * c.y + (c.y - a.y) * p.x + (a.x - c.x) * p.y);
+  const t =
+    (1 / (2 * area)) *
+    (a.x * b.y - a.y * b.x + (a.y - b.y) * p.x + (b.x - a.x) * p.y);
+  const u = 1 - s - t;
+
+  return s >= 0 && t >= 0 && u >= 0;
+}
+
+function buildTriArray(roads) {
+  let roads_ = [...roads];
+  let triRoads = [];
+  roads_.forEach((road) => {
+    var connectors = [];
+    if (!players[road.id]) return;
+
+    roads_.forEach((_road) => {
+      if (connectors.length > 2 || road === _road || !players[road.id]) return;
+      var distance = MathHypotenuse(_road.x - road.x, _road.y - road.y);
+      let sameTeam =
+        players[road.id].team === players[_road.id].team &&
+        players[road.id].team !== null &&
+        players[_road.id].team !== null;
+      if (
+        distance < CONFIG.roadMaxConectLength &&
+        (sameTeam || road.id === _road.id)
+      ) {
+        connectors.push({ road: _road, distance: distance });
+        connectors.sort((a, b) => {
+          return a.distance - b.distance;
+        });
+        connectors = connectors.splice(0, 3);
+      }
+    });
+    while (connectors.length < 3) {
+      connectors.push({road:road, distance: 0});
+    }
+    triRoads.push(connectors);
+  });
+  return triRoads;
 }
 
 function calculateSquareVertices(cx, cy, size, angle) {
@@ -2568,7 +2628,7 @@ wss.on("connection", (socket, req) => {
           players[data.playerId].team !== MYteam.teamID ||
           data.playerId !== MYteam.owner.id
         ) {
-          socket.close();
+          socket.close(500, "invalid delete");
         }
         MYteam.players.forEach((player) => {
           emit("playerJoinedTeam", { id: player.id, teamId: null });
@@ -3576,6 +3636,17 @@ wss.on("connection", (socket, req) => {
             }
           };
         }
+        if (data.type === "roadMap") {
+          roads.push({
+            x: data.x,
+            y: data.y,
+            id: data.id,
+            uniqueid: data.uniqueid,
+            multiplyer:
+              tankmeta[players[data.id].__type__].cannons[data.cannonIndex]
+                .multiplyer,
+          });
+        }
 
         var sedoRoom = getKeyRoom(data.x, data.y) ?? "room-0";
         data.sedoRoomKey = sedoRoom;
@@ -3999,7 +4070,13 @@ wss.on("connection", (socket, req) => {
       }
 
       case "playerDied": {
-        hidden_broswers.filter((interval) => {
+        roads = roads.filter((road) => {
+          if (road.id === connection.playerId) {
+            return false;
+          }
+          return true;
+        });
+        hidden_broswers = hidden_broswers.filter((interval) => {
           if (connection.playerId === interval.id) {
             clearInterval(interval.interval);
             return false;
@@ -4087,8 +4164,14 @@ wss.on("connection", (socket, req) => {
   }, 5000);
 
   socket.on("close", () => {
+    roads = roads.filter((road) => {
+      if (road.id === connection.playerId) {
+        return false;
+      }
+      return true;
+    });
     IPs = IPs.splice(IPs.indexOf(req.socket.remoteAddress), 1);
-    hidden_broswers.filter((interval) => {
+    hidden_broswers = hidden_broswers.filter((interval) => {
       if (connection.playerId === interval.id) {
         clearInterval(interval.interval);
         return false;
@@ -4449,13 +4532,14 @@ setInterval(() => {
 
     if (
       bullet.type === "trap" ||
+      bullet.type === "roadMap" ||
       bullet.type === "directer" ||
       bullet.type === "FreeSwarm" ||
       bullet.type === "FreeNecromancer"
     ) {
       if (
         bullet.bullet_distance - bullet.distanceTraveled < 200 &&
-        bullet.type === "trap"
+        bullet.type === "roadMap"
       ) {
         bullet.speed -= (bullet.bullet_distance - bullet.distanceTraveled) / 85;
         if (bullet.speed <= 0) bullet.speed = 0;
@@ -4481,10 +4565,10 @@ setInterval(() => {
           )
         ) {
           if (
-            bullet_speed !== 0 &&
-            bullet_speed !== 0 &&
-            (!bullet_.speed || !bullet_speed) &&
-            bullet.type === "trap"
+            (bullet_speed !== 0 &&
+              bullet_speed !== 0 &&
+              (!bullet_.speed || !bullet_speed) &&
+              bullet.type === "trap") || bullet.type === "roadMap"
           )
             return;
           bullet.bullet_distance -=
@@ -4634,7 +4718,7 @@ setInterval(() => {
           con = distance < player40 + bullet.size && bullet.id !== player.id;
         }
         if (con) {
-          if (bullet.type === "trap") {
+          if (bullet.type === "trap" || bullet.type === "roadMap") {
             player.health -=
               (bullet.bullet_damage - 3.8) /
               (player.size + 6 / bullet.size + 3);
@@ -4769,6 +4853,11 @@ setInterval(() => {
     if (bullet.distanceTraveled <= bullet.bullet_distance) {
       bullet.x = newX;
       bullet.y = newY;
+      if (bullet.type === "roadMap") {
+        let road = roads.find((road) => road.uniqueid === bullet.uniqueid);
+        road.x = newX;
+        road.y = newY;
+      }
       if (bullet.type === "directer") {
         bullet.wander.setXY(newX, newY);
       }
@@ -4782,13 +4871,15 @@ setInterval(() => {
 
     if (bullet.type === "directer") {
       emit("dronekilled", { droneID: bullet.id });
-    }
-
-    if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
+    } else if (bullet.type === "roadMap") {
+      let road = roads.find((road) => road.uniqueid === bullet.uniqueid);
+      roads = roads.splice(roads.indexOf(road), 1);
+    } else if (
+      bullet.type === "FreeNecromancer" ||
+      bullet.type === "FreeSwarm"
+    ) {
       deadlist.push(bullet.id);
-    }
-
-    if (bullet.type === "AutoBullet") {
+    } else if (bullet.type === "AutoBullet") {
       autocannons = autocannons.filter((cannon) => {
         if (bullet.id === cannon.playerid) return false;
         return true;
@@ -5611,7 +5702,7 @@ setInterval(() => {
             item.vertices
           );
 
-          if (bullet.type === "trap") {
+          if (bullet.type === "trap" || bullet.type === "roadMap") {
             var bulletSpeed = 4;
           } else {
             var bulletSpeed = bullet.speed || 0;
@@ -6019,16 +6110,46 @@ setInterval(() => {
     return true;
   });
 
+  roadsectors = buildTriArray(roads);
+  roadsectors.forEach((triroad) => {
+    for (const playerID in players) {
+      var player = players[playerID];
+      let sameTeam =
+        players[triroad[0].road.id].team === player.team &&
+        player.team !== null &&
+        player.team !== null;
+      if (
+        (triroad[0].road.id === playerID || sameTeam) &&
+        isPointInTriangle(
+          { x: player.x, y: player.y },
+          { x: triroad[0].road.x, x: triroad[0].road.y },
+          { x: triroad[1].road.x, x: triroad[1].road.y },
+          { x: triroad[2].road.x, x: triroad[2].road.y }
+        )
+      ) {
+        player.speedBoost = dataRoad[0].multiplyer;
+      } else {
+        player.speedBoost = 1;
+      }
+      emit("playerSpeedBoost", {
+        id: playerID,
+        speedMultiplyer: player.speedBoost,
+      });
+    }
+  });
+
   tempBulletToPush.forEach((item) => {
     bullets.push(item);
   });
 
-  emit("bulletUpdate", bullets);
-  emit("bossUpdate", bosses);
-  emit("explosionUpdate", explosions);
   announcements = announcements.filter(
     (message) => message.killtime > Date.now()
   );
+
+  emit("bulletUpdate", bullets);
+  emit("bossUpdate", bosses);
+  emit("roadUpdate", roadsectors);
+  emit("explosionUpdate", explosions);
   requestEmit("requests", JoinRequests);
   messageEmit("announcements", announcements);
   createAndSendGameObjects(buildArray);
