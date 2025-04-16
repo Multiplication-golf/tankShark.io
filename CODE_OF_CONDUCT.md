@@ -5,8 +5,7 @@
 We as members, contributors, and leaders will try to make participation in our
 community a harassment-free experience for everyone, regardless of age, body
 size, visible or invisible disability, ethnicitys, and expression, level of experience, education, socio-economic status,
-nationality, personal appearance, race, religion, or sexual identity
-and orientation.
+nationality, personal appearance, race, and religion.
 
 We try to act and interact in ways that contribute to an open, welcoming,
 diverse, inclusive, and healthy community.
@@ -38,7 +37,7 @@ Examples of unacceptable behavior include:
 ## Enforcement Responsibilities
 
 Community leaders can be responsible for clarifying and enforcing our standards of
-acceptable behavior and will take appropriate and fair corrective action in
+acceptable behavior and may take appropriate and fair corrective action in
 response to any behavior that they deem inappropriate, threatening, offensive,
 or harmful.
 
@@ -55,7 +54,7 @@ This Code of Conduct applies within this respiratory.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-can_not_find_me@gmail.com.
+can_not_find_me@somesite.com.
 
 ## Enforcement Guidelines
 
@@ -114,6 +113,6 @@ enforcement ladder](https://github.com/mozilla/diversity).
 
 [homepage]: https://www.contributor-covenant.org
 
-For answers to common questions about this code of conduct, see the FAQ at
+For answers to common questions about the regular version of the code of conduct, see the FAQ at
 https://www.contributor-covenant.org/faq. Translations are available at
 https://www.contributor-covenant.org/translations.
