@@ -20,10 +20,21 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #01b4fa7e;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #63f8fd7e;
+}
+
+.player-canvas {
+  border: rgb(226, 226, 226) solid 8px;
+  width: 250px;
+  height: 100%;
+  border-radius: 20px;
+  margin-left: -2vw;
+  background-repeat: repeat;
+  background-origin: border-box;
 }
 
 /* Container Styles */
@@ -35,6 +46,25 @@ body {
   width: 33%;
   margin: auto;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.player-canvas-container {
+  width: 266px;
+  height: 266px;
+  margin-bottom: 2vw;
+  margin-left: -2vw;
+  transform: translateX(-100%);
+}
+
+.right-content-container {
+  float: right;
+  margin-right: 0;
+  height: 100%;
+  line-height: 14px;
+  width: 0px;
+  display: flex;
+  align-content: end;
+  flex-wrap: wrap;
 }
 
 .center100 {
@@ -58,7 +88,65 @@ body {
   align-items: center;
 }
 
+@keyframes pop {
+  0% {
+    font-size: 15px;
+    transform: translateY(-284px);
+  }
+  50% {
+    font-size: 19px;
+    transform: translateY(-287px);
+  }
+  0% {
+    font-size: 15px;
+    transform: translateY(-284px);
+  }
+}
+
 /* Input and Button Styles */
+.skin-text {
+  position: fixed; 
+  transform: translateY(-284px); 
+  font-size: 15px;
+  margin-left: -1vw;
+  animation: pop 1s infinite;
+}
+
+.leader-board {
+  width: 266px;
+  height: 37vw;
+  border: 8px solid rgb(226, 226, 226);
+  border-radius: 2vw;
+  transform: translateX(-266px);
+  margin-left: -2vw;
+  display: flex;
+  align-content:start;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  background: linear-gradient(to bottom,
+    rgb(0, 238, 255) 0%,
+    rgb(0, 4, 255) 45%,
+    rgb(0, 4, 255) 55%,
+    #1c0291 100%
+  );
+}
+
+.entrie-box {
+  background-color: rgb(243, 243, 243);
+  border: none;
+  margin: 5px;
+  padding: 5px;
+  display: flex;
+  min-height: 10px;
+  min-width: 230px;
+  border-radius: 2vw;
+  text-align: center;
+  align-items: center;
+  background-origin: border-box;
+  background-clip: border-box;
+  justify-content: center;
+}
+
 .inputMain {
   width: 80%;
   padding: 3%;
@@ -72,6 +160,7 @@ body {
   background: linear-gradient(0deg, rgba(0, 0, 255), rgb(0, 238, 255));
   -webkit-background-clip: text;
   background-clip: text;
+  text-shadow: 2px 5px 2px #00d2d65d;
   -webkit-text-fill-color: transparent;
 }
 
@@ -116,18 +205,25 @@ body {
   --angle: 0deg;
 
   background-origin: border-box;
-  
+
   /* Remove the background-color to let gradient show */
-  background-image: 
-    linear-gradient(var(--angle), rgba(68, 0, 255, 0.8), rgba(255, 0, 0, 0) 70.71%),
-    linear-gradient(var(--angle), rgba(0, 217, 255, 0.8), rgba(0, 255, 0, 0) 70.71%);
+  background-image: linear-gradient(
+      var(--angle),
+      rgba(68, 0, 255, 0.8),
+      rgba(255, 0, 0, 0) 70.71%
+    ),
+    linear-gradient(
+      var(--angle),
+      rgba(0, 217, 255, 0.8),
+      rgba(0, 255, 0, 0) 70.71%
+    );
   border: 0.3rem solid transparent;
   animation: rotateBackground 4s linear infinite;
   cursor: pointer;
 }
 
 button:hover {
-  background-color: #00d2d6;
+  background-color: #46fcff;
 }
 
 /* Labels and Text Styles */
@@ -234,7 +330,11 @@ option {
 }
 
 .disabledBadge {
-  background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4));
+  background-image: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.4),
+    rgba(0, 0, 0, 0.4)
+  );
   background-clip: border-box;
   border-color: rgb(122, 122, 122) !important;
 }

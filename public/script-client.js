@@ -3941,40 +3941,6 @@
 
       roads.forEach((road) => {
         console.log(road)
-        /*
-            [
-              {
-                  "road": {
-                      "x": 3808.206557283408,
-                      "y": 2115.0409425360053,
-                      "id": "8483aa04-0618-47f6-9128-52aeeea3c6e2",
-                      "uniqueid": 1744756577974.232,
-                      "multiplyer": 1.02
-                  },
-                  "distance": 21.081130625354504
-              },
-              {
-                  "road": {
-                      "x": 3824.406311311279,
-                      "y": 2070.1444813730486,
-                      "id": "8483aa04-0618-47f6-9128-52aeeea3c6e2",
-                      "uniqueid": 1744756577974.2854,
-                      "multiplyer": 1.02
-                  },
-                  "distance": 31.392023800162615
-              },
-              {
-                  "road": {
-                      "x": 3842.7622611269103,
-                      "y": 2065.952387837666,
-                      "id": "8483aa04-0618-47f6-9128-52aeeea3c6e2",
-                      "uniqueid": 1744756576626.3406,
-                      "multiplyer": 1.02
-                  },
-                  "distance": 47.729699931178644
-              }
-          ]
-        */
         var show = road.some((buildmap) => 
           buildmap.road.x > 0 + cavansX &&
           buildmap.road.x < canvas.width + cavansX &&
@@ -5141,6 +5107,43 @@
       console.error(error.message);
     }
   }
+
+  async function getLeaderBoardData() {
+    const url = "http://localhost:4500/leaderboard";
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  async function buildLeaderBoard() {
+    var leaderboard = await getLeaderBoardData();
+    var leaderBoard = document.getElementById("leaderBoard")
+    leaderBoard.innerHTML = "";
+    console.log(leaderboard.leader_board)
+    leaderboard.leader_board.forEach((leader) => {
+      var holderDiv = document.createElement("div");
+      var holderName = document.createElement("p");
+      var holderImg = document.createElement("img");
+      leaderBoard.appendChild(holderDiv);
+      holderDiv.appendChild(holderImg)
+      holderImg.src = `/public${leader.badge.badge}`;
+      holderDiv.classList.add("entrie-box");
+      holderDiv.appendChild(holderName);
+      holderName.innerHTML = `${leader.username}, Score: ${leader.score}`
+      holderImg.style.width = "30px";
+      holderImg.style.hieght = "30px";
+    });
+  }
+
+  buildLeaderBoard();
+
   async function ping() {
     const urls = [
       "http://localhost:4500/ping",
@@ -5159,7 +5162,7 @@
           console.log("a");
           passed = true;
         } catch (error) {
-          console.error(error.message);
+          console.log(error.message);
         }
       })
     ).then(() => {

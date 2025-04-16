@@ -1888,6 +1888,41 @@ app.post("/currentbadge", (req, res) => {
   });
 });
 
+app.get("/leaderboard", (req, res) => {
+  console.log("ooo")
+  userbase.sort((entrieA,entrieB) => {
+    var scoresumA = entrieA.scores.reduce((a,score) => a + score.score);
+    var scoresumB = entrieB.scores.reduce((a,score) => a + score.score);
+    return scoresumA - scoresumB;
+  });
+  var preLeaderBoard = userbase
+  var postLeaderBorad = []
+  preLeaderBoard.forEach((board) => {
+    var scoresumA = board.scores.reduce((a,score) => a + score.score, 0);
+    console.log(scoresumA);
+
+    var badge = CONFIG.badgeLevels.find((badgeLevel) => {
+      if (
+        between(
+          scoresumA,
+          badgeLevel.minScore,
+          badgeLevel.maxScore !== null ? badgeLevel.maxScore : Infinity
+        )
+      ) {
+        return badgeLevel.badge;
+      }
+    });
+    badge ??= "/badges/1.png"
+    board = {username:board.username, score:scoresumA, badge:badge};
+    postLeaderBorad.push(board)
+  });
+  
+
+  res.send({
+    leader_board:postLeaderBorad
+  });
+});
+
 // is the server open ^(*_*)^
 app.get("/ping", (req, res) => {
   res.send("pong");
@@ -1992,6 +2027,7 @@ wss.on("connection", (socket, req) => {
           });
 
           if (_player !== undefined) {
+            _player.username = data.username;
             let score__$ = _player.scores.reduce((a, b) => {
               return a + b.score;
             }, 0);
@@ -2023,7 +2059,10 @@ wss.on("connection", (socket, req) => {
               Date.now() / 213984238 +
               Math.random();
             players[newId].userId = newid;
-            userbase.push({ userid: newid, scores: [] });
+            userbase.push({ userid: newid, scores: [], username:data.username });
+            socket.send(
+              JSON.stringify({ type: "newid", data: { newid: newid } })
+            );
             badge = "/badges/1.png";
           }
         } else {
@@ -2036,7 +2075,7 @@ wss.on("connection", (socket, req) => {
             JSON.stringify({ type: "newid", data: { newid: newid } })
           );
           players[newId].userId = newid;
-          userbase.push({ userid: newid, scores: [] });
+          userbase.push({ userid: newid, scores: [], username: data.username });
           badge = "/badges/1.png";
         }
         socket.send(

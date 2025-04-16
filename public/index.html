@@ -6,15 +6,22 @@
     <link rel="stylesheet" href="game-style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <meta name="twitter:title" content="TankShark.IO">
+    <meta name="twitter:description" content="A fun open world game were everyone is foe. Enjoy lots of fun with loads of new tanks and shapes plus advanced teaming.">
+    <meta name="twitter:image" content="/public/og-assets/tankshark-io.png">
+    <meta name="twitter:card" content="summary_large_image">
     <link
       href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
       rel="stylesheet"
     />
     <meta
       name="description"
-      content="A fun open world game were everyone is foe. Enjoy lots of fun with loads of new tanks and shapes."
+      content="A fun open world game were everyone is foe. Enjoy lots of fun with loads of new tanks and shapes plus advanced teaming."
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta property="og:title" content="TankShark.IO" />
+    <meta property="og:description" content="A fun open world game were everyone is foe. Enjoy lots of fun with loads of new tanks and shapes plus advanced teaming." />
+    <meta property="og:image" content="/public/og-assets/tankshark-io.png" />
     <link
       rel="icon"
       id="icon"
@@ -33,7 +40,7 @@
       </div>
       <div class="center100">
         <div id="start" class="container">
-          <h1 class="mainHeader">Welcome to TankShark!</h1>
+          <h1 class="mainHeader">Welcome to TankShark.io!</h1>
           <input
             type="text"
             id="username"
@@ -44,10 +51,13 @@
           />
           <div class="divMain"><button class="buttonMain" id="playButton">Play</button></div>
         </div>
-        <!-- um just doing all the things :S-->
-        <div style="float: right; margin-right: 0; height: 100%; width: 0px; display: flex; align-content: end; flex-wrap: wrap;">
-          <div style="width: 266px;height: 266px;margin-bottom: 2vw;margin-left: -2vw;transform: translateX(-100%);" id="buildBox">
-            <canvas width="250" height="250" id="playerCanvas" style="border: rgb(226, 226, 226) solid 8px; width: 250px; height: 100%; border-radius: 20px; margin-left:-2vw; background-repeat: repeat; background-origin: border-box;"></canvas>
+        <div class="right-content-container">
+          <div class="leader-board" id="leaderBoard">
+            <div class="entrie-box"><p>bla</p></div>
+          </div>
+          <div class="player-canvas-container" id="buildBox">
+            <canvas width="250" height="250" id="playerCanvas" class="player-canvas"></canvas>
+            <p class="skin-text">New skins available</p>
           </div>
         </div>
       </div>
