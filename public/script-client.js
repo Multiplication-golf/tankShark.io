@@ -152,6 +152,7 @@
     canvas.style.position = "absolute";
     canvas.style.top = "0";
     canvas.style.left = "0";
+    canvas.itemprop = "gamePlatform";
 
     document.getElementsByTagName(
       "body"
@@ -5136,9 +5137,9 @@
       holderImg.src = `/public${leader.badge.badge}`;
       holderDiv.classList.add("entrie-box");
       holderDiv.appendChild(holderName);
-      holderName.innerHTML = `${leader.username}, Score: ${leader.score}`
-      holderImg.style.width = "30px";
-      holderImg.style.hieght = "30px";
+      holderName.innerHTML = `${leader.username}, ${leader.score}`
+      holderImg.style.width = "20px";
+      holderImg.style.hieght = "20px";
     });
   }
 
@@ -5226,7 +5227,7 @@
           1 - (maxScore - levelData.playerScore) / (maxScore - minScore)
         );
         imageDiv.innerHTML = `
-          <svg width="5vw" height="5vw" viewBox="0 0 100 100">
+          <svg width="10vh" height="10vh" viewBox="0 0 100 100">
             <g stroke-width="9" stroke="hsl(184, 100%, 50%)" fill="none">
               <circle r="45" cx="50" cy="50" filter="url(#nnneon-filter)"></circle>
               <circle r="45" cx="56.75" cy="50" filter="url(#nnneon-filter2)" opacity="0.25"></circle>

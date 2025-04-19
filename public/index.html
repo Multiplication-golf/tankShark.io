@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <meta name="twitter:title" content="TankShark.IO">
-    <meta name="twitter:description" content="A fun open world game were everyone is foe. Enjoy lots of fun with loads of new tanks and shapes plus advanced teaming.">
+    <meta name="twitter:description" content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!">
     <meta name="twitter:image" content="/public/og-assets/tankshark-io.png">
     <meta name="twitter:card" content="summary_large_image">
     <link
@@ -16,25 +16,37 @@
     />
     <meta
       name="description"
-      content="A fun open world game were everyone is foe. Enjoy lots of fun with loads of new tanks and shapes plus advanced teaming."
+      content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta property="og:title" content="TankShark.IO" />
-    <meta property="og:description" content="A fun open world game were everyone is foe. Enjoy lots of fun with loads of new tanks and shapes plus advanced teaming." />
+    <meta property="og:description" content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!" />
     <meta property="og:image" content="/public/og-assets/tankshark-io.png" />
+    <meta property="og:type" content="website" />
+    
     <link
       rel="icon"
       id="icon"
       type="image/x-icon"
-      href="/favicons/favicon.ico"
+      href="/public/favicons/favicon.ico"
     />
   </head>
   <body>
+    <script type="text/javascript">
+      (function(window, document, dataLayerName, id) {
+      window[dataLayerName]=window[dataLayerName]||[],window[dataLayerName].push({start:(new Date).getTime(),event:"stg.start"});var scripts=document.getElementsByTagName('script')[0],tags=document.createElement('script');
+      var qP=[];dataLayerName!=="dataLayer"&&qP.push("data_layer_name="+dataLayerName);var qPString=qP.length>0?("?"+qP.join("&")):"";
+      tags.async=!0,tags.src="https://multiplication-golf.containers.piwik.pro/"+id+".js"+qPString,scripts.parentNode.insertBefore(tags,scripts);
+      !function(a,n,i){a[n]=a[n]||{};for(var c=0;c<i.length;c++)!function(i){a[n][i]=a[n][i]||{},a[n][i].api=a[n][i].api||function(){var a=[].slice.call(arguments,0);"string"==typeof a[0]&&window[dataLayerName].push({event:n+"."+i+":"+a[0],parameters:[].slice.call(arguments,1)})}}(i[c])}(window,"ppms",["tm","cm"]);
+      })(window, document, 'dataLayer', '3de78e0f-45d5-413f-8fdc-0089ab0c0116');
+      </script>
     <header class="landing-page" id="landing-page">
       <div class="flexcenter">
         <div class="badgeLevelDiv-con">
           <div class="badgeLevelDiv" id="badgeLevelDiv">
-            <div class="levelContainer"></div>
+            <div class="levelContainer">
+
+            </div>
           </div>
         </div>
       </div>
@@ -61,30 +73,54 @@
           </div>
         </div>
       </div>
-      <footer class="botton-footer">
-          <select name="ip" id="IP" class="ip-slecet">
-            <option value="wss://websocketpointer.duckdns.org">
-              wss://websocketpointer.duckdns.org
-            </option>
-            <option value="ws://127.0.0.1:400">ws://127.0.0.1:4500</option>
-            <option value="ws://192.168.9.100:4500">
-              ws://192.168.9.100:4500
-            </option>
-            <option value="ws://localhost:4500">ws://localhost:4500</option>
-          </select>
+      <footer class="botton-footer" style="z-index: 3;">
+        <div class="surronder">
+          
+          <a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fyourwebsite.com" 
+            target="_blank"
+            itemprop="url" 
+            class="social-share" 
+            rel="noopener noreferrer">
+            Share on X
+          </a>
+
+          <!-- Share on Facebook -->
+          <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fyourwebsite.com" 
+            target="_blank"
+            itemprop="url"
+            class="social-share" 
+            rel="noopener noreferrer">
+            Share on Facebook
+          </a>
+        </div>
+      </footer>
+      <footer class="botton-footer2" itemscope itemtype="https://schema.org/VideoGame">
+        <select name="ip" id="IP" class="ip-slecet" itemprop="gameLocation" title="Web-dev server conntion accses point. Warning leave as DEFAULT" >
+          <option value="wss://websocketpointer.duckdns.org">
+            wss://websocketpointer.duckdns.org
+          </option>
+          <option value="ws://127.0.0.1:400">ws://127.0.0.1:4500</option>
+          <option value="ws://192.168.9.100:4500">
+            ws://192.168.9.100:4500
+          </option>
+          <option value="ws://localhost:4500">ws://localhost:4500</option>
+        </select>
       </footer>
     </header>
-    <section class="full-screen" id="full-screen">
+    <section itemscope itemtype="https://schema.org/Game" class="full-screen" id="full-screen" itemprop="status">
       <p>Loading</p>
     </section>
     <main
       id="game"
+      itemscope itemtype="https://schema.org/Game"
       class="mainframe"
     >
       <img
         src="assets/youDied.png"
         class="death-screen"
+        itemprop="gameEvent"
         id="die"
+        alt="death screen"
       />
       <div
         class="background-grid"
@@ -98,8 +134,10 @@
           class="bar-holder"
         >
           <img
+            itemprop="characterAttribute"
             src="assets/barXP.png"
             class="bar-image"
+            alt="level bar"
           />
         </div>
         <!-- <p
@@ -108,6 +146,7 @@
         ></p> -->
       </div>
       <div
+        itemprop="characterAttribute"
         id="tanktiles"
         class="upgrade-tiles"
       ></div>
@@ -215,6 +254,7 @@
               >
               <input
                 type="text"
+                itemprop="description"
                 id="teamDescription"
                 placeholder="Enter your team's description"
                 autocomplete=""
@@ -231,6 +271,7 @@
                     name="teamType"
                     value="Anarchy"
                     class="inlineRadio"
+                    itemprop="gameMode"
                     checked
                   />
                   <label for="Anarchy">Anarchy</label>
@@ -243,6 +284,7 @@
                     name="teamType"
                     value="Democracy"
                     class="inlineRadio"
+                    itemprop="gameMode"
                   />
                   <label for="Democracy">Democracy</label>
                 </div>
@@ -254,6 +296,7 @@
                     name="teamType"
                     value="Communist"
                     class="inlineRadio"
+                    itemprop="gameMode"
                   />
                   <label for="Communist">Communist</label>
                 </div>
@@ -265,6 +308,7 @@
                     name="teamType"
                     value="Constitutional"
                     class="inlineRadio"
+                    itemprop="gameMode"
                   />
                   <label for="Constitutional">Constitutional</label>
                 </div>
@@ -349,6 +393,7 @@
           <input
             type="text"
             id="teamname"
+            itemprop="name"
             style="z-index: 10"
             placeholder="Enter your team name"
             autocomplete="given-lastname"

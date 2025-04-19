@@ -29,10 +29,9 @@ body {
 
 .player-canvas {
   border: rgb(226, 226, 226) solid 8px;
-  width: 250px;
-  height: 100%;
+  height: 13.8541666667vw;
   border-radius: 20px;
-  margin-left: -2vw;
+  margin-left: 0;
   background-repeat: repeat;
   background-origin: border-box;
 }
@@ -49,10 +48,10 @@ body {
 }
 
 .player-canvas-container {
-  width: 266px;
-  height: 266px;
+  width: 13.8541666667vw;
+  height: 13.8541666667vw;
   margin-bottom: 2vw;
-  margin-left: -2vw;
+  margin-left: -4vw;
   transform: translateX(-100%);
 }
 
@@ -90,45 +89,149 @@ body {
 
 @keyframes pop {
   0% {
-    font-size: 15px;
-    transform: translateY(-284px);
+    transform: translateY(-14.8541666667vw) scale(1); 
   }
   50% {
-    font-size: 19px;
-    transform: translateY(-287px);
+    transform: translateY(-14.8541666667vw) scale(1.3); 
   }
   0% {
-    font-size: 15px;
-    transform: translateY(-284px);
+    transform: translateY(-14.8541666667vw) scale(1); 
   }
 }
 
 /* Input and Button Styles */
 .skin-text {
   position: fixed; 
-  transform: translateY(-284px); 
+  transform: translateY(-14.8541666667vw); 
   font-size: 15px;
-  margin-left: -1vw;
+  margin-left: 2vw;
   animation: pop 1s infinite;
 }
 
+.social-share {
+  background-color: #33f0ff;
+  padding: 8px;
+  font-size: 17px;
+  border-radius: 15px;
+  width: 15vw;
+  color: rgb(0, 0, 0);
+  margin: 6px;
+  font-size: 1.5vw;
+  font-weight: 800;
+  min-width: 10.9375vw;
+  border: rgb(226, 226, 226) solid 5px;
+  text-decoration: none;
+}
+
+@media only screen and (600px < width < 1048px) {
+  .social-share {
+    font-size: 1.25vw;
+  }
+}
+
+@media screen and (min-width: 1261px) {
+  .social-share {
+     font-size: 20px;
+  }
+}
+
+.social-share:hover {
+  background-color: #33b4ff;
+}
+
+.surronder {
+  margin-bottom: 0px;
+  margin-top: 25px;
+  display: flex;
+  width: 35vw;
+  background-color: #ffffff;
+  border-top: rgb(226, 226, 226) solid 5px;
+  border-right: rgb(226, 226, 226) solid 5px;
+  float: left;
+  border-radius: 0px 10px 0px 0px;
+  justify-content: center;
+}
+
+@media only screen and (width < 950px) {
+  .ip-slecet {
+    display: none;
+  }
+}
+
 .leader-board {
-  width: 266px;
-  height: 37vw;
+  min-width: 13.8541666667vw;
+  height: 67vh;
   border: 8px solid rgb(226, 226, 226);
   border-radius: 2vw;
-  transform: translateX(-266px);
-  margin-left: -2vw;
+  transform: translateX(-13.8541666667vw);
+  margin-left: -4vw;
   display: flex;
   align-content:start;
   flex-wrap: wrap;
   margin-bottom: 20px;
+  justify-content: center;
   background: linear-gradient(to bottom,
     rgb(0, 238, 255) 0%,
     rgb(0, 4, 255) 45%,
     rgb(0, 4, 255) 55%,
     #1c0291 100%
   );
+}
+
+html, body {
+  overflow-x:hidden;
+}
+
+@media only screen and (max-width: 600px) {
+  .leader-board {
+    min-width: calc(100vw - 16px) !important;
+    --realwidth:calc(-100vw + 8px);
+    transform: translateX(var(--realwidth)) !important;
+    margin-bottom: auto;
+    height:25vh;
+  }
+  .surronder {
+    float: none;
+    width:100%;
+    border-radius: 0px 0px 0px 0px;
+    border-right: none;
+  }
+  .social-share {
+    padding: 4px;
+    font-size: 14px;
+    min-width: 10px !important;
+    width: 40% !important;
+    margin: 10px !important;
+  }
+  .player-canvas-container {
+    display: none;
+  }
+  .player-canvas-container {
+    display: none;
+  }
+  .badgeLevelDiv {
+    min-width: none;
+  }
+  .badgeLevelDiv-con {
+    height: 15vh !important;
+  }
+  .botton-footer2 {
+    display: none;
+  }
+  .divMain {
+    font-size: 15px !important;
+  }
+  .container {
+    width: calc(100vw - 20px) !important;
+  }
+  .flexcenter {
+    width: 100%;
+    align-items: baseline
+  }
+  .entrie-box {
+    width: calc(100% - 10px);
+  }
+  
 }
 
 .entrie-box {
@@ -138,7 +241,7 @@ body {
   padding: 5px;
   display: flex;
   min-height: 10px;
-  min-width: 230px;
+  min-width: 11.8541666667vw;
   border-radius: 2vw;
   text-align: center;
   align-items: center;
@@ -462,6 +565,13 @@ option {
 
 /* Footer Styles */
 .botton-footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.botton-footer2 {
   position: absolute;
   bottom: 0;
   width: 100%;
