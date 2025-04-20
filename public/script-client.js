@@ -155,7 +155,7 @@
     canvas.itemprop = "gamePlatform";
 
     document.getElementsByTagName("body")[0].style.cursor =
-      window.location.href !== "https://tank-shark-io.vercel.app"
+      window.location.href !== "https://tank-shark-io.vercel.app/"
         ? `url('${window.location.origin}/public/targetpointer1.cur'), auto`
         : `url('${window.location.origin}/targetpointer1.cur'), auto`;
     var pi180 = Math.PI / 180;
@@ -5157,7 +5157,7 @@
       leaderBoard.appendChild(holderDiv);
       holderDiv.appendChild(holderImg);
       holderImg.src =
-        window.location.href !== "https://tank-shark-io.vercel.app"
+        window.location.href !== "https://tank-shark-io.vercel.app/"
           ? `/public${leader.badge.badge}`
           : `${leader.badge.badge}`;
       holderDiv.classList.add("entrie-box");
@@ -5194,7 +5194,10 @@
     ).then(() => {
       console.log("e");
       if (!passed) {
-        window.location.href = window.location.href !== "https://tank-shark-io.vercel.app" ? "/public/server-down.html" : "/server-down.html";
+        window.location.href =
+          window.location.href !== "https://tank-shark-io.vercel.app/"
+            ? "/public/server-down.html"
+            : "/server-down.html";
       }
     });
   }
@@ -5262,7 +5265,9 @@
             <circle cx="50" cy="50" r="45" stroke="black" stroke-width="8" fill="none"> </circle>
             <circle cx="50" cy="50" r="45" class="meter-1" id="fillcircle"> </circle>
             <image x="20" y="20" width="60" height="60" href='${
-              window.location.href !== "https://tank-shark-io.vercel.app" ?window.location.origin + "/public/" + level.badge : window.location.origin + level.badge
+              window.location.href !== "https://tank-shark-io.vercel.app/"
+                ? window.location.origin + "/public/" + level.badge
+                : window.location.origin + level.badge
             }'> </image>
           </svg>
         `;
@@ -5284,8 +5289,11 @@
         buildOutEle = imageDiv;
       }
 
-      console.log(window.location.href)
-      imageForDiv.src = window.location.href !== "https://tank-shark-io.vercel.app" ? `/public${level.badge}` : `${level.badge}`;
+      console.log(window.location.href);
+      imageForDiv.src =
+        window.location.href !== "https://tank-shark-io.vercel.app/"
+          ? `/public${level.badge}`
+          : `${level.badge}`;
       imageDiv.appendChild(imageForDiv);
       imageForDiv.style.height = "4.5vw";
       imageForDiv.style.minHeight = "70px";
@@ -5397,9 +5405,10 @@
 
   var badgeLevelDiv = document.getElementById("badgeLevelDiv");
 
-  playerCanvas.style[
-    "background-image"
-  ] = window.location.href !== "https://tank-shark-io.vercel.app" ? `url(${window.location.origin}/public/assets/hexbackground.png)`: `url(${window.location.origin}/assets/hexbackground.png)`;
+  playerCanvas.style["background-image"] =
+    window.location.href !== "https://tank-shark-io.vercel.app/"
+      ? `url(${window.location.origin}/public/assets/hexbackground.png)`
+      : `url(${window.location.origin}/assets/hexbackground.png)`;
 
   document.getElementById("playButton").addEventListener("mousedown", () => {
     username = document.getElementById("username").value;
