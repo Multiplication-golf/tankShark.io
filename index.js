@@ -9,6 +9,7 @@ const path = require("path");
 const SAT = require("sat");
 const { setTimeout } = require("timers");
 const WebSocket = require("ws");
+const cors = require("cors");
 
 const options = {
   key: fs.readFileSync(
@@ -1153,7 +1154,7 @@ function buildTriArray(roads) {
       }
     });
     while (connectors.length < 3) {
-      connectors.push({road:road, distance: 0});
+      connectors.push({ road: road, distance: 0 });
     }
     triRoads.push(connectors);
   });
@@ -1830,12 +1831,30 @@ var invaled_requests = [];
 
 const connections = [];
 
-app.use((req, res, next) => {
+const allowedOrigins = [
+  "https://tank-shark-io.vercel.app",
+  "http://127.0.0.1:5501",
+  "https://tank-shark-io.vercel.app",
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+};
+
+app.use(cors(corsOptions));
+
+/*app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "http://127.0.0.1:5501");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type");
   next();
-});
+});*/
 
 serverHttps.on("request", () => console.log("HTTP request"));
 
@@ -1889,16 +1908,16 @@ app.post("/currentbadge", (req, res) => {
 });
 
 app.get("/leaderboard", (req, res) => {
-  console.log("ooo")
-  userbase.sort((entrieA,entrieB) => {
-    var scoresumA = entrieA.scores.reduce((a,score) => a + score.score);
-    var scoresumB = entrieB.scores.reduce((a,score) => a + score.score);
+  console.log("ooo");
+  userbase.sort((entrieA, entrieB) => {
+    var scoresumA = entrieA.scores.reduce((a, score) => a + score.score);
+    var scoresumB = entrieB.scores.reduce((a, score) => a + score.score);
     return scoresumA - scoresumB;
   });
-  var preLeaderBoard = userbase
-  var postLeaderBorad = []
+  var preLeaderBoard = userbase;
+  var postLeaderBorad = [];
   preLeaderBoard.forEach((board) => {
-    var scoresumA = board.scores.reduce((a,score) => a + score.score, 0);
+    var scoresumA = board.scores.reduce((a, score) => a + score.score, 0);
     console.log(scoresumA);
 
     var badge = CONFIG.badgeLevels.find((badgeLevel) => {
@@ -1912,14 +1931,13 @@ app.get("/leaderboard", (req, res) => {
         return badgeLevel.badge;
       }
     });
-    badge ??= "/badges/1.png"
-    board = {username:board.username, score:scoresumA, badge:badge};
-    postLeaderBorad.push(board)
+    badge ??= "/badges/1.png";
+    board = { username: board.username, score: scoresumA, badge: badge };
+    postLeaderBorad.push(board);
   });
-  
 
   res.send({
-    leader_board:postLeaderBorad
+    leader_board: postLeaderBorad,
   });
 });
 
@@ -2059,7 +2077,11 @@ wss.on("connection", (socket, req) => {
               Date.now() / 213984238 +
               Math.random();
             players[newId].userId = newid;
-            userbase.push({ userid: newid, scores: [], username:data.username });
+            userbase.push({
+              userid: newid,
+              scores: [],
+              username: data.username,
+            });
             socket.send(
               JSON.stringify({ type: "newid", data: { newid: newid } })
             );
@@ -4607,7 +4629,8 @@ setInterval(() => {
             (bullet_speed !== 0 &&
               bullet_speed !== 0 &&
               (!bullet_.speed || !bullet_speed) &&
-              bullet.type === "trap") || bullet.type === "roadMap"
+              bullet.type === "trap") ||
+            bullet.type === "roadMap"
           )
             return;
           bullet.bullet_distance -=

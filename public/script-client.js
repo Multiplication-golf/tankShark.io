@@ -154,9 +154,10 @@
     canvas.style.left = "0";
     canvas.itemprop = "gamePlatform";
 
-    document.getElementsByTagName(
-      "body"
-    )[0].style.cursor = `url('${window.location.origin}/public/targetpointer1.cur'), auto`;
+    document.getElementsByTagName("body")[0].style.cursor =
+      window.location.href !== "https://tank-shark-io.vercel.app"
+        ? `url('${window.location.origin}/public/targetpointer1.cur'), auto`
+        : `url('${window.location.origin}/targetpointer1.cur'), auto`;
     var pi180 = Math.PI / 180;
     let lastTime = performance.now();
     let frameTimes = [];
@@ -1973,7 +1974,8 @@
                     var type = "rocketer";
                     var health = 9;
                   } else if (cannon["type"] === "paver") {
-                    var bulletdistance = bullet_speed__ * 100 * (bullet_size / 5);
+                    var bulletdistance =
+                      bullet_speed__ * 100 * (bullet_size / 5);
                     var type = "roadMap";
                     var health = 6;
                   }
@@ -2954,7 +2956,10 @@
           ctx.restore();
         }
 
-        if (tankdatacannondata["type"] === "trap"  || tankdatacannondata["type"] === "paver") {
+        if (
+          tankdatacannondata["type"] === "trap" ||
+          tankdatacannondata["type"] === "paver"
+        ) {
           ctx.save();
           // Translate to the center of the square
           ctx.translate(canW / 2, canH / 2);
@@ -3027,8 +3032,7 @@
               cannon_heightFOV +
               tankdatacannondata["offSet-x"] -
               cannonWidth[i];
-            let basey =
-              -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
+            let basey = -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
 
             ctx.fillRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
 
@@ -3941,16 +3945,17 @@
       let unZbullets = [];
 
       roads.forEach((road) => {
-        console.log(road)
-        var show = road.some((buildmap) => 
-          buildmap.road.x > 0 + cavansX &&
-          buildmap.road.x < canvas.width + cavansX &&
-          buildmap.road.y - cavansY > 0 &&
-          buildmap.road.y < canvas.height + cavansY
+        console.log(road);
+        var show = road.some(
+          (buildmap) =>
+            buildmap.road.x > 0 + cavansX &&
+            buildmap.road.x < canvas.width + cavansX &&
+            buildmap.road.y - cavansY > 0 &&
+            buildmap.road.y < canvas.height + cavansY
         );
         if (true) {
           ctx.beginPath();
-          ctx.moveTo(road[2].road.x-cavansX,road[2].road.y-cavansY)
+          ctx.moveTo(road[2].road.x - cavansX, road[2].road.y - cavansY);
           let sameTeam =
             players[road[2].road.id].team === players[playerId].team &&
             players[road[2].road.id].team !== null &&
@@ -3960,7 +3965,7 @@
             ctx.strokeStyle = "#5f79f5";
           }
           road.forEach((mapMark) => {
-            ctx.lineTo(mapMark.road.x-cavansX,mapMark.road.y-cavansY)
+            ctx.lineTo(mapMark.road.x - cavansX, mapMark.road.y - cavansY);
           });
           ctx.globalAlpha = 0.8;
           ctx.stroke();
@@ -3969,7 +3974,7 @@
           ctx.closePath();
           ctx.globalAlpha = 1;
         }
-      })
+      });
 
       bullets.forEach((bullet) => {
         var realstartx = bullet.xstart - (bullet.xstart - cavansX);
@@ -4189,7 +4194,6 @@
             ctx.save();
             ctx.translate(realx - cavansX, realy - cavansY);
             for (let i = 0; i < 2; i++) {
-              
               ctx.rotate(bullet.angle + i * 180 * (pi / 180));
               //ctx.rotate(i * 90 * pi / 180)
               let realitemsize = bullet.size * 3 * FOV;
@@ -4524,7 +4528,10 @@
               ctx.closePath(); // Close the path
               ctx.stroke(); // Draw the border
               ctx.restore();
-            } else if (tankdatacannondata["type"] === "trap" || tankdatacannondata["type"] === "paver") {
+            } else if (
+              tankdatacannondata["type"] === "trap" ||
+              tankdatacannondata["type"] === "paver"
+            ) {
               let cannonwidth = tankdatacannondata["cannon-width"];
               let cannonheight = tankdatacannondata["cannon-height"];
               ctx.save();
@@ -5109,6 +5116,21 @@
     }
   }
 
+  let settingsopen = false;
+  var settings = document.getElementById("settingsOpener");
+
+  settings.addEventListener("click", () => {
+    settingsopen = !settingsopen;
+    document.getElementById("settingsBox").style.display = settingsopen
+      ? "block"
+      : "none";
+  });
+
+  const el = document.querySelector(".settings-img");
+  const width = el.offsetWidth;
+
+  el.style.setProperty("--img-width", `${width}px`);
+
   async function getLeaderBoardData() {
     const url = "http://localhost:4500/leaderboard";
     try {
@@ -5125,19 +5147,22 @@
 
   async function buildLeaderBoard() {
     var leaderboard = await getLeaderBoardData();
-    var leaderBoard = document.getElementById("leaderBoard")
+    var leaderBoard = document.getElementById("leaderBoard");
     leaderBoard.innerHTML = "";
-    console.log(leaderboard.leader_board)
+    console.log(leaderboard.leader_board);
     leaderboard.leader_board.forEach((leader) => {
       var holderDiv = document.createElement("div");
       var holderName = document.createElement("p");
       var holderImg = document.createElement("img");
       leaderBoard.appendChild(holderDiv);
-      holderDiv.appendChild(holderImg)
-      holderImg.src = `/public${leader.badge.badge}`;
+      holderDiv.appendChild(holderImg);
+      holderImg.src =
+        window.location.href !== "https://tank-shark-io.vercel.app"
+          ? `/public${leader.badge.badge}`
+          : `${leader.badge.badge}`;
       holderDiv.classList.add("entrie-box");
       holderDiv.appendChild(holderName);
-      holderName.innerHTML = `${leader.username}, ${leader.score}`
+      holderName.innerHTML = `${leader.username}, ${leader.score}`;
       holderImg.style.width = "20px";
       holderImg.style.hieght = "20px";
     });
@@ -5169,7 +5194,7 @@
     ).then(() => {
       console.log("e");
       if (!passed) {
-        window.location.href = "/public/server-down.html";
+        window.location.href = window.location.href !== "https://tank-shark-io.vercel.app" ? "/public/server-down.html" : "/server-down.html";
       }
     });
   }
@@ -5237,7 +5262,7 @@
             <circle cx="50" cy="50" r="45" stroke="black" stroke-width="8" fill="none"> </circle>
             <circle cx="50" cy="50" r="45" class="meter-1" id="fillcircle"> </circle>
             <image x="20" y="20" width="60" height="60" href='${
-              window.location.origin + "/public/" + level.badge
+              window.location.href !== "https://tank-shark-io.vercel.app" ?window.location.origin + "/public/" + level.badge : window.location.origin + level.badge
             }'> </image>
           </svg>
         `;
@@ -5259,7 +5284,8 @@
         buildOutEle = imageDiv;
       }
 
-      imageForDiv.src = `/public${level.badge}`;
+      console.log(window.location.href)
+      imageForDiv.src = window.location.href !== "https://tank-shark-io.vercel.app" ? `/public${level.badge}` : `${level.badge}`;
       imageDiv.appendChild(imageForDiv);
       imageForDiv.style.height = "4.5vw";
       imageForDiv.style.minHeight = "70px";
@@ -5373,8 +5399,7 @@
 
   playerCanvas.style[
     "background-image"
-  ] = `url(${window.location.origin}/public/assets/hexbackground.png)`;
-  console.log(`url(${window.location.origin}/public/assets/hexbackground.png)`);
+  ] = window.location.href !== "https://tank-shark-io.vercel.app" ? `url(${window.location.origin}/public/assets/hexbackground.png)`: `url(${window.location.origin}/assets/hexbackground.png)`;
 
   document.getElementById("playButton").addEventListener("mousedown", () => {
     username = document.getElementById("username").value;

@@ -1,0 +1,104 @@
+@media only screen and (max-width: 940px) and (min-width: 840px) and (min-height: 1200px) {
+  .badgeLevelDiv-con {
+    min-width: 150px !important;
+  }
+}
+
+@media only screen and (max-width: 1290px) and (min-width: 1270px) and (min-height: 790px) {
+  .badgeLevelDiv-con {
+    min-width: 200px !important;
+    height: 75% !important;
+  }
+}
+
+@media only screen and (max-width: 850px) and (min-width: 600px) {
+  .badgeLevelDiv-con {
+    min-width: 0px !important;
+  }
+  .buttonMain {
+    font-size: 1em !important;
+  }
+}
+
+@media only screen and (max-width: 810px) and (max-height: 500px) and (orientation: landscape) {
+  .leader-board {
+    height: 60vh !important;
+  }
+  .social-share {
+    margin: 3px !important;
+  }
+  .badgeLevelDiv-con {
+    height: 65% !important;
+  }
+}
+
+@media only screen and (max-width: 600px) and (orientation: portrait) {
+  .leader-board {
+    min-width: calc(100vw - 16px) !important;
+    --realwidth: calc(-100vw + 8px);
+    transform: translateX(var(--realwidth)) !important;
+    margin-bottom: auto;
+    margin-left: -8px;
+    height: 25vh;
+  }
+  .surronder {
+    float: none;
+    width: 100%;
+    border-radius: 0px 0px 0px 0px;
+    border-right: none;
+  }
+  .social-share {
+    padding: 4px;
+    font-size: 14px;
+    min-width: 10px !important;
+    width: 40% !important;
+    margin: 10px !important;
+  }
+  .player-canvas-container {
+    display: none;
+  }
+  .player-canvas-container {
+    display: none;
+  }
+  .badgeLevelDiv {
+    min-width: none;
+  }
+  .badgeLevelDiv-con {
+    margin-left: 0px !important;
+    height: 15vh !important;
+  }
+  .botton-footer2 {
+    display: none;
+  }
+  .divMain {
+    font-size: 15px !important;
+  }
+  .container {
+    width: calc(100vw - 20px) !important;
+  }
+  .flexcenter {
+    width: 100%;
+    align-items: baseline;
+  }
+  .entrie-box {
+    width: calc(100% - 10px);
+  }
+}
+
+@media only screen and (600px < width < 1048px) {
+  .social-share {
+    font-size: 1.25vw;
+  }
+}
+
+@media screen and (min-width: 1261px) {
+  .social-share {
+    font-size: 20px;
+  }
+}
+
+@media only screen and (width < 950px) {
+  .ip-slecet {
+    display: none;
+  }
+}

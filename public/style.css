@@ -89,20 +89,20 @@ body {
 
 @keyframes pop {
   0% {
-    transform: translateY(-14.8541666667vw) scale(1); 
+    transform: translateY(-14.8541666667vw) scale(1);
   }
   50% {
-    transform: translateY(-14.8541666667vw) scale(1.3); 
+    transform: translateY(-14.8541666667vw) scale(1.3);
   }
   0% {
-    transform: translateY(-14.8541666667vw) scale(1); 
+    transform: translateY(-14.8541666667vw) scale(1);
   }
 }
 
 /* Input and Button Styles */
 .skin-text {
-  position: fixed; 
-  transform: translateY(-14.8541666667vw); 
+  position: fixed;
+  transform: translateY(-14.8541666667vw);
   font-size: 15px;
   margin-left: 2vw;
   animation: pop 1s infinite;
@@ -123,18 +123,6 @@ body {
   text-decoration: none;
 }
 
-@media only screen and (600px < width < 1048px) {
-  .social-share {
-    font-size: 1.25vw;
-  }
-}
-
-@media screen and (min-width: 1261px) {
-  .social-share {
-     font-size: 20px;
-  }
-}
-
 .social-share:hover {
   background-color: #33b4ff;
 }
@@ -152,12 +140,6 @@ body {
   justify-content: center;
 }
 
-@media only screen and (width < 950px) {
-  .ip-slecet {
-    display: none;
-  }
-}
-
 .leader-board {
   min-width: 13.8541666667vw;
   height: 67vh;
@@ -166,11 +148,12 @@ body {
   transform: translateX(-13.8541666667vw);
   margin-left: -4vw;
   display: flex;
-  align-content:start;
+  align-content: start;
   flex-wrap: wrap;
   margin-bottom: 20px;
   justify-content: center;
-  background: linear-gradient(to bottom,
+  background: linear-gradient(
+    to bottom,
     rgb(0, 238, 255) 0%,
     rgb(0, 4, 255) 45%,
     rgb(0, 4, 255) 55%,
@@ -178,60 +161,9 @@ body {
   );
 }
 
-html, body {
-  overflow-x:hidden;
-}
-
-@media only screen and (max-width: 600px) {
-  .leader-board {
-    min-width: calc(100vw - 16px) !important;
-    --realwidth:calc(-100vw + 8px);
-    transform: translateX(var(--realwidth)) !important;
-    margin-bottom: auto;
-    height:25vh;
-  }
-  .surronder {
-    float: none;
-    width:100%;
-    border-radius: 0px 0px 0px 0px;
-    border-right: none;
-  }
-  .social-share {
-    padding: 4px;
-    font-size: 14px;
-    min-width: 10px !important;
-    width: 40% !important;
-    margin: 10px !important;
-  }
-  .player-canvas-container {
-    display: none;
-  }
-  .player-canvas-container {
-    display: none;
-  }
-  .badgeLevelDiv {
-    min-width: none;
-  }
-  .badgeLevelDiv-con {
-    height: 15vh !important;
-  }
-  .botton-footer2 {
-    display: none;
-  }
-  .divMain {
-    font-size: 15px !important;
-  }
-  .container {
-    width: calc(100vw - 20px) !important;
-  }
-  .flexcenter {
-    width: 100%;
-    align-items: baseline
-  }
-  .entrie-box {
-    width: calc(100% - 10px);
-  }
-  
+html,
+body {
+  overflow-x: hidden;
 }
 
 .entrie-box {
@@ -655,4 +587,66 @@ input:checked + .slider:before {
 
 .slider.round:before {
   border-radius: 50%;
+}
+
+.settings-img {
+  position: absolute;
+  top: .2vw;
+  left: calc(2vw - var(--img-width)/2);
+  width: max(4vw, 6vh);
+}
+
+.settings-box {
+  border: rgb(226, 226, 226) solid 8px;
+  border-radius: 2vw;
+  border-top-left-radius: 0px;
+  min-width: 250px;
+  width: 20%;
+  height: 30%;
+  position: fixed;
+  top: calc(max(4vw, 6vh) + 1.2vw);
+  left: 2vw;
+  background-color: white;
+  z-index: 4;
+  overflow: visible;
+}
+
+.sudo-tool-tip {
+  width:100%;
+  height: 100%;
+  position: absolute;
+  border: none;
+  border-radius: 2vw;
+  z-index: 5;
+  border-top-left-radius: 0px;
+  background-color: white;
+}
+
+.tooltip {
+  width: 0;
+  height: 0;
+  border-top: 3vh solid rgb(255, 255, 255);
+  border-right: 3vh solid rgb(226, 226, 226);
+  border-bottom: 0px solid transparent;
+  border-left: 0px solid transparent;
+  background-color: rgb(255, 255, 255);
+  position: absolute;
+  --setwidth: calc(-50% - 8px);
+  transform: translateY(var(--setwidth)) rotate(45deg);
+  z-index: 1;
+  --builtbox: border-box;
+}
+
+@keyframes turn {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.settings-img:hover {
+  transform-origin: 50% 50%;
+  animation: turn 0.7s ease-out;
 }
