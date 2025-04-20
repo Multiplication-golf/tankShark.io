@@ -217,6 +217,12 @@
     var hidden = false;
     var blinking = false;
 
+    // ⚙️ settings
+    var canSeeChat = true;
+    var nightmode = false;
+    var canSeeLeaderBoard = true;
+    var canSeeNames = false;
+
     // 🕹️ Movement & Controls
     var canmove = true;
     var canKeyPress = true;
@@ -4774,7 +4780,8 @@
               mymessages.push(massege);
             }
           });
-          mymessages.forEach((message) => {
+          if (canSeeChat) {
+            mymessages.forEach((message) => {
             ctx.save();
             if (message.hidetime < Date.now()) {
               if (1 > 1 - (Date.now() - message.hidetime) / 500) {
@@ -4791,7 +4798,8 @@
             ctx.fillText(message.text, 0, 0);
             ctx.globalAlpha = 1;
             ctx.restore();
-          });
+            });
+          }
           ctx.fillStyle = "black";
           ctx.fillRect(
             playerX - cavansX - 50 * FOV,
@@ -5058,6 +5066,7 @@
       ctx.fillStyle = "#00f7ff";
       ctx.fillText("leaderboard", canvas.width - 125 * upscaleX, 25);
 
+      if (canSeeLeaderBoard) {
       leader_board.forEach((entre, i) => {
         var totalwidth;
         if (leader_board[0].score) {
@@ -5089,6 +5098,7 @@
           72 + i * 30 * upscaleY
         );
       });
+    }
 
       requestAnimationFrame(draw);
     }
@@ -5126,10 +5136,17 @@
       : "none";
   });
 
-  const el = document.querySelector(".settings-img");
-  const width = el.offsetWidth;
+  setTimeout(() => {
+    const el = document.querySelector(".tooltip");
+    const width = el.offsetWidth;
+    //el.style.setProperty("--img-width", `${width}px`);
+    const st = document.querySelector(".settings-img");
+    st.style.left = `calc(2vw - ${width / 4}px)`;
+    console.log(st.style.left, st);
+  },100);
+  
 
-  el.style.setProperty("--img-width", `${width}px`);
+  
 
   async function getLeaderBoardData() {
     const url = "http://localhost:4500/leaderboard";

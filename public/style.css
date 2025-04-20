@@ -592,12 +592,12 @@ input:checked + .slider:before {
 .settings-img {
   position: absolute;
   top: .2vw;
-  left: calc(2vw - var(--img-width)/2);
+  left: 2vw;
   width: max(4vw, 6vh);
 }
 
 .settings-box {
-  border: rgb(226, 226, 226) solid 8px;
+  border: rgb(199, 199, 199) solid 7px;
   border-radius: 2vw;
   border-top-left-radius: 0px;
   min-width: 250px;
@@ -625,8 +625,8 @@ input:checked + .slider:before {
 .tooltip {
   width: 0;
   height: 0;
-  border-top: 3vh solid rgb(255, 255, 255);
-  border-right: 3vh solid rgb(226, 226, 226);
+  border-top: 3vh solid rgb(199, 199, 199);
+  border-right: 3vh solid rgb(199, 199, 199);
   border-bottom: 0px solid transparent;
   border-left: 0px solid transparent;
   background-color: rgb(255, 255, 255);
