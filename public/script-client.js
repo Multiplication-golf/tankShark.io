@@ -5181,7 +5181,7 @@
 
   async function ping() {
     const urls =
-      window.location.href !== "https://tank-shark-io.vercel.app/"
+      /* window.location.href !== "https://tank-shark-io.vercel.app/" */ true
         ? [
             "http://localhost:4500/ping",
             "https://websocketpointer.duckdns.org/ping",
@@ -5351,7 +5351,7 @@
     canSeeLeaderBoard = !canSeeLeaderBoard;
   });
 
-  document.getElementById("namescheck").addEventListener("click", () => {
+  document.getElementById("namesCheck").addEventListener("click", () => {
     canSeeNames = !canSeeNames;
   });
 
