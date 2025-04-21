@@ -7,10 +7,13 @@
     <link rel="stylesheet" href="media-querys.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <meta name="twitter:title" content="TankShark.IO">
-    <meta name="twitter:description" content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!">
-    <meta name="twitter:image" content="/public/og-assets/tankshark-io.png">
-    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="TankShark.IO" />
+    <meta
+      name="twitter:description"
+      content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!"
+    />
+    <meta name="twitter:image" content="/public/og-assets/tankshark-io.png" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link
       href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
       rel="stylesheet"
@@ -21,10 +24,13 @@
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta property="og:title" content="TankShark.IO" />
-    <meta property="og:description" content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!" />
+    <meta
+      property="og:description"
+      content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!"
+    />
     <meta property="og:image" content="/public/og-assets/tankshark-io.png" />
     <meta property="og:type" content="website" />
-    
+
     <link
       rel="icon"
       id="icon"
@@ -34,20 +40,49 @@
   </head>
   <body>
     <script type="text/javascript">
-      (function(window, document, dataLayerName, id) {
-      window[dataLayerName]=window[dataLayerName]||[],window[dataLayerName].push({start:(new Date).getTime(),event:"stg.start"});var scripts=document.getElementsByTagName('script')[0],tags=document.createElement('script');
-      var qP=[];dataLayerName!=="dataLayer"&&qP.push("data_layer_name="+dataLayerName);var qPString=qP.length>0?("?"+qP.join("&")):"";
-      tags.async=!0,tags.src="https://multiplication-golf.containers.piwik.pro/"+id+".js"+qPString,scripts.parentNode.insertBefore(tags,scripts);
-      !function(a,n,i){a[n]=a[n]||{};for(var c=0;c<i.length;c++)!function(i){a[n][i]=a[n][i]||{},a[n][i].api=a[n][i].api||function(){var a=[].slice.call(arguments,0);"string"==typeof a[0]&&window[dataLayerName].push({event:n+"."+i+":"+a[0],parameters:[].slice.call(arguments,1)})}}(i[c])}(window,"ppms",["tm","cm"]);
-      })(window, document, 'dataLayer', '3de78e0f-45d5-413f-8fdc-0089ab0c0116');
-      </script>
+      (function (window, document, dataLayerName, id) {
+        (window[dataLayerName] = window[dataLayerName] || []),
+          window[dataLayerName].push({
+            start: new Date().getTime(),
+            event: "stg.start",
+          });
+        var scripts = document.getElementsByTagName("script")[0],
+          tags = document.createElement("script");
+        var qP = [];
+        dataLayerName !== "dataLayer" &&
+          qP.push("data_layer_name=" + dataLayerName);
+        var qPString = qP.length > 0 ? "?" + qP.join("&") : "";
+        (tags.async = !0),
+          (tags.src =
+            "https://multiplication-golf.containers.piwik.pro/" +
+            id +
+            ".js" +
+            qPString),
+          scripts.parentNode.insertBefore(tags, scripts);
+        !(function (a, n, i) {
+          a[n] = a[n] || {};
+          for (var c = 0; c < i.length; c++)
+            !(function (i) {
+              (a[n][i] = a[n][i] || {}),
+                (a[n][i].api =
+                  a[n][i].api ||
+                  function () {
+                    var a = [].slice.call(arguments, 0);
+                    "string" == typeof a[0] &&
+                      window[dataLayerName].push({
+                        event: n + "." + i + ":" + a[0],
+                        parameters: [].slice.call(arguments, 1),
+                      });
+                  });
+            })(i[c]);
+        })(window, "ppms", ["tm", "cm"]);
+      })(window, document, "dataLayer", "3de78e0f-45d5-413f-8fdc-0089ab0c0116");
+    </script>
     <header class="landing-page" id="landing-page">
       <div class="flexcenter">
         <div class="badgeLevelDiv-con">
           <div class="badgeLevelDiv" id="badgeLevelDiv">
-            <div class="levelContainer">
-
-            </div>
+            <div class="levelContainer"></div>
           </div>
         </div>
       </div>
@@ -62,41 +97,61 @@
             maxlength="11"
             class="inputMain"
           />
-          <div class="divMain"><button class="buttonMain" id="playButton">Play</button></div>
+          <div class="divMain">
+            <button class="buttonMain" id="playButton">Play</button>
+          </div>
         </div>
         <div class="right-content-container">
           <div class="leader-board" id="leaderBoard">
             <div class="entrie-box"><p>bla</p></div>
           </div>
           <div class="player-canvas-container" id="buildBox">
-            <canvas width="250" height="250" id="playerCanvas" class="player-canvas"></canvas>
+            <canvas
+              width="250"
+              height="250"
+              id="playerCanvas"
+              class="player-canvas"
+            ></canvas>
             <p class="skin-text">New skins available</p>
           </div>
         </div>
       </div>
-      <footer class="botton-footer" style="z-index: 3;">
+      <footer class="botton-footer" style="z-index: 3">
         <div class="surronder">
-          
-          <a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fyourwebsite.com" 
+          <a
+            href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fyourwebsite.com"
             target="_blank"
-            itemprop="url" 
-            class="social-share" 
-            rel="noopener noreferrer">
+            itemprop="url"
+            class="social-share"
+            rel="noopener noreferrer"
+          >
             Share on X
           </a>
 
           <!-- Share on Facebook -->
-          <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fyourwebsite.com" 
+          <a
+            href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fyourwebsite.com"
             target="_blank"
             itemprop="url"
-            class="social-share" 
-            rel="noopener noreferrer">
+            class="social-share"
+            rel="noopener noreferrer"
+          >
             Share on Facebook
           </a>
         </div>
       </footer>
-      <footer class="botton-footer2" itemscope itemtype="https://schema.org/VideoGame">
-        <select name="ip" id="IP" class="ip-slecet" itemprop="gameLocation" title="Web-dev server conntion accses point. Warning leave as DEFAULT" >
+      <footer
+        class="botton-footer2"
+        itemscope
+        itemtype="https://schema.org/VideoGame"
+      >
+        <select
+          name="ip"
+          id="IP"
+          class="ip-slecet"
+          itemprop="gameLocation"
+          title="Web-dev server connection access point. Warning leave as default"
+        >
           <option value="wss://websocketpointer.duckdns.org">
             wss://websocketpointer.duckdns.org
           </option>
@@ -108,12 +163,19 @@
         </select>
       </footer>
     </header>
-    <section itemscope itemtype="https://schema.org/Game" class="full-screen" id="full-screen" itemprop="status">
+    <section
+      itemscope
+      itemtype="https://schema.org/Game"
+      class="full-screen"
+      id="full-screen"
+      itemprop="status"
+    >
       <p>Loading</p>
     </section>
     <main
       id="game"
-      itemscope itemtype="https://schema.org/Game"
+      itemscope
+      itemtype="https://schema.org/Game"
       class="mainframe"
     >
       <img
@@ -123,17 +185,9 @@
         id="die"
         alt="death screen"
       />
-      <div
-        class="background-grid"
-        id="grid"
-      ></div>
-      <div
-        class="UI-contaniner"
-        id="container"
-      >
-        <div
-          class="bar-holder"
-        >
+      <div class="background-grid" id="grid"></div>
+      <div class="UI-contaniner" id="container">
+        <div class="bar-holder">
           <img
             itemprop="characterAttribute"
             src="assets/barXP.png"
@@ -151,10 +205,7 @@
         id="tanktiles"
         class="upgrade-tiles"
       ></div>
-      <canvas
-        id="ghostCanvas"
-        class="ghost-canvas"
-      ></canvas>
+      <canvas id="ghostCanvas" class="ghost-canvas"></canvas>
       <div style="width: 100vw; text-align: center">
         <div class="outer-box" id="teamMain">
           <div class="inner-box">
@@ -227,10 +278,7 @@
       </div>
 
       <div style="width: 100%">
-        <div
-          id="teambox"
-          class="team-contaniner"
-        >
+        <div id="teambox" class="team-contaniner">
           <h1 class="high-index">Your team name</h1>
           <label class="label" for="checkbox">Hidden:</label>
           <label class="switch" id="checkbox">
@@ -261,9 +309,9 @@
                 autocomplete=""
                 maxlength="200"
               />
-              <br/>
+              <br />
               <label class="label" for="teamSelcetor">Team type:</label>
-              <br/>
+              <br />
               <div id="teamSelcetor" class="aling-left">
                 <div>
                   <input
@@ -406,8 +454,49 @@
         </div>
       </div>
     </main>
-    <img class="settings-img" src="assets/cropped/gear.png" id="settingsOpener"/>
-    <div id="settingsBox" class="settings-box"><div class="tooltip"></div ><div class="sudo-tool-tip"></div>
+    <img
+      class="settings-img"
+      src="assets/cropped/gear.png"
+      id="settingsOpener"
+      title="settings"
+      alt="settings"
+    />
+    <div id="settingsBox" class="settings-box">
+      <div class="centerleft">
+        <label class="label labelspace" for="chat">Show Chat Messages:</label>
+        <label class="switch" id="chat">
+          <input type="checkbox" id="chatcheck" class="null3" />
+          <span class="slider round" id="getChatShown"></span>
+        </label>
+      </div>
+      <div class="centerleft">
+        <label class="label labelspace" for="leaderBoard"
+          >Show Leader Board:</label
+        >
+        <label class="switch" id="leaderBoard">
+          <input type="checkbox" id="leaderBoardCheck" class="null3" />
+          <span class="slider round" id="getleaderBoardShown"></span>
+        </label>
+      </div>
+      <div class="centerleft">
+        <label class="label labelspace" for="names"
+          >Show Names:</label
+        >
+        <label class="switch" id="names">
+          <input type="checkbox" id="namesCheck" class="null3" />
+          <span class="slider round" id="getnamesShown"></span>
+        </label>
+      </div>
+      <div class="centerleft">
+        <label class="label labelspace" for="darkMode"
+          >Dark Mode:</label
+        >
+        <label class="switch" id="darkMode">
+          <input type="checkbox" id="darkModeCheck" class="null3" />
+          <span class="slider round" id="getdarkMode"></span>
+        </label>
+      </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/light/protobuf.min.js"></script>
     <script src="script-client.js"></script>
   </body>

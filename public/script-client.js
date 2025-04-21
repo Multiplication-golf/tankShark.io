@@ -112,6 +112,11 @@
     return message;
   }
 
+  var canSeeChat = true;
+  var darkMode = false;
+  var canSeeLeaderBoard = true;
+  var canSeeNames = false;
+
   function ongame() {
     let getIP = document.getElementById("IP").value;
 
@@ -216,12 +221,6 @@
     var messaging = false;
     var hidden = false;
     var blinking = false;
-
-    // ⚙️ settings
-    var canSeeChat = true;
-    var nightmode = false;
-    var canSeeLeaderBoard = true;
-    var canSeeNames = false;
 
     // 🕹️ Movement & Controls
     var canmove = true;
@@ -981,7 +980,7 @@
                   const img = document.createElement("img");
                   img.style.width = "100%";
                   img.style.height = "100%";
-                  img.src = "assets/hexbackground.png";
+                  img.src = "assets/hexbackground.webp";
                   let divstyle = div.style;
                   divstyle.width = "999px";
                   divstyle.height = "999px";
@@ -4782,22 +4781,26 @@
           });
           if (canSeeChat) {
             mymessages.forEach((message) => {
-            ctx.save();
-            if (message.hidetime < Date.now()) {
-              if (1 > 1 - (Date.now() - message.hidetime) / 500) {
-                ctx.globalAlpha = 1 - (Date.now() - message.hidetime) / 500;
+              ctx.save();
+              if (message.hidetime < Date.now()) {
+                if (1 > 1 - (Date.now() - message.hidetime) / 500) {
+                  ctx.globalAlpha = 1 - (Date.now() - message.hidetime) / 500;
+                }
               }
-            }
-            ctx.translate(
-              playerX - cavansX,
-              playerY - cavansY - player.size * 40 - 30 * mymessages.length - 25
-            );
-            ctx.fillStyle = "black";
-            ctx.textAlign = "center";
-            ctx.font = `bold ${21 * upscaleX}px Nunito`;
-            ctx.fillText(message.text, 0, 0);
-            ctx.globalAlpha = 1;
-            ctx.restore();
+              ctx.translate(
+                playerX - cavansX,
+                playerY -
+                  cavansY -
+                  player.size * 40 -
+                  30 * mymessages.length -
+                  25
+              );
+              ctx.fillStyle = "black";
+              ctx.textAlign = "center";
+              ctx.font = `bold ${21 * upscaleX}px Nunito`;
+              ctx.fillText(message.text, 0, 0);
+              ctx.globalAlpha = 1;
+              ctx.restore();
             });
           }
           ctx.fillStyle = "black";
@@ -5067,38 +5070,38 @@
       ctx.fillText("leaderboard", canvas.width - 125 * upscaleX, 25);
 
       if (canSeeLeaderBoard) {
-      leader_board.forEach((entre, i) => {
-        var totalwidth;
-        if (leader_board[0].score) {
-          totalwidth = entre.score / leader_board[0].score;
-        }
-        if (!leader_board[0].score) {
-          totalwidth = 1;
-        }
-        drawRoundedLevelBar(
-          ctx,
-          canvas.width - 237.5 * upscaleX,
-          50 + i * 30,
-          225 * upscaleX,
-          27 * upscaleY,
-          borderRadius,
-          entre.score / leader_board[0].score,
-          "#23badb",
-          "#4eddfc",
-          "#242424",
-          false
-        );
+        leader_board.forEach((entre, i) => {
+          var totalwidth;
+          if (leader_board[0].score) {
+            totalwidth = entre.score / leader_board[0].score;
+          }
+          if (!leader_board[0].score) {
+            totalwidth = 1;
+          }
+          drawRoundedLevelBar(
+            ctx,
+            canvas.width - 237.5 * upscaleX,
+            50 + i * 30,
+            225 * upscaleX,
+            27 * upscaleY,
+            borderRadius,
+            entre.score / leader_board[0].score,
+            "#23badb",
+            "#4eddfc",
+            "#242424",
+            false
+          );
 
-        ctx.textAlign = "center";
-        ctx.font = "bold 23px Nunito";
-        ctx.fillStyle = "black";
-        ctx.fillText(
-          `${entre.name} ➠ ${entre.score}`,
-          canvas.width - 125 * upscaleX,
-          72 + i * 30 * upscaleY
-        );
-      });
-    }
+          ctx.textAlign = "center";
+          ctx.font = "bold 23px Nunito";
+          ctx.fillStyle = "black";
+          ctx.fillText(
+            `${entre.name} ➠ ${entre.score}`,
+            canvas.width - 125 * upscaleX,
+            72 + i * 30 * upscaleY
+          );
+        });
+      }
 
       requestAnimationFrame(draw);
     }
@@ -5136,18 +5139,6 @@
       : "none";
   });
 
-  setTimeout(() => {
-    const el = document.querySelector(".tooltip");
-    const width = el.offsetWidth;
-    //el.style.setProperty("--img-width", `${width}px`);
-    const st = document.querySelector(".settings-img");
-    st.style.left = `calc(2vw - ${width / 4}px)`;
-    console.log(st.style.left, st);
-  },100);
-  
-
-  
-
   async function getLeaderBoardData() {
     const url = "http://localhost:4500/leaderboard";
     try {
@@ -5180,6 +5171,7 @@
       holderDiv.classList.add("entrie-box");
       holderDiv.appendChild(holderName);
       holderName.innerHTML = `${leader.username}, ${leader.score}`;
+      holderName.classList.add("normalized-text-color");
       holderImg.style.width = "20px";
       holderImg.style.hieght = "20px";
     });
@@ -5188,12 +5180,15 @@
   buildLeaderBoard();
 
   async function ping() {
-    const urls = [
-      "http://localhost:4500/ping",
-      "https://websocketpointer.duckdns.org/ping",
-      "http://127.0.0.1:4000/ping",
-      "http://192.168.9.100:4500/ping",
-    ];
+    const urls =
+      window.location.href !== "https://tank-shark-io.vercel.app/"
+        ? [
+            "http://localhost:4500/ping",
+            "https://websocketpointer.duckdns.org/ping",
+            "http://127.0.0.1:4000/ping",
+            "http://192.168.9.100:4500/ping",
+          ]
+        : ["https://websocketpointer.duckdns.org/ping"];
     var passed = false;
     Promise.all(
       urls.map(async (url) => {
@@ -5311,6 +5306,7 @@
         window.location.href !== "https://tank-shark-io.vercel.app/"
           ? `/public${level.badge}`
           : `${level.badge}`;
+      imageForDiv.alt = `badge level: ${level}`
       imageDiv.appendChild(imageForDiv);
       imageForDiv.style.height = "4.5vw";
       imageForDiv.style.minHeight = "70px";
@@ -5322,7 +5318,7 @@
         imageForDiv.style.visibility = "hidden";
         imageDiv.style.setProperty(
           "border-color",
-          "rgb(190, 190, 190)",
+          "var(--border-color-400)",
           "important"
         );
       } else {
@@ -5337,6 +5333,27 @@
   build();
 
   var canAnimateProfile = true;
+
+  document
+    .getElementById("darkModeCheck")
+    .addEventListener("click", () => {
+      darkMode = !darkMode;
+      localStorage.setItem("theme", darkMode);
+      var newTheme = darkMode ? "light" : "dark";
+      document.querySelector("html").setAttribute("data-theme", newTheme);
+    });
+
+  document.getElementById("chatcheck").addEventListener("click", () => {
+    canSeeChat = !canSeeChat;
+  });
+
+  document.getElementById("leaderBoardCheck").addEventListener("click", () => {
+    canSeeLeaderBoard = !canSeeLeaderBoard;
+  });
+
+  document.getElementById("namescheck").addEventListener("click", () => {
+    canSeeNames = !canSeeNames;
+  });
 
   var playerCanvas = document.getElementById("playerCanvas");
   let profileCtx = playerCanvas.getContext("2d");
@@ -5409,6 +5426,15 @@
     if (canAnimateProfile) requestAnimationFrame(createProfile);
   }
 
+  darkMode = localStorage.getItem("theme");
+
+  darkMode ??= false;
+
+  var newTheme = darkMode ? "light" : "dark";
+  document.querySelector("html").setAttribute("data-theme", newTheme);
+
+  // set theme on button press
+
   requestAnimationFrame(createProfile);
 
   const getProfilePointer = (evt) => {
@@ -5424,8 +5450,8 @@
 
   playerCanvas.style["background-image"] =
     window.location.href !== "https://tank-shark-io.vercel.app/"
-      ? `url(${window.location.origin}/public/assets/hexbackground.png)`
-      : `url(${window.location.origin}/assets/hexbackground.png)`;
+      ? `url(${window.location.origin}/public/assets/cropped/hexbackground.webp)`
+      : `url(${window.location.origin}/assets/cropped/hexbackground.webp)`;
 
   document.getElementById("playButton").addEventListener("mousedown", () => {
     username = document.getElementById("username").value;

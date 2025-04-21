@@ -6,7 +6,37 @@ body {
   height: 100vh;
   margin: 0;
   font-family: Nunito, Arial, sans-serif;
-  background-color: #f3f2f2;
+  background-color: var(--background-white-100);
+}
+
+[data-theme="dark"] {
+  --background-white-100: #070707;
+  --background-white-0: #000000;
+  --background-white-200: rgb(17, 17, 17);
+  --background-white-300: #383838;
+  --background-white-400: #383838;
+  --border-color-100: rgb(46, 46, 46);
+  --border-color-200: rgb(17, 17, 17);
+  --border-color-300: rgb(75, 74, 74);
+  --border-color-400: rgb(53, 53, 53);
+  --border-color-500: rgb(78, 78, 78);
+  --text-color-100: rgb(255, 255, 255);
+  --disabled-badge: rgb(7, 7, 7);
+}
+
+[data-theme="light"] {
+  --background-white-100: #f3f2f2;
+  --background-white-0: #ffffff;
+  --background-white-200: rgb(243, 243, 243);
+  --background-white-300: #cccccc;
+  --background-white-400: #ffffff;
+  --border-color-100: rgb(226, 226, 226);
+  --border-color-200: rgb(243, 243, 243);
+  --border-color-300: rgb(199, 199, 199);
+  --border-color-400: rgb(190, 190, 190);
+  --border-color-500: rgb(226, 226, 226);
+  --text-color-100: rgb(0, 0, 0);
+  --disabled-badge: rgb(133, 133, 133);
 }
 
 ::-webkit-scrollbar {
@@ -28,7 +58,7 @@ body {
 }
 
 .player-canvas {
-  border: rgb(226, 226, 226) solid 8px;
+  border: var(--border-color-100) solid 8px;
   height: 13.8541666667vw;
   border-radius: 20px;
   margin-left: 0;
@@ -39,7 +69,7 @@ body {
 /* Container Styles */
 .container {
   text-align: center;
-  background: #ffffff;
+  background: var(--background-white-400);
   padding: 20px;
   border-radius: 8px;
   width: 33%;
@@ -119,7 +149,7 @@ body {
   font-size: 1.5vw;
   font-weight: 800;
   min-width: 10.9375vw;
-  border: rgb(226, 226, 226) solid 5px;
+  border: var(--border-color-100) solid 5px;
   text-decoration: none;
 }
 
@@ -132,9 +162,9 @@ body {
   margin-top: 25px;
   display: flex;
   width: 35vw;
-  background-color: #ffffff;
-  border-top: rgb(226, 226, 226) solid 5px;
-  border-right: rgb(226, 226, 226) solid 5px;
+  background-color: var(--background-white-0);
+  border-top: var(--border-color-100) solid 5px;
+  border-right: var(--border-color-100) solid 5px;
   float: left;
   border-radius: 0px 10px 0px 0px;
   justify-content: center;
@@ -143,7 +173,7 @@ body {
 .leader-board {
   min-width: 13.8541666667vw;
   height: 67vh;
-  border: 8px solid rgb(226, 226, 226);
+  border: 8px solid var(--border-color-100);
   border-radius: 2vw;
   transform: translateX(-13.8541666667vw);
   margin-left: -4vw;
@@ -167,7 +197,7 @@ body {
 }
 
 .entrie-box {
-  background-color: rgb(243, 243, 243);
+  background-color: var(--background-white-200);
   border: none;
   margin: 5px;
   padding: 5px;
@@ -182,11 +212,15 @@ body {
   justify-content: center;
 }
 
+.normalized-text-color {
+  color: var(--text-color-100);
+}
+
 .inputMain {
   width: 80%;
   padding: 3%;
   margin: 3% 0;
-  border: 1px solid #cccccc;
+  border: 1px solid var(--background-white-300);
   border-radius: 10px;
 }
 
@@ -219,7 +253,7 @@ body {
   font-family: Nunito;
   font-weight: 1000;
   border: none;
-  color: black;
+  color: var(--text-color-100);
   display: block;
   font-size: 2em;
   cursor: pointer;
@@ -235,7 +269,7 @@ body {
 
   background-color: #6bfaff;
   border-radius: 10px;
-  color: black;
+  color: var(--text-color-100);
   font-size: 2em;
   --angle: 0deg;
 
@@ -262,10 +296,20 @@ button:hover {
 }
 
 /* Labels and Text Styles */
+
+.null3 {
+  width: 1px;
+  height: 1px;
+}
+
 .label {
-  color: black;
+  color: var(--text-color-100);
   font-size: 18px;
   font-weight: bold;
+}
+
+.labelspace {
+  margin-right: 5px;
 }
 
 .addedInfo {
@@ -287,8 +331,8 @@ button:hover {
   margin: 5%;
   float: left;
   overflow: auto;
-  border-top: black solid 2px;
-  border-bottom: black solid 2px;
+  border-top: var(--text-color-100) solid 2px;
+  border-bottom: var(--text-color-100) solid 2px;
 }
 
 .configDiv::-webkit-scrollbar {
@@ -325,7 +369,7 @@ option {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(255, 255, 255, 1);
+  background-color: var(--background-white-0);
   font-size: 20px;
   display: none;
   justify-content: center;
@@ -335,7 +379,7 @@ option {
 /* Badge Level Div Styles */
 .badgeLevelDiv {
   line-height: 18px;
-  background-color: white;
+  background-color: var(--background-white-0);
   display: flex;
   flex-direction: column-reverse;
   justify-content: end;
@@ -347,7 +391,7 @@ option {
 }
 
 .badgeLevelDiv-con {
-  border: rgb(226, 226, 226) solid 8px;
+  border: var(--border-color-100) solid 8px;
   border-radius: 2vw;
   position: fixed;
   overflow: hidden;
@@ -371,7 +415,7 @@ option {
     rgba(0, 0, 0, 0.4)
   );
   background-clip: border-box;
-  border-color: rgb(122, 122, 122) !important;
+  border-color: var(--disabled-badge) !important;
 }
 
 .meter-1 {
@@ -386,8 +430,8 @@ option {
 }
 
 .levelContainer {
-  background-color: rgb(243, 243, 243);
-  border: rgb(226, 226, 226) solid 8px;
+  background-color: var(--background-white-300);
+  border: var(--border-color-500) solid 8px;
   margin: 5px;
   padding: 5px;
   display: flex;
@@ -430,7 +474,7 @@ option {
   right: 5px;
   font-size: 14px;
   cursor: pointer;
-  color: black;
+  color: var(--text-color-100);
 }
 
 .close-btn:hover {
@@ -454,13 +498,13 @@ option {
 
 .btn-join {
   background-color: #1eafff;
-  color: black;
+  color: var(--text-color-100);
   font-weight: bold;
 }
 
 .btn-create {
   background-color: #4287f5;
-  color: black;
+  color: var(--text-color-100);
 }
 
 .btn:hover {
@@ -486,7 +530,7 @@ option {
 
 .team {
   background-color: #32baff;
-  color: black;
+  color: var(--text-color-100);
   text-align: center;
   padding: 10px 0;
   width: 90%;
@@ -510,10 +554,20 @@ option {
   text-align: center;
 }
 
+.centerleft {
+  display: flex;
+  align-items: center;
+  margin: 5px;
+}
+
 .ip-slecet {
+  position: relative;
   padding: 20px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--background-white-300);
+  background-color: var(--background-white-0);
+  color: var(--text-color-100);
   border-radius: 4px;
+  z-index: 20;
 }
 
 /* Miscellaneous Styles */
@@ -550,7 +604,7 @@ option {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #cccccc;
+  background-color: var(--background-white-300);
   -webkit-transition: 0.4s;
   transition: 0.4s;
 }
@@ -562,7 +616,7 @@ option {
   width: 26px;
   left: 4px;
   bottom: 4px;
-  background-color: white;
+  background-color: var(--background-white-0);
   -webkit-transition: 0.4s;
   transition: 0.4s;
 }
@@ -597,41 +651,41 @@ input:checked + .slider:before {
 }
 
 .settings-box {
-  border: rgb(199, 199, 199) solid 7px;
+  border: var(--border-color-300) solid 7px;
   border-radius: 2vw;
   border-top-left-radius: 0px;
   min-width: 250px;
   width: 20%;
   height: 30%;
   position: fixed;
-  top: calc(max(4vw, 6vh) + 1.2vw);
-  left: 2vw;
-  background-color: white;
+  top: calc(max(2vw, 3vh) + 0.2vw);
+  left: calc(2vw + max(2vw, 3vh));
+  background-color: var(--background-white-0);
   z-index: 4;
   overflow: visible;
 }
 
 .sudo-tool-tip {
-  width:100%;
+  width: 100%;
   height: 100%;
   position: absolute;
   border: none;
   border-radius: 2vw;
   z-index: 5;
   border-top-left-radius: 0px;
-  background-color: white;
+  background-color: var(--background-white-0);
 }
 
 .tooltip {
   width: 0;
   height: 0;
-  border-top: 3vh solid rgb(199, 199, 199);
-  border-right: 3vh solid rgb(199, 199, 199);
+  border-top: max(4vw, 6vh) solid var(--border-color-300);
+  border-right: max(4vw, 6vh) solid var(--border-color-300);
   border-bottom: 0px solid transparent;
   border-left: 0px solid transparent;
-  background-color: rgb(255, 255, 255);
+  background-color: var(--background-white-0);
   position: absolute;
-  --setwidth: calc(-50% - 8px);
+  --setwidth: calc(-50%);
   transform: translateY(var(--setwidth)) rotate(45deg);
   z-index: 1;
   --builtbox: border-box;
