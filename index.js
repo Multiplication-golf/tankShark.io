@@ -1912,7 +1912,7 @@ app.get("/leaderboard", (req, res) => {
   userbase.sort((entrieA, entrieB) => {
     var scoresumA = entrieA.scores.reduce((a, score) => a + score.score);
     var scoresumB = entrieB.scores.reduce((a, score) => a + score.score);
-    return scoresumA - scoresumB;
+    return scoresumB - scoresumA;
   });
   var preLeaderBoard = userbase;
   var postLeaderBorad = [];

@@ -651,6 +651,7 @@ option {
   top: .2vw;
   left: 2vw;
   width: max(4vw, 6vh);
+  z-index: 23;
 }
 
 .settings-box {
@@ -661,10 +662,11 @@ option {
   width: 20%;
   height: 30%;
   position: fixed;
+  display: none;
   top: calc(max(2vw, 3vh) + 0.2vw);
   left: calc(2vw + max(2vw, 3vh));
   background-color: var(--background-white-0);
-  z-index: 4;
+  z-index: 24;
   overflow: visible;
 }
 

@@ -184,7 +184,8 @@
       },
     };
 
-    var grid = document.getElementById("grid");
+    var gridDark = document.getElementById("gridDark");
+    var gridLight = document.getElementById("gridLight");
 
     var HANDSHAKE = {
       null: [{ null: null }],
@@ -267,7 +268,8 @@
     var canW = canvas.width;
     var canH = canvas.height;
     var FOV = 1; // sensitive
-    var gridstyle = grid.style;
+    var gridDarkstyle = gridDark.style;
+    var gridLightstyle = gridLight.style;
     var sqrt23 = Math.sqrt(3) / 2;
     var pi = Math.PI;
     var pentarotate = 0;
@@ -974,20 +976,38 @@
               radiusConfig = data.colorGradeint;
               console.log(radiusConfig);
               playerBaseSize = data.playerBaseSize;
+              var gridDark = document.getElementById("gridDark");
+              var gridLight = document.getElementById("gridLight");
               for (let i = 0; i < data.map.size / 500; i++) {
                 for (let j = 0; j < data.map.size / 500; j++) {
                   const div = document.createElement("div");
                   const img = document.createElement("img");
                   img.style.width = "100%";
                   img.style.height = "100%";
-                  img.src = "assets/hexbackground.webp";
+                  img.src = "backgrounds/hexlight.webp";
                   let divstyle = div.style;
                   divstyle.width = "999px";
                   divstyle.height = "999px";
                   divstyle.backgroundColor = "white";
                   divstyle.border = "1px solid black";
                   div.appendChild(img);
-                  document.getElementById("grid").appendChild(div);
+                  gridLight.appendChild(div);
+                }
+              }
+              for (let t = 0; t < data.map.size / 500; t++) {
+                for (let k = 0; k < data.map.size / 500; k++) {
+                  const div = document.createElement("div");
+                  const img = document.createElement("img");
+                  img.style.width = "100%";
+                  img.style.height = "100%";
+                  img.src = "backgrounds/hexdark.webp";
+                  let divstyle = div.style;
+                  divstyle.width = "999px";
+                  divstyle.height = "999px";
+                  divstyle.backgroundColor = "white";
+                  divstyle.border = "1px solid black";
+                  div.appendChild(img);
+                  gridDark.appendChild(div);
                 }
               }
               resolveDraw();
@@ -2515,15 +2535,27 @@
       button110 = 0.10669253152 * canvas.height;
       barWidth = 0.3125 * canvas.width;
       barHeight = 0.02909796314 * canvas.height;
-      document.getElementById("grid").style[
+      document.getElementById("gridLight").style[
         "grid-template-columns"
       ] = `repeat(10, ${999 * scaleFactor + 1}px)`;
-      document.getElementById("grid").style[
+      document.getElementById("gridLight").style[
         "grid-template-rows"
       ] = `repeat(10, ${999 * scaleFactor + 1}px)`;
-      document.getElementById("grid").style.width = `${10000 * scaleFactor}px`;
-      document.getElementById("grid").style.height = `${10000 * scaleFactor}px`;
-      document.getElementById("grid").childNodes.forEach((node) => {
+      document.getElementById("gridLight").style.width = `${10000 * scaleFactor}px`;
+      document.getElementById("gridLight").style.height = `${10000 * scaleFactor}px`;
+      document.getElementById("gridLight").childNodes.forEach((node) => {
+        node.style.width = `${999 * scaleFactor}px`;
+        node.style.height = `${999 * scaleFactor}px`;
+      });
+      document.getElementById("gridDark").style[
+        "grid-template-columns"
+      ] = `repeat(10, ${999 * scaleFactor + 1}px)`;
+      document.getElementById("gridDark").style[
+        "grid-template-rows"
+      ] = `repeat(10, ${999 * scaleFactor + 1}px)`;
+      document.getElementById("gridDark").style.width = `${10000 * scaleFactor}px`;
+      document.getElementById("gridDark").style.height = `${10000 * scaleFactor}px`;
+      document.getElementById("gridDark").childNodes.forEach((node) => {
         node.style.width = `${999 * scaleFactor}px`;
         node.style.height = `${999 * scaleFactor}px`;
       });
@@ -4997,10 +5029,16 @@
       ctx.lineTo(mapLeft, mapBottom);
       ctx.lineTo(mapLeft, mapTop);
       ctx.stroke();
-      gridstyle.top = `calc(-${(10000 * scaleFactor) / 2}px - ${
+      gridLightstyle.top = `calc(-${(10000 * scaleFactor) / 2}px - ${
         cavansY * scaleFactor
       }px)`;
-      gridstyle.left = `calc(-${(10000 * scaleFactor) / 2}px - ${
+      gridLightstyle.left = `calc(-${(10000 * scaleFactor) / 2}px - ${
+        cavansX * scaleFactor
+      }px)`;
+      gridDarkstyle.top = `calc(-${(10000 * scaleFactor) / 2}px - ${
+        cavansY * scaleFactor
+      }px)`;
+      gridDarkstyle.left = `calc(-${(10000 * scaleFactor) / 2}px - ${
         cavansX * scaleFactor
       }px)`;
 
@@ -5348,6 +5386,14 @@
     localStorage.setItem("theme", darkMode);
     var newTheme = darkMode ? "dark" : "light";
     document.querySelector("html").setAttribute("data-theme", newTheme);
+    if (darkMode) {
+      document.getElementById("gridDark").style.display = "grid";
+      document.getElementById("gridLight").style.display = "none";
+    }
+    if (!darkMode) {
+      document.getElementById("gridDark").style.display = "none";
+      document.getElementById("gridLight").style.display = "grid";
+    }
   });
 
   chatshown.addEventListener("click", () => {
@@ -5470,6 +5516,14 @@
     document.getElementById("getleaderBoardShown").classList.toggle("moveee");
   console.log(darkMode,canSeeNames,canSeeChat,canSeeLeaderBoard, typeof darkMode);
   document.querySelector("html").setAttribute("data-theme", newTheme);
+  if (darkMode) {
+    document.getElementById("gridDark").style.display = "grid";
+    document.getElementById("gridLight").style.display = "none";
+  }
+  if (!darkMode) {
+    document.getElementById("gridDark").style.display = "none";
+    document.getElementById("gridLight").style.display = "grid";
+  }
 
   // set theme on button press
 
@@ -5513,7 +5567,7 @@
           return Math.random() * (max - min) + min;
         }
         username = "unknown-" + Math.round(generateRandomNumber(0, 1000));
-        document.getElementById("start").style.display = "none";
+        document.getElementById("landing-page").style.display = "none";
         document.getElementById("game").style.display = "block";
         /*document.addEventListener("contextmenu", (event) =>
           event.preventDefault()
