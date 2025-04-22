@@ -460,6 +460,7 @@
       class="settings-img"
       src="assets/cropped/gear.png"
       id="settingsOpener"
+      role="button"
       title="settings"
       alt="settings"
     />
@@ -467,7 +468,7 @@
       <div class="centerleft">
         <label class="label labelspace" for="chat">Show Chat Messages:</label>
         <label class="switch" id="chat">
-          <button id="chatcheck" class="_100per">
+          <button id="chatcheck" class="_100per" aria-label="Will show chat">
           <span class="slider round" id="getChatShown"></span>
         </button>
         </label>
@@ -477,7 +478,7 @@
           >Show Leader Board:</label
         >
         <label class="switch" id="leaderBoard">
-          <button id="leaderBoardCheck" class="_100per">
+          <button id="leaderBoardCheck" class="_100per" aria-label="Will leader board be shown">
           <span class="slider round" id="getleaderBoardShown"></span>
           </button>
         </label>
@@ -487,7 +488,7 @@
           >Show Names:</label
         >
         <label class="switch" id="names">
-          <button id="namesCheck"  class="_100per">
+          <button id="namesCheck" aria-label="Will names be shown" class="_100per">
           <span class="slider round" id="getnamesShown"></span>
           </button>
         </label>
@@ -497,7 +498,7 @@
           >Dark Mode:</label
         >
         <label class="switch" id="darkMode">
-          <button id="darkModeCheck" class="_100per">
+          <button id="darkModeCheck" class="_100per" aria-label="dark mode toggle" >
           <span class="slider round" id="getdarkMode"></span>
           </button>
         </label>
