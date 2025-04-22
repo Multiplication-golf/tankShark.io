@@ -2541,8 +2541,12 @@
       document.getElementById("gridLight").style[
         "grid-template-rows"
       ] = `repeat(10, ${999 * scaleFactor + 1}px)`;
-      document.getElementById("gridLight").style.width = `${10000 * scaleFactor}px`;
-      document.getElementById("gridLight").style.height = `${10000 * scaleFactor}px`;
+      document.getElementById("gridLight").style.width = `${
+        10000 * scaleFactor
+      }px`;
+      document.getElementById("gridLight").style.height = `${
+        10000 * scaleFactor
+      }px`;
       document.getElementById("gridLight").childNodes.forEach((node) => {
         node.style.width = `${999 * scaleFactor}px`;
         node.style.height = `${999 * scaleFactor}px`;
@@ -2553,8 +2557,12 @@
       document.getElementById("gridDark").style[
         "grid-template-rows"
       ] = `repeat(10, ${999 * scaleFactor + 1}px)`;
-      document.getElementById("gridDark").style.width = `${10000 * scaleFactor}px`;
-      document.getElementById("gridDark").style.height = `${10000 * scaleFactor}px`;
+      document.getElementById("gridDark").style.width = `${
+        10000 * scaleFactor
+      }px`;
+      document.getElementById("gridDark").style.height = `${
+        10000 * scaleFactor
+      }px`;
       document.getElementById("gridDark").childNodes.forEach((node) => {
         node.style.width = `${999 * scaleFactor}px`;
         node.style.height = `${999 * scaleFactor}px`;
@@ -5501,7 +5509,8 @@
 
   canSeeNames = canSeeNames === "true" || canSeeNames === null;
   canSeeChat = canSeeChat === "true" || canSeeChat === null;
-  canSeeLeaderBoard = canSeeLeaderBoard === "true" || canSeeLeaderBoard === null;
+  canSeeLeaderBoard =
+    canSeeLeaderBoard === "true" || canSeeLeaderBoard === null;
 
   console.log(darkMode);
 
@@ -5514,7 +5523,13 @@
     document.getElementById("getChatShown").classList.toggle("moveee");
   if (canSeeLeaderBoard)
     document.getElementById("getleaderBoardShown").classList.toggle("moveee");
-  console.log(darkMode,canSeeNames,canSeeChat,canSeeLeaderBoard, typeof darkMode);
+  console.log(
+    darkMode,
+    canSeeNames,
+    canSeeChat,
+    canSeeLeaderBoard,
+    typeof darkMode
+  );
   document.querySelector("html").setAttribute("data-theme", newTheme);
   if (darkMode) {
     document.getElementById("gridDark").style.display = "grid";
@@ -5544,6 +5559,27 @@
     window.location.href !== "https://tank-shark-io.vercel.app/"
       ? `url(${window.location.origin}/public/assets/cropped/hexbackground.webp)`
       : `url(${window.location.origin}/assets/cropped/hexbackground.webp)`;
+
+  var skinGrid = document.getElementById("skins-grid");
+
+  for (let i = 1; i < 10; i++) {
+    var skinDiv = document.createElement("div");
+    var skinImg = document.createElement("img");
+    skinGrid.appendChild(skinDiv);
+    skinDiv.appendChild(skinImg);
+    skinImg.src =
+      window.location.href !== "https://tank-shark-io.vercel.app/"
+        ? `/public/skins/${i}.png`
+        : `/skins/${i}.png`;
+    skinImg.classList.add("_100per_");
+    skinDiv.classList.add("skin-div");
+  }
+
+  var skinShown = false;
+  document.getElementById("skinButton").addEventListener("click", () => {
+    skinShown = !skinShown;
+    document.getElementById("skins-grid").style.display = skinShown ? "grid" : "none";
+  })
 
   document.getElementById("playButton").addEventListener("mousedown", () => {
     username = document.getElementById("username").value;

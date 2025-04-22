@@ -105,6 +105,16 @@ body {
   height: 100%;
 }
 
+.center1000 {
+  width: 100%;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+
+}
+
 .flexcenter {
   position: absolute;
   top: 0;
@@ -637,6 +647,10 @@ option {
   height: 100%;
   border-radius: 34px;
 }
+._100per_ {
+  width:100%;
+  height: 100%;
+}
 
 .slider.round {
   border-radius: 34px;
@@ -668,6 +682,32 @@ option {
   background-color: var(--background-white-0);
   z-index: 24;
   overflow: visible;
+}
+
+.skins-grid {  
+  display: none;
+  --real-deal-width: calc(25vw - 6.66666666667px);
+  grid-template-columns: repeat(3, var(--real-deal-width));
+  gap: 0px 0px;
+  grid-auto-flow: row;
+  border-radius: 60px;
+  background-color: var(--background-white-0);
+  border: var(--border-color-300) solid 8px;
+  width: 98%;
+  height: 98%;
+  z-index: 24;
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+
+.skin-div {
+  margin: 20px;
+  border-radius: 20px;
+  background-color: var(--background-white-100);
+  border: var(--border-color-100) solid 8px;
+  /* width: 20%; */
+  height: auto;
+  aspect-ratio: 1;
 }
 
 .sudo-tool-tip {
