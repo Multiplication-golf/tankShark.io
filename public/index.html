@@ -40,6 +40,7 @@
   </head>
   <body>
     <script type="text/javascript">
+      if (window.location.herf === "https://tank-shark-io.vercel.app/") {
       (function (window, document, dataLayerName, id) {
         (window[dataLayerName] = window[dataLayerName] || []),
           window[dataLayerName].push({
@@ -77,7 +78,8 @@
             })(i[c]);
         })(window, "ppms", ["tm", "cm"]);
       })(window, document, "dataLayer", "3de78e0f-45d5-413f-8fdc-0089ab0c0116");
-    </script>
+      }
+      </script>
     <header class="landing-page" id="landing-page">
       <div class="flexcenter">
         <div class="badgeLevelDiv-con">
@@ -465,8 +467,9 @@
       <div class="centerleft">
         <label class="label labelspace" for="chat">Show Chat Messages:</label>
         <label class="switch" id="chat">
-          <input type="checkbox" id="chatcheck" class="null3" />
+          <button id="chatcheck" class="_100per">
           <span class="slider round" id="getChatShown"></span>
+        </button>
         </label>
       </div>
       <div class="centerleft">
@@ -474,8 +477,9 @@
           >Show Leader Board:</label
         >
         <label class="switch" id="leaderBoard">
-          <input type="checkbox" id="leaderBoardCheck" class="null3" />
+          <button id="leaderBoardCheck" class="_100per">
           <span class="slider round" id="getleaderBoardShown"></span>
+          </button>
         </label>
       </div>
       <div class="centerleft">
@@ -483,8 +487,9 @@
           >Show Names:</label
         >
         <label class="switch" id="names">
-          <input type="checkbox" id="namesCheck" class="null3" />
+          <button id="namesCheck"  class="_100per">
           <span class="slider round" id="getnamesShown"></span>
+          </button>
         </label>
       </div>
       <div class="centerleft">
@@ -492,8 +497,9 @@
           >Dark Mode:</label
         >
         <label class="switch" id="darkMode">
-          <input type="checkbox" id="darkModeCheck" class="null3" />
+          <button id="darkModeCheck" class="_100per">
           <span class="slider round" id="getdarkMode"></span>
+          </button>
         </label>
       </div>
     </div>

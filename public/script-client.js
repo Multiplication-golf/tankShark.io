@@ -115,7 +115,7 @@
   var canSeeChat = true;
   var darkMode = false;
   var canSeeLeaderBoard = true;
-  var canSeeNames = false;
+  var canSeeNames = true;
 
   function ongame() {
     let getIP = document.getElementById("IP").value;
@@ -4956,16 +4956,18 @@
           );
           ctx.fillText(player.score, playerX - cavansX, playerY - cavansY - 55);
 
-          ctx.strokeText(
-            player.username,
-            playerX - cavansX,
-            playerY - cavansY - 75
-          );
-          ctx.fillText(
-            player.username,
-            playerX - cavansX,
-            playerY - cavansY - 75
-          );
+          if (canSeeNames) {
+            ctx.strokeText(
+              player.username,
+              playerX - cavansX,
+              playerY - cavansY - 75
+            );
+            ctx.fillText(
+              player.username,
+              playerX - cavansX,
+              playerY - cavansY - 75
+            );
+          }
 
           // Draw border
           ctx.lineWidth = 1;
@@ -5306,7 +5308,7 @@
         window.location.href !== "https://tank-shark-io.vercel.app/"
           ? `/public${level.badge}`
           : `${level.badge}`;
-      imageForDiv.alt = `badge level: ${level}`
+      imageForDiv.alt = `badge level: ${level}`;
       imageDiv.appendChild(imageForDiv);
       imageForDiv.style.height = "4.5vw";
       imageForDiv.style.minHeight = "70px";
@@ -5334,25 +5336,36 @@
 
   var canAnimateProfile = true;
 
-  document
-    .getElementById("darkModeCheck")
-    .addEventListener("click", () => {
-      darkMode = !darkMode;
-      localStorage.setItem("theme", darkMode);
-      var newTheme = darkMode ? "light" : "dark";
-      document.querySelector("html").setAttribute("data-theme", newTheme);
-    });
+  var darkmode = document.getElementById("darkModeCheck");
+  var chatshown = document.getElementById("chatcheck");
+  var leaderboardshown = document.getElementById("leaderBoardCheck");
+  var namesshown = document.getElementById("namesCheck");
 
-  document.getElementById("chatcheck").addEventListener("click", () => {
+  darkmode.addEventListener("click", () => {
+    console.log(localStorage.getItem("theme"));
+    document.getElementById("getdarkMode").classList.toggle("moveee");
+    darkMode = !darkMode;
+    localStorage.setItem("theme", darkMode);
+    var newTheme = darkMode ? "dark" : "light";
+    document.querySelector("html").setAttribute("data-theme", newTheme);
+  });
+
+  chatshown.addEventListener("click", () => {
     canSeeChat = !canSeeChat;
+    localStorage.setItem("canSeeChat", canSeeChat);
+    document.getElementById("getChatShown").classList.toggle("moveee");
   });
 
-  document.getElementById("leaderBoardCheck").addEventListener("click", () => {
+  leaderboardshown.addEventListener("click", () => {
     canSeeLeaderBoard = !canSeeLeaderBoard;
+    localStorage.setItem("canSeeLeaderBoard", canSeeLeaderBoard);
+    document.getElementById("getleaderBoardShown").classList.toggle("moveee");
   });
 
-  document.getElementById("namesCheck").addEventListener("click", () => {
+  namesshown.addEventListener("click", () => {
     canSeeNames = !canSeeNames;
+    localStorage.setItem("canSeeNames", canSeeNames);
+    document.getElementById("getnamesShown").classList.toggle("moveee");
   });
 
   var playerCanvas = document.getElementById("playerCanvas");
@@ -5427,10 +5440,35 @@
   }
 
   darkMode = localStorage.getItem("theme");
+  canSeeNames = localStorage.getItem("canSeeNames");
+  canSeeLeaderBoard = localStorage.getItem("canSeeLeaderBoard");
+  canSeeChat = localStorage.getItem("canSeeChat");
 
+  darkMode = darkMode === "true";
+
+  if (darkMode == null) localStorage.setItem("theme", false);
+  if (canSeeNames == null) localStorage.setItem("canSeeNames", true);
+  if (canSeeChat == null) localStorage.setItem("canSeeChat", true);
+  if (canSeeLeaderBoard == null)
+    localStorage.setItem("canSeeLeaderBoard", true);
   darkMode ??= false;
 
-  var newTheme = darkMode ? "light" : "dark";
+  canSeeNames = canSeeNames === "true" || canSeeNames === null;
+  canSeeChat = canSeeChat === "true" || canSeeChat === null;
+  canSeeLeaderBoard = canSeeLeaderBoard === "true" || canSeeLeaderBoard === null;
+
+  console.log(darkMode);
+
+  var newTheme = darkMode ? "dark" : "light";
+  if (darkMode)
+    document.getElementById("getdarkMode").classList.toggle("moveee");
+  if (canSeeNames)
+    document.getElementById("getnamesShown").classList.toggle("moveee");
+  if (canSeeChat)
+    document.getElementById("getChatShown").classList.toggle("moveee");
+  if (canSeeLeaderBoard)
+    document.getElementById("getleaderBoardShown").classList.toggle("moveee");
+  console.log(darkMode,canSeeNames,canSeeChat,canSeeLeaderBoard, typeof darkMode);
   document.querySelector("html").setAttribute("data-theme", newTheme);
 
   // set theme on button press
