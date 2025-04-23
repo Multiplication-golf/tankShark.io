@@ -581,6 +581,14 @@ option {
 }
 
 /* Miscellaneous Styles */
+.x-out {
+  position: sticky;
+  top: 20px;
+  right: 20px;
+  width: 1vw;
+  height: 1vw;
+}
+
 .coolLineBreak {
   display: flex;
   justify-content: space-between;
