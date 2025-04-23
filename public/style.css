@@ -582,11 +582,21 @@ option {
 
 /* Miscellaneous Styles */
 .x-out {
-  position: sticky;
-  top: 20px;
-  right: 20px;
+  position: fixed;
+  top: 16vh;
+  right: 17vw;
   width: 1vw;
   height: 1vw;
+  font-size: 27px;
+  font-weight: 700;
+  border: none;
+  background: none;
+  color: var(--text-color-100);
+}
+.x-out:hover {
+  color:red;
+  border: none;
+  background: none;
 }
 
 .coolLineBreak {
