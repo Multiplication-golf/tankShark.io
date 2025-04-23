@@ -1,9 +1,5 @@
 // LOL, you little kids can't mess with my game
 (function () {
-  function generateRandomNumber(min, max) {
-    return Math.random() * (max - min) + min;
-  }
-
   function getMousePos(canvas, evt) {
     return {
       x: evt.clientX,
@@ -39,29 +35,22 @@
     return "";
   }
 
+  var added = false;
+  if (window.innerWidth < window.innerHeight) {
+    document.getElementsByTagName("body")[0] +=
+      "<script src='https://hammerjs.github.io/dist/hammer.min.js'></script>";
+    added = true;
+  }
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth < window.innerHeight) {
+      document.getElementsByTagName("body")[0] +=
+        "<script src='https://hammerjs.github.io/dist/hammer.min.js'></script>";
+      added = true;
+    }
+  });
+
   var username;
-
-  const schema = `
-    syntax = "proto3";
-
-    message GameObject {
-      float angle = 1;
-      string cvolor = 2;
-      int32 health = 3;
-      int32 maxhealth = 4;
-      float size = 5;
-      string type = 6;
-      float weight = 7;
-      float x = 8;
-      float y = 9;
-      float transparency = 10;
-      float randomID = 11;
-    }
-
-    message GameObjectList {
-      repeated GameObject objects = 1;
-    }
-    `;
 
   function loadProto() {
     // Define the schema directly as a JSON object
@@ -123,27 +112,6 @@
     const socket =
       new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(getIP);
     socket.binaryType = "arraybuffer";
-    const schema = `
-          syntax = "proto3";
-
-          message GameObject {
-            float angle = 1;
-            string color = 2;
-            int32 health = 3;
-            int32 maxhealth = 4;
-            float size = 5;
-            string type = 6;
-            float weight = 7;
-            float x = 8;
-            float y = 9;
-            float transparency = 10;
-            float randomID = 11;
-          }
-
-          message GameObjectList {
-            repeated GameObject objects = 1;
-          }
-          `;
 
     let playerId = null; // Connect to the server
     var canvas = document.createElement("canvas");
@@ -220,7 +188,6 @@
     var announcements = [];
     var playerMessages = [];
     var messaging = false;
-    var hidden = false;
     var blinking = false;
 
     // 🕹️ Movement & Controls
@@ -275,7 +242,6 @@
     var pentarotate = 0;
 
     // 🛡️ UI & Interface
-    var container = document.getElementById("container");
     var state = "start";
     var statecycle = 0;
     var progress = 0.0;
@@ -691,12 +657,13 @@
           downArrow.style["margin-right"] = "3px";
           downArrow.style.float = "right";
           let isDown = false;
-          downArrow.addEventListener("click", () => {
+          const demotePlayer = () => {
             downArrow.style.rotate = isDown ? "180deg" : "0deg";
             infoConteiner.style.display = isDown ? "none" : "block";
             isDown = !isDown;
-          });
-          item.addEventListener("click", () => {
+          };
+          downArrow.addEventListener("click", demotePlayer);
+          const addSelected = () => {
             Array.from(teamcontainer.children).forEach((child) => {
               child.classList.remove("glow");
             });
@@ -704,7 +671,8 @@
             item.classList.add("glow");
 
             selected_class = team.teamID;
-          });
+          };
+          item.addEventListener("click", addSelected);
         });
       } else {
         let MYteam = pubteams.find((team) => {
@@ -740,7 +708,7 @@
             player.id !== MYteam.owner.id &&
             MYteam.powers.canKick
           ) {
-            item.addEventListener("mouseover", () => {
+            const addKick = () => {
               if (teamOver) return;
               teamOver = true;
               var kick = document.createElement("img");
@@ -759,7 +727,22 @@
                 teamOver = false;
                 item.children[0].remove();
               });
-            });
+            };
+            item.addEventListener("mouseover", addKick);
+            if (added) {
+              var kick = document.createElement("img");
+              kick.src = "assets/kickButton.png";
+              kick.style.width = "1.5em";
+              kick.style.height = "1.5em";
+              kick.style["text-align"] = "left";
+              kick.addEventListener("click", () => {
+                send("kickplayer", {
+                  id: player.id,
+                  team: MYteam.teamID,
+                });
+              });
+              item.appendChild(kick);
+            }
           }
           if (MYteam.owner.id === playerId || amLower) {
             var canPremote = amLower
@@ -1143,7 +1126,6 @@
               break;
             }
             case "playerLeft": {
-              let id = data.playerId;
               players = Object.entries(players).reduce(
                 (newPlayers, [key, value]) => {
                   if (key !== data["playerID"]) {
@@ -1187,9 +1169,10 @@
                 respawn.style["z-index"] = "12";
                 document.getElementsByTagName("body")[0].style.cursor = "auto";
                 document.getElementById("game").appendChild(respawn);
-                respawn.addEventListener("click", () => {
+                const reload = () => {
                   window.location.reload();
-                });
+                };
+                respawn.addEventListener("click", reload);
               } else if (data["rewarder"] === playerId && data.reward) {
                 score += data.reward;
               }
@@ -1534,12 +1517,13 @@
           }
         };
 
-        document.addEventListener("visibilitychange", (event) => {
+        const windowSateChange = () => {
           send("windowStateChange", {
             vis: document.visibilityState,
             id: playerId,
           });
-        });
+        };
+        document.addEventListener("visibilitychange", windowSateChange);
 
         const movePlayer = (dx, dy, last, i) => {
           dx *= speedBoost;
@@ -1571,10 +1555,6 @@
           });
         }, 1000);
 
-        function MathHypotenuse(x, y) {
-          return Math.sqrt(x * x + y * y);
-        }
-
         function setCookie(cname, cvalue, exdays) {
           const d = new Date();
           d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
@@ -1582,7 +1562,7 @@
           document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
         }
 
-        document.addEventListener("keydown", (event) => {
+        const typing = (event) => {
           keysPressed[event.key] = true;
           if (messaging) {
             if (
@@ -1616,13 +1596,14 @@
             }
             messaging = !messaging;
           }
-        });
+        };
+        document.addEventListener("keydown", typing);
 
         document.addEventListener("keyup", (event) => {
           delete keysPressed[event.key];
         });
 
-        document.addEventListener("mousemove", (evt) => {
+        const mousemove = (evt) => {
           var mousepos = getMousePos(window, evt);
           if (!autoRotating && !lockautoRotating) {
             MouseX_ = mousepos.x;
@@ -1637,18 +1618,18 @@
           }
           MouseX = mousepos.x;
           MouseY = mousepos.y;
-        });
+        };
+        document.addEventListener("mousemove", mousemove);
 
         function generateRandomNumber(min, max) {
           return Math.random() * (max - min) + min;
         }
 
-        document.getElementById("teamButton").addEventListener("click", () => {
+        const createTeam = () => {
           var teamname = document.getElementById("teamname").value;
           var checked, checked2, checked3;
 
           try {
-            var checkedValue = document.querySelector(".null:checked").value;
             checked = true;
           } catch {
             checked = false;
@@ -1656,7 +1637,6 @@
           var description = document.getElementById("teamDescription").value;
 
           try {
-            var checkedValue = document.querySelector(".null2:checked").value;
             checked2 = true;
           } catch {
             checked2 = false;
@@ -1667,7 +1647,6 @@
           ).value;
 
           try {
-            var checkedValue = document.querySelector(".null3:checked").value;
             checked3 = true;
           } catch {
             checked3 = false;
@@ -1699,7 +1678,10 @@
             ScheduledBasedTaxInterval,
           });
           owner_of_team = true;
-        });
+        };
+        document
+          .getElementById("teamButton")
+          .addEventListener("click", createTeam);
 
         function bounceBackAndRecoil(i, Bsize, Bspeed, anlge_) {
           cannonWidth[i] = cannonWidth[i] || 0;
@@ -2042,20 +2024,22 @@
           });
         }
 
-        document.addEventListener("mousedown", (evt) => {
+        const fireCannon = (evt) => {
           if (teampanelopen) return;
           fireOnce(evt, false);
-        });
+        };
+        document.addEventListener("mousedown", fireCannon);
 
-        window.addEventListener("resize", (evt) => {
+        window.addEventListener("resize", () => {
           scaleby(0);
         });
 
-        document.addEventListener("click", (evt) => {
+        const perventEvent = (evt) => {
           if (!teampanelopen) {
             evt.preventDefault();
           }
-        });
+        };
+        document.addEventListener("click", perventEvent);
 
         let __tankdata__ = tankmeta[__type__];
 
@@ -2071,7 +2055,7 @@
           }
           if (tankmeta.dronetanks.includes(__type__)) {
             let i = 0;
-            for (var cannon in tankmeta[__type__]["cannons"]) {
+            for (var {} in tankmeta[__type__]["cannons"]) {
               if (
                 drones <= tankmeta[__type__]["cannons"][i]["max-drones"] &&
                 tankmeta[__type__]["cannons"][i].type === "directer"
@@ -2095,7 +2079,7 @@
 
         var Xbutton = document.getElementById("Xbutton");
 
-        Xbutton.addEventListener("click", () => {
+        const closeTeamPanel = () => {
           teampanelopen = false;
           var teamcontainer = document.getElementById("teamcontainer");
           var teamMain = document.getElementById("teamMain");
@@ -2104,10 +2088,11 @@
           document.getElementById("teambox").style.display = "none";
           document.getElementsByTagName("body")[0].style.cursor =
             "url('https://deip-io3.glitch.me/targetpointer1.cur'), auto";
-        });
+        };
+        Xbutton.addEventListener("click", closeTeamPanel);
 
         var joinLeave = document.getElementById("join/leave");
-        joinLeave.addEventListener("click", () => {
+        const joinLeave = () => {
           if (!joinedTeam) {
             if (selected_class !== null) {
               send("playerJoinedTeam", {
@@ -2131,19 +2116,21 @@
             joinedTeam = false;
             selected_class = null;
           }
-        });
+        };
+        joinLeave.addEventListener("click", joinLeave);
 
         var createDelete = document.getElementById("create/delete");
 
-        createDelete.addEventListener("click", () => {
+        const deleteTeam = () => {
           if (!owner_of_team) {
             document.getElementById("teambox").style.display = "block";
           } else if (owner_of_team && joinedTeam) {
             send("deleteTeam", { teamID: teamOn, playerId: playerId });
           }
-        });
+        };
+        createDelete.addEventListener("click", deleteTeam);
 
-        document.addEventListener("mousedown", (evt) => {
+        const canvasOpener = (evt) => {
           if (
             window.innerWidth - 475 < MouseX &&
             MouseX < window.innerWidth - 275 &&
@@ -2179,9 +2166,10 @@
               send("MouseAway", { id: playerId });
             }
           }
-        });
+        };
+        document.addEventListener("mousedown", canvasOpener);
 
-        document.addEventListener("mouseup", function () {
+        const mouseStateChange = () => {
           for (const interval in firingIntervals) {
             firingInterval = firingIntervals[interval];
             clearInterval(firingInterval);
@@ -2190,7 +2178,8 @@
           }
 
           send("MousestateUpdate", { id: playerId });
-        });
+        };
+        document.addEventListener("mouseup", mouseStateChange);
       }, 0);
     };
 
@@ -2280,7 +2269,7 @@
       }
     }
 
-    const movePlayer = (dx, dy, last, i) => {
+    const movePlayer = (dx, dy, last) => {
       movementTimeouts.shift();
       cavansX += dx;
       playerY += dy;
@@ -2301,7 +2290,7 @@
       return Math.sqrt(x * x + y * y);
     }
 
-    const checkCollisions = (dx, dy) => {
+    const checkCollisions = () => {
       for (let playerId_ in players) {
         let player = players[playerId_];
         let distance = MathHypotenuse(player.x - playerX, player.y - playerY);
@@ -2517,7 +2506,6 @@
       playerY -= canH / 2 - canH1 / 2;
       cavansX -= canW / 2 - canW1 / 2;
       cavansY -= canH / 2 - canH1 / 2;
-      var upscaleX2 = 1 + (1 - oWidth / canvas.width);
       teamwidth = 0.15625 * canvas.width; // 297.1875
       teamheight = 0.33333333333333333333333333 * canvas.height;
       innerteamwidth = 0.14322916666 * canvas.width;
@@ -2614,7 +2602,6 @@
       }
       run() {
         var shovedown = 50;
-        var shoved_down = false;
         var shoved_down_anoucment = {};
         var exW = 1; // scale factors
         var exH = 1; // scale factors
@@ -3294,7 +3281,6 @@
         2 * Math.PI,
         false
       );
-      let num = statecycle % 10;
       if (state === "start" || state === "damaged") {
         let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
         let percentage =
@@ -3466,7 +3452,6 @@
         const y = centerY + radius * Math.sin(theta);
         vertices.push({ x, y });
       }
-      var _vertices = [];
       // Draw filled pentagon
       ctx.beginPath();
       ctx.moveTo(vertices[0].x, vertices[0].y);
@@ -3751,7 +3736,6 @@
               const y = centerY + radius * Math.sin(theta);
               vertices.push({ x, y });
             }
-            var _vertices = [];
             // Draw filled pentagon
             ctx.beginPath();
             ctx.moveTo(vertices[0].x, vertices[0].y);
@@ -3991,13 +3975,6 @@
 
       roads.forEach((road) => {
         console.log(road);
-        var show = road.some(
-          (buildmap) =>
-            buildmap.road.x > 0 + cavansX &&
-            buildmap.road.x < canvas.width + cavansX &&
-            buildmap.road.y - cavansY > 0 &&
-            buildmap.road.y < canvas.height + cavansY
-        );
         if (true) {
           ctx.beginPath();
           ctx.moveTo(road[2].road.x - cavansX, road[2].road.y - cavansY);
@@ -4076,8 +4053,6 @@
         var realx = bullet.x;
         var realy = bullet.y;
 
-        var realstartx = bullet.xstart - (bullet.xstart - cavansX);
-        var realstarty = bullet.ystart - (bullet.ystart - cavansY);
         if (
           realx > 0 + cavansX &&
           realx < canvas.width + cavansX &&
@@ -4301,7 +4276,6 @@
             autocannons.forEach((can) => {
               if (can.playerid === bullet.uniqueid) {
                 autoCAN_ = can;
-                var cannonWidth = can.cannonWidth;
               }
             });
             ctx.save();
@@ -4577,7 +4551,6 @@
               tankdatacannondata["type"] === "trap" ||
               tankdatacannondata["type"] === "paver"
             ) {
-              let cannonwidth = tankdatacannondata["cannon-width"];
               let cannonheight = tankdatacannondata["cannon-height"];
               ctx.save();
 
@@ -5023,7 +4996,6 @@
 
       ctx.fillStyle = squareColor;
 
-      let angle = getCannonAngle();
       if (!dead) {
         drawself(upscaleX, upscaleY);
       }
@@ -5155,7 +5127,6 @@
     }
   }
 
-  let getIP = document.getElementById("IP").value;
   async function getBagdeData() {
     const url = "http://localhost:4500/currentbadge";
     try {
@@ -5180,12 +5151,13 @@
   let settingsopen = false;
   var settings = document.getElementById("settingsOpener");
 
-  settings.addEventListener("click", () => {
+  const settingsOpener = () => {
     settingsopen = !settingsopen;
     document.getElementById("settingsBox").style.display = settingsopen
       ? "block"
       : "none";
-  });
+  };
+  settings.addEventListener("click", settingsOpener);
 
   async function getLeaderBoardData() {
     const url = "http://localhost:4500/leaderboard";
@@ -5271,7 +5243,6 @@
     console.log(levelData);
     badgeLevelDiv.innerHTML = "";
 
-    let lastBuilt = 0;
     levelData.playerScore = 159999;
 
     var buildOutEle = {};
@@ -5387,7 +5358,7 @@
   var leaderboardshown = document.getElementById("leaderBoardCheck");
   var namesshown = document.getElementById("namesCheck");
 
-  darkmode.addEventListener("click", () => {
+  const themeChanger = () => {
     console.log(localStorage.getItem("theme"));
     document.getElementById("getdarkMode").classList.toggle("moveee");
     darkMode = !darkMode;
@@ -5402,25 +5373,29 @@
       document.getElementById("gridDark").style.display = "none";
       document.getElementById("gridLight").style.display = "grid";
     }
-  });
+  };
+  darkmode.addEventListener("click", themeChanger);
 
-  chatshown.addEventListener("click", () => {
+  const chatToggle = () => {
     canSeeChat = !canSeeChat;
     localStorage.setItem("canSeeChat", canSeeChat);
     document.getElementById("getChatShown").classList.toggle("moveee");
-  });
+  };
+  chatshown.addEventListener("click", chatToggle);
 
-  leaderboardshown.addEventListener("click", () => {
+  const leaderBoardToggle = () => {
     canSeeLeaderBoard = !canSeeLeaderBoard;
     localStorage.setItem("canSeeLeaderBoard", canSeeLeaderBoard);
     document.getElementById("getleaderBoardShown").classList.toggle("moveee");
-  });
+  };
+  leaderboardshown.addEventListener("click", leaderBoardToggle);
 
-  namesshown.addEventListener("click", () => {
+  const namesToggle = () => {
     canSeeNames = !canSeeNames;
     localStorage.setItem("canSeeNames", canSeeNames);
     document.getElementById("getnamesShown").classList.toggle("moveee");
-  });
+  };
+  namesshown.addEventListener("click", namesToggle);
 
   var playerCanvas = document.getElementById("playerCanvas");
   let profileCtx = playerCanvas.getContext("2d");
@@ -5562,10 +5537,11 @@
 
   var skinGrid = document.getElementById("skins-grid");
 
-  document.getElementById("close").addEventListener("click", () => {
+  const skinsTabCloser = () => {
     document.getElementById("skinCon").style.display = "none";
     skinShown = false;
-  });
+  };
+  document.getElementById("close").addEventListener("click", skinsTabCloser);
 
   for (let i = 1; i < 10; i++) {
     var skinDiv = document.createElement("div");
@@ -5581,12 +5557,17 @@
   }
 
   var skinShown = false;
-  document.getElementById("skinButton").addEventListener("click", () => {
+  const skinsTabOpener = () => {
     skinShown = !skinShown;
-    document.getElementById("skinCon").style.display = skinShown ? "grid" : "none";
-  })
+    document.getElementById("skinCon").style.display = skinShown
+      ? "grid"
+      : "none";
+  };
+  document
+    .getElementById("skinButton")
+    .addEventListener("click", skinsTabOpener);
 
-  document.getElementById("playButton").addEventListener("mousedown", () => {
+  const startGame = () => {
     username = document.getElementById("username").value;
     document.removeEventListener("mousemove", (evt) => getProfilePointer(evt));
     canAnimateProfile = false;
@@ -5616,7 +5597,10 @@
         ongame();
       }, 100);
     }
-  });
+  };
+  document
+    .getElementById("playButton")
+    .addEventListener("mousedown", startGame);
 })();
 
 console.log(
