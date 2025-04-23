@@ -80,7 +80,7 @@ body {
 .player-canvas-container {
   width: 13.8541666667vw;
   height: 13.8541666667vw;
-  margin-bottom: 2vw;
+  margin-bottom: 4vh;
   margin-left: -4vw;
   transform: translateX(-100%);
 }
@@ -106,25 +106,34 @@ body {
 }
 
 .center1000 {
+  display: none;
+  position: relative;
+  z-index: 24;
   width: 100%;
   text-align: center;
-  display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  transform: translateY(-6vh);
+}
 
+.about {
+  padding: 30px;
+  font-size: 21px;
+  line-height: 20px;
+  padding-bottom: 100px;
 }
 
 .flexcenter {
-  position: absolute;
+  /* position: absolute;
   top: 0;
-  left: 0;
+  left: 0; */
   float: left;
-  height: 100%;
-  width: 20%;
+  height: 0%;
+  width: 27%;
   display: flex;
   justify-content: center;
-  align-items: center;
+  /* align-items: end; */
 }
 
 @keyframes pop {
@@ -144,8 +153,17 @@ body {
   position: fixed;
   transform: translateY(-14.8541666667vw);
   font-size: 15px;
-  margin-left: 2vw;
+  margin-left: -5vw;
+  border: none;
+  background: none;
+  padding: 0;
   animation: pop 1s infinite;
+}
+
+.skin-text:hover {
+  border: none;
+  background: none;
+  padding: 0;
 }
 
 .social-share {
@@ -403,11 +421,10 @@ option {
 .badgeLevelDiv-con {
   border: var(--border-color-100) solid 8px;
   border-radius: 2vw;
-  position: fixed;
   overflow: hidden;
   min-width: 250px;
   width: 20%;
-  height: 85%;
+  height: 85vh;
   margin-top: 2.5%;
   margin-bottom: 2.5%;
   margin-left: 5%;
@@ -679,7 +696,7 @@ option {
 }
 
 .settings-img {
-  position: absolute;
+  position: relative;
   top: .2vw;
   left: 2vw;
   width: max(4vw, 6vh);
@@ -703,7 +720,7 @@ option {
 }
 
 .skins-grid {  
-  display: none;
+  display: grid;
   --real-deal-width: calc(25vw - 6.66666666667px);
   grid-template-columns: repeat(3, var(--real-deal-width));
   gap: 0px 0px;

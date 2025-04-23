@@ -5229,7 +5229,7 @@
 
   async function ping() {
     const urls =
-      /* window.location.href !== "https://tank-shark-io.vercel.app/" */ true
+      window.location.href !== "https://tank-shark-io.vercel.app/"
         ? [
             "http://localhost:4500/ping",
             "https://websocketpointer.duckdns.org/ping",
@@ -5562,6 +5562,11 @@
 
   var skinGrid = document.getElementById("skins-grid");
 
+  document.getElementById("close").addEventListener("click", () => {
+    document.getElementById("skinCon").style.display = "none";
+    skinShown = false;
+  });
+
   for (let i = 1; i < 10; i++) {
     var skinDiv = document.createElement("div");
     var skinImg = document.createElement("img");
@@ -5578,7 +5583,7 @@
   var skinShown = false;
   document.getElementById("skinButton").addEventListener("click", () => {
     skinShown = !skinShown;
-    document.getElementById("skins-grid").style.display = skinShown ? "grid" : "none";
+    document.getElementById("skinCon").style.display = skinShown ? "grid" : "none";
   })
 
   document.getElementById("playButton").addEventListener("mousedown", () => {

@@ -7,13 +7,13 @@
 @media only screen and (max-width: 1290px) and (min-width: 1270px) and (min-height: 790px) {
   .badgeLevelDiv-con {
     min-width: 200px !important;
-    height: 75% !important;
+    height: 75vh !important;
   }
 }
 
 @media only screen and (max-width: 850px) and (min-width: 600px) {
   .badgeLevelDiv-con {
-    min-width: 0px !important;
+    min-width: 200px !important;
   }
   .buttonMain {
     font-size: 1em !important;

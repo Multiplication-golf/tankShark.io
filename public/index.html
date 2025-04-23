@@ -13,12 +13,14 @@
       name="twitter:description"
       content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!"
     />
-    <meta name="twitter:image" content="/public/og-assets/tankshark-io.png" />
+    <meta name="twitter:image" content="/og-assets/tankshark-io.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <link
       href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
       rel="stylesheet"
     />
+    <meta content="4/20/2025T12:10" itemprop="Last Updated">
+    <link rel="canonical" href="https://www.privacypolicygenerator.info">
     <meta
       name="description"
       content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!"
@@ -29,14 +31,14 @@
       property="og:description"
       content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!"
     />
-    <meta property="og:image" content="/public/og-assets/tankshark-io.png" />
+    <meta property="og:image" content="/og-assets/tankshark-io.png" />
     <meta property="og:type" content="website" />
 
     <link
       rel="icon"
       id="icon"
       type="image/x-icon"
-      href="/public/favicons/favicon.ico"
+      href="/favicons/favicon.ico"
     />
   </head>
   <body>
@@ -82,11 +84,19 @@
       }
       </script>
     <header class="landing-page" id="landing-page">
+      <img
+        class="settings-img"
+        src="assets/cropped/gear.png"
+        id="settingsOpener"
+        role="button"
+        title="settings"
+        alt="settings"
+      />
       <div style="height:0px;">
-        <div class="center1000">
+        <div class="center1000" id="skinCon">
           <div style="overflow: hidden; height:75vh; z-index: 24; border-radius: 60px;">
             <div class="skins-grid" id="skins-grid">
-              <button class="x-out" title="close button">X</button>
+              <button class="x-out" id="close" title="close button">X</button>
             </div>
           </div>
         </div>
@@ -98,7 +108,7 @@
           </div>
         </div>
       </div>
-      <div class="center100">
+      <div class="center100" style="transform: translateY(-6vh);">
         <div id="start" class="container">
           <h1 class="mainHeader">Welcome to TankShark.io!</h1>
           <input
@@ -124,7 +134,7 @@
               id="playerCanvas"
               class="player-canvas"
             ></canvas>
-            <p class="skin-text" id="skinButton">New skins available</p>
+            <button class="skin-text" id="skinButton">New skins available</button>
           </div>
         </div>
       </div>
@@ -174,6 +184,21 @@
           <option value="ws://localhost:4500">ws://localhost:4500</option>
         </select>
       </footer>
+      <article itemprop="about" itemscope itemtype="http://schema.org/Thing" class="about">
+        <h2>About TankShark.IO</h2>
+        <p>
+            Dive into the action with TankShark.IO, the ultimate multiplayer 
+          game where you control powerful tanks and battle it out in a vibrant, open-world arena. Whether you're teaming up with friends or going solo, there's always a new challenge waiting for you. Get ready to explore, compete, and dominate the battlefield!
+        </p>
+        <p>
+            Designed for fast-paced fun, TankShark.IO offers unique tank 
+          upgrades, colorful shapes, and exciting gameplay that keeps you coming back for more. Customize your tank, level up, and show off your skills as you climb the leaderboard. It's easy to pick up and play, but mastering the game takes strategy and skill.
+        </p>
+        <p>
+            Join the TankShark.IO community today and experience the thrill of 
+          online multiplayer gaming like never before. With regular updates, new skins, and fresh content, there's always something exciting happening. Play now and become the ultimate tank champion!
+        </p>
+      </article>
     </header>
     <section
       itemscope
@@ -467,14 +492,6 @@
         </div>
       </div>
     </main>
-    <img
-      class="settings-img"
-      src="assets/cropped/gear.png"
-      id="settingsOpener"
-      role="button"
-      title="settings"
-      alt="settings"
-    />
     <div id="settingsBox" class="settings-box">
       <div class="centerleft">
         <label class="label labelspace" for="chat">Show Chat Messages:</label>
