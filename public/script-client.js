@@ -53,11 +53,25 @@
   var username;
 
   const images = [];
-  const imagePaths = ["0.png","1.png","2.png","3.png","4.png","5.png","6.png","7.png","8.png","9.png"]; // Array of image paths
+  const imagePaths = [
+    "0.png",
+    "1.png",
+    "2.png",
+    "3.png",
+    "4.png",
+    "5.png",
+    "6.png",
+    "7.png",
+    "8.png",
+    "9.png",
+  ]; // Array of image paths
 
-  imagePaths.forEach(path => {
+  imagePaths.forEach((path) => {
     const img = new Image();
-    img.src = path;
+    img.src =
+      (window.location.herf !== "https://tank-shark-io.vercel.app/"
+        ? "/public/skins/"
+        : "/skins/") + path;
     images.push(img);
   });
 
@@ -5572,9 +5586,11 @@
       [...document.getElementById("skins-grid").children].forEach((skin) => {
         skin.classList.remove("selected-skin");
       });
-      document.getElementById("skins-grid").children[i+1].classList.add("selected-skin");
+      document
+        .getElementById("skins-grid")
+        .children[i + 1].classList.add("selected-skin");
       selected_ele = skinImg;
-      console.log(i,document.getElementById("skins-grid").children[i+2]);
+      console.log(i, document.getElementById("skins-grid").children[i + 2]);
     };
     skinDiv.addEventListener("click", selectSkin);
   }
@@ -5621,9 +5637,11 @@
       }, 100);
     }
   };
-  document
+  window.addEventListener('load', () => {
+    document
     .getElementById("playButton")
     .addEventListener("mousedown", startGame);
+  });
 })();
 
 console.log(

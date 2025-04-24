@@ -430,10 +430,11 @@ option {
   overflow: hidden;
   min-width: 250px;
   width: 20%;
-  height: 85vh;
+  height: 84vh;
   margin-top: 2.5%;
   margin-bottom: 2.5%;
   margin-left: 5%;
+  z-index: 20;
 }
 
 .lineBreak::after {

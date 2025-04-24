@@ -8,7 +8,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <meta name="twitter:title" content="TankShark.IO" />
-    <meta name="google-site-verification" content="v4LjyJ6spsXmQJwHFU__CcDiJmY5kflfJYLuGNiaV6E" />
+    <meta
+      name="google-site-verification"
+      content="v4LjyJ6spsXmQJwHFU__CcDiJmY5kflfJYLuGNiaV6E"
+    />
     <meta
       name="twitter:description"
       content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!"
@@ -19,8 +22,8 @@
       href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
       rel="stylesheet"
     />
-    <meta content="4/20/2025T12:10" itemprop="Last Updated">
-    <link rel="canonical" href="https://www.privacypolicygenerator.info">
+    <meta content="4/20/2025T12:10" itemprop="Last Updated" />
+    <link rel="canonical" href="https://www.privacypolicygenerator.info" />
     <meta
       name="description"
       content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!"
@@ -44,45 +47,50 @@
   <body>
     <script type="text/javascript">
       if (window.location.herf === "https://tank-shark-io.vercel.app/") {
-      (function (window, document, dataLayerName, id) {
-        (window[dataLayerName] = window[dataLayerName] || []),
-          window[dataLayerName].push({
-            start: new Date().getTime(),
-            event: "stg.start",
-          });
-        var scripts = document.getElementsByTagName("script")[0],
-          tags = document.createElement("script");
-        var qP = [];
-        dataLayerName !== "dataLayer" &&
-          qP.push("data_layer_name=" + dataLayerName);
-        var qPString = qP.length > 0 ? "?" + qP.join("&") : "";
-        (tags.async = !0),
-          (tags.src =
-            "https://multiplication-golf.containers.piwik.pro/" +
-            id +
-            ".js" +
-            qPString),
-          scripts.parentNode.insertBefore(tags, scripts);
-        !(function (a, n, i) {
-          a[n] = a[n] || {};
-          for (var c = 0; c < i.length; c++)
-            !(function (i) {
-              (a[n][i] = a[n][i] || {}),
-                (a[n][i].api =
-                  a[n][i].api ||
-                  function () {
-                    var a = [].slice.call(arguments, 0);
-                    "string" == typeof a[0] &&
-                      window[dataLayerName].push({
-                        event: n + "." + i + ":" + a[0],
-                        parameters: [].slice.call(arguments, 1),
-                      });
-                  });
-            })(i[c]);
-        })(window, "ppms", ["tm", "cm"]);
-      })(window, document, "dataLayer", "3de78e0f-45d5-413f-8fdc-0089ab0c0116");
+        (function (window, document, dataLayerName, id) {
+          (window[dataLayerName] = window[dataLayerName] || []),
+            window[dataLayerName].push({
+              start: new Date().getTime(),
+              event: "stg.start",
+            });
+          var scripts = document.getElementsByTagName("script")[0],
+            tags = document.createElement("script");
+          var qP = [];
+          dataLayerName !== "dataLayer" &&
+            qP.push("data_layer_name=" + dataLayerName);
+          var qPString = qP.length > 0 ? "?" + qP.join("&") : "";
+          (tags.async = !0),
+            (tags.src =
+              "https://multiplication-golf.containers.piwik.pro/" +
+              id +
+              ".js" +
+              qPString),
+            scripts.parentNode.insertBefore(tags, scripts);
+          !(function (a, n, i) {
+            a[n] = a[n] || {};
+            for (var c = 0; c < i.length; c++)
+              !(function (i) {
+                (a[n][i] = a[n][i] || {}),
+                  (a[n][i].api =
+                    a[n][i].api ||
+                    function () {
+                      var a = [].slice.call(arguments, 0);
+                      "string" == typeof a[0] &&
+                        window[dataLayerName].push({
+                          event: n + "." + i + ":" + a[0],
+                          parameters: [].slice.call(arguments, 1),
+                        });
+                    });
+              })(i[c]);
+          })(window, "ppms", ["tm", "cm"]);
+        })(
+          window,
+          document,
+          "dataLayer",
+          "3de78e0f-45d5-413f-8fdc-0089ab0c0116"
+        );
       }
-      </script>
+    </script>
     <header class="landing-page" id="landing-page">
       <img
         class="settings-img"
@@ -92,9 +100,16 @@
         title="settings"
         alt="settings"
       />
-      <div style="height:0px;">
+      <div style="height: 0px">
         <div class="center1000" id="skinCon">
-          <div style="overflow: hidden; height:75vh; z-index: 24; border-radius: 60px;">
+          <div
+            style="
+              overflow: hidden;
+              height: 75vh;
+              z-index: 24;
+              border-radius: 60px;
+            "
+          >
             <div class="skins-grid" id="skins-grid">
               <button class="x-out" id="close" title="close button">X</button>
             </div>
@@ -108,7 +123,7 @@
           </div>
         </div>
       </div>
-      <div class="center100" style="transform: translateY(-6vh);">
+      <div class="center100" style="transform: translateY(-6vh)">
         <div id="start" class="container">
           <h1 class="mainHeader">Welcome to TankShark.io!</h1>
           <input
@@ -134,7 +149,9 @@
               id="playerCanvas"
               class="player-canvas"
             ></canvas>
-            <button class="skin-text" id="skinButton">New skins available</button>
+            <button class="skin-text" id="skinButton">
+              New skins available
+            </button>
           </div>
         </div>
       </div>
@@ -184,19 +201,66 @@
           <option value="ws://localhost:4500">ws://localhost:4500</option>
         </select>
       </footer>
-      <article itemprop="about" itemscope itemtype="http://schema.org/Thing" class="about">
-        <h2>About TankShark.IO</h2>
-        <p>
-            Dive into the action with TankShark.IO, the ultimate multiplayer 
-          game where you control powerful tanks and battle it out in a vibrant, open-world arena. Whether you're teaming up with friends or going solo, there's always a new challenge waiting for you. Get ready to explore, compete, and dominate the battlefield!
+      <article
+        itemscope
+        itemtype="https://schema.org/Thing"
+        class="howToPlay"
+        itemprop="HowTo"
+      >
+        <h2 style="text-align: center">How to Play</h2>
+        <p itemprop="actionProcess">
+          Use your mouse to aim and control your tank's direction. You can also
+          left-click to fire your cannon and right-click to interact with the
+          game elements. Keep your health up and score as you navigate the
+          battlefield to stay alive.
+        </p>
+        <p itemprop="actionProcess">
+          Roam around using the arrow keys or WASD keys, and you can also
+          combine keys for diagonal movement and use the mouse to rotate your
+          cannon independently. Upgrade your tank by earning points and
+          unlocking new abilities, but watch out for enemies and obstacles while
+          exploring the map.
         </p>
         <p>
-            Designed for fast-paced fun, TankShark.IO offers unique tank 
-          upgrades, colorful shapes, and exciting gameplay that keeps you coming back for more. Customize your tank, level up, and show off your skills as you climb the leaderboard. It's easy to pick up and play, but mastering the game takes strategy and skill.
+          Join or create teams to collaborate with other players. Use the team
+          panel to manage your team or join available teams. Customize your tank
+          with skins and adjust game settings like dark mode or chat visibility
+          in the settings menu.
+          <span itemprop="yield">
+            Stay alert and dominate the battlefield!</span
+          >
+        </p>
+      </article>
+      <article
+        itemprop="about"
+        itemscope
+        itemtype="http://schema.org/Thing"
+        class="about"
+      >
+        <h2 style="text-align: center">About TankShark.IO</h2>
+        <p>
+          Dive into the
+          <span itemprop="description"
+            >multiplayer action with the ultimate game where you control awesome
+            tanks and battle in a open-world arena. Whether you're teaming up
+            with friends or going solo, there's always a new challenge waiting
+            for you.</span
+          >
+          Get ready to explore, compete, and dominate the battlefield!
         </p>
         <p>
-            Join the TankShark.IO community today and experience the thrill of 
-          online multiplayer gaming like never before. With regular updates, new skins, and fresh content, there's always something exciting happening. Play now and become the ultimate tank champion!
+          Designed for fast-paced fun, TankShark.IO offers plentiful tank
+          upgrades, colorful polygons, and exciting gameplay that keeps you
+          coming back for more. Customize your tank, level up, and show off your
+          skills as you climb the leaderboard. It's easy to pick up and play,
+          but mastering the game takes strategy and skill.
+        </p>
+        <p>
+          Join the Tank-Shark.io community today and experience the thrill of
+          <span itemprop="genre">online multiplayer gaming</span> like never
+          before. With regular updates, new skins, and fresh content, something
+          exciting happening. Gain score to and build teams to become the
+          ultimate tank champion and rise to the top of the leader board!
         </p>
       </article>
     </header>
@@ -497,8 +561,8 @@
         <label class="label labelspace" for="chat">Show Chat Messages:</label>
         <label class="switch" id="chat">
           <button id="chatcheck" class="_100per" aria-label="Will show chat">
-          <span class="slider round" id="getChatShown"></span>
-        </button>
+            <span class="slider round" id="getChatShown"></span>
+          </button>
         </label>
       </div>
       <div class="centerleft">
@@ -506,28 +570,36 @@
           >Show Leader Board:</label
         >
         <label class="switch" id="leaderBoard">
-          <button id="leaderBoardCheck" class="_100per" aria-label="Will leader board be shown">
-          <span class="slider round" id="getleaderBoardShown"></span>
+          <button
+            id="leaderBoardCheck"
+            class="_100per"
+            aria-label="Will leader board be shown"
+          >
+            <span class="slider round" id="getleaderBoardShown"></span>
           </button>
         </label>
       </div>
       <div class="centerleft">
-        <label class="label labelspace" for="names"
-          >Show Names:</label
-        >
+        <label class="label labelspace" for="names">Show Names:</label>
         <label class="switch" id="names">
-          <button id="namesCheck" aria-label="Will names be shown" class="_100per">
-          <span class="slider round" id="getnamesShown"></span>
+          <button
+            id="namesCheck"
+            aria-label="Will names be shown"
+            class="_100per"
+          >
+            <span class="slider round" id="getnamesShown"></span>
           </button>
         </label>
       </div>
       <div class="centerleft">
-        <label class="label labelspace" for="darkMode"
-          >Dark Mode:</label
-        >
+        <label class="label labelspace" for="darkMode">Dark Mode:</label>
         <label class="switch" id="darkMode">
-          <button id="darkModeCheck" class="_100per" aria-label="dark mode toggle" >
-          <span class="slider round" id="getdarkMode"></span>
+          <button
+            id="darkModeCheck"
+            class="_100per"
+            aria-label="dark mode toggle"
+          >
+            <span class="slider round" id="getdarkMode"></span>
           </button>
         </label>
       </div>
