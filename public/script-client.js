@@ -75,6 +75,11 @@
     images.push(img);
   });
 
+  var inverted = [];
+  images.forEach((image___,i) => {
+    inverted.push({[`${i}.png`]:image___})
+  });
+
   function loadProto() {
     // Define the schema directly as a JSON object
     const schema = {
@@ -903,6 +908,7 @@
           team: teamOn,
           userId: userId,
           autoFiring: autoFiring,
+          skin: skin,
           statsTree: {
             Health: 1,
             "Body Damage": 1,
@@ -980,7 +986,6 @@
               baseFireInterval = data.baseFireInterval;
               scaleUp = data.scaleUp;
               radiusConfig = data.colorGradeint;
-              console.log(radiusConfig);
               playerBaseSize = data.playerBaseSize;
               var gridDark = document.getElementById("gridDark");
               var gridLight = document.getElementById("gridLight");
@@ -1265,7 +1270,6 @@
               break;
             }
             case "roadUpdate": {
-              console.log(data);
               roads = data;
               break;
             }
@@ -1302,6 +1306,7 @@
                   screenWidth: canvas.width,
                   screenHeight: canvas.height,
                   autoFiring: autoFiring,
+                  skin: skin,
                   statsTree: {
                     Health: 1,
                     "Body Damage": 1,
@@ -2928,6 +2933,7 @@
         2 * Math.PI,
         false
       );
+
       ctx.fillStyle = gradient;
       ctx.fill();
 
@@ -3320,6 +3326,20 @@
       ctx.lineWidth = 5;
       ctx.strokeStyle = "#aaaaaa";
       ctx.stroke();
+
+      if (skinID !== 0) {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(angle);
+        ctx.drawImage(
+          images[skinID],
+          0 - (playerSize * playerBaseSize),
+          0 - (playerSize * playerBaseSize),
+          playerBaseSize*2,
+          playerBaseSize*2
+        );
+        ctx.restore();
+      }
 
       // Draw background bar
       ctx.fillStyle = "black";
@@ -3997,7 +4017,6 @@
       let unZbullets = [];
 
       roads.forEach((road) => {
-        console.log(road);
         if (true) {
           ctx.beginPath();
           ctx.moveTo(road[2].road.x - cavansX, road[2].road.y - cavansY);
@@ -4808,6 +4827,20 @@
           ctx.stroke();
           ctx.closePath();
 
+          if (player.skin !== "0.png") {
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(angle);
+            ctx.drawImage(
+              inverted[player.skin],
+              0 - (playerSize * playerBaseSize),
+              0 - (playerSize * playerBaseSize),
+              playerBaseSize*2,
+              playerBaseSize*2
+            );
+            ctx.restore();
+          }
+
           // Draw background bar
           let mymessages = [];
           playerMessages.forEach((massege) => {
@@ -5200,7 +5233,6 @@
     var leaderboard = await getLeaderBoardData();
     var leaderBoard = document.getElementById("leaderBoard");
     leaderBoard.innerHTML = "";
-    console.log(leaderboard.leader_board);
     leaderboard.leader_board.forEach((leader) => {
       var holderDiv = document.createElement("div");
       var holderName = document.createElement("p");
@@ -5240,14 +5272,12 @@
           if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
           }
-          console.log("a");
           passed = true;
         } catch (error) {
           console.log(error.message);
         }
       })
     ).then(() => {
-      console.log("e");
       if (!passed) {
         window.location.href =
           window.location.href !== "https://tank-shark-io.vercel.app/"
@@ -5263,7 +5293,6 @@
 
   async function build() {
     levelData = await getBagdeData();
-    console.log(levelData);
     badgeLevelDiv.innerHTML = "";
 
     levelData.playerScore = 159999;
@@ -5302,12 +5331,7 @@
           2 *
           Math.PI *
           (1 - (maxScore - levelData.playerScore) / (maxScore - minScore));
-        console.log(
-          strokeDashoffset,
-          maxScore - levelData.playerScore,
-          maxScore - minScore,
-          1 - (maxScore - levelData.playerScore) / (maxScore - minScore)
-        );
+
         imageDiv.innerHTML = `
           <svg width="10vh" height="10vh" viewBox="0 0 100 100">
             <g stroke-width="9" stroke="hsl(184, 100%, 50%)" fill="none">
@@ -5343,7 +5367,6 @@
         buildOutEle = imageDiv;
       }
 
-      console.log(window.location.href);
       imageForDiv.src =
         window.location.href !== "https://tank-shark-io.vercel.app/"
           ? `/public${level.badge}`
@@ -5365,7 +5388,6 @@
         );
       } else {
         imageForDiv["aspect-ratio"] = "1 / 1";
-        console.log(i);
       }
     });
   }
@@ -5382,7 +5404,6 @@
   var namesshown = document.getElementById("namesCheck");
 
   const themeChanger = () => {
-    console.log(localStorage.getItem("theme"));
     document.getElementById("getdarkMode").classList.toggle("moveee");
     darkMode = !darkMode;
     localStorage.setItem("theme", darkMode);
@@ -5510,8 +5531,6 @@
   canSeeLeaderBoard =
     canSeeLeaderBoard === "true" || canSeeLeaderBoard === null;
 
-  console.log(darkMode);
-
   var newTheme = darkMode ? "dark" : "light";
   if (darkMode)
     document.getElementById("getdarkMode").classList.toggle("moveee");
@@ -5521,13 +5540,6 @@
     document.getElementById("getChatShown").classList.toggle("moveee");
   if (canSeeLeaderBoard)
     document.getElementById("getleaderBoardShown").classList.toggle("moveee");
-  console.log(
-    darkMode,
-    canSeeNames,
-    canSeeChat,
-    canSeeLeaderBoard,
-    typeof darkMode
-  );
   document.querySelector("html").setAttribute("data-theme", newTheme);
   if (darkMode) {
     document.getElementById("gridDark").style.display = "grid";
@@ -5547,8 +5559,6 @@
     pointerAngle = getMouseAngle(playerCanvas, mousepos.x, mousepos.y);
   };
 
-  console.log(getMiddleOfElement(playerCanvas));
-
   document.addEventListener("mousemove", (evt) => getProfilePointer(evt));
 
   var badgeLevelDiv = document.getElementById("badgeLevelDiv");
@@ -5567,6 +5577,7 @@
   document.getElementById("close").addEventListener("click", skinsTabCloser);
 
   var skin = "none";
+  var skinID = 0;
   var selected_ele = {};
 
   for (let i = 0; i < 10; i++) {
@@ -5578,11 +5589,12 @@
       window.location.href !== "https://tank-shark-io.vercel.app/"
         ? `/public/skins/${i}.png`
         : `/skins/${i}.png`;
+
     skinImg.classList.add("_100per_");
     skinDiv.classList.add("skin-div");
     var selectSkin = () => {
-      skin = i === 0 ? `/skins/${i}.png` : "none";
-      console.log(document.getElementById("skins-grid").children);
+      skinID = i;
+      skin = i === 0 ? `${i}.png` : "none";
       [...document.getElementById("skins-grid").children].forEach((skin) => {
         skin.classList.remove("selected-skin");
       });
@@ -5590,7 +5602,6 @@
         .getElementById("skins-grid")
         .children[i + 1].classList.add("selected-skin");
       selected_ele = skinImg;
-      console.log(i, document.getElementById("skins-grid").children[i + 2]);
     };
     skinDiv.addEventListener("click", selectSkin);
   }
@@ -5637,10 +5648,10 @@
       }, 100);
     }
   };
-  window.addEventListener('load', () => {
+  window.addEventListener("load", () => {
     document
-    .getElementById("playButton")
-    .addEventListener("mousedown", startGame);
+      .getElementById("playButton")
+      .addEventListener("mousedown", startGame);
   });
 })();
 
