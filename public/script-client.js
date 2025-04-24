@@ -52,6 +52,15 @@
 
   var username;
 
+  const images = [];
+  const imagePaths = ["0.png","1.png","2.png","3.png","4.png","5.png","6.png","7.png","8.png","9.png"]; // Array of image paths
+
+  imagePaths.forEach(path => {
+    const img = new Image();
+    img.src = path;
+    images.push(img);
+  });
+
   function loadProto() {
     // Define the schema directly as a JSON object
     const schema = {
@@ -2092,7 +2101,7 @@
         Xbutton.addEventListener("click", closeTeamPanel);
 
         var joinLeave = document.getElementById("join/leave");
-        const joinLeave = () => {
+        const joinLeaveClick = () => {
           if (!joinedTeam) {
             if (selected_class !== null) {
               send("playerJoinedTeam", {
@@ -2117,7 +2126,7 @@
             selected_class = null;
           }
         };
-        joinLeave.addEventListener("click", joinLeave);
+        joinLeave.addEventListener("click", joinLeaveClick);
 
         var createDelete = document.getElementById("create/delete");
 
@@ -5543,7 +5552,10 @@
   };
   document.getElementById("close").addEventListener("click", skinsTabCloser);
 
-  for (let i = 1; i < 10; i++) {
+  var skin = "none";
+  var selected_ele = {};
+
+  for (let i = 0; i < 10; i++) {
     var skinDiv = document.createElement("div");
     var skinImg = document.createElement("img");
     skinGrid.appendChild(skinDiv);
@@ -5554,6 +5566,17 @@
         : `/skins/${i}.png`;
     skinImg.classList.add("_100per_");
     skinDiv.classList.add("skin-div");
+    var selectSkin = () => {
+      skin = i === 0 ? `/skins/${i}.png` : "none";
+      console.log(document.getElementById("skins-grid").children);
+      [...document.getElementById("skins-grid").children].forEach((skin) => {
+        skin.classList.remove("selected-skin");
+      });
+      document.getElementById("skins-grid").children[i+1].classList.add("selected-skin");
+      selected_ele = skinImg;
+      console.log(i,document.getElementById("skins-grid").children[i+2]);
+    };
+    skinDiv.addEventListener("click", selectSkin);
   }
 
   var skinShown = false;

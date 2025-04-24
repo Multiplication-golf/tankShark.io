@@ -195,6 +195,19 @@ app.use(express.static(path.join(__dirname, "public")));
  * An example object should be provided
  */
 
+const skinAllowlist = [
+  "/skins.1.png",
+  "/skins.2.png",
+  "/skins.3.png",
+  "/skins.4.png",
+  "/skins.5.png",
+  "/skins.6.png",
+  "/skins.7.png",
+  "/skins.8.png",
+  "/skins.9.png",
+  "none",
+];
+
 function assignRooms(item) {
   let found = false;
   var thisroom = {};
@@ -1941,6 +1954,13 @@ app.get("/leaderboard", (req, res) => {
   });
 });
 
+let illegalIPs = [];
+
+fs.readFile("data/illegal.json", function (err, data) {
+  if (err) throw err;
+  illegalIPs = JSON.parse(data);
+});
+
 // is the server open ^(*_*)^
 app.get("/ping", (req, res) => {
   res.send("pong");
@@ -1968,6 +1988,10 @@ wss.on("connection", (socket, req) => {
         .find((con) => con.IP === duplicateIP)
         .socket.close(1000, "Duplicate IP detected");
     });
+  }
+  if (illegalIPs.includes(req.socket.remoteAddress)) {
+    socket.close(999, "You hacker your IP has been permently banned");
+    return false;
   }
 
   let current = 0;
@@ -2002,6 +2026,17 @@ wss.on("connection", (socket, req) => {
             con.playerId = newId;
           }
         });
+        if (!skinAllowlist.includes(data.skin)) {
+          socket.close(999, "You hacker, your IP has been permently banned");
+          fs.writeFile(
+            "data/illegal.json",
+            JSON.stringify({ userbase: userbase }),
+            function (err, data) {
+              if (err) throw err;
+            }
+          );
+          return false;
+        }
         var badge;
         console.log("players", players);
         emit("playerJoined", data); // Emit playerJoined event to notify all clients
@@ -2010,6 +2045,7 @@ wss.on("connection", (socket, req) => {
         emit("Levels", levels);
         emit("NewMessages", messages);
         emit("Config", CONFIG);
+        
         socket.send(JSON.stringify({ type: "RETURNtankmeta", data: tankmeta }));
         var public_teams = [];
         public_teams = teamlist.map((team) => {
@@ -2922,6 +2958,10 @@ wss.on("connection", (socket, req) => {
         if (!players[data.id]) {
           invaled_requests.push(data.id);
           break;
+        }
+        if (data.skin) {
+          socket.close(999, "You hacker your IP has been permently banned");
+          return false;
         }
         if (data.id !== connection.playerId) {
           // Do somethin here like put the cleints eyes out for hacken
