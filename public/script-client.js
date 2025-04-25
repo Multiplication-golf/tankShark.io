@@ -5321,6 +5321,7 @@
     });
   }
 
+  console.log(window.location.href === "https://tank-shark-io.vercel.app/")
   if (window.location.href === "https://tank-shark-io.vercel.app/") {
     document.getElementById("squareimg").src = "/how-to-imgs/square.png";
     document.getElementById("triangleimg").src = "/how-to-imgs/triangle.png";
