@@ -27,7 +27,11 @@ async function ping() {
 setInterval(() => {
   console.log("pinging the sever...");
   if (ping()) {
-    window.location.href = "/public/index.html";
+    window.location.href =
+      window.location.href !==
+      "https://tank-shark-io.vercel.app/server-down.html"
+        ? "/public/index.html"
+        : "https://tank-shark-io.vercel.app/";
   } else {
     console.log("Server is not reachable.");
   }

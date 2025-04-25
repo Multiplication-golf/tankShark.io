@@ -5321,6 +5321,12 @@
     });
   }
 
+  if (window.location.href === "https://tank-shark-io.vercel.app/") {
+    document.getElementById("squareimg").src = "/how-to-imgs/square.png";
+    document.getElementById("triangleimg").src = "/how-to-imgs/triangle.png";
+    document.getElementById("pentagonimg").src = "/how-to-imgs/pentagon.png";
+  }
+
   ping();
 
   var levelData = null;
