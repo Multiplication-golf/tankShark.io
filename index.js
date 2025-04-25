@@ -1848,6 +1848,7 @@ const allowedOrigins = [
   "https://tank-shark-io.vercel.app",
   "http://127.0.0.1:5501",
   "https://tank-shark-io.vercel.app",
+  "https://tankshark.fun/"
 ];
 
 const corsOptions = {

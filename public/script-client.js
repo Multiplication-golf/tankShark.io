@@ -69,7 +69,7 @@
   imagePaths.forEach((path) => {
     const img = new Image();
     img.src =
-      (window.location.herf !== "https://tank-shark-io.vercel.app/"
+      (window.location.herf !== "https://tankshark.fun/"
         ? "/public/skins/"
         : "/skins/") + path;
     images.push(img);
@@ -156,7 +156,7 @@
     canvas.itemprop = "gamePlatform";
 
     document.getElementsByTagName("body")[0].style.cursor =
-      window.location.href !== "https://tank-shark-io.vercel.app/"
+      window.location.href !== "https://tankshark.fun"
         ? `url('${window.location.origin}/public/targetpointer1.cur'), auto`
         : `url('${window.location.origin}/targetpointer1.cur'), auto`;
     var pi180 = Math.PI / 180;
@@ -5184,7 +5184,7 @@
   }
 
   async function getBagdeData() {
-    const url = window.location.href === "https://tank-shark-io.vercel.app/"
+    const url = window.location.href === "https://tankshark.fun"
       ? "https://websocketpointer.duckdns.org/currentbadge"
       : "http://localhost:4500/currentbadge";
     try {
@@ -5210,7 +5210,7 @@
 
   async function subfeedback() {
     const url =
-      window.location.href === "https://tank-shark-io.vercel.app/"
+      window.location.href === "https://tankshark.fun"
         ? "https://websocketpointer.duckdns.org/submit-feedback"
         : "http://localhost:4500/submit-feedback";
     try {
@@ -5248,7 +5248,7 @@
 
   async function getLeaderBoardData() {
     const url =
-      window.location.href === "https://tank-shark-io.vercel.app/"
+      window.location.href === "https://tankshark.fun"
         ? "https://websocketpointer.duckdns.org/leaderboard"
         : "http://localhost:4500/leaderboard";
     try {
@@ -5274,7 +5274,7 @@
       leaderBoard.appendChild(holderDiv);
       holderDiv.appendChild(holderImg);
       holderImg.src =
-        window.location.href !== "https://tank-shark-io.vercel.app/"
+        window.location.href !== "https://tankshark.fun"
           ? `/public${leader.badge.badge}`
           : `${leader.badge.badge}`;
       holderDiv.classList.add("entrie-box");
@@ -5290,7 +5290,8 @@
 
   async function ping() {
     const urls =
-      window.location.href !== "https://tank-shark-io.vercel.app/"
+
+      window.location.href !== "https://tankshark.fun"
         ? [
             "http://localhost:4500/ping",
             "https://websocketpointer.duckdns.org/ping",
@@ -5314,15 +5315,15 @@
     ).then(() => {
       if (!passed) {
         window.location.href =
-          window.location.href !== "https://tank-shark-io.vercel.app/"
+          window.location.href !== "https://tankshark.fun"
             ? "/public/server-down.html"
             : "/server-down.html";
       }
     });
   }
 
-  console.log(window.location.href === "https://tank-shark-io.vercel.app/")
-  if (window.location.href === "https://tank-shark-io.vercel.app/") {
+  console.log(window.location.href === "https://tankshark.fun")
+  if (window.location.href === "https://tankshark.fun") {
     document.getElementById("squareimg").src = "/how-to-imgs/square.png";
     document.getElementById("triangleimg").src = "/how-to-imgs/triangle.png";
     document.getElementById("pentagonimg").src = "/how-to-imgs/pentagon.png";
@@ -5384,7 +5385,7 @@
             <circle cx="50" cy="50" r="45" stroke="black" stroke-width="8" fill="none"> </circle>
             <circle cx="50" cy="50" r="45" class="meter-1" id="fillcircle"> </circle>
             <image x="20" y="20" width="60" height="60" href='${
-              window.location.href !== "https://tank-shark-io.vercel.app/"
+              window.location.href !== "https://tankshark.fun"
                 ? window.location.origin + "/public/" + level.badge
                 : window.location.origin + level.badge
             }'> </image>
@@ -5409,7 +5410,7 @@
       }
 
       imageForDiv.src =
-        window.location.href !== "https://tank-shark-io.vercel.app/"
+        window.location.href !== "https://tankshark.fun"
           ? `/public${level.badge}`
           : `${level.badge}`;
       imageForDiv.alt = `badge level: ${level}`;
@@ -5605,7 +5606,7 @@
   var badgeLevelDiv = document.getElementById("badgeLevelDiv");
 
   playerCanvas.style["background-image"] =
-    window.location.href !== "https://tank-shark-io.vercel.app/"
+    window.location.href !== "https://tankshark.fun"
       ? `url(${window.location.origin}/public/assets/cropped/hexbackground.webp)`
       : `url(${window.location.origin}/assets/cropped/hexbackground.webp)`;
 
@@ -5627,7 +5628,7 @@
     skinGrid.appendChild(skinDiv);
     skinDiv.appendChild(skinImg);
     skinImg.src =
-      window.location.href !== "https://tank-shark-io.vercel.app/"
+      window.location.href !== "https://tankshark.fun"
         ? `/public/skins/${i}.png`
         : `/skins/${i}.png`;
 
