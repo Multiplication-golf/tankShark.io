@@ -69,7 +69,7 @@
   imagePaths.forEach((path) => {
     const img = new Image();
     img.src =
-      (window.location.herf !== "https://tankshark.fun/"
+      (window.location.href !== "https://tankshark.fun/"
         ? "/public/skins/"
         : "/skins/") + path;
     images.push(img);
