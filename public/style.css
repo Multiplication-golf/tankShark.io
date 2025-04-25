@@ -491,6 +491,8 @@ option {
   width: 5vw;
   height: 5vw;
   margin: 20px;
+  border: 8px var(--background-white-300) solid;
+  border-radius: 20px;
 }
 
 .lineBreak::after {
