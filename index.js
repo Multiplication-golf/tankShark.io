@@ -535,7 +535,7 @@ const tankmeta = {
       autoShooter: { img: 11, level: 30 },
       rocketer: { img: 12, level: 30 },
       smasher: { img: 13, level: 30 },
-      paver: { img: 14, level: 3 },
+      paver: { img: 14, level: 30 },
     },
     cannons: [
       {
@@ -1920,6 +1920,25 @@ app.post("/currentbadge", (req, res) => {
   });
 });
 
+app.post("/submit-feedback", (req, res) => {
+  const { name, message } = req.body;
+
+  if (!name || !message) {
+    return res.status(400).send("All fields are required.");
+  }
+
+  console.log(req.body);
+  fs.writeFileSync(
+    "data/feedback.txt",
+    (JSON.stringify({ name, message })+"\n"),
+    { flag: "a" },
+    function (err) {
+      if (err) throw err;
+      console.log("Date written to file, ", filename);
+    }
+  );
+});
+
 app.get("/leaderboard", (req, res) => {
   console.log("ooo");
   userbase.sort((entrieA, entrieB) => {
@@ -2045,7 +2064,7 @@ wss.on("connection", (socket, req) => {
         emit("Levels", levels);
         emit("NewMessages", messages);
         emit("Config", CONFIG);
-        
+
         socket.send(JSON.stringify({ type: "RETURNtankmeta", data: tankmeta }));
         var public_teams = [];
         public_teams = teamlist.map((team) => {

@@ -1,0 +1,11 @@
+*.log
+
+# Ignore the node_modules directory
+node_modules/
+
+# Ignore environment variable files
+.env
+
+data/
+
+node_trace.1.log

@@ -258,6 +258,42 @@ body {
   border-radius: 10px;
 }
 
+.subbmit-feedback {
+  width:100%;
+  background-color: var(--background-white-0);
+  height: 15vw;
+  border-radius: 30px;
+  float: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.subbmit-feedback label {
+  font-size: 19px;
+  margin: 10px;
+}
+
+.subbmit-feedback input[type="textarea"] {
+  width: 30%;
+  padding: 3%;
+  margin: 15px;
+  border: 1px solid var(--background-white-300);
+  border-radius: 30px;
+  line-height: 18px;
+  font-size: 17px;
+}
+
+.subbmit-feedback input[type="submit"] {
+  width: 10%;
+  padding: 2%;
+  margin: 15px;
+  border: 4px solid var(--background-white-300);
+  border-radius: 30px;
+  line-height: 18px;
+  font-size: 17px;
+}
+
 .mainHeader {
   font-size: 2em;
   background: linear-gradient(0deg, rgba(0, 0, 255), rgb(0, 238, 255));
@@ -265,6 +301,15 @@ body {
   background-clip: text;
   text-shadow: 2px 5px 2px #00d2d65d;
   -webkit-text-fill-color: transparent;
+}
+
+.mainHeader::after {
+  content: 'BETA';
+  font-size: 12px;
+  vertical-align: top;
+  background: linear-gradient(0deg, rgb(0, 255, 55), rgb(22, 187, 0));
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 @property --angle {
@@ -430,11 +475,18 @@ option {
   overflow: hidden;
   min-width: 250px;
   width: 20%;
-  height: 84vh;
+  height: 83vh;
   margin-top: 2.5%;
   margin-bottom: 2.5%;
   margin-left: 5%;
   z-index: 20;
+}
+
+.about-img {
+  display: inline;
+  width: 5vw;
+  height: 5vw;
+  margin: 20px;
 }
 
 .lineBreak::after {

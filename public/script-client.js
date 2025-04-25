@@ -76,8 +76,8 @@
   });
 
   var inverted = [];
-  images.forEach((image___,i) => {
-    inverted.push({[`${i}.png`]:image___})
+  images.forEach((image___, i) => {
+    inverted.push({ [`${i}.png`]: image___ });
   });
 
   function loadProto() {
@@ -3333,10 +3333,10 @@
         ctx.rotate(angle);
         ctx.drawImage(
           images[skinID],
-          0 - (playerSize * playerBaseSize),
-          0 - (playerSize * playerBaseSize),
-          playerBaseSize*2,
-          playerBaseSize*2
+          0 - playerSize * playerBaseSize,
+          0 - playerSize * playerBaseSize,
+          playerBaseSize * 2,
+          playerBaseSize * 2
         );
         ctx.restore();
       }
@@ -4833,10 +4833,10 @@
             ctx.rotate(angle);
             ctx.drawImage(
               inverted[player.skin],
-              0 - (playerSize * playerBaseSize),
-              0 - (playerSize * playerBaseSize),
-              playerBaseSize*2,
-              playerBaseSize*2
+              0 - playerSize * playerBaseSize,
+              0 - playerSize * playerBaseSize,
+              playerBaseSize * 2,
+              playerBaseSize * 2
             );
             ctx.restore();
           }
@@ -5184,7 +5184,9 @@
   }
 
   async function getBagdeData() {
-    const url = "http://localhost:4500/currentbadge";
+    const url = window.location.href === "https://tank-shark-io.vercel.app/"
+      ? "https://websocketpointer.duckdns.org/currentbadge"
+      : "http://localhost:4500/currentbadge";
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -5193,6 +5195,35 @@
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: getCookie("userId") }),
+      });
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  document.getElementById("subfeedback").addEventListener("click", subfeedback)
+
+  async function subfeedback() {
+    const url =
+      window.location.href === "https://tank-shark-io.vercel.app/"
+        ? "https://websocketpointer.duckdns.org/submit-feedback"
+        : "http://localhost:4500/submit-feedback";
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: document.getElementById("namesub").value,
+          message: document.getElementById("feedback").value,
+        }),
       });
       if (!response.ok) {
         throw new Error(`Response status: ${response.status}`);
@@ -5216,7 +5247,10 @@
   settings.addEventListener("click", settingsOpener);
 
   async function getLeaderBoardData() {
-    const url = "http://localhost:4500/leaderboard";
+    const url =
+      window.location.href === "https://tank-shark-io.vercel.app/"
+        ? "https://websocketpointer.duckdns.org/leaderboard"
+        : "http://localhost:4500/leaderboard";
     try {
       const response = await fetch(url);
       if (!response.ok) {
