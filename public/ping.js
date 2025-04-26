@@ -29,9 +29,9 @@ setInterval(() => {
   if (ping()) {
     window.location.href =
       window.location.href !==
-      "https://tank-shark-io.vercel.app/server-down.html"
+      "https://tankshark.fun/server-down.html"
         ? "/public/index.html"
-        : "https://tank-shark-io.vercel.app/";
+        : "https://tankshark.fun/";
   } else {
     console.log("Server is not reachable.");
   }

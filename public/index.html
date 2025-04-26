@@ -216,9 +216,9 @@
         </p>
         <div style="text-align: center;" itemscope
         itemtype="https://schema.org/Game">
-          <img itemprop="gameItem" class="about-img" src="/public/how-to-imgs/pentagon.png" alt="a polygon for points" id="triangleimg"/>
-          <img itemprop="gameItem" class="about-img" src="/public/how-to-imgs/triangle.png" alt="a polygon for points" id="pentagonimg"/>
-          <img itemprop="gameItem" class="about-img" src="/public/how-to-imgs/square.png" alt="a polygon for points" id="squareimg"/>
+          <img itemprop="gameItem" class="about-img" alt="a polygon for points" id="triangleimg"/>
+          <img itemprop="gameItem" class="about-img" alt="a polygon for points" id="pentagonimg"/>
+          <img itemprop="gameItem" class="about-img" alt="a polygon for points" id="squareimg"/>
         </div>
         <p itemprop="actionProcess">
           Collaboration can be a game-changer. Join or create teams to work together with other players. Use the team panel to manage your team, view available teams, or invite others to join. Teams can share resources, strategize together, and dominate the battlefield more effectively. However, be cautious—team dynamics can shift, and alliances may not always last.
@@ -287,23 +287,23 @@
         id="die"
         alt="death screen"
       />
-      <div id="keyscontainer" style="position: absolute; bottom: 30vh; left:20px; z-index: 25;" >
+      <div id="keyscontainer" style="position: absolute; bottom: 30vh; left:20px; z-index: 25; display: none;" >
         <svg width="4vw" height="4vw">
         </svg>
-        <svg width="4vw" height="4vw">
+        <svg width="4vw" height="4vw" id="up">
           <rect width="4vw" height="4vw" rx="15" fill="rgba(255,255,255,0.8)" stroke="rgba(255,255,255,0.9)" stroke-width="1"/>
           <text x="2vw" y="2.5vw" font-size="25" text-anchor="middle" alignment-baseline="middle">W</text>
         </svg>
         <br>
-        <svg width="4vw" height="4vw">
+        <svg width="4vw" height="4vw" id="left">
           <rect width="4vw" height="4vw" rx="15" fill="rgba(255,255,255,0.8)"/>
           <text x="2vw" y="2.5vw" font-size="25" text-anchor="middle" alignment-baseline="middle">A</text>
         </svg>
-        <svg width="4vw" height="4vw">
+        <svg width="4vw" height="4vw" id="down">
           <rect width="4vw" height="4vw" rx="15" fill="rgba(255,255,255,0.8)"/>
           <text x="2vw" y="2.5vw" font-size="25" text-anchor="middle" alignment-baseline="middle">S</text>
         </svg>
-        <svg width="4vw" height="4vw">
+        <svg width="4vw" height="4vw" id="right">
           <rect width="4vw" height="4vw" rx="15" fill="rgba(255,255,255,0.8)"/>
           <text x="2vw" y="2.5vw" font-size="25" text-anchor="middle" alignment-baseline="middle">D</text>
         </svg>

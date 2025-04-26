@@ -196,16 +196,16 @@ app.use(express.static(path.join(__dirname, "public")));
  */
 
 const skinAllowlist = [
-  "/skins.1.png",
-  "/skins.2.png",
-  "/skins.3.png",
-  "/skins.4.png",
-  "/skins.5.png",
-  "/skins.6.png",
-  "/skins.7.png",
-  "/skins.8.png",
-  "/skins.9.png",
-  "none",
+  "1.png",
+  "2.png",
+  "3.png",
+  "4.png",
+  "5.png",
+  "6.png",
+  "7.png",
+  "8.png",
+  "9.png",
+  "0.png",
 ];
 
 function assignRooms(item) {
@@ -1847,8 +1847,8 @@ const connections = [];
 const allowedOrigins = [
   "https://tank-shark-io.vercel.app",
   "http://127.0.0.1:5501",
-  "https://tank-shark-io.vercel.app",
-  "https://tankshark.fun/"
+  "https://tankshark.fun/",
+  "https://tankshark.fun"
 ];
 
 const corsOptions = {
@@ -2047,10 +2047,11 @@ wss.on("connection", (socket, req) => {
           }
         });
         if (!skinAllowlist.includes(data.skin)) {
-          socket.close(999, "You hacker, your IP has been permently banned");
+          socket.close(1007, "You hacker, your IP has been permently banned");
+          illegalIPs.push(req.socket.remoteAddress)
           fs.writeFile(
             "data/illegal.json",
-            JSON.stringify({ userbase: userbase }),
+            JSON.stringify(illegalIPs),
             function (err, data) {
               if (err) throw err;
             }
