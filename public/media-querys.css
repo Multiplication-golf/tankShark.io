@@ -103,6 +103,9 @@
     width: 96%;
     height: 97%;
   }
+  .skin-button {
+    display: block;
+  }
 }
 
 @media only screen and (600px < width < 1048px) {

@@ -360,6 +360,7 @@ body {
 }
 
 .skin-button {
+  display: none;
   background-image: none;
   background-color: var(--background-white-100);
   border-radius: 10px;
@@ -369,7 +370,6 @@ body {
   font-weight: 1000;
   border: 8px var(--border-color-200) solid;
   color: var(--text-color-100);
-  display: block;
   font-size: 2em;
   margin: 2vh;
 }
