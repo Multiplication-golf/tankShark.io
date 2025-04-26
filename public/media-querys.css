@@ -34,12 +34,13 @@
 
 @media only screen and (max-width: 600px) and (orientation: portrait) {
   .leader-board {
-    min-width: calc(100vw - 16px) !important;
+    min-width: calc(100vw - 24px) !important;
     --realwidth: calc(-100vw + 8px);
     transform: translateX(var(--realwidth)) !important;
     margin-bottom: auto;
-    margin-left: -8px;
+    margin-left: 0px;
     height: 25vh;
+    overflow-y: scroll;
   }
   .surronder {
     float: none;
@@ -82,6 +83,25 @@
   }
   .entrie-box {
     width: calc(100% - 10px);
+  }
+  .x-out {
+    right: 4vh;
+    top: 3vh;
+  }
+  .subbmit-feedback input[type="br"] {
+    display: block;
+  }
+  .subbmit-feedback {
+    display: block;
+    height: auto;
+    text-align: center;
+  }
+  .subbmit-feedback input[type="submit"] {
+    width: auto;
+  }
+  .skins-grid {
+    width: 96%;
+    height: 97%;
   }
 }
 

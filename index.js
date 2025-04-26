@@ -1870,6 +1870,8 @@ app.use(cors(corsOptions));
   next();
 });*/
 
+app.disable('x-powered-by');
+
 serverHttps.on("request", () => console.log("HTTP request"));
 
 serverHttps.on("upgrade", (req, socket, head) => {
@@ -1942,16 +1944,16 @@ app.post("/submit-feedback", (req, res) => {
 
 app.get("/leaderboard", (req, res) => {
   console.log("ooo");
-  userbase.sort((entrieA, entrieB) => {
-    var scoresumA = entrieA.scores.reduce((a, score) => a + score.score);
-    var scoresumB = entrieB.scores.reduce((a, score) => a + score.score);
-    return scoresumB - scoresumA;
-  });
-  var preLeaderBoard = userbase;
+  var userbaseb = userbase.sort((entrieA, entrieB) => {
+    var scoresumA = entrieA.scores.reduce((a, score) => a + score.score, 0);
+    var scoresumB = entrieB.scores.reduce((a, score) => a + score.score, 0);
+    return scoresumA - scoresumB;
+  }).reverse();
+  console.log(userbaseb)
+  var preLeaderBoard = userbaseb;
   var postLeaderBorad = [];
   preLeaderBoard.forEach((board) => {
     var scoresumA = board.scores.reduce((a, score) => a + score.score, 0);
-    console.log(scoresumA);
 
     var badge = CONFIG.badgeLevels.find((badgeLevel) => {
       if (

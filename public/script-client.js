@@ -5682,6 +5682,10 @@
   var skinID = 0;
   var selected_ele = {};
 
+  document.getElementById("skinsButton").addEventListener("click", () => {
+    document.getElementById("skinCon").style.display = "block";
+  });
+
   for (let i = 0; i < 10; i++) {
     var skinDiv = document.createElement("div");
     var skinImg = document.createElement("img");
