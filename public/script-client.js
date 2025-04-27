@@ -1654,25 +1654,25 @@
           });
 
           var mouseLeftPress = false;
-          document.getElementById("down").addEventListener("touchstart", () => {
+          document.getElementById("left").addEventListener("touchstart", () => {
             mouseLeftPress = true;
             if (!messaging) { 
               keysPressed["ArrowLeft"] = true;
             }
           });
-          document.getElementById("down").addEventListener("touchend", () => {
+          document.getElementById("left").addEventListener("touchend", () => {
             mouseDownPress = false;
             delete keysPressed["ArrowLeft"];
           });
 
           var mouseRightPress = false;
-          document.getElementById("down").addEventListener("touchstart", () => {
+          document.getElementById("right").addEventListener("touchstart", () => {
             mouseRightPress = true;
             if (!messaging) { 
               keysPressed["ArrowRight"] = true;
             }
           });
-          document.getElementById("down").addEventListener("touchend", () => {
+          document.getElementById("right").addEventListener("touchend", () => {
             mouseRightPress = false;
             delete keysPressed["ArrowRight"];
           });
@@ -5783,3 +5783,6 @@ console.log(
   "color:white",
   "\n ⬆\n ⬆\n ⬆\n ⬆\n ⬆\n"
 );
+if (window.location.href === "https://tank-shark-io.vercel.app/") {
+  window.location.href = "https://tankshark.fun/";
+}
