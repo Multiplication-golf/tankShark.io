@@ -1,7 +1,7 @@
 {
     "redirects": [
       {
-        "source": "https://tank-shark-io.vercel.app/",
+        "source": "/",
         "destination": "https://tankshark.fun/",
         "permanent": true
       }
