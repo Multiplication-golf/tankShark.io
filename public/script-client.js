@@ -5783,6 +5783,3 @@ console.log(
   "color:white",
   "\n ⬆\n ⬆\n ⬆\n ⬆\n ⬆\n"
 );
-if (window.location.href === "https://tank-shark-io.vercel.app/") {
-  window.location.href = "https://tankshark.fun/";
-}
