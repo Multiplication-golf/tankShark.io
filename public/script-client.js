@@ -54,16 +54,16 @@
 
   const images = [];
   const imagePaths = [
-    "0.png",
-    "1.png",
-    "2.png",
-    "3.png",
-    "4.png",
-    "5.png",
-    "6.png",
-    "7.png",
-    "8.png",
-    "9.png",
+    "0.webp",
+    "1.webp",
+    "2.webp",
+    "3.webp",
+    "4.webp",
+    "5.webp",
+    "6.webp",
+    "7.webp",
+    "8.webp",
+    "9.webp",
   ]; // Array of image paths
 
   imagePaths.forEach((path) => {
@@ -200,6 +200,7 @@
     var playerHealTime = 0;
     var playerReheal = 1;
     var playerSpeed = 10;
+    var privateteamlist = [];
     var playerSize = 1;
     var playerBaseSize = 40;
     var bodyDamage = 3;
@@ -831,6 +832,12 @@
             }
           }
         });
+        if (owner_of_team) {
+          document.getElementsByClassName("outer-box").classList.add("outer-onwer-box");
+          document.getElementsByClassName("inner-box").classList.add("inner-onwer-box");
+          document.getElementById("upgradesBox").style.display = "block";
+
+        }
       }
     }
 
@@ -876,6 +883,9 @@
           draw();
         });
         console.log(skin);
+        const urlParams = new URLSearchParams(location);
+
+        const teamKey = urlParams.get('team');
 
         const playerData = {
           id: null,
@@ -910,6 +920,7 @@
           userId: userId,
           autoFiring: autoFiring,
           skin: skin,
+          teamKey: teamKey,
           statsTree: {
             Health: 1,
             "Body Damage": 1,
@@ -1388,6 +1399,13 @@
               buildTeamList();
               break;
             }
+            case "privateteamlist": {
+              privateteamlist = data;
+              var teamcontainer = document.getElementById("teamcontainer");
+              teamcontainer.innerHTML = "";
+              buildTeamList();
+              break;
+            }
             case "JoinTeamSuccess": {
               if (data.id === playerId) {
                 joinedTeam = true;
@@ -1545,6 +1563,18 @@
             }
           }
         };
+
+        var miniMapButton = document.getElementById("miniMap");
+
+        var buyMiniMap = () => {
+          send("requestUpgrade",{
+            upgradeType: "miniMap",
+            teamId: teamOn,
+            id: playerId
+          });
+        }
+
+        miniMapButton.addEventListener("click",buyMiniMap)
 
         const windowSateChange = () => {
           send("windowStateChange", {
@@ -1710,28 +1740,14 @@
           var teamname = document.getElementById("teamname").value;
           var checked, checked2, checked3;
 
-          try {
-            checked = true;
-          } catch {
-            checked = false;
-          }
+          var checked = document.getElementById("hidden").checked;
+          var checked2 = document.getElementById("private").checked;
+          var checked3 = document.getElementById("teamScore").checked;
           var description = document.getElementById("teamDescription").value;
-
-          try {
-            checked2 = true;
-          } catch {
-            checked2 = false;
-          }
 
           var govType = document.querySelector(
             'input[name="teamType"]:checked'
           ).value;
-
-          try {
-            checked3 = true;
-          } catch {
-            checked3 = false;
-          }
 
           var ScheduledBasedTax =
             document.getElementById("ScheduledBased").value;
@@ -4881,7 +4897,7 @@
           ctx.stroke();
           ctx.closePath();
 
-          if (player.skin !== "0.png") {
+          if (player.skin !== "0.webp") {
             ctx.save();
             ctx.translate(playerX - cavansX, playerY - cavansY);
             ctx.rotate(player.cannon_angle);
@@ -5384,9 +5400,9 @@
   }
 
   if (window.location.href === "https://tankshark.fun/") {
-    document.getElementById("squareimg").src = "/how-to-imgs/square.png";
-    document.getElementById("triangleimg").src = "/how-to-imgs/triangle.png";
-    document.getElementById("pentagonimg").src = "/how-to-imgs/pentagon.png";
+    document.getElementById("squareimg").src = "/how-to-imgs/square.webp";
+    document.getElementById("triangleimg").src = "/how-to-imgs/triangle.webp";
+    document.getElementById("pentagonimg").src = "/how-to-imgs/pentagon.webp";
   }
 
   ping();
@@ -5678,7 +5694,7 @@
   };
   document.getElementById("close").addEventListener("click", skinsTabCloser);
 
-  var skin = "0.png";
+  var skin = "0.webp";
   var skinID = 0;
   var selected_ele = {};
 
@@ -5693,14 +5709,14 @@
     skinDiv.appendChild(skinImg);
     skinImg.src =
       window.location.href !== "https://tankshark.fun/"
-        ? `/public/skins/${i}.png`
-        : `/skins/${i}.png`;
+        ? `/public/skins/${i}.webp`
+        : `/skins/${i}.webp`;
 
     skinImg.classList.add("_100per_");
     skinDiv.classList.add("skin-div");
     var selectSkin = () => {
       skinID = i;
-      skin = `${i}.png`;
+      skin = `${i}.webp`;
       [...document.getElementById("skins-grid").children].forEach((skin) => {
         skin.classList.remove("selected-skin");
       });

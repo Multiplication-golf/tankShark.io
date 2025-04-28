@@ -196,16 +196,16 @@ app.use(express.static(path.join(__dirname, "public")));
  */
 
 const skinAllowlist = [
-  "1.png",
-  "2.png",
-  "3.png",
-  "4.png",
-  "5.png",
-  "6.png",
-  "7.png",
-  "8.png",
-  "9.png",
-  "0.png",
+  "1.webp",
+  "2.webp",
+  "3.webp",
+  "4.webp",
+  "5.webp",
+  "6.webp",
+  "7.webp",
+  "8.webp",
+  "9.webp",
+  "0.webp",
 ];
 
 function assignRooms(item) {
@@ -316,6 +316,9 @@ let messages = [];
 let teamlist = [];
 /**/
 
+let teamKeys = [];
+/**/
+
 let bosses = [];
 /**/
 
@@ -338,6 +341,9 @@ let JoinRequests = [];
 /**/
 
 let PendingJoinRequests = [];
+/**/
+
+let buildMiniMapTeams = [];
 /**/
 
 let explosions = [];
@@ -397,16 +403,16 @@ const CONFIG = {
     buildSize: 1000,
   },
   badgeLevels: [
-    { minScore: 50000000, maxScore: null, badge: "/badges/10.png" },
-    { minScore: 25000000, maxScore: 49999999, badge: "/badges/9.png" },
-    { minScore: 10000000, maxScore: 24999999, badge: "/badges/8.png" },
-    { minScore: 5000000, maxScore: 9999999, badge: "/badges/7.png" },
-    { minScore: 2500000, maxScore: 4999999, badge: "/badges/6.png" },
-    { minScore: 1000000, maxScore: 2499999, badge: "/badges/5.png" },
-    { minScore: 500000, maxScore: 999999, badge: "/badges/4.png" },
-    { minScore: 250000, maxScore: 499999, badge: "/badges/3.png" },
-    { minScore: 100000, maxScore: 249999, badge: "/badges/2.png" },
-    { minScore: 0, maxScore: 99999, badge: "/badges/1.png" },
+    { minScore: 50000000, maxScore: null, badge: "/badges/10.webp" },
+    { minScore: 25000000, maxScore: 49999999, badge: "/badges/9.webp" },
+    { minScore: 10000000, maxScore: 24999999, badge: "/badges/8.webp" },
+    { minScore: 5000000, maxScore: 9999999, badge: "/badges/7.webp" },
+    { minScore: 2500000, maxScore: 4999999, badge: "/badges/6.webp" },
+    { minScore: 1000000, maxScore: 2499999, badge: "/badges/5.webp" },
+    { minScore: 500000, maxScore: 999999, badge: "/badges/4.webp" },
+    { minScore: 250000, maxScore: 499999, badge: "/badges/3.webp" },
+    { minScore: 100000, maxScore: 249999, badge: "/badges/2.webp" },
+    { minScore: 0, maxScore: 99999, badge: "/badges/1.webp" },
   ],
   colorUpgardes: [
     "#f54242",
@@ -1278,6 +1284,8 @@ function createExsplosion(
   x,
   y,
   {
+    createbullet = true,
+    doesDamage = false,
     damage = 1,
     dealsDamgage = { players: true, shapes: false },
     knockBack = { players: true, shapes: true },
@@ -1327,6 +1335,33 @@ function createExsplosion(
     y: y,
   };
   explosions.push(newExsposion);
+
+  if (createbullet) {
+    var bullet = {
+      type: "expoled",
+      bullet_distance: 300,
+      speed: 0,
+      size: size,
+      angle: 0,
+      bullet_damage: 3,
+      distanceTraveled: 0,
+      vertices: null,
+      bullet_pentration: 5,
+      x: x,
+      y: y,
+      lifespan: 0,
+      parentindex: 0,
+      health: Infinity,
+      xstart: x,
+      ystart: y,
+      endTime: startTime + lifeSpan,
+      id: null,
+      uniqueid: Date.now() + Math.random(),
+      cannonIndex: 0,
+      exspandRate: (maxsize - size) / (lifeSpan / 16),
+    };
+    bullets.push(bullet);
+  }
 }
 
 function calculateTax(score, maxScore) {
@@ -1848,7 +1883,7 @@ const allowedOrigins = [
   "https://tank-shark-io.vercel.app",
   "http://127.0.0.1:5501",
   "https://tankshark.fun/",
-  "https://tankshark.fun"
+  "https://tankshark.fun",
 ];
 
 const corsOptions = {
@@ -1870,7 +1905,7 @@ app.use(cors(corsOptions));
   next();
 });*/
 
-app.disable('x-powered-by');
+app.disable("x-powered-by");
 
 serverHttps.on("request", () => console.log("HTTP request"));
 
@@ -1933,7 +1968,7 @@ app.post("/submit-feedback", (req, res) => {
   console.log(req.body);
   fs.writeFileSync(
     "data/feedback.txt",
-    (JSON.stringify({ name, message })+"\n"),
+    JSON.stringify({ name, message }) + "\n",
     { flag: "a" },
     function (err) {
       if (err) throw err;
@@ -1944,12 +1979,14 @@ app.post("/submit-feedback", (req, res) => {
 
 app.get("/leaderboard", (req, res) => {
   console.log("ooo");
-  var userbaseb = userbase.sort((entrieA, entrieB) => {
-    var scoresumA = entrieA.scores.reduce((a, score) => a + score.score, 0);
-    var scoresumB = entrieB.scores.reduce((a, score) => a + score.score, 0);
-    return scoresumA - scoresumB;
-  }).reverse();
-  console.log(userbaseb)
+  var userbaseb = userbase
+    .sort((entrieA, entrieB) => {
+      var scoresumA = entrieA.scores.reduce((a, score) => a + score.score, 0);
+      var scoresumB = entrieB.scores.reduce((a, score) => a + score.score, 0);
+      return scoresumA - scoresumB;
+    })
+    .reverse();
+  console.log(userbaseb);
   var preLeaderBoard = userbaseb;
   var postLeaderBorad = [];
   preLeaderBoard.forEach((board) => {
@@ -2050,7 +2087,7 @@ wss.on("connection", (socket, req) => {
         });
         if (!skinAllowlist.includes(data.skin)) {
           socket.close(1007, "You hacker, your IP has been permently banned");
-          illegalIPs.push(req.socket.remoteAddress)
+          illegalIPs.push(req.socket.remoteAddress);
           fs.writeFile(
             "data/illegal.json",
             JSON.stringify(illegalIPs),
@@ -2077,6 +2114,18 @@ wss.on("connection", (socket, req) => {
             return team;
           }
         });
+
+        if (data.teamKey) {
+          var team = teamKeys[data.teamKey];
+          if (team) {
+            emit("playerJoinedTeam", { id: newId, teamId: team });
+            createAnnocment("You joined a private team successfuly", newId, {
+              color: "green",
+            });
+          } else {
+            createAnnocment("Bad key!", newId, { color: "red" });
+          }
+        }
         emit("pubteamlist", public_teams);
         let x, y;
         do {
@@ -2271,6 +2320,65 @@ wss.on("connection", (socket, req) => {
         break;
       }
 
+      case "requestUpgrade": {
+        if (!players[data.id]) break;
+        let myTeam = teamlist.find((team) => team.teamID === data.teamId);
+        if (!myTeam) break;
+        if (myTeam.createTeamScore) {
+          if (myTeam.createTeamScore >= 200) {
+            myTeam.upgrades.canTrack = true;
+            buildMiniMapTeams.push(myTeam.teamID)
+            team.teamScore -= 200;
+          } else {
+            createAnnocment(
+              `Not enough Team score. The team has ${team.teamScore}`,
+              data.id,
+              { color: "red", delay: 3000 }
+            );
+          }
+        } else {
+          if (myTeam.createTeamScore >= 200) {
+            myTeam.upgrades.canTrack = true;
+            buildMiniMapTeams.push(myTeam.teamID)
+            players[data.id].score -= 200;
+            leader_board.hidden.forEach((__index__) => {
+              if (__index__.id === data.owner.id) {
+                let isshown = false;
+                __index__.score -= 200;
+                leader_board.shown.forEach(() => {
+                  if (__index__.id === data.owner.id) {
+                    isshown = true;
+                  }
+                });
+                if (leader_board.shown[10]) {
+                  if (leader_board.shown[10].score < __index__.score) {
+                    leader_board.shown[10] = __index__;
+                  }
+                } else if (!leader_board.shown[10] && !isshown) {
+                  leader_board.shown.push(__index__);
+                }
+              }
+            });
+            leader_board.shown.forEach((__index__) => {
+              if (__index__.id === data.owner.id) {
+                __index__.score -= 200;
+              }
+            });
+            emit("playerScore", {
+              bulletId: data.owner.id,
+              socrepluse: -200,
+            });
+          } else {
+            createAnnocment(
+              `Not enough score. You have ${players[data.id].score}`,
+              data.id,
+              { color: "red", delay: 3000 }
+            );
+          }
+        }
+        break;
+      }
+
       case "autoFiringUpdate": {
         players[data.id].autoFiring = data.autoFiring;
         break;
@@ -2293,7 +2401,7 @@ wss.on("connection", (socket, req) => {
           break;
         }
         let myTeam = teamlist.find((team) => team.teamID === data.myTeamID);
-        if (data.premotor.id === MYteam.owner.id) {
+        if (data.premotor.id === myTeam.owner.id) {
           if (!myTeam.powers.canDedicatePower) {
             badIP[req.socket.remoteAddress].warnings ??= 0;
             badIP[req.socket.remoteAddress].warnings += 1;
@@ -2454,6 +2562,20 @@ wss.on("connection", (socket, req) => {
           },
         };
 
+        data.upgrades = {
+          canTrack: false,
+          teamPowers: false,
+          teamBuilding: {
+            built: false,
+            level: null,
+            polygonId: null,
+            boosts: {
+              speed: 1,
+              health: 1,
+            },
+          },
+        };
+
         if (CONFIG.PayesSelfStrictTaxes.includes(govType)) {
           createAnnocment(
             "Some configerations were overridden due to team type",
@@ -2535,7 +2657,7 @@ wss.on("connection", (socket, req) => {
                   socrepluse: -Scheduledtax,
                 });
               } else {
-                data.owner.id += Scheduledtax;
+                players[data.owner.id].score += Scheduledtax;
                 leader_board.hidden.forEach((__index__) => {
                   if (__index__.id === data.owner.id) {
                     let isshown = false;
@@ -2616,8 +2738,13 @@ wss.on("connection", (socket, req) => {
         var PlayerTeam = teamlist.find((team) => team.teamID === id);
         if (PlayerTeam.hidden) {
           let code = Math.floor(100000 * Math.random());
-          //socket.send(JSON.stringify({ type: "Team code", data: {code:code} }));
+          teamKeys.push(code);
           createAnnocment(`The join code is ${code}`, data.owner.id, 3000);
+          createAnnocment(
+            `put this into the url bar like this: tankshark.fun/?team=code when someone wants to join`,
+            data.owner.id,
+            3000
+          );
         }
         emit("pubteamlist", public_teams);
         break;
@@ -4971,8 +5098,30 @@ setInterval(() => {
             emit("boardUpdate", {
               leader_board: leader_board.shown,
             });
+          } else {
+            if (bullet.type !== "expoled") {
+              var knockBackX = bullet.speed * Math.cos(bullet.angle);
+              var knockBackY = bullet.speed * Math.sin(bullet.angle);
+            } else {
+              var realPushBackAngle = Math.atan2(
+                bullet.x - player.x,
+                bullet.y - player.y
+              );
+              var knockBackX = bullet.exspandRate * Math.cos(realPushBackAngle);
+              var knockBackY = bullet.exspandRate * Math.sin(realPushBackAngle);
+            }
+            emit("bouceBack", {
+              response: { x: knockBackX, y: knockBackY },
+              playerID: player.id,
+            });
           }
         }
+      }
+    }
+    if (bullet.type === "expoled") {
+      bullet.size += bullet.exspandRate;
+      if (Date.now() > bullet.endTime) {
+        return false;
       }
     }
     if (bullet.distanceTraveled <= bullet.bullet_distance) {
@@ -6263,6 +6412,16 @@ setInterval(() => {
     }
   });
 
+  buildMiniMapTeams.forEach((teamId) => {
+    var miniMapSize = 150;
+    var teamPlayersXY = [];
+
+    for (const playerId in players) {
+      var player = players[playerId];
+      teamPlayersXY.push({player}) 
+    }
+  })
+
   tempBulletToPush.forEach((item) => {
     bullets.push(item);
   });
@@ -6482,6 +6641,15 @@ function broadcast(type, data, senderConn) {
   const message = JSON.stringify({ type, data });
   connections.forEach((conn) => {
     if (conn.socket !== senderConn) {
+      conn.socket.send(message);
+    }
+  });
+}
+
+function emitTeam(type, data, teamId) {
+  const message = JSON.stringify({ type, data });
+  connections.forEach((conn) => {
+    if (players[conn.playerId].teamId === teamId) {
       conn.socket.send(message);
     }
   });
