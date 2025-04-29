@@ -424,6 +424,16 @@ const CONFIG = {
     "#5181fc",
     "#5c14f7",
   ],
+  colorTeamUpgardes: [
+    "#f54242f1",
+    "#fa8050f1",
+    "#fab350f1",
+    "#fcf25bf1",
+    "#57f75cf1",
+    "#42fcf6f1",
+    "#5181fcf1",
+    "#5c14f7f1",
+  ],
   colorGradeint: { radius: 60, build: { 0: 0.0, 1: 0.4, 2: 1 } },
   govermentTypes: ["Anarchy", "Democracy", "Communist", "Constitutional"],
   default: "Anarchy",
@@ -2105,6 +2115,7 @@ wss.on("connection", (socket, req) => {
         emit("Levels", levels);
         emit("NewMessages", messages);
         emit("Config", CONFIG);
+        emit("teamColorUpgrades", CONFIG.colorTeamUpgardes);
 
         socket.send(JSON.stringify({ type: "RETURNtankmeta", data: tankmeta }));
         var public_teams = [];
@@ -2324,58 +2335,179 @@ wss.on("connection", (socket, req) => {
         if (!players[data.id]) break;
         let myTeam = teamlist.find((team) => team.teamID === data.teamId);
         if (!myTeam) break;
-        if (myTeam.createTeamScore) {
-          if (myTeam.createTeamScore >= 200) {
-            myTeam.upgrades.canTrack = true;
-            buildMiniMapTeams.push(myTeam.teamID)
-            team.teamScore -= 200;
+        var upgradeStat = (upgradetype) => {
+          myTeam.players.forEach((player) => {
+            if (upgradetype === "health") {
+              players[player.id].health =
+                (players[player.id].health / 2) * CONFIG.levelMultiplyer;
+              players[player.id].maxhealth =
+                players[player.id].maxhealth * CONFIG.levelMultiplyer;
+            } else if (upgradetype === "Regen") {
+              let Regen = players[player.id].statsTree[upgradetype];
+              let Regenspeed = 30 - 30 * (Regen / 10);
+              players[player.id].Regenspeed = Regenspeed;
+              emit("healerRestart", {
+                id: player.id,
+                Regenspeed: Regenspeed,
+              });
+            } else if (upgradetype === "Body Damage") {
+              players[player.id].bodyDamage *= CONFIG.levelMultiplyer;
+            } else if (upgradetype === "Speed") {
+              players[player.id].speed *= CONFIG.levelMultiplyer;
+            }
+
+            broadcast("statsTreeRestart", {
+              stats: players[player.id].statsTree,
+              id: player.id,
+            });
+
+            if (
+              upgradetype !== "Bullet Pentration" ||
+              upgradetype !== "Bullet Speed" ||
+              upgradetype !== "Bullet Damage"
+            ) {
+              emit("UpdateStatTree", {
+                id: player.id,
+                StatUpgradetype: upgradetype,
+                levelmultiplyer: CONFIG.levelMultiplyer,
+                doUpgrade: false,
+              });
+            } else {
+              emit("UpdateStatTree", {
+                id: player.id,
+                StatUpgradetype: upgradetype,
+                levelmultiplyer: CONFIG.levelMultiplyer,
+                doUpgrade: true,
+              });
+            }
+          });
+        }
+        if ("miniMap" === data.upgradeType) {
+          if (myTeam.createTeamScore) {
+            if (myTeam.createTeamScore >= 3000) {
+              myTeam.upgrades.canTrack = true;
+              buildMiniMapTeams.push(myTeam.teamID);
+              team.teamScore -= 3000;
+            } else {
+              createAnnocment(
+                `Not enough Team score. The team has ${team.teamScore}`,
+                data.id,
+                { color: "red", delay: 3000 }
+              );
+            }
           } else {
-            createAnnocment(
-              `Not enough Team score. The team has ${team.teamScore}`,
-              data.id,
-              { color: "red", delay: 3000 }
-            );
+            if (players[data.id].score >= 3000) {
+              myTeam.upgrades.canTrack = true;
+              buildMiniMapTeams.push(myTeam.teamID);
+              players[data.id].score -= 3000;
+              leader_board.hidden.forEach((__index__) => {
+                if (__index__.id === data.owner.id) {
+                  let isshown = false;
+                  __index__.score -= 3000;
+                  isshown = leader_board.shown.find((__index__) => {
+                    if (__index__.id === data.owner.id) {
+                      return true;
+                    }
+                  });
+                  if (leader_board.shown[10]) {
+                    if (leader_board.shown[10].score < __index__.score) {
+                      leader_board.shown[10] = __index__;
+                    }
+                  } else if (!leader_board.shown[10] && !isshown) {
+                    leader_board.shown.push(__index__);
+                  }
+                }
+              });
+              leader_board.shown.forEach((__index__) => {
+                if (__index__.id === data.owner.id) {
+                  __index__.score -= 3000;
+                }
+              });
+              emit("playerScore", {
+                bulletId: data.owner.id,
+                socrepluse: -3000,
+              });
+            } else {
+              createAnnocment(
+                `Not enough score. You have ${players[data.id].score}`,
+                data.id,
+                { color: "red", delay: 3000 }
+              );
+            }
           }
-        } else {
-          if (myTeam.createTeamScore >= 200) {
-            myTeam.upgrades.canTrack = true;
-            buildMiniMapTeams.push(myTeam.teamID)
-            players[data.id].score -= 200;
-            leader_board.hidden.forEach((__index__) => {
-              if (__index__.id === data.owner.id) {
-                let isshown = false;
-                __index__.score -= 200;
-                leader_board.shown.forEach(() => {
+        } else if ("statUpgrade" === data.upgradeType) {
+          if (myTeam.createTeamScore) {
+            if (myTeam.createTeamScore >= 200) {
+              if (myTeam.stats[data.stat] < 8) {
+                myTeam.stats[data.stat] += 1;
+                var upgradetype = data.upgradeType;
+                upgradeStat(upgradetype)
+                team.teamScore -= 200;
+              } else {
+                createAnnocment(
+                  `Stat has reached it max limit`,
+                  data.id,
+                  { color: "orange", delay: 3000 }
+                );
+              }
+            } else {
+              createAnnocment(
+                `Not enough Team score. The team has ${team.teamScore}`,
+                data.id,
+                { color: "red", delay: 3000 }
+              );
+            }
+          } else {
+            if (players[data.id].score >= 200) {
+              if (myTeam.stats[data.stat] < 8) {
+                myTeam.stats[data.stat] += 1;
+                var upgradetype = data.upgradeType;
+                upgradeStat(upgradetype)
+                players[data.id].score -= 200;
+                leader_board.hidden.forEach((__index__) => {
                   if (__index__.id === data.owner.id) {
-                    isshown = true;
+                    let isshown = false;
+                    __index__.score -= 200;
+                    isshown = leader_board.shown.find((__index__) => {
+                      if (__index__.id === data.owner.id) {
+                        return true;
+                      }
+                    });
+                    if (leader_board.shown[10]) {
+                      if (leader_board.shown[10].score < __index__.score) {
+                        leader_board.shown[10] = __index__;
+                      }
+                    } else if (!leader_board.shown[10] && !isshown) {
+                      leader_board.shown.push(__index__);
+                    }
                   }
                 });
-                if (leader_board.shown[10]) {
-                  if (leader_board.shown[10].score < __index__.score) {
-                    leader_board.shown[10] = __index__;
+                leader_board.shown.forEach((__index__) => {
+                  if (__index__.id === data.owner.id) {
+                    __index__.score -= 200;
                   }
-                } else if (!leader_board.shown[10] && !isshown) {
-                  leader_board.shown.push(__index__);
-                }
+                });
+                emit("playerScore", {
+                  bulletId: data.owner.id,
+                  socrepluse: -200,
+                });
+              } else {
+                createAnnocment(
+                  `Stat has reached it max limit`,
+                  data.id,
+                  { color: "orange", delay: 3000 }
+                );
               }
-            });
-            leader_board.shown.forEach((__index__) => {
-              if (__index__.id === data.owner.id) {
-                __index__.score -= 200;
-              }
-            });
-            emit("playerScore", {
-              bulletId: data.owner.id,
-              socrepluse: -200,
-            });
-          } else {
-            createAnnocment(
-              `Not enough score. You have ${players[data.id].score}`,
-              data.id,
-              { color: "red", delay: 3000 }
-            );
+            } else {
+              createAnnocment(
+                `Not enough score. You have ${players[data.id].score}`,
+                data.id,
+                { color: "red", delay: 3000 }
+              );
+            }
           }
         }
+
         break;
       }
 
@@ -2576,6 +2708,17 @@ wss.on("connection", (socket, req) => {
           },
         };
 
+        data.stats = {
+          Health: 0,
+          "Body Damage": 0,
+          Regen: 0,
+          "Bullet Pentration": 0,
+          "Bullet Speed": 0,
+          "Bullet Damage": 0,
+          "Bullet Reload": 0,
+          Speed: 0,
+        };
+
         if (CONFIG.PayesSelfStrictTaxes.includes(govType)) {
           createAnnocment(
             "Some configerations were overridden due to team type",
@@ -2662,9 +2805,9 @@ wss.on("connection", (socket, req) => {
                   if (__index__.id === data.owner.id) {
                     let isshown = false;
                     __index__.score += Scheduledtax;
-                    leader_board.shown.forEach(() => {
+                    isshown = leader_board.shown.find((__index__) => {
                       if (__index__.id === data.owner.id) {
-                        isshown = true;
+                        return true;
                       }
                     });
                     if (leader_board.shown[10]) {
@@ -2690,9 +2833,9 @@ wss.on("connection", (socket, req) => {
                 if (__index__.id === player.id) {
                   let isshown = false;
                   __index__.score -= Scheduledtax;
-                  leader_board.shown.forEach(() => {
+                  isshown = leader_board.shown.find((__index__) => {
                     if (__index__.id === player.id) {
-                      isshown = true;
+                      return true;
                     }
                   });
                   if (leader_board.shown[10]) {
@@ -5075,9 +5218,9 @@ setInterval(() => {
               if (__index__.id === bullet.id) {
                 __index__.score += reward;
                 let isshown = false;
-                leader_board.shown.forEach(() => {
+                isshown = leader_board.shown.find((__index__) => {
                   if (__index__.id === bullet.id) {
-                    isshown = true;
+                    return true;
                   }
                 });
                 if (leader_board.shown[10]) {
@@ -5791,9 +5934,9 @@ setInterval(() => {
                 if (__index__.id === player.id) {
                   __index__.score += reward;
                   let isshown = false;
-                  leader_board.shown.forEach(() => {
+                  isshown = leader_board.shown.find((__index__) => {
                     if (__index__.id === player.id) {
-                      isshown = true;
+                      return true;
                     }
                   });
                   if (leader_board.shown[10]) {
@@ -6042,9 +6185,9 @@ setInterval(() => {
                 if (__index__.id === bullet.id) {
                   __index__.score += reward;
                   let isshown = false;
-                  leader_board.shown.forEach(() => {
+                  isshown = leader_board.shown.find((__index__) => {
                     if (__index__.id === bullet.id) {
-                      isshown = true;
+                      return true;
                     }
                   });
                   if (leader_board.shown[10]) {
@@ -6413,14 +6556,21 @@ setInterval(() => {
   });
 
   buildMiniMapTeams.forEach((teamId) => {
-    var miniMapSize = 150;
+    var miniMapSize = 150 / (CONFIG.map.size * 2);
     var teamPlayersXY = [];
 
     for (const playerId in players) {
       var player = players[playerId];
-      teamPlayersXY.push({player}) 
+      if (teamId === player.teamId) {
+        teamPlayersXY.push({
+          x: player.x * miniMapSize,
+          y: player.y * miniMapSize,
+          id: playerId,
+        });
+      }
     }
-  })
+    emitTeam("minimapUpdate", teamPlayersXY, teamId);
+  });
 
   tempBulletToPush.forEach((item) => {
     bullets.push(item);
