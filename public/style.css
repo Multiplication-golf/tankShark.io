@@ -105,14 +105,44 @@ body {
   height: 100%;
 }
 
-.shaded100 {
+.center200 {
   width: 100%;
   text-align: center;
   display: flex;
   justify-content: center;
   align-items: center;
+  height: 7.5vw;
+}
+
+.topcenterAD {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 10vw;
+  min-height: 200px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+
+.innercenterAD {
+  width: 40vw;
   height: 100%;
+  z-index: 40;
+}
+
+.shaded100 {
+  width: 100vw;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
   background-color: #0000004f;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .center1000 {

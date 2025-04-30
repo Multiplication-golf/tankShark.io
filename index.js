@@ -2133,8 +2133,12 @@ wss.on("connection", (socket, req) => {
             createAnnocment("You joined a private team successfuly", newId, {
               color: "green",
             });
-          } else {
+          } else if (data.teamKey !== null) {
             createAnnocment("Bad key!", newId, { color: "red" });
+          } else if (data.isCrazy){
+            createAnnocment("Did you know you can invite freinds to your team? To do so simply click the invite button in crazy games", newId, {
+              color: "blue",
+            });
           }
         }
         emit("pubteamlist", public_teams);
@@ -5177,7 +5181,7 @@ setInterval(() => {
             }
             if (players[bullet.id]) {
               player.score += reward;
-              emit("playerScore", { bulletId: bullet.id, socrepluse: reward });
+              emit("playerScore", { bulletId: bullet.id, socrepluse: reward,kill: true });
               createAnnocment(
                 `You killed ${player.username}'s ${player.__type__}`,
                 bullet.id

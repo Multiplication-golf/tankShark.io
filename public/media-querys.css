@@ -106,6 +106,10 @@
   .skin-button {
     display: block;
   }
+  .topcenterAD {
+    height: 2.5vw;
+    min-height: 50px;
+  }
 }
 
 @media only screen and (600px < width < 1048px) {
