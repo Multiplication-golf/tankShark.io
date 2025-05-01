@@ -31,28 +31,6 @@
       console.log("Error on request responsive banner", e);
     }
   }
-
-  function getScrollPercentage() {
-    const scrollTop = window.scrollY;
-    const docHeight = document.body.scrollHeight;
-    const windowHeight = window.innerHeight;
-    console.log(scrollTop,docHeight,windowHeight)
-    const scrollPercentage = (scrollTop / (docHeight - windowHeight)) * 100;
-    return scrollPercentage;
-  }
-
-  if (isCrazyGames) {
-    document.body.addEventListener("scroll", async () => {
-      console.log(getScrollPercentage())
-      if (getScrollPercentage() > 60) {
-        try {
-          await window.CrazyGames.SDK.banner.requestResponsiveBanner("adBox2");
-        } catch (e) {
-          console.log("Error on request responsive banner", e);
-        }
-      }
-    })
-  }
   
   if (isCrazyGames) {
     
@@ -93,21 +71,6 @@
     return "";
   }
 
-  var added = false;
-  if (window.innerWidth < window.innerHeight) {
-    document.getElementsByTagName("body")[0] +=
-      "<script src='https://hammerjs.github.io/dist/hammer.min.js'></script>";
-    added = true;
-  }
-
-  window.addEventListener("resize", () => {
-    if (window.innerWidth < window.innerHeight) {
-      document.getElementsByTagName("body")[0] +=
-        "<script src='https://hammerjs.github.io/dist/hammer.min.js'></script>";
-      added = true;
-    }
-  });
-
   var username;
 
   const images = [];
@@ -122,6 +85,7 @@
     "7.webp",
     "8.webp",
     "9.webp",
+    "10.webp"
   ]; // Array of image paths
 
   imagePaths.forEach((path) => {
@@ -908,6 +872,20 @@
             .getElementsByClassName("inner-box")[0]
             .classList.add("inner-onwer-box");
           document.getElementById("upgradesBox").style.display = "block";
+
+          document.getElementById("HomeBaseUpgrade").addEventListener("click",() => {
+            document.getElementById("confermationScreen").style.display = "flex";
+
+          });
+          document.getElementById("placeNo").addEventListener("click",() => {
+            document.getElementById("confermationScreen").style.display = "none";
+          });
+          document.getElementById("placeYes").addEventListener("click", () => {
+            send("requestUpgrade", {
+              id: playerId,
+              upgradeType: "buildBase",
+            });
+          });
 
           document
             .getElementById("upgradeHealth")
@@ -5865,6 +5843,14 @@
     profileCtx.strokeStyle = "#aaaaaa";
 
     profileCtx.stroke();
+    if (skinID !== 0) {
+      let imageSRC = images[skinID];
+      profileCtx.save();
+      profileCtx.translate(playerCanvas.width / 2, playerCanvas.height / 2);
+      profileCtx.rotate(pointerAngle);
+      profileCtx.drawImage(imageSRC,-40,-40,80,80);
+      profileCtx.restore();
+    }
     if (canAnimateProfile) requestAnimationFrame(createProfile);
   }
 
@@ -5946,7 +5932,7 @@
     document.getElementById("skinCon").style.display = "block";
   });
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 11; i++) {
     var skinDiv = document.createElement("div");
     var skinImg = document.createElement("img");
     skinGrid.appendChild(skinDiv);

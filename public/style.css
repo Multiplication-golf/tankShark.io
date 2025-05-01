@@ -135,7 +135,7 @@ body {
 .shaded100 {
   width: 100vw;
   text-align: center;
-  display: flex;
+  display: none;
   justify-content: center;
   align-items: center;
   height: 100vh;
@@ -317,6 +317,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.updates {
+  background-color: var(--background-white-0);
+  border-radius: 30px;
+  line-height: 25px;
 }
 
 .upgrades-box {

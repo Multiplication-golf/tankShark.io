@@ -205,6 +205,7 @@ const skinAllowlist = [
   "7.webp",
   "8.webp",
   "9.webp",
+  "10.webp",
   "0.webp",
 ];
 
@@ -1135,6 +1136,21 @@ function calculateRotatedPentagonVertices(cx, cy, r, rotation) {
 
   for (let i = 0; i < 5; i++) {
     const angle = (2 * pi * i) / 5 + angleOffset;
+    const x = cx + R * Math.cos(angle);
+    const y = cy + R * Math.sin(angle);
+    vertices[i] = { x, y };
+  }
+
+  return vertices;
+}
+
+function calculateRotatedOctagonVertices(cx, cy, r, rotation) {
+  const R = r;
+  const angleOffset = piby2 + rotation;
+  const vertices = new Array(8);
+
+  for (let i = 0; i < 8; i++) {
+    const angle = (2 * pi * i) / 8 + angleOffset;
     const x = cx + R * Math.cos(angle);
     const y = cy + R * Math.sin(angle);
     vertices[i] = { x, y };
@@ -2502,6 +2518,78 @@ wss.on("connection", (socket, req) => {
                   { color: "orange", delay: 3000 }
                 );
               }
+            } else {
+              createAnnocment(
+                `Not enough score. You have ${players[data.id].score}`,
+                data.id,
+                { color: "red", delay: 3000 }
+              );
+            }
+          }
+        } else if ("miniMap" === data.upgradeType) {
+          if (myTeam.createTeamScore) {
+            if (myTeam.createTeamScore >= 10000) {
+              team.teamScore -= 10000;
+              let base = {
+                type: "octagon",
+                health: 2000,
+                maxhealth: 2000,
+                size: 500,
+                angle: getRandomInt(0, 180),
+                healrate: 1,
+                x: players[team.owner.id].x - 600,
+                y: players[team.owner.id].y,
+                centerX: players[team.owner.id].x,
+                centerY: players[team.owner.id].y,
+                weight: Infinity,
+                body_damage: 10,
+                scalarX: 0,
+                scalarY: 0,
+                vertices: null,
+                color: "['#A0DDFA','#b3ffff']",
+                score_add: 9000,
+                randomID: `teamBase:${myTeam.id}`,
+                respawn: false,
+              };
+            } else {
+              createAnnocment(
+                `Not enough Team score. The team has ${team.teamScore}`,
+                data.id,
+                { color: "red", delay: 3000 }
+              );
+            }
+          } else {
+            if (players[data.id].score >= 10000) {
+              myTeam.upgrades.canTrack = true;
+              buildMiniMapTeams.push(myTeam.teamID);
+              players[data.id].score -= 10000;
+              leader_board.hidden.forEach((__index__) => {
+                if (__index__.id === data.owner.id) {
+                  let isshown = false;
+                  __index__.score -= 10000;
+                  isshown = leader_board.shown.find((__index__) => {
+                    if (__index__.id === data.owner.id) {
+                      return true;
+                    }
+                  });
+                  if (leader_board.shown[10]) {
+                    if (leader_board.shown[10].score < __index__.score) {
+                      leader_board.shown[10] = __index__;
+                    }
+                  } else if (!leader_board.shown[10] && !isshown) {
+                    leader_board.shown.push(__index__);
+                  }
+                }
+              });
+              leader_board.shown.forEach((__index__) => {
+                if (__index__.id === data.owner.id) {
+                  __index__.score -= 10000;
+                }
+              });
+              emit("playerScore", {
+                bulletId: data.owner.id,
+                socrepluse: -10000,
+              });
             } else {
               createAnnocment(
                 `Not enough score. You have ${players[data.id].score}`,
