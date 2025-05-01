@@ -1,7 +1,7 @@
 // LOL, you little kids can't mess with my game
 (async function () {
   /* Warning! DO NOT TOUCH */
-  const isCrazyGames = true;
+  const isCrazyGames = false;
 
   if (isCrazyGames) {
     // document.getElementsByTagName("body")[0].innerHTML +=

@@ -2526,16 +2526,67 @@ wss.on("connection", (socket, req) => {
               );
             }
           }
-        } else if ("miniMap" === data.upgradeType) {
+        } else if ("buildBase" === data.upgradeType) {
           if (myTeam.createTeamScore) {
             if (myTeam.createTeamScore >= 10000) {
-              team.teamScore -= 10000;
+              if (!myTeam.upgrades.teamBuilding.built) {
+                team.teamScore -= 10000;
+                let base = {
+                  type: "octagon",
+                  health: 2000,
+                  maxhealth: 2000,
+                  size: 500,
+                  angle: 0,
+                  healrate: 1,
+                  x: players[team.owner.id].x - 600,
+                  y: players[team.owner.id].y,
+                  centerX: players[team.owner.id].x,
+                  centerY: players[team.owner.id].y,
+                  weight: Infinity,
+                  body_damage: 10,
+                  scalarX: 0,
+                  scalarY: 0,
+                  vertices: null,
+                  color: "['#A0DDFA','#b3ffff']",
+                  score_add: 9000,
+                  randomID: `teamBase:${myTeam.id}`,
+                  respawn: false,
+                  teamId: myTeam.teamID,
+                };
+                const rawvertices = calculateRotatedOctagonVertices(
+                  base.x,
+                  base.y,
+                  base.size,
+                  base.angle
+                );
+                base.vertices = rawvertices;
+                myTeam.upgrades.teamBuilding.built = true;
+                myTeam.upgrades.teamBuilding.polygonId = `teamBase:${myTeam.id}
+                `;
+                food_squares.assignRoom(base);
+              } else {
+                createAnnocment(
+                  `The team base has all ready been built`,
+                  data.id,
+                  { color: "orange", delay: 3000 }
+                );
+              }
+            } else {
+              createAnnocment(
+                `Not enough Team score. The team has ${team.teamScore}`,
+                data.id,
+                { color: "red", delay: 3000 }
+              );
+            }
+          } else {
+            if (players[data.id].score >= 10000) {
+              if (!myTeam.upgrades.teamBuilding.built) {
               let base = {
                 type: "octagon",
                 health: 2000,
                 maxhealth: 2000,
                 size: 500,
-                angle: getRandomInt(0, 180),
+                angle: 0,
                 healrate: 1,
                 x: players[team.owner.id].x - 600,
                 y: players[team.owner.id].y,
@@ -2550,18 +2601,18 @@ wss.on("connection", (socket, req) => {
                 score_add: 9000,
                 randomID: `teamBase:${myTeam.id}`,
                 respawn: false,
+                teamId: myTeam.teamID,
               };
-            } else {
-              createAnnocment(
-                `Not enough Team score. The team has ${team.teamScore}`,
-                data.id,
-                { color: "red", delay: 3000 }
+              const rawvertices = calculateRotatedOctagonVertices(
+                base.x,
+                base.y,
+                base.size,
+                base.angle
               );
-            }
-          } else {
-            if (players[data.id].score >= 10000) {
-              myTeam.upgrades.canTrack = true;
-              buildMiniMapTeams.push(myTeam.teamID);
+              base.vertices = rawvertices;
+              myTeam.upgrades.teamBuilding.built = true;
+              myTeam.upgrades.teamBuilding.polygonId = `teamBase:${myTeam.id}`;
+              food_squares.assignRoom(base);
               players[data.id].score -= 10000;
               leader_board.hidden.forEach((__index__) => {
                 if (__index__.id === data.owner.id) {
@@ -2590,6 +2641,13 @@ wss.on("connection", (socket, req) => {
                 bulletId: data.owner.id,
                 socrepluse: -10000,
               });
+              } else {
+                createAnnocment(
+                  `The team base has all ready been built`,
+                  data.id,
+                  { color: "orange", delay: 3000 }
+                );
+              }
             } else {
               createAnnocment(
                 `Not enough score. You have ${players[data.id].score}`,
@@ -2600,6 +2658,15 @@ wss.on("connection", (socket, req) => {
           }
         }
 
+        var public_teams = [];
+        public_teams = teamlist.map((team) => {
+          if (!team.hidden) {
+            team.taxInterval = null;
+            return team;
+          }
+        });
+        emit("pubteamlist", public_teams);
+
         break;
       }
 
@@ -2607,7 +2674,7 @@ wss.on("connection", (socket, req) => {
         players[data.id].autoFiring = data.autoFiring;
         break;
       }
-      /*send("premotePlayer", {premote:player.id,premotor: MYteam.owner}) */
+
       case "premotePlayer": {
         if (
           !data.players.includes(data.player) ||
@@ -2796,7 +2863,9 @@ wss.on("connection", (socket, req) => {
             boosts: {
               speed: 1,
               health: 1,
+              cannons: {},
             },
+            health: 2000
           },
         };
 
@@ -5770,8 +5839,7 @@ setInterval(() => {
           item.angle
         );
         item.vertices = rawvertices;
-      }
-      if (item.type === "triangle") {
+      } else if (item.type === "triangle") {
         const rawvertices = calculateTriangleVertices(
           item.x,
           item.y,
@@ -5779,9 +5847,16 @@ setInterval(() => {
           item.angle
         );
         item.vertices = rawvertices;
-      }
-      if (item.type === "pentagon") {
+      } else if (item.type === "pentagon") {
         const rawvertices = calculateRotatedPentagonVertices(
+          item.x,
+          item.y,
+          item.size,
+          item.angle
+        );
+        item.vertices = rawvertices;
+      } else if (item.type === "octagon") {
+        const rawvertices = calculateRotatedOctagonVertices(
           item.x,
           item.y,
           item.size,
@@ -5937,266 +6012,274 @@ setInterval(() => {
           Math.abs(item.x - player.x) < size__ &&
           Math.abs(item.y - player.y) < size__
         ) {
-          var collisionCheck = isPlayerCollidingWithPolygon(
-            player,
-            item.vertices
-          );
+          var sameteam = false;
+          if (item.teamId) {
+            sameteam =
+              players[playerId].team === item.teamId &&
+              players[playerId].team !== null;
+          }
+          if (!sameteam) {
+            var collisionCheck = isPlayerCollidingWithPolygon(
+              player,
+              item.vertices
+            );
 
-          if (collisionCheck[0]) {
-            let damageplayer = item.body_damage;
-            let damageother = player["bodyDamage"];
-            if (player.state !== "start") {
-              player.health -= damageplayer;
-            }
-
-            if (player.health < 0) {
-              emit("playerDied", {
-                playerID: player.id,
-                rewarder: null,
-                reward: null,
-              });
-              players = Object.entries(players).reduce(
-                (newPlayers, [key, value]) => {
-                  if (key !== player.id) {
-                    newPlayers[key] = value;
-                  }
-                  return newPlayers;
-                },
-                {}
-              );
-            }
-
-            emit("bouceBack", {
-              response: collisionCheck[1].overlapV,
-              playerID: player.id,
-            });
-            for (let i = 0; i < 10; i++) {
-              var factor = item.weight / 5 < 1 ? 1 : item.weight / 5;
-              setTimeout(() => {
-                let recoilX = collisionCheck[1].overlapV.x / 30;
-                let recoilY = collisionCheck[1].overlapV.y / 30;
-                item.x += recoilX / factor;
-                item.y += recoilY / factor;
-                item.centerX += recoilX / factor;
-                item.centerY += recoilY / factor;
-              }, 50 * i);
-            }
-            if (0 >= item.health) {
-              var reward = item.score_add;
-              if (player.team !== null) {
-                var team = teamlist.find((team) => team.teamID === player.team);
-                if (team.owner.id !== player.id || team.createTeamScore) {
-                  reward -= reward * team.simpleTax;
-                }
-                if (team.createTeamScore) {
-                  team.teamScore += (reward * team.simpleTax) / 2;
-                } else {
-                  emit("playerScore", {
-                    bulletId: team.owner.id,
-                    socrepluse: reward * team.simpleTax,
-                  });
-                }
-
-                console.log(reward * team.simpleTax);
-
-                var complexTax =
-                  reward *
-                  (calculateTax(player.score, 10000000) / team.playerTax);
-                if (team.owner.id !== player.id || team.createTeamScore) {
-                  console.log(complexTax);
-                  reward -= complexTax;
-                }
-                if (team.createTeamScore) {
-                  team.teamScore += complexTax / 1.5;
-                } else {
-                  emit("playerScore", {
-                    bulletId: team.owner.id,
-                    socrepluse: complexTax,
-                  });
-                  players[team.owner.id].score += complexTax;
-                }
-              }
-              console.log(reward);
-              player.score += reward;
-              emit("playerScore", {
-                bulletId: player.id,
-                socrepluse: reward,
-              });
-              leader_board.hidden.forEach((__index__) => {
-                if (__index__.id === player.id) {
-                  __index__.score += reward;
-                  let isshown = false;
-                  isshown = leader_board.shown.find((__index__) => {
-                    if (__index__.id === player.id) {
-                      return true;
-                    }
-                  });
-                  if (leader_board.shown[10]) {
-                    if (leader_board.shown[10].score < __index__.score) {
-                      leader_board.shown[10] = __index__;
-                    }
-                  } else if (!leader_board.shown[10] && !isshown) {
-                    leader_board.shown.push(__index__);
-                  }
-                }
-              });
-              leader_board.shown.forEach((__index__) => {
-                if (__index__.id === player.id) {
-                  __index__.score += reward;
-                }
-              });
-              rearrange();
-              emit("boardUpdate", {
-                leader_board: leader_board.shown,
-              });
-
-              cors_taken.filter((cor) => {
-                if (cor.id === item.randomID) {
-                  return false;
-                } else {
-                  return true;
-                }
-              });
-
-              let respawnrai = item["respawn-raidis"] || CONFIG.map.innersize;
-              let x, y;
-              do {
-                x = getRandomInt(-respawnrai, respawnrai);
-                y = getRandomInt(-respawnrai, respawnrai);
-              } while (
-                cors_taken.some(
-                  (c) =>
-                    between(
-                      x,
-                      c.x - CONFIG.map.boundRange,
-                      c.x + CONFIG.map.boundRange
-                    ) &&
-                    between(
-                      y,
-                      c.y - CONFIG.map.boundRange,
-                      c.y + CONFIG.map.boundRange
-                    )
-                )
-              );
-              let randID = Math.random() * index * Date.now();
-
-              cors_taken.push({ x, y, id: randID });
-
-              const valueOp = getRandomInt(1, 15);
-              var type = "";
-              var color = "";
-              var health_max = "";
-              var score_add = 0;
-              var body_damage = 0;
-              var weight = 0;
-              if (!item["respawn-raidis"]) {
-                switch (true) {
-                  case between(valueOp, 1, 10): // Adjusted to 1-6 for square
-                    type = "square";
-                    color = "Gold";
-                    health_max = 10;
-                    score_add = 10;
-                    body_damage = 2;
-                    weight = 3;
-                    break;
-                  case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
-                    type = "triangle";
-                    color = "Red";
-                    health_max = 15;
-                    score_add = 15;
-                    body_damage = 3.5;
-                    weight = 5;
-                    break;
-                  case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
-                    type = "pentagon";
-                    color = "#579bfa";
-                    health_max = 100;
-                    score_add = 120;
-                    body_damage = 4;
-                    weight = 10;
-                    break;
-                }
-              } else {
-                const valueOp2 = getRandomInt(1, 10);
-
-                type = "pentagon";
-                color = "#579bfa";
-                health_max = 100;
-                score_add = 120;
-                body_damage = 4;
-                if (valueOp2 === 5) {
-                  var size = 150;
-                  score_add = 3000;
-                  health_max = 1000;
-                  body_damage = 9;
-                  weight = 300;
-                } else {
-                  weight = 10;
-                  var size = 50;
-                }
-              }
-              let fooditem = {
-                type: type,
-                health: health_max,
-                maxhealth: health_max,
-                size: size,
-                angle: getRandomInt(0, 180),
-                x: x,
-                y: y,
-                centerX: x,
-                centerY: y,
-                body_damage: body_damage,
-                weight: weight,
-                scalarX: getRandomInt(-100, 100),
-                scalarY: getRandomInt(-100, 100),
-                vertices: null,
-                color: color,
-                score_add: score_add,
-                randomID: randID,
-              };
-              if (type === "square") {
-                const rawvertices = calculateSquareVertices(
-                  fooditem.x,
-                  fooditem.y,
-                  fooditem.size,
-                  fooditem.angle
-                );
-                fooditem.vertices = rawvertices;
-              }
-              if (type === "triangle") {
-                const rawvertices = calculateTriangleVertices(
-                  fooditem.x,
-                  fooditem.y,
-                  fooditem.size,
-                  fooditem.angle
-                );
-                fooditem.vertices = rawvertices;
-              }
-              if (type === "pentagon") {
-                const rawvertices = calculateRotatedPentagonVertices(
-                  fooditem.x,
-                  fooditem.y,
-                  fooditem.size,
-                  fooditem.angle
-                );
-                fooditem.vertices = rawvertices;
-              }
-
-              tempToPush.push(fooditem);
-
-              return false;
-            } else {
+            if (collisionCheck[0]) {
+              let damageplayer = item.body_damage;
+              let damageother = player["bodyDamage"];
               if (player.state !== "start") {
-                item.health -= damageother;
+                player.health -= damageplayer;
               }
-            }
 
-            if (player.state !== "start") {
-              emit("shapeDamage", {
-                PlayerId: player.id,
-                playerDamage: damageplayer,
-                shapes: food_squares,
+              if (player.health < 0) {
+                emit("playerDied", {
+                  playerID: player.id,
+                  rewarder: null,
+                  reward: null,
+                });
+                players = Object.entries(players).reduce(
+                  (newPlayers, [key, value]) => {
+                    if (key !== player.id) {
+                      newPlayers[key] = value;
+                    }
+                    return newPlayers;
+                  },
+                  {}
+                );
+              }
+
+              emit("bouceBack", {
+                response: collisionCheck[1].overlapV,
+                playerID: player.id,
               });
+              for (let i = 0; i < 10; i++) {
+                var factor = item.weight / 5 < 1 ? 1 : item.weight / 5;
+                setTimeout(() => {
+                  let recoilX = collisionCheck[1].overlapV.x / 30;
+                  let recoilY = collisionCheck[1].overlapV.y / 30;
+                  item.x += recoilX / factor;
+                  item.y += recoilY / factor;
+                  item.centerX += recoilX / factor;
+                  item.centerY += recoilY / factor;
+                }, 50 * i);
+              }
+              if (0 >= item.health) {
+                var reward = item.score_add;
+                if (player.team !== null) {
+                  var team = teamlist.find((team) => team.teamID === player.team);
+                  if (team.owner.id !== player.id || team.createTeamScore) {
+                    reward -= reward * team.simpleTax;
+                  }
+                  if (team.createTeamScore) {
+                    team.teamScore += (reward * team.simpleTax) / 2;
+                  } else {
+                    emit("playerScore", {
+                      bulletId: team.owner.id,
+                      socrepluse: reward * team.simpleTax,
+                    });
+                  }
+
+                  console.log(reward * team.simpleTax);
+
+                  var complexTax =
+                    reward *
+                    (calculateTax(player.score, 10000000) / team.playerTax);
+                  if (team.owner.id !== player.id || team.createTeamScore) {
+                    console.log(complexTax);
+                    reward -= complexTax;
+                  }
+                  if (team.createTeamScore) {
+                    team.teamScore += complexTax / 1.5;
+                  } else {
+                    emit("playerScore", {
+                      bulletId: team.owner.id,
+                      socrepluse: complexTax,
+                    });
+                    players[team.owner.id].score += complexTax;
+                  }
+                }
+                console.log(reward);
+                player.score += reward;
+                emit("playerScore", {
+                  bulletId: player.id,
+                  socrepluse: reward,
+                });
+                leader_board.hidden.forEach((__index__) => {
+                  if (__index__.id === player.id) {
+                    __index__.score += reward;
+                    let isshown = false;
+                    isshown = leader_board.shown.find((__index__) => {
+                      if (__index__.id === player.id) {
+                        return true;
+                      }
+                    });
+                    if (leader_board.shown[10]) {
+                      if (leader_board.shown[10].score < __index__.score) {
+                        leader_board.shown[10] = __index__;
+                      }
+                    } else if (!leader_board.shown[10] && !isshown) {
+                      leader_board.shown.push(__index__);
+                    }
+                  }
+                });
+                leader_board.shown.forEach((__index__) => {
+                  if (__index__.id === player.id) {
+                    __index__.score += reward;
+                  }
+                });
+                rearrange();
+                emit("boardUpdate", {
+                  leader_board: leader_board.shown,
+                });
+
+                cors_taken.filter((cor) => {
+                  if (cor.id === item.randomID) {
+                    return false;
+                  } else {
+                    return true;
+                  }
+                });
+
+                let respawnrai = item["respawn-raidis"] || CONFIG.map.innersize;
+                let x, y;
+                do {
+                  x = getRandomInt(-respawnrai, respawnrai);
+                  y = getRandomInt(-respawnrai, respawnrai);
+                } while (
+                  cors_taken.some(
+                    (c) =>
+                      between(
+                        x,
+                        c.x - CONFIG.map.boundRange,
+                        c.x + CONFIG.map.boundRange
+                      ) &&
+                      between(
+                        y,
+                        c.y - CONFIG.map.boundRange,
+                        c.y + CONFIG.map.boundRange
+                      )
+                  )
+                );
+                let randID = Math.random() * index * Date.now();
+
+                cors_taken.push({ x, y, id: randID });
+
+                const valueOp = getRandomInt(1, 15);
+                var type = "";
+                var color = "";
+                var health_max = "";
+                var score_add = 0;
+                var body_damage = 0;
+                var weight = 0;
+                if (!item["respawn-raidis"]) {
+                  switch (true) {
+                    case between(valueOp, 1, 10): // Adjusted to 1-6 for square
+                      type = "square";
+                      color = "Gold";
+                      health_max = 10;
+                      score_add = 10;
+                      body_damage = 2;
+                      weight = 3;
+                      break;
+                    case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
+                      type = "triangle";
+                      color = "Red";
+                      health_max = 15;
+                      score_add = 15;
+                      body_damage = 3.5;
+                      weight = 5;
+                      break;
+                    case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
+                      type = "pentagon";
+                      color = "#579bfa";
+                      health_max = 100;
+                      score_add = 120;
+                      body_damage = 4;
+                      weight = 10;
+                      break;
+                  }
+                } else {
+                  const valueOp2 = getRandomInt(1, 10);
+
+                  type = "pentagon";
+                  color = "#579bfa";
+                  health_max = 100;
+                  score_add = 120;
+                  body_damage = 4;
+                  if (valueOp2 === 5) {
+                    var size = 150;
+                    score_add = 3000;
+                    health_max = 1000;
+                    body_damage = 9;
+                    weight = 300;
+                  } else {
+                    weight = 10;
+                    var size = 50;
+                  }
+                }
+                let fooditem = {
+                  type: type,
+                  health: health_max,
+                  maxhealth: health_max,
+                  size: size,
+                  angle: getRandomInt(0, 180),
+                  x: x,
+                  y: y,
+                  centerX: x,
+                  centerY: y,
+                  body_damage: body_damage,
+                  weight: weight,
+                  scalarX: getRandomInt(-100, 100),
+                  scalarY: getRandomInt(-100, 100),
+                  vertices: null,
+                  color: color,
+                  score_add: score_add,
+                  randomID: randID,
+                };
+                if (type === "square") {
+                  const rawvertices = calculateSquareVertices(
+                    fooditem.x,
+                    fooditem.y,
+                    fooditem.size,
+                    fooditem.angle
+                  );
+                  fooditem.vertices = rawvertices;
+                }
+                if (type === "triangle") {
+                  const rawvertices = calculateTriangleVertices(
+                    fooditem.x,
+                    fooditem.y,
+                    fooditem.size,
+                    fooditem.angle
+                  );
+                  fooditem.vertices = rawvertices;
+                }
+                if (type === "pentagon") {
+                  const rawvertices = calculateRotatedPentagonVertices(
+                    fooditem.x,
+                    fooditem.y,
+                    fooditem.size,
+                    fooditem.angle
+                  );
+                  fooditem.vertices = rawvertices;
+                }
+
+                tempToPush.push(fooditem);
+
+                return false;
+              } else {
+                if (player.state !== "start") {
+                  item.health -= damageother;
+                }
+              }
+
+              if (player.state !== "start") {
+                emit("shapeDamage", {
+                  PlayerId: player.id,
+                  playerDamage: damageplayer,
+                  shapes: food_squares,
+                });
+              }
             }
           }
         }
