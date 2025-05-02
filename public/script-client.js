@@ -7,6 +7,7 @@
     // document.getElementsByTagName("body")[0].innerHTML +=
     //   '<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>';
 
+
     try {
       await window.CrazyGames.SDK.init();
     } catch {
@@ -881,9 +882,11 @@
             document.getElementById("confermationScreen").style.display = "none";
           });
           document.getElementById("placeYes").addEventListener("click", () => {
+            document.getElementById("confermationScreen").style.display = "none";
             send("requestUpgrade", {
               id: playerId,
               upgradeType: "buildBase",
+              teamId: teamOn,
             });
           });
 
@@ -894,6 +897,7 @@
                 id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Health",
+                teamId: teamOn,
               });
             });
           document
@@ -903,6 +907,7 @@
                 id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Body Damage",
+                teamId: teamOn,
               });
             });
           document
@@ -912,6 +917,7 @@
                 id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Regen",
+                teamId: teamOn,
               });
             });
           document
@@ -921,6 +927,7 @@
                 id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Bullet Pentration",
+                teamId: teamOn,
               });
             });
           document
@@ -930,6 +937,7 @@
                 id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Bullet Speed",
+                teamId: teamOn,
               });
             });
           document
@@ -939,6 +947,7 @@
                 id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Body Damage",
+                teamId: teamOn,
               });
             });
           document
@@ -948,6 +957,7 @@
                 id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Bullet Reload",
+                teamId: teamOn,
               });
             });
           document
@@ -957,6 +967,7 @@
                 id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Speed",
+                teamId: teamOn,
               });
             });
         }
@@ -1047,7 +1058,7 @@
           userId: userId,
           autoFiring: autoFiring,
           skin: skin,
-          isCrazy: window.CrazyGames.SDK.user.isUserAccountAvailable,
+          isCrazy: isCrazyGames,
           teamKey: teamKey,
           statsTree: {
             Health: 1,
@@ -2342,6 +2353,7 @@
           var teamMain = document.getElementById("teamMain");
           teamcontainer.style.display = "none";
           teamMain.style.display = "none";
+          document.getElementById("confermationScreen").style.display = "none";
           document.getElementById("teambox").style.display = "none";
           document.getElementsByTagName("body")[0].style.cursor =
             "url('https://deip-io3.glitch.me/targetpointer1.cur'), auto";
@@ -2368,6 +2380,15 @@
             createDelete.innerText = "Create";
             if (owner_of_team) {
               owner_of_team = false;
+              document.getElementById("teambox").style.display = "none";
+              document
+                .getElementsByClassName("outer-box")[0]
+                .classList.remove("outer-onwer-box");
+              document
+                .getElementsByClassName("inner-box")[0]
+                .classList.remove("inner-onwer-box");
+              document.getElementById("confermationScreen").style.display = "none";
+              document.getElementById("upgradesBox").style.display = "none";
             }
             joinLeave.innerText = "Join";
             if (isCrazyGames) window.CrazyGames.SDK.game.hideInviteButton();
@@ -4037,6 +4058,74 @@
             }
             ctx.closePath();
             ctx.lineWidth = 5;
+            ctx.stroke();
+
+            // Rotate context back to original position (if needed)
+            ctx.rotate(-item.angle * pi180);
+
+            // Draw health bar if health is less than 100%
+            if (item.health < item.maxhealth) {
+              ctx.fillStyle = "black";
+              ctx.beginPath();
+              ctx.roundRect(
+                centerX - 60,
+                centerY + (35 + (item.size - 50)),
+                120 + (item.size - 50),
+                10,
+                5
+              );
+              ctx.fill();
+              ctx.closePath();
+              const healthWidth =
+                (item.health / item.maxhealth) * (120 + (item.size - 50));
+              ctx.fillStyle = "green";
+              ctx.beginPath();
+              ctx.roundRect(
+                centerX - 60,
+                centerY + (35 + (item.size - 50)),
+                healthWidth,
+                10,
+                5
+              );
+              ctx.fill();
+              ctx.closePath();
+            }
+          }
+
+          if (/octagon/.test(item.type)) {
+            var realcolor = item.type.replace("octagon", "") === teamOn ? "#b3ffff" : "#A0DDFA";
+            ctx.fillStyle = realcolor;
+
+            const centerX = 0;
+            const centerY = 0;
+            const radius = item.size * FOV;
+            const angle = item.angle * pi180; // Convert angle to radians
+            vertices = [];
+
+            for (let i = 0; i < 8; i++) {
+              const theta = (i * 2 * Math.PI) / 8 + angle; // Divide circle into 8 parts and add rotation angle
+              const x = centerX + radius * Math.cos(theta);
+              const y = centerY + radius * Math.sin(theta);
+              vertices.push({ x, y });
+            }
+            // Draw filled pentagon
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            for (let i = 1; i < vertices.length; i++) {
+              ctx.lineTo(vertices[i].x, vertices[i].y);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw pentagon outline
+            ctx.strokeStyle = item.type.replace("octagon", "") === teamOn ? "#b1fcfc" : "#98D6F4";
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            for (let i = 1; i < vertices.length; i++) {
+              ctx.lineTo(vertices[i].x, vertices[i].y);
+            }
+            ctx.closePath();
+            ctx.lineWidth = 25;
             ctx.stroke();
 
             // Rotate context back to original position (if needed)
@@ -6034,7 +6123,3 @@ console.log(
   "color:white",
   "\n ⬆\n ⬆\n ⬆\n ⬆\n ⬆\n"
 );
-if (window.location.herf === "https://tank-shark.vercel.app/") {
-  document.getElementsByTagName("head")[0].innerHTML +=
-    '<meta name="robots" content="noindex">';
-}

@@ -153,7 +153,7 @@ app.use(
   })
 );
 
-/*app.use(
+app.use(
   helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: ["'self'"], // Only allow content from the same origin
@@ -167,12 +167,12 @@ app.use(
         "'unsafe-inline'",
         "https://fonts.googleapis.com",
         "https://fonts.gstatic.com",
+        "https://multiplication-golf.containers.piwik.pro",
+        "https://sdk.crazygames.com"
       ],
-      imgSrc: ["'self'", "https://images.com"],
+      imgSrc: ["'self'", ],
       connectSrc: [
         "'self'",
-        "ws://71.73.66.5:443",
-        "wss://71.73.66.5:443",
         "ws://127.0.0.1:4000",
         "wss://127.0.0.1:4000",
         "wss://websocketpointer.duckdns.org:443",
@@ -186,7 +186,9 @@ app.use(
       ],
     },
   })
-);*/
+);
+
+app.use(helmet.frameguard({ action: 'deny' }));
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -2050,7 +2052,7 @@ fs.readFile("data/illegal.json", function (err, data) {
 app.get("/ping", (req, res) => {
   res.send("pong");
 });
-
+console.log(fs.readFileSync("C:/Certs/websocket/fetchIP.txt", "utf8"))
 wss.on("connection", (socket, req) => {
   let connection = {
     socket: socket,
@@ -2063,9 +2065,10 @@ wss.on("connection", (socket, req) => {
 
   let duplicateIPs = IPs.filter((e, i, a) => a.indexOf(e) !== i);
 
+  console.log(req.socket.remoteAddress);
   if (
     req.socket.remoteAddress !==
-      fs.readFileSync("C:/Certs/websocket/fetchIP.txt", "utf8") &&
+      fs.readFileSync("C:/Certs/websocket/fetchIP.txt", "utf8") && req.socket.remoteAddress !== "127.0.0.1" &&
     duplicateIPs.length > 0
   ) {
     duplicateIPs.forEach((duplicateIP) => {
@@ -2151,10 +2154,14 @@ wss.on("connection", (socket, req) => {
             });
           } else if (data.teamKey !== null) {
             createAnnocment("Bad key!", newId, { color: "red" });
-          } else if (data.isCrazy){
-            createAnnocment("Did you know you can invite freinds to your team? To do so simply click the invite button in crazy games", newId, {
-              color: "blue",
-            });
+          } else if (data.isCrazy) {
+            createAnnocment(
+              "Did you know you can invite freinds to your team? To do so simply click the invite button in crazy games",
+              newId,
+              {
+                color: "blue",
+              }
+            );
           }
         }
         emit("pubteamlist", public_teams);
@@ -2355,6 +2362,7 @@ wss.on("connection", (socket, req) => {
         if (!players[data.id]) break;
         let myTeam = teamlist.find((team) => team.teamID === data.teamId);
         if (!myTeam) break;
+        console.log(data);
         var upgradeStat = (upgradetype) => {
           myTeam.players.forEach((player) => {
             if (upgradetype === "health") {
@@ -2401,16 +2409,16 @@ wss.on("connection", (socket, req) => {
               });
             }
           });
-        }
+        };
         if ("miniMap" === data.upgradeType) {
           if (myTeam.createTeamScore) {
             if (myTeam.createTeamScore >= 3000) {
               myTeam.upgrades.canTrack = true;
               buildMiniMapTeams.push(myTeam.teamID);
-              team.teamScore -= 3000;
+              myTeam.teamScore -= 3000;
             } else {
               createAnnocment(
-                `Not enough Team score. The team has ${team.teamScore}`,
+                `Not enough Team score. The team has ${myTeam.teamScore}`,
                 data.id,
                 { color: "red", delay: 3000 }
               );
@@ -2421,11 +2429,11 @@ wss.on("connection", (socket, req) => {
               buildMiniMapTeams.push(myTeam.teamID);
               players[data.id].score -= 3000;
               leader_board.hidden.forEach((__index__) => {
-                if (__index__.id === data.owner.id) {
+                if (__index__.id === myTeam.owner.id) {
                   let isshown = false;
                   __index__.score -= 3000;
                   isshown = leader_board.shown.find((__index__) => {
-                    if (__index__.id === data.owner.id) {
+                    if (__index__.id === myTeam.owner.id) {
                       return true;
                     }
                   });
@@ -2439,12 +2447,15 @@ wss.on("connection", (socket, req) => {
                 }
               });
               leader_board.shown.forEach((__index__) => {
-                if (__index__.id === data.owner.id) {
+                if (__index__.id === myTeam.owner.id) {
                   __index__.score -= 3000;
                 }
               });
+              emit("boardUpdate", {
+                leader_board: leader_board.shown,
+              });
               emit("playerScore", {
-                bulletId: data.owner.id,
+                bulletId: myTeam.owner.id,
                 socrepluse: -3000,
               });
             } else {
@@ -2461,18 +2472,17 @@ wss.on("connection", (socket, req) => {
               if (myTeam.stats[data.stat] < 8) {
                 myTeam.stats[data.stat] += 1;
                 var upgradetype = data.upgradeType;
-                upgradeStat(upgradetype)
-                team.teamScore -= 200;
+                upgradeStat(upgradetype);
+                myTeam.teamScore -= 200;
               } else {
-                createAnnocment(
-                  `Stat has reached it max limit`,
-                  data.id,
-                  { color: "orange", delay: 3000 }
-                );
+                createAnnocment(`Stat has reached it max limit`, data.id, {
+                  color: "orange",
+                  delay: 3000,
+                });
               }
             } else {
               createAnnocment(
-                `Not enough Team score. The team has ${team.teamScore}`,
+                `Not enough Team score. The team has ${myTeam.teamScore}`,
                 data.id,
                 { color: "red", delay: 3000 }
               );
@@ -2482,14 +2492,14 @@ wss.on("connection", (socket, req) => {
               if (myTeam.stats[data.stat] < 8) {
                 myTeam.stats[data.stat] += 1;
                 var upgradetype = data.upgradeType;
-                upgradeStat(upgradetype)
+                upgradeStat(upgradetype);
                 players[data.id].score -= 200;
                 leader_board.hidden.forEach((__index__) => {
-                  if (__index__.id === data.owner.id) {
+                  if (__index__.id === myTeam.owner.id) {
                     let isshown = false;
                     __index__.score -= 200;
                     isshown = leader_board.shown.find((__index__) => {
-                      if (__index__.id === data.owner.id) {
+                      if (__index__.id === myTeam.owner.id) {
                         return true;
                       }
                     });
@@ -2503,20 +2513,22 @@ wss.on("connection", (socket, req) => {
                   }
                 });
                 leader_board.shown.forEach((__index__) => {
-                  if (__index__.id === data.owner.id) {
+                  if (__index__.id === myTeam.owner.id) {
                     __index__.score -= 200;
                   }
                 });
+                emit("boardUpdate", {
+                  leader_board: leader_board.shown,
+                });
                 emit("playerScore", {
-                  bulletId: data.owner.id,
+                  bulletId: myTeam.owner.id,
                   socrepluse: -200,
                 });
               } else {
-                createAnnocment(
-                  `Stat has reached it max limit`,
-                  data.id,
-                  { color: "orange", delay: 3000 }
-                );
+                createAnnocment(`Stat has reached it max limit`, data.id, {
+                  color: "orange",
+                  delay: 3000,
+                });
               }
             } else {
               createAnnocment(
@@ -2530,18 +2542,18 @@ wss.on("connection", (socket, req) => {
           if (myTeam.createTeamScore) {
             if (myTeam.createTeamScore >= 10000) {
               if (!myTeam.upgrades.teamBuilding.built) {
-                team.teamScore -= 10000;
+                myTeam.teamScore -= 10000;
                 let base = {
-                  type: "octagon",
+                  type: `octagon${myTeam.teamID}`,
                   health: 2000,
                   maxhealth: 2000,
                   size: 500,
                   angle: 0,
                   healrate: 1,
-                  x: players[team.owner.id].x - 600,
-                  y: players[team.owner.id].y,
-                  centerX: players[team.owner.id].x,
-                  centerY: players[team.owner.id].y,
+                  x: players[myTeam.owner.id].x - 600,
+                  y: players[myTeam.owner.id].y,
+                  centerX: players[myTeam.owner.id].x,
+                  centerY: players[myTeam.owner.id].y,
                   weight: Infinity,
                   body_damage: 10,
                   scalarX: 0,
@@ -2549,7 +2561,7 @@ wss.on("connection", (socket, req) => {
                   vertices: null,
                   color: "['#A0DDFA','#b3ffff']",
                   score_add: 9000,
-                  randomID: `teamBase:${myTeam.id}`,
+                  randomID: `teamBase:${myTeam.teamID}`,
                   respawn: false,
                   teamId: myTeam.teamID,
                 };
@@ -2561,7 +2573,7 @@ wss.on("connection", (socket, req) => {
                 );
                 base.vertices = rawvertices;
                 myTeam.upgrades.teamBuilding.built = true;
-                myTeam.upgrades.teamBuilding.polygonId = `teamBase:${myTeam.id}
+                myTeam.upgrades.teamBuilding.polygonId = `teamBase:${myTeam.teamID}
                 `;
                 food_squares.assignRoom(base);
               } else {
@@ -2573,74 +2585,75 @@ wss.on("connection", (socket, req) => {
               }
             } else {
               createAnnocment(
-                `Not enough Team score. The team has ${team.teamScore}`,
+                `Not enough Team score. The team has ${myTeam.teamScore}`,
                 data.id,
                 { color: "red", delay: 3000 }
               );
             }
           } else {
-            if (players[data.id].score >= 10000) {
+            if (players[data.id].score >= 10000 || true) {
               if (!myTeam.upgrades.teamBuilding.built) {
-              let base = {
-                type: "octagon",
-                health: 2000,
-                maxhealth: 2000,
-                size: 500,
-                angle: 0,
-                healrate: 1,
-                x: players[team.owner.id].x - 600,
-                y: players[team.owner.id].y,
-                centerX: players[team.owner.id].x,
-                centerY: players[team.owner.id].y,
-                weight: Infinity,
-                body_damage: 10,
-                scalarX: 0,
-                scalarY: 0,
-                vertices: null,
-                color: "['#A0DDFA','#b3ffff']",
-                score_add: 9000,
-                randomID: `teamBase:${myTeam.id}`,
-                respawn: false,
-                teamId: myTeam.teamID,
-              };
-              const rawvertices = calculateRotatedOctagonVertices(
-                base.x,
-                base.y,
-                base.size,
-                base.angle
-              );
-              base.vertices = rawvertices;
-              myTeam.upgrades.teamBuilding.built = true;
-              myTeam.upgrades.teamBuilding.polygonId = `teamBase:${myTeam.id}`;
-              food_squares.assignRoom(base);
-              players[data.id].score -= 10000;
-              leader_board.hidden.forEach((__index__) => {
-                if (__index__.id === data.owner.id) {
-                  let isshown = false;
-                  __index__.score -= 10000;
-                  isshown = leader_board.shown.find((__index__) => {
-                    if (__index__.id === data.owner.id) {
-                      return true;
+                let base = {
+                  type: `octagon${myTeam.teamID}`,
+                  health: 2000,
+                  maxhealth: 2000,
+                  size: 500,
+                  angle: 0,
+                  healrate: 1,
+                  x: players[myTeam.owner.id].x - 600,
+                  y: players[myTeam.owner.id].y,
+                  centerX: players[myTeam.owner.id].x,
+                  centerY: players[myTeam.owner.id].y,
+                  weight: Infinity,
+                  body_damage: 10,
+                  scalarX: 0,
+                  scalarY: 0,
+                  vertices: null,
+                  color: "['#A0DDFA','#b3ffff']",
+                  score_add: 9000,
+                  randomID: myTeam.teamID,
+                  respawn: false,
+                  teamId: myTeam.teamID,
+                };
+                console.log("base", base);
+                const rawvertices = calculateRotatedOctagonVertices(
+                  base.x,
+                  base.y,
+                  base.size,
+                  base.angle
+                );
+                base.vertices = rawvertices;
+                myTeam.upgrades.teamBuilding.built = true;
+                myTeam.upgrades.teamBuilding.polygonId = `teamBase:${myTeam.teamID}`;
+                food_squares.assignRoom(base);
+                players[myTeam.owner.id].score -= 10000;
+                leader_board.hidden.forEach((__index__) => {
+                  if (__index__.id === myTeam.owner.id) {
+                    let isshown = false;
+                    __index__.score -= 10000;
+                    isshown = leader_board.shown.find((__index__) => {
+                      if (__index__.id === myTeam.owner.id) {
+                        return true;
+                      }
+                    });
+                    if (leader_board.shown[10]) {
+                      if (leader_board.shown[10].score < __index__.score) {
+                        leader_board.shown[10] = __index__;
+                      }
+                    } else if (!leader_board.shown[10] && !isshown) {
+                      leader_board.shown.push(__index__);
                     }
-                  });
-                  if (leader_board.shown[10]) {
-                    if (leader_board.shown[10].score < __index__.score) {
-                      leader_board.shown[10] = __index__;
-                    }
-                  } else if (!leader_board.shown[10] && !isshown) {
-                    leader_board.shown.push(__index__);
                   }
-                }
-              });
-              leader_board.shown.forEach((__index__) => {
-                if (__index__.id === data.owner.id) {
-                  __index__.score -= 10000;
-                }
-              });
-              emit("playerScore", {
-                bulletId: data.owner.id,
-                socrepluse: -10000,
-              });
+                });
+                leader_board.shown.forEach((__index__) => {
+                  if (__index__.id === myTeam.owner.id) {
+                    __index__.score -= 10000;
+                  }
+                });
+                emit("playerScore", {
+                  bulletId: myTeam.owner.id,
+                  socrepluse: -10000,
+                });
               } else {
                 createAnnocment(
                   `The team base has all ready been built`,
@@ -2865,7 +2878,7 @@ wss.on("connection", (socket, req) => {
               health: 1,
               cannons: {},
             },
-            health: 2000
+            health: 2000,
           },
         };
 
@@ -3193,6 +3206,13 @@ wss.on("connection", (socket, req) => {
             return team;
           }
         });
+        for (const roomkey in food_squares) {
+          var room = food_squares[roomkey];
+          if (typeof room === "function") continue;
+          room.items = room.items.filter((item) => 
+            item.id !== team.teamID
+          );
+        }
         emit("pubteamlist", public_teams);
         break;
       }
@@ -4646,6 +4666,17 @@ wss.on("connection", (socket, req) => {
           });
           team.players = teamplayers;
           if (teamplayers.length === 0) {
+            for (const roomkey in food_squares) {
+              var room = food_squares[roomkey];
+              if (typeof room === "function") continue;
+              room.items.forEach((item, index) => {
+                if (item.id === team.teamID) {
+                  room.items.splice(index, 1);
+                  return false;
+                }
+                return true;
+              });
+            }
             return false;
           }
           if (team.owner.id === connection.playerId) {
@@ -4674,6 +4705,13 @@ wss.on("connection", (socket, req) => {
                 });
               }
             } else {
+              for (const roomkey in food_squares) {
+                var room = food_squares[roomkey];
+                if (typeof room === "function") continue;
+                room.items = room.items.filter((item) => 
+                  item.id !== team.teamID
+                );
+              }
               return false;
             }
           }
@@ -4794,6 +4832,13 @@ wss.on("connection", (socket, req) => {
       team.players = teamplayers;
       if (teamplayers.length === 0) {
         clearInterval(team.taxInterval);
+        for (const roomkey in food_squares) {
+          var room = food_squares[roomkey];
+          if (typeof room === "function") continue;
+          room.items = room.items.filter((item) => 
+            item.id !== team.teamID
+          );
+        }
         return false;
       }
       if (team.owner.id === connection.playerId) {
@@ -4823,6 +4868,13 @@ wss.on("connection", (socket, req) => {
           }
         } else {
           clearInterval(team.taxInterval);
+          for (const roomkey in food_squares) {
+            var room = food_squares[roomkey];
+            if (typeof room === "function") continue;
+            room.items = room.items.filter((item) => 
+              item.id !== team.teamID
+            );
+          }
           return false;
         }
       }
@@ -5338,7 +5390,11 @@ setInterval(() => {
             }
             if (players[bullet.id]) {
               player.score += reward;
-              emit("playerScore", { bulletId: bullet.id, socrepluse: reward,kill: true });
+              emit("playerScore", {
+                bulletId: bullet.id,
+                socrepluse: reward,
+                kill: true,
+              });
               createAnnocment(
                 `You killed ${player.username}'s ${player.__type__}`,
                 bullet.id
@@ -5818,8 +5874,9 @@ setInterval(() => {
       if (item.type === "pentagon") {
         item.angle += CONFIG.rotationSpeed.pentagon;
       } else if (
-        item.subtype !== "Enemyboss:Square" ||
-        item.subtype !== "Enemyboss:Triangle"
+        item.subtype !== "Enemyboss:Square" &&
+        item.subtype !== "Enemyboss:Triangle" &&
+        !/octagon/.test(item.type)
       ) {
         item.angle += CONFIG.rotationSpeed.triangleSquare;
       } else if (
@@ -5855,7 +5912,7 @@ setInterval(() => {
           item.angle
         );
         item.vertices = rawvertices;
-      } else if (item.type === "octagon") {
+      } else if (/octagon/.test(item.type)) {
         const rawvertices = calculateRotatedOctagonVertices(
           item.x,
           item.y,
@@ -6018,20 +6075,21 @@ setInterval(() => {
               players[playerId].team === item.teamId &&
               players[playerId].team !== null;
           }
-          if (!sameteam) {
             var collisionCheck = isPlayerCollidingWithPolygon(
               player,
               item.vertices
             );
 
             if (collisionCheck[0]) {
-              let damageplayer = item.body_damage;
-              let damageother = player["bodyDamage"];
-              if (player.state !== "start") {
-                player.health -= damageplayer;
+              if (!sameteam) {
+                var damageplayer = item.body_damage;
+                var damageother = player["bodyDamage"];
+                if (player.state !== "start") {
+                  player.health -= damageplayer;
+                }
               }
 
-              if (player.health < 0) {
+              if (player.health < 0 && !sameteam) {
                 emit("playerDied", {
                   playerID: player.id,
                   rewarder: null,
@@ -6063,10 +6121,12 @@ setInterval(() => {
                   item.centerY += recoilY / factor;
                 }, 50 * i);
               }
-              if (0 >= item.health) {
+              if (0 >= item.health && !sameteam) {
                 var reward = item.score_add;
                 if (player.team !== null) {
-                  var team = teamlist.find((team) => team.teamID === player.team);
+                  var team = teamlist.find(
+                    (team) => team.teamID === player.team
+                  );
                   if (team.owner.id !== player.id || team.createTeamScore) {
                     reward -= reward * team.simpleTax;
                   }
@@ -6264,16 +6324,33 @@ setInterval(() => {
                   fooditem.vertices = rawvertices;
                 }
 
-                tempToPush.push(fooditem);
+                if (!item.isdead && !item.hasOwnProperty("respawn")) {
+                  tempToPush.push(fooditem);
+                }
+
+                if (item.hasOwnProperty("respawn")) {
+                  var myTeam = teamlist.find(
+                    (team) => team.teamID === item.teamId
+                  );
+                  myTeam.upgrades.teamBuilding = {
+                    built: false,
+                    level: null,
+                    polygonId: null,
+                    boosts: {
+                      speed: 1,
+                      health: 1,
+                      cannons: {},
+                    },
+                    health: 2000,
+                  };
+                }
 
                 return false;
-              } else {
-                if (player.state !== "start") {
+              } else if (player.state !== "start" && !sameteam) {
                   item.health -= damageother;
-                }
               }
 
-              if (player.state !== "start") {
+              if (player.state !== "start" && !sameteam) {
                 emit("shapeDamage", {
                   PlayerId: player.id,
                   playerDamage: damageplayer,
@@ -6281,7 +6358,7 @@ setInterval(() => {
                 });
               }
             }
-          }
+          
         }
       }
       bullets.forEach((bullet) => {
@@ -6300,7 +6377,14 @@ setInterval(() => {
             var bulletSpeed = bullet.speed || 0;
           }
 
-          if (!collisionCheck) return;
+          var sameteam = false;
+          if (item.teamId) {
+            sameteam =
+              players[bullet.id]?.team === item.teamId &&
+              players[bullet.id]?.team !== null;
+          }
+
+          if (!collisionCheck || sameteam) return;
           const damage =
             (bullet.bullet_damage / (item.size + bulletSpeed) +
               bullet.bullet_pentration) /
@@ -6312,8 +6396,8 @@ setInterval(() => {
             bullet.type !== "FreeSwarm"
           ) {
             if (!players[bullet.id]) {
-              console.log(bullet.id);
-              console.log(players);
+              console.error(bullet.id);
+              console.error(players);
               return;
             }
             var reward = item.score_add;
@@ -6561,8 +6645,23 @@ setInterval(() => {
               );
               fooditem__XX.vertices = rawvertices;
             }
-            if (!item.isdead) {
+            if (!item.isdead && !item.hasOwnProperty("respawn")) {
               tempToPush.push(fooditem__XX);
+            }
+
+            if (item.hasOwnProperty("respawn")) {
+              var myTeam = teamlist.find((team) => team.teamID === item.teamId);
+              myTeam.upgrades.teamBuilding = {
+                built: false,
+                level: null,
+                polygonId: null,
+                boosts: {
+                  speed: 1,
+                  health: 1,
+                  cannons: {},
+                },
+                health: 2000,
+              };
             }
 
             bullet.distanceTraveled +=

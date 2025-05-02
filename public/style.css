@@ -326,22 +326,18 @@ body {
 }
 
 .upgrades-box {
-  width: 17vw;
+  width: 100%;
   background-color: var(--background-white-0);
-  height: calc(400px * 0.8);
+  height: 95%;
   border: 4px solid var(--background-white-200);
   border-radius: 30px;
   margin: 0;
+  margin-left: 10px;
   float: left;
   overflow-y: scroll;
 }
 
 .con-12849 {
-  position: fixed;
-  left: 53%;
-  width: 0;
-  height: 0;
-  top: calc(50vh - 200px);
   display: none;
 }
 
@@ -692,7 +688,7 @@ option {
 
 .inner-box {
   width: 95%;
-  height: 80%;
+  height: 95%;
   background-color: #63f1f1;
   border-radius: 8px;
   padding: 5px;

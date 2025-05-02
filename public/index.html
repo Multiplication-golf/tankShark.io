@@ -97,6 +97,9 @@
         title="settings"
         alt="settings"
       />
+      <div style="top:10px; right: 20px; position: fixed">
+        © 2025
+      </div>
       <div class="topcenterAD">
         <div id="adbox" class="innercenterAD">
 
@@ -398,7 +401,7 @@
     <main
       id="game"
       itemscope
-      itemtype="https://schema.org/Game"
+      itemtype="https://schema.org/VideoGame"
       class="mainframe"
     >
       <img
@@ -476,7 +479,7 @@
         <div class="confimation-pop-up"> 
           <strong
             ><span class="join-text"
-              >The hub will be unmoveble until it is destroyed by another team/player.\n
+              >The hub will be unmoveble until it is destroyed by another team/player.<br>
                 It will place just to your left. Choose your spot wisely!
               <br />
               <button
@@ -512,8 +515,16 @@
       <canvas id="ghostCanvas" class="ghost-canvas"></canvas>
       <div class="aling-center-10">
         <div class="outer-box" id="teamMain">
-          <div class="inner-box">
-            <span class="close-btn" id="Xbutton">X</span>
+          <div style="display: flex; height: 85%;">
+            <div class="inner-box">
+              <span class="close-btn" id="Xbutton">X</span>
+              <div class="containerA" id="teamcontainer">
+                <div class="team">Team1</div>
+                <div class="team">Team2</div>
+                <div class="team">Team3</div>
+                <div class="team">Team4</div>
+              </div>
+            </div>
             <div class="con-12849" id="upgradesBox">
               <div class="upgrades-box">
                 <button class="upgrade-button" id="miniMap">Upgrade mini-map player tracking: 3000</button>
@@ -546,18 +557,14 @@
                 <button class="upgrade-button" id="HomeBaseUpgrade">Build homebase: 10000</button>
               </div>
             </div>
-            <div class="containerA" id="teamcontainer">
-              <div class="team">Team1</div>
-              <div class="team">Team2</div>
-              <div class="team">Team3</div>
-              <div class="team">Team4</div>
-            </div>
           </div>
-          <div class="button-container">
-            <button class="btn btn-join" id="join/leave">Join</button>
-            <button class="btn btn-create" id="create/delete">
-              Create team
-            </button>
+          <div style="display: block; height: 14%;">
+            <div class="button-container">
+              <button class="btn btn-join" id="join/leave">Join</button>
+              <button class="btn btn-create" id="create/delete">
+                Create team
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -73,8 +73,7 @@
 .confimation-pop-up {
     background: #fff;
     box-shadow: 0 4px 8px rgba(192, 192, 192, 0.1);
-    width: 3.5vw;
-    height: 3.5vw;
+    z-index: 50;
     border-radius: 14px;
 }
 
