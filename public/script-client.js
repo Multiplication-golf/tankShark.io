@@ -33,9 +33,28 @@
     }
   }
   
-  if (isCrazyGames) {
-    
-  }
+  var badgelevels = {
+
+  };
+
+  var badgesToLoad = [
+    "1.webp",
+    "2.webp",
+    "3.webp",
+    "4.webp",
+    "5.webp",
+    "6.webp",
+    "7.webp",
+    "8.webp",
+    "9.webp",
+    "10.webp",
+  ];
+
+  badgesToLoad.forEach((badge) => {
+    var img = new Image();
+    img.src = window.location.href !== "http://127.0.0.1:5501/public/index.html" ? `/badges/${badge}` : `/public/badges/${badge}`;
+    badgelevels[`/badges/${badge}`] = img;
+  });
 
   function getMousePos(canvas, evt) {
     return {
@@ -43,6 +62,7 @@
       y: evt.clientY,
     };
   }
+
 
   function getMiddleOfElement(element) {
     const rect = element.getBoundingClientRect();
@@ -111,7 +131,7 @@
           fields: {
             angle: { type: "float", id: 1 },
             color: { type: "string", id: 2 },
-            health: { type: "int32", id: 3 },
+            health: { type: "float", id: 3 },
             maxhealth: { type: "int32", id: 4 },
             size: { type: "float", id: 5 },
             type: { type: "string", id: 6 },
@@ -310,7 +330,7 @@
     var button475 = 0.24739583333 * canvas.width;
     var button462_5 = 0.24088541666 * canvas.width;
     var button375 = 0.1953125 * canvas.width;
-    var button40 = 0.03879728419 * canvas.height;
+    var button40 = 0.03100775193 * canvas.height;
     var button10 = 0.00969932104 * canvas.height;
     var nolist = [3, 5, 7, 8, 10, 11, 13];
 
@@ -483,30 +503,18 @@
             }
 
             send("typeChange", {
-              id: playerId,
-              x: playerX,
-              y: playerY,
               health: playerHealth,
               speed: playerSpeed,
               size: playerSize,
               bodyDamage: bodyDamage,
-              cannonW: cannonWidth,
-              cannonH: 0,
               __type__: __type__,
-              cannon_angle: getCannonAngle(),
-              score: score,
-              username: username,
-              level: level,
               state: state,
               statecycle: statecycle,
               playerHealTime: playerHealTime,
               maxhealth: maxhealth,
               playerReheal: playerReheal,
               FOV: scaleFactor,
-              MouseX: MouseX_,
               Regenspeed: Regenspeed,
-              MouseY: MouseY_,
-              visible: true,
               statsTree: {
                 Health: statsTree.Health,
                 "Body Damage": statsTree["Body Damage"],
@@ -517,8 +525,6 @@
                 "Bullet Reload": statsTree["Bullet Reload"],
                 Speed: statsTree.Speed,
               },
-              team: teamOn,
-              userId: userId,
             });
 
             setTimeout(() => {
@@ -544,7 +550,6 @@
                   let autoID = Math.random() * 1000 + Math.random() * 1000;
                   send("autoCannonADD", {
                     CannonID: autoID,
-                    playerid: playerId,
                     angle: 0,
                     _type_: cannon.type,
                     cannonWidth: 0,
@@ -553,7 +558,6 @@
                   let tankdata = tankmeta[__type__];
                   let _CAN = {
                     CannonID: autoID,
-                    playerid: playerId,
                     angle: 0,
                     _type_: cannon.type,
                     cannonWidth: 0,
@@ -593,7 +597,6 @@
                         tankdatacannon__[cannon_].type === "SwivelAutoCannon"
                       ) {
                         send("Autofire", {
-                          playerId: playerId,
                           playerX: playerX + x,
                           playerY: playerY + y,
                           cannon: cannon__,
@@ -607,7 +610,6 @@
                       }
                       if (tankdatacannon__[cannon_].type === "autoCannon") {
                         send("Autofire", {
-                          playerId: playerId,
                           playerX: playerX - offSet_x,
                           playerY: playerY,
                           cannon: cannon__,
@@ -652,13 +654,13 @@
         setprogress =
           (score - levels[level - 1]) / (levels[level] - levels[level - 1]);
         playerSize += playerSize * 0.005;
-        send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
+        send("Sizeup", { plus: playerSize * 0.005 });
         scaleby(scaleUp);
         while (score / levels[level] >= 1) {
           level += 1;
           upgradePoints += 1;
           playerSize += playerSize * 0.005;
-          send("Sizeup", { id: playerId, plus: playerSize * 0.005 });
+          send("Sizeup", { plus: playerSize * 0.005 });
           scaleby(scaleUp);
           progress = 0;
           setprogress =
@@ -827,7 +829,6 @@
                   const addplayer = () => {
                     send("premotePlayer", {
                       premote: player,
-                      premotor: MYteam.owner,
                       MYteamID: MYteam.teamID,
                     });
                     premoteArrow.removeEventListener("click", addplayer);
@@ -853,7 +854,6 @@
                   const addplayer = () => {
                     send("demotePlayer", {
                       premote: player,
-                      premotor: MYteam.owner,
                       MYteamID: MYteam.teamID,
                     });
                     demoteArrow.removeEventListener("click", addplayer);
@@ -884,7 +884,6 @@
           document.getElementById("placeYes").addEventListener("click", () => {
             document.getElementById("confermationScreen").style.display = "none";
             send("requestUpgrade", {
-              id: playerId,
               upgradeType: "buildBase",
               teamId: teamOn,
             });
@@ -894,7 +893,6 @@
             .getElementById("upgradeHealth")
             .addEventListener("click", () => {
               send("requestUpgrade", {
-                id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Health",
                 teamId: teamOn,
@@ -904,7 +902,6 @@
             .getElementById("upgradeBodyDamage")
             .addEventListener("click", () => {
               send("requestUpgrade", {
-                id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Body Damage",
                 teamId: teamOn,
@@ -914,7 +911,6 @@
             .getElementById("upgradeRegen")
             .addEventListener("click", () => {
               send("requestUpgrade", {
-                id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Regen",
                 teamId: teamOn,
@@ -924,7 +920,6 @@
             .getElementById("upgradeBulletPentration")
             .addEventListener("click", () => {
               send("requestUpgrade", {
-                id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Bullet Pentration",
                 teamId: teamOn,
@@ -934,7 +929,6 @@
             .getElementById("upgradeBulletSpeed")
             .addEventListener("click", () => {
               send("requestUpgrade", {
-                id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Bullet Speed",
                 teamId: teamOn,
@@ -944,7 +938,6 @@
             .getElementById("upgradeBulletDamage")
             .addEventListener("click", () => {
               send("requestUpgrade", {
-                id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Body Damage",
                 teamId: teamOn,
@@ -954,7 +947,6 @@
             .getElementById("upgradeBulletReload")
             .addEventListener("click", () => {
               send("requestUpgrade", {
-                id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Bullet Reload",
                 teamId: teamOn,
@@ -964,13 +956,24 @@
             .getElementById("upgradeSpeed")
             .addEventListener("click", () => {
               send("requestUpgrade", {
-                id: playerId,
                 upgradeType: "statUpgrade",
                 stat: "Speed",
                 teamId: teamOn,
               });
             });
         }
+      }
+    }
+    var postText = document.getElementById("posttext");
+    document.getElementById("postBite").addEventListener("click", () => {
+      send("postBite", { message: postText.value });
+      postText.value = "";
+    });
+
+    window.onbeforeunload = (evt) => {
+      if (!confirm("Reloading will not save your progress!")) {
+        evt.preventDefault();
+        evt.returnValue = '';
       }
     }
 
@@ -1251,13 +1254,13 @@
               break;
             }
             case "updaterHeal": {
-              if (!players[data.ID]) return;
-              players[data.ID].playerHealTime = data.HEALTime;
+              if (!players[data.id]) return;
+              players[data.id].playerHealTime = data.HEALTime;
               break;
             }
             case "playerHeal": {
-              players[data.ID].health = data.HEALTH;
-              if (data.ID === playerId) {
+              players[data.id].health = data.HEALTH;
+              if (data.id === playerId) {
                 playerHealth = data.HEALTH;
               }
               break;
@@ -1325,24 +1328,27 @@
                 setTimeout(() => {
                   document.getElementById("die").style.display = "block";
                   document.getElementById("container").style.display = "none";
-                  //document.getElementById("myCanvas").style.display = "none";
                   document.getElementById("tanktiles").style.display = "none";
+                  if (isCrazyGames) window.CrazyGames.SDK.game.gameplayStop();
                 }, 10);
-                if (isCrazyGames) window.CrazyGames.SDK.game.gameplayStop();
+                
                 dead = true;
 
                 clearInterval(healer);
-                send("playerDied", { id: playerId });
-                //socket.onmessage = {};
                 autoIntevals;
                 autoIntevals.forEach((timeout) => {
                   clearTimeout(timeout);
                 });
                 autoIntevals = [];
 
+                fireOnce = () => {};
+                FireIntervale = () => {};
+
                 canvas = document.getElementById("myCanvas");
                 canvas.style["z-index"] = "5";
                 let respawn = document.createElement("button");
+
+                send = (type,data) => {};
 
                 respawn.innerHTML = "Respawn";
                 respawn.style.position = "absolute";
@@ -1356,11 +1362,13 @@
                 const reload = () => {
                   if (isCrazyGames) {
                     const callbacks = {
-                      adFinished: () => window.location.reload(),
-                      adError: (error) => window.location.reload(),
-                      adStarted: () => window.location.reload(),
+                      adFinished: () => ongame(),
+                      adError: (error) => ongame(),
+                      adStarted: () => {},
                     };
                     window.CrazyGames.SDK.ad.requestAd("midgame", callbacks);
+                  } else {
+                    ongame();
                   }
                 };
                 respawn.addEventListener("click", reload);
@@ -1393,15 +1401,13 @@
                 send("statechange", {
                   state: state,
                   statecycle: statecycle,
-                  playerID: playerId,
                 });
                 setTimeout(() => {
                   state = "normal";
                   statecycle = 0;
                   send("statechange", {
                     state: state,
-                    statecycle: statecycle,
-                    playerID: playerId,
+                    statecycle: statecycle
                   });
                 }, 1000);
               }
@@ -1413,7 +1419,6 @@
                 send("statechange", {
                   state: state,
                   statecycle: statecycle,
-                  playerID: playerId,
                 });
                 setTimeout(() => {
                   state = "normal";
@@ -1421,7 +1426,6 @@
                   send("statechange", {
                     state: state,
                     statecycle: statecycle,
-                    playerID: playerId,
                   });
                 }, 1000);
               }
@@ -1437,7 +1441,7 @@
               break;
             }
             case "playerJoined": {
-              console.log(data); // Log the player data
+              console.log(data);
               players[data.id] = data; // Update the local player list
               if (playerId !== data.id) {
                 send("updatePlayer", {
@@ -1486,7 +1490,6 @@
               }
               setTimeout(() => {
                 send("healrate", {
-                  playerId: playerId,
                   playerReheal: playerReheal,
                 });
               }, 3000);
@@ -1607,22 +1610,34 @@
 
                 if (data.playerID == playerId) {
                   playerHealth = data.playerHealth;
-                  send("playerHealintterupted", { ID: playerId });
+                  send("playerHealintterupted", { });
                   playerHealTime = 0;
                   state = "damaged";
                   send("statechange", {
                     state: state,
                     statecycle: statecycle,
-                    playerID: playerId,
                   });
                   setTimeout(() => {
                     state = "normal";
                     send("statechange", {
                       state: state,
                       statecycle: statecycle,
-                      playerID: playerId,
                     });
                   }, 1000);
+                }
+              } else {
+                console.warn(
+                  "Received bulletDamage for an unknown player:",
+                  data.playerID
+                );
+              }
+              break;
+            }
+            case "bulletHeal": {
+              if (players[data.playerID]) {
+                players[data.playerID].health = data.playerHealth;
+                if (data.playerID === playerId) {
+                  playerHealth = data.playerHealth;
                 }
               } else {
                 console.warn(
@@ -1642,7 +1657,6 @@
                   send("statechange", {
                     state: state,
                     statecycle: statecycle,
-                    playerID: playerId,
                   });
                   setTimeout(() => {
                     state = "normal";
@@ -1650,12 +1664,11 @@
                     send("statechange", {
                       state: state,
                       statecycle: statecycle,
-                      playerID: playerId,
                     });
                   }, 1000);
                   playerHealth -= data.playerDamage;
                   playerHealTime = 0;
-                  send("playerHealintterupted", { ID: playerId });
+                  send("playerHealintterupted", { });
                 }
               } else {
                 console.warn(
@@ -1739,7 +1752,6 @@
           send("requestUpgrade", {
             upgradeType: "miniMap",
             teamId: teamOn,
-            id: playerId,
           });
         };
 
@@ -1765,7 +1777,6 @@
 
           if (i in nolist) return; // just roll with it
           send("playerMoved", {
-            id: playerId,
             x: playerX,
             y: playerY,
             dx: dx,
@@ -1778,7 +1789,6 @@
           playerHealTime += 1;
           send("AddplayerHealTime", {
             playerHealTime: playerHealTime,
-            ID: playerId,
             maxhealth: maxhealth,
           });
         }, 1000);
@@ -1806,7 +1816,7 @@
           }
           if (keysPressed["Enter"]) {
             if (messaging && typedtext !== "") {
-              send("playerSend", { id: playerId, text: typedtext });
+              send("playerSend", { text: typedtext });
               typedtext = "";
             }
             if (!messaging) {
@@ -1892,7 +1902,6 @@
             MouseY_ = mousepos.y;
             let __angle__ = getCannonAngle();
             send("playerCannonMoved", {
-              id: playerId,
               cannon_angle: __angle__,
               MouseX: MouseX_,
               MouseY: MouseY_,
@@ -1933,7 +1942,6 @@
 
           createDelete.innerText = "Delete";
           send("newTeamCreated", {
-            owner: { id: playerId, username: username },
             private: checked2,
             hidden: checked,
             name: teamname,
@@ -1957,14 +1965,12 @@
             setTimeout(() => {
               cannonWidth[i] -= 1;
               send("playerCannonWidth", {
-                id: playerId,
                 cannonW: cannonWidth,
               });
             }, 10 * t);
             setTimeout(() => {
               cannonWidth[i] += 1;
               send("playerCannonWidth", {
-                id: playerId,
                 cannonW: cannonWidth,
               });
             }, 20 * t); // Updated to prevent overlap
@@ -2109,7 +2115,6 @@
                 health: health,
                 xstart: playerX,
                 ystart: playerY,
-                id: playerId,
                 uniqueid: identdfire,
                 cannonIndex: i,
               };
@@ -2275,7 +2280,6 @@
                     parentindex: i,
                     xstart: playerX,
                     ystart: playerY,
-                    id: playerId,
                     uniqueid: identdfire,
                     cannonIndex: i,
                   };
@@ -2365,7 +2369,6 @@
           if (!joinedTeam) {
             if (selected_class !== null) {
               send("playerJoinedTeam", {
-                id: playerId,
                 teamId: selected_class,
               });
               joinLeave.innerText = "Leave";
@@ -2373,7 +2376,6 @@
             }
           } else {
             send("playerLeftTeam", {
-              id: playerId,
               teamId: players[playerId].team,
             });
             createDelete.style.display = "block";
@@ -2404,7 +2406,7 @@
           if (!owner_of_team) {
             document.getElementById("teambox").style.display = "block";
           } else if (owner_of_team && joinedTeam) {
-            send("deleteTeam", { teamID: teamOn, playerId: playerId });
+            send("deleteTeam", { teamID: teamOn });
           }
         };
         createDelete.addEventListener("click", deleteTeam);
@@ -2442,7 +2444,7 @@
             FireIntervale(evt);
           } else {
             if (evt.button === 2 && !dead) {
-              send("MouseAway", { id: playerId });
+              send("MouseAway", { });
             }
           }
         };
@@ -2456,7 +2458,7 @@
             canFire2 = true;
           }
 
-          send("MousestateUpdate", { id: playerId });
+          send("MousestateUpdate", { });
         };
         document.addEventListener("mouseup", mouseStateChange);
       }, 0);
@@ -2539,7 +2541,7 @@
         try {
           ctx.drawImage(
             img,
-            canvas.width / 2 - 20,
+            canvas.width / 2 - button40 / 2,
             canvas.height - button10 * 15,
             button40,
             button40
@@ -2556,7 +2558,6 @@
       playerX += dx;
 
       send("playerMoved", {
-        id: playerId,
         x: playerX,
         y: playerY,
         dx: dx,
@@ -2591,7 +2592,7 @@
             id_self: playerId,
           });
           playerHealTime = 0;
-          send("playerHealintterupted", { ID: playerId });
+          send("playerHealintterupted", { });
           canmove = false;
           setTimeout(() => {
             canmove = true;
@@ -2768,7 +2769,6 @@
         canvasH: canvas.height,
         screenW: oWidth,
         screenH: oHieght,
-        id: playerId,
       });
       Ghostcanvas.width = oWidth;
       Ghostcanvas.height = oHieght;
@@ -2797,7 +2797,7 @@
       button462_5 = 87.5 * upscaleX_ + button375;
       button475 = 100 * upscaleX_ + button375;
       button80 = 0.07759456838 * canvas.height;
-      button40 = 0.03879728419 * canvas.height;
+      button40 = 0.0208333333 * canvas.width;
       button10 = 0.00969932104 * canvas.height;
       button110 = 0.10669253152 * canvas.height;
       barWidth = 0.3125 * canvas.width;
@@ -2851,7 +2851,6 @@
 
       return vertices;
     }
-    console.log(inverted);
 
     class notify {
       constructor(
@@ -3009,7 +3008,6 @@
               send("statUpgrade", {
                 Upgradetype: "Health",
                 UpgradeLevel: 1,
-                id: playerId,
               });
             }
             waitpls();
@@ -3020,7 +3018,6 @@
               send("statUpgrade", {
                 Upgradetype: "Body Damage",
                 UpgradeLevel: 1,
-                id: playerId,
               });
             }
             waitpls();
@@ -3031,7 +3028,6 @@
               send("statUpgrade", {
                 Upgradetype: "Regen",
                 UpgradeLevel: 1,
-                id: playerId,
               });
             }
             waitpls();
@@ -3042,7 +3038,6 @@
               send("statUpgrade", {
                 Upgradetype: "Bullet Pentration",
                 UpgradeLevel: 1,
-                id: playerId,
               });
             }
             waitpls();
@@ -3053,7 +3048,6 @@
               send("statUpgrade", {
                 Upgradetype: "Bullet Speed",
                 UpgradeLevel: 1,
-                id: playerId,
               });
             }
             waitpls();
@@ -3064,7 +3058,6 @@
               send("statUpgrade", {
                 Upgradetype: "Bullet Damage",
                 UpgradeLevel: 1,
-                id: playerId,
               });
             }
             waitpls();
@@ -3075,7 +3068,6 @@
               send("statUpgrade", {
                 Upgradetype: "Bullet Reload",
                 UpgradeLevel: 1,
-                id: playerId,
               });
             }
             waitpls();
@@ -3086,14 +3078,13 @@
               send("statUpgrade", {
                 Upgradetype: "Speed",
                 UpgradeLevel: 1,
-                id: playerId,
               });
             }
             waitpls();
           } else if (keysPressed["="]) {
             FOV += 0.1;
           } else if (keysPressed["e"]) {
-            send("autoFiringUpdate", { autoFiring: !autoFiring, id: playerId });
+            send("autoFiringUpdate", { autoFiring: !autoFiring });
             if (lockautoRotating) return;
             autoFiring = !autoFiring;
             if (!autoFiring) {
@@ -3102,11 +3093,10 @@
             waitpls();
           } else if (keysPressed["c"]) {
             if (autoRotating && !lockautoRotating) {
-              send("unrotating", { id: playerId });
+              send("unrotating", { });
             } else {
               send("rotate", {
                 autoAngle: angle * (180 / pi),
-                id: playerId,
                 autoIntevals: autoIntevals,
                 playerSize: playerSize,
                 FOV: scaleFactor,
@@ -3967,9 +3957,9 @@
         var realy = item.y;
 
         if (
-          realx + item.size > 0 + cavansX &&
+          realx + item.size > cavansX &&
           realx < canvas.width + cavansX + item.size &&
-          realy - cavansY > 0 - item.size &&
+          realy - cavansY > -item.size &&
           realy - item.size < canvas.height + cavansY &&
           item.health >= 0
         ) {
@@ -4375,10 +4365,10 @@
         var realx = bullet.x;
         var realy = bullet.y;
         if (
-          realx > 0 + cavansX &&
-          realx < canvas.width + cavansX &&
-          realy - cavansY > 0 &&
-          realy < canvas.height + cavansY
+          realx > -bullet.size + cavansX &&
+          realx < canvas.width + cavansX + bullet.size &&
+          realy - cavansY > -bullet.size &&
+          realy < canvas.height + cavansY + bullet.size
         ) {
           if (bullet.Zlevel !== 3) {
             unZbullets.push(bullet);
@@ -4439,11 +4429,15 @@
           }
           ctx.beginPath();
 
-          if (bullet.type === "basic") {
-            var sameTeam =
-              players[bullet.id]?.team === players[playerId]?.team &&
-              players[bullet.id]?.team !== null &&
-              players[playerId]?.team !== null;
+          if (bullet.type === "basic" || bullet.type === "sheild") {
+            if (bullet.type !== "sheild") {
+              var sameTeam =
+                players[bullet.id]?.team === players[playerId]?.team &&
+                players[bullet.id]?.team !== null &&
+                players[playerId]?.team !== null;
+            } else {
+              var sameTeam = bullet.teamId === players[playerId]?.team;
+            }
             if (bullet.id === playerId || sameTeam) {
               ctx.fillStyle = "blue";
               ctx.strokeStyle = "darkblue";
@@ -5524,9 +5518,9 @@
           }
           drawRoundedLevelBar(
             ctx,
-            canvas.width - 237.5 * upscaleX,
+            canvas.width - 257.5 * upscaleX,
             50 + i * 30,
-            225 * upscaleX,
+            245 * upscaleX,
             27 * upscaleY,
             borderRadius,
             entre.score / leader_board[0].score,
@@ -5537,12 +5531,19 @@
           );
 
           ctx.textAlign = "center";
-          ctx.font = "bold 23px Nunito";
+          ctx.font = "bold 20px Nunito";
           ctx.fillStyle = "black";
           ctx.fillText(
             `${entre.name} ➠ ${entre.score}`,
             canvas.width - 125 * upscaleX,
             72 + i * 30 * upscaleY
+          );
+          ctx.drawImage(
+            badgelevels[entre.badge],
+            canvas.width - (40 + 205 * upscaleX) * upscaleX,
+            52 + i * 30 * upscaleY,
+            button40,
+            (40 * upscaleY) / 1.8
           );
         });
       }
@@ -5739,11 +5740,6 @@
           2 *
           Math.PI *
           ((maxScore - levelData.playerScore) / (maxScore - minScore));
-        console.log(
-          1 - (maxScore - levelData.playerScore) / (maxScore - minScore),
-          maxScore,
-          minScore
-        );
 
         imageDiv.innerHTML = `
           <svg width="10vh" height="10vh" viewBox="0 0 130 100">

@@ -164,6 +164,10 @@ body {
   padding-bottom: 100px;
 }
 
+.about li {
+  margin: 20px;
+}
+
 .selected-skin {
   box-shadow: 0px 10px 85px 23px #33f0ff;
   -webkit-box-shadow: 0px 10px 85px 23px #33f0ff;
@@ -355,6 +359,7 @@ body {
   line-height: 18px;
   font-size: 17px;
 }
+
 
 .subbmit-feedback input[type="submit"] {
   width: 15%;
@@ -570,6 +575,18 @@ option {
   padding: 0;
 }
 
+.post-button {
+  background-color: #0184ff;
+  border-radius: 10px;
+  font-family: Nunito;
+  font-weight: 700;
+  border: none;
+  color: var(--text-color-100);
+  display: block;
+  font-size: 1em;
+  cursor: pointer;
+}
+
 /* Landing Page Styles */
 .landing-page {
   width: 100%;
@@ -613,6 +630,19 @@ option {
   margin-top: 2.5%;
   margin-bottom: 2.5%;
   margin-left: 5%;
+  z-index: 20;
+}
+
+.social-con {
+  border: var(--border-color-100) solid 8px;
+  border-radius: 2vw;
+  overflow: hidden;
+  min-width: 250px;
+  width: 20vw;
+  height: 83vh;
+  margin-top: 2.5%;
+  margin-bottom: 2.5%;
+  margin-left: 5vw;
   z-index: 20;
 }
 
@@ -666,12 +696,32 @@ option {
   justify-content: center;
 }
 
+.socialContainer {
+  background-color: var(--background-white-300);
+  border: var(--border-color-500) solid 8px;
+  margin: 5px;
+  padding: 5px;
+  display: block;
+  min-height: 10px;
+  border-radius: 2vw;
+  background-origin: border-box;
+  background-clip: border-box;
+}
+
+.flexbuild {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 70%;
+}
+
 /* Team Box Styles */
 .outer-box {
   position: absolute;
   top: calc(50vh - 208px);
   left: calc(50vw - 158px);
-  display: none;
+  display: block;
   z-index: 8;
   width: 300px;
   height: 400px;

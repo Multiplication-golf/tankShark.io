@@ -10,6 +10,7 @@ const SAT = require("sat");
 const { setTimeout } = require("timers");
 const WebSocket = require("ws");
 const cors = require("cors");
+const DOMPurify = require('dompurify');
 
 const options = {
   key: fs.readFileSync(
@@ -49,7 +50,6 @@ function getAdjacentRoomKeys(roomkey, range = 1000) {
     }
   }
   var indexI = (parseInt(roomkey) - (parseInt(roomkey) % 10)) / 10;
-  //console.log(indexI)
   var indexC = parseInt(roomkey) % 10;
 
   const rows = structRooms.length;
@@ -103,7 +103,7 @@ syntax = "proto3";
 message GameObject {
   float angle = 1;
   string color = 2; 
-  int32 health = 3;
+  float health = 3;
   int32 maxhealth = 4;
   float size = 5;
   string type = 6;
@@ -168,9 +168,9 @@ app.use(
         "https://fonts.googleapis.com",
         "https://fonts.gstatic.com",
         "https://multiplication-golf.containers.piwik.pro",
-        "https://sdk.crazygames.com"
+        "https://sdk.crazygames.com",
       ],
-      imgSrc: ["'self'", ],
+      imgSrc: ["'self'"],
       connectSrc: [
         "'self'",
         "ws://127.0.0.1:4000",
@@ -188,7 +188,7 @@ app.use(
   })
 );
 
-app.use(helmet.frameguard({ action: 'deny' }));
+app.use(helmet.frameguard({ action: "deny" }));
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -217,7 +217,6 @@ function assignRooms(item) {
   try {
     for (const roomkey in food_squares) {
       var room = food_squares[roomkey];
-      //console.log(room.bounds)
       if (
         item.x >= room.bounds?.x1 &&
         item.x <= room.bounds?.x2 &&
@@ -360,7 +359,6 @@ let frame = 0;
 var levels = {};
 fs.readFile("data/levelData.json", function (err, data) {
   levels = JSON.parse(data).levelData;
-  console.log(levels);
 });
 
 const sqrt23 = Math.sqrt(3);
@@ -527,8 +525,6 @@ food_squares.assignRoom = (item) => {
 };
 
 Object.freeze(CONFIG);
-
-console.log(getAdjacentRoomKeys("35"));
 
 const tankmeta = {
   basic: {
@@ -1072,6 +1068,15 @@ function getRandomInt(min, max) {
   return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
 }
 
+function deleteTeamBase(id) {
+  for (const roomkey in food_squares) {
+    var room = food_squares[roomkey];
+    if (typeof room === "function") continue;
+    room.items = room.items.filter((item) => item.id !== id);
+  }
+  bullets = bullets.filter((bullet) => bullet.id !== id);
+}
+
 function createAnnocment(
   text,
   sender,
@@ -1280,10 +1285,6 @@ const log = (...a) => {
   console.log(v);
 };
 
-/*var reg = /^\D\w*@\D\w*\.com$/
-var str = "abc@gmail.com"
-console.log(reg.test(str))*/
-
 function isTargetInSwivelRange(
   playerRotation,
   targetAngle,
@@ -1489,6 +1490,90 @@ function confirmplayerradia(_x, _y) {
   return true; // No overlap
 }
 
+function killplayer(id) {
+  roads = roads.filter((road) => {
+    if (road.id === id) {
+      return false;
+    }
+    return true;
+  });
+  hidden_broswers = hidden_broswers.filter((interval) => {
+    if (id === interval.id) {
+      clearInterval(interval.interval);
+      return false;
+    }
+    return true;
+  });
+  deadplayers.push(id);
+  teamlist = teamlist.filter((team) => {
+    var teamplayers = team.players;
+    teamplayers = teamplayers.filter((player) => {
+      return player.id !== id;
+    });
+    team.players = teamplayers;
+    if (teamplayers.length === 0) {
+      deleteTeamBase(team.teamID);
+      return false;
+    }
+    if (team.owner.id === id) {
+      if (teamplayers.length !== 0) {
+        if (team.lowerLevelPlayers.length > 0) {
+          team.owner = team.lowerLevelPlayers[0];
+          emit("newOwner", {
+            teamID: team.teamID,
+            playerid: team.lowerLevelPlayers[0].id,
+          });
+          PendingJoinRequests.forEach((_request) => {
+            if (_request.owner === id) {
+              _request.owner = team.lowerLevelPlayers[0].id;
+            }
+          });
+        } else {
+          team.owner = teamplayers[0];
+          emit("newOwner", {
+            teamID: team.teamID,
+            playerid: teamplayers[0].id,
+          });
+          PendingJoinRequests.forEach((_request) => {
+            if (_request.owner === id) {
+              _request.owner = teamplayers[0].id;
+            }
+          });
+        }
+      } else {
+        deleteTeamBase(team.teamID);
+        return false;
+      }
+    }
+    return true;
+  });
+  var public_teams = [];
+  public_teams = teamlist.map((team) => {
+    if (!team.hidden) {
+      team.taxInterval = null;
+      return team;
+    }
+  });
+  emit("pubteamlist", public_teams);
+  try {
+    leader_board.shown = leader_board.shown.filter(
+      (__index__) => __index__.id !== id
+    );
+    leader_board.hidden = leader_board.hidden.filter(
+      (__index__) => __index__.id !== id
+    );
+    emit("boardUpdate", {
+      leader_board: leader_board.shown,
+    });
+  } catch (e) {
+    console.log(e);
+  }
+  emit("playerLeft", id);
+  players[id].state = "dead";
+  players[id].dead = true;
+  return;
+}
+
 function limitedLog(message, ...optionalParams) {
   if (logCounter < LOG_LIMIT) {
     console.log(message, ...optionalParams);
@@ -1585,6 +1670,7 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
     health: health_max,
     maxhealth: health_max,
     size: 50,
+    healrate: 1,
     angle: getRandomInt(0, 180),
     x: x,
     y: y,
@@ -1598,6 +1684,8 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
     color: color,
     score_add: score_add,
     randomID: randID,
+    lastDamaged: null,
+    lastDamgers: [],
   };
   if (type === "square") {
     const rawvertices = calculateSquareVertices(
@@ -1681,6 +1769,7 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
     health: health_max,
     maxhealth: health_max,
     size: size,
+    healrate: 1,
     angle: getRandomInt(0, 180),
     x: x,
     y: y,
@@ -1695,6 +1784,8 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
     score_add: score_add,
     randomID: randID,
     "respawn-raidis": 1000,
+    lastDamaged: null,
+    lastDamgers: [],
   };
   if (type === "square") {
     const rawvertices = calculateSquareVertices(
@@ -1897,8 +1988,6 @@ function Wanderer( // class but what ever
   };
 }
 
-console.log("a", getRoomAndBounding(1000, 2300).items.length);
-
 var angle = 0;
 
 var serverseed = crypto.randomUUID();
@@ -1935,12 +2024,6 @@ app.use(cors(corsOptions));
 
 app.disable("x-powered-by");
 
-serverHttps.on("request", () => console.log("HTTP request"));
-
-serverHttps.on("upgrade", (req, socket, head) => {
-  console.log("Upgrade request");
-});
-
 serverHttps.on("request", app);
 httpServer.on("request", app);
 
@@ -1950,7 +2033,6 @@ const LOG_LIMIT = 1300;
 app.use(express.json());
 
 app.post("/currentbadge", (req, res) => {
-  console.log("currentbadge request", req.body.userId);
   let badge = "";
   let playerScore = 0;
   if (req.body.userId) {
@@ -1993,7 +2075,6 @@ app.post("/submit-feedback", (req, res) => {
     return res.status(400).send("All fields are required.");
   }
 
-  console.log(req.body);
   fs.writeFileSync(
     "data/feedback.txt",
     JSON.stringify({ name, message }) + "\n",
@@ -2006,7 +2087,6 @@ app.post("/submit-feedback", (req, res) => {
 });
 
 app.get("/leaderboard", (req, res) => {
-  console.log("ooo");
   var userbaseb = userbase
     .sort((entrieA, entrieB) => {
       var scoresumA = entrieA.scores.reduce((a, score) => a + score.score, 0);
@@ -2014,7 +2094,6 @@ app.get("/leaderboard", (req, res) => {
       return scoresumA - scoresumB;
     })
     .reverse();
-  console.log(userbaseb);
   var preLeaderBoard = userbaseb;
   var postLeaderBorad = [];
   preLeaderBoard.forEach((board) => {
@@ -2052,7 +2131,7 @@ fs.readFile("data/illegal.json", function (err, data) {
 app.get("/ping", (req, res) => {
   res.send("pong");
 });
-console.log(fs.readFileSync("C:/Certs/websocket/fetchIP.txt", "utf8"))
+
 wss.on("connection", (socket, req) => {
   let connection = {
     socket: socket,
@@ -2065,10 +2144,10 @@ wss.on("connection", (socket, req) => {
 
   let duplicateIPs = IPs.filter((e, i, a) => a.indexOf(e) !== i);
 
-  console.log(req.socket.remoteAddress);
   if (
     req.socket.remoteAddress !==
-      fs.readFileSync("C:/Certs/websocket/fetchIP.txt", "utf8") && req.socket.remoteAddress !== "127.0.0.1" &&
+      fs.readFileSync("C:/Certs/websocket/fetchIP.txt", "utf8") &&
+    req.socket.remoteAddress !== "127.0.0.1" &&
     duplicateIPs.length > 0
   ) {
     duplicateIPs.forEach((duplicateIP) => {
@@ -2089,6 +2168,7 @@ wss.on("connection", (socket, req) => {
   }, 998);
 
   let stateupdate = null;
+  let isSetUp = false;
   socket.on("message", (message) => {
     const { type, data } = JSON.parse(message);
 
@@ -2097,9 +2177,16 @@ wss.on("connection", (socket, req) => {
       socket.close(1000, "Too many requests");
       return;
     }
+
+    if (isSetUp) if (players[connection.playerId].dead) {
+      return;
+    }
+
     switch (type) {
       case "newPlayer": {
         var newId = crypto.randomUUID();
+        data.dead = false;
+        isSetUp = true;
         Object.defineProperty(players, `${newId}`, {
           value: data,
           writable: false,
@@ -2196,25 +2283,25 @@ wss.on("connection", (socket, req) => {
               return a + b.score;
             }, 0);
             if (score__$ >= 50000000) {
-              badge = "/badges/10.png";
+              badge = "/badges/10.webp";
             } else if (score__$ >= 25000000) {
-              badge = "/badges/9.png";
+              badge = "/badges/9.webp";
             } else if (score__$ >= 10000000) {
-              badge = "/badges/8.png";
+              badge = "/badges/8.webp";
             } else if (score__$ >= 5000000) {
-              badge = "/badges/7.png";
+              badge = "/badges/7.webp";
             } else if (score__$ >= 2500000) {
-              badge = "/badges/6.png";
+              badge = "/badges/6.webp";
             } else if (score__$ >= 1000000) {
-              badge = "/badges/5.png";
+              badge = "/badges/5.webp";
             } else if (score__$ >= 500000) {
-              badge = "/badges/4.png";
+              badge = "/badges/4.webp";
             } else if (score__$ >= 250000) {
-              badge = "/badges/3.png";
+              badge = "/badges/3.webp";
             } else if (score__$ >= 100000) {
-              badge = "/badges/2.png";
+              badge = "/badges/2.webp";
             } else {
-              badge = "/badges/1.png";
+              badge = "/badges/1.webp";
             }
           } else {
             var newid =
@@ -2231,7 +2318,7 @@ wss.on("connection", (socket, req) => {
             socket.send(
               JSON.stringify({ type: "newid", data: { newid: newid } })
             );
-            badge = "/badges/1.png";
+            badge = "/badges/1.webp";
           }
         } else {
           var newid =
@@ -2244,7 +2331,7 @@ wss.on("connection", (socket, req) => {
           );
           players[newId].userId = newid;
           userbase.push({ userid: newid, scores: [], username: data.username });
-          badge = "/badges/1.png";
+          badge = "/badges/1.webp";
         }
         socket.send(
           JSON.stringify({ type: "badgeToplayer", data: { badge: badge } })
@@ -2252,7 +2339,7 @@ wss.on("connection", (socket, req) => {
         emit("new_X_Y", { x: x, y: y, id: newId });
         players[newId].x = x;
         players[newId].y = y;
-        createExsplosion("ksiejf48jfq", x + 400, y + 400);
+        createExsplosion("ksiejf48jfq", x, y + 400);
         leader_board.hidden.push({
           id: newId,
           score: 0,
@@ -2313,7 +2400,6 @@ wss.on("connection", (socket, req) => {
           emit("statecycleUpdate", _data__);
         }, CONFIG.updateInterval);
 
-        console.log(newId, players[newId]);
         players[newId].stateTimeout = setTimeout(() => {
           start = null;
           state = "normal";
@@ -2359,10 +2445,10 @@ wss.on("connection", (socket, req) => {
       }
 
       case "requestUpgrade": {
+        data.id = connection.playerId;
         if (!players[data.id]) break;
         let myTeam = teamlist.find((team) => team.teamID === data.teamId);
         if (!myTeam) break;
-        console.log(data);
         var upgradeStat = (upgradetype) => {
           myTeam.players.forEach((player) => {
             if (upgradetype === "health") {
@@ -2549,10 +2635,10 @@ wss.on("connection", (socket, req) => {
                   maxhealth: 2000,
                   size: 500,
                   angle: 0,
-                  healrate: 1,
+                  healrate: 4,
                   x: players[myTeam.owner.id].x - 600,
                   y: players[myTeam.owner.id].y,
-                  centerX: players[myTeam.owner.id].x,
+                  centerX: players[myTeam.owner.id].x - 600,
                   centerY: players[myTeam.owner.id].y,
                   weight: Infinity,
                   body_damage: 10,
@@ -2564,6 +2650,28 @@ wss.on("connection", (socket, req) => {
                   randomID: `teamBase:${myTeam.teamID}`,
                   respawn: false,
                   teamId: myTeam.teamID,
+                  lastDamaged: null,
+                  lastDamgers: [],
+                };
+                var basesheild = {
+                  type: "sheild",
+                  bullet_distance: Infinity,
+                  transparency: 0.5,
+                  speed: 0,
+                  size: 650,
+                  angle: 0,
+                  bullet_damage: -1,
+                  distanceTraveled: 0,
+                  vertices: null,
+                  bullet_pentration: 0,
+                  x: players[myTeam.owner.id].x - 600,
+                  y: players[myTeam.owner.id].y,
+                  lifespan: 0,
+                  health: 10,
+                  xstart: players[myTeam.owner.id].x - 600,
+                  ystart: players[myTeam.owner.id].y,
+                  id: myTeam.teamID,
+                  uniqueid: randID,
                 };
                 const rawvertices = calculateRotatedOctagonVertices(
                   base.x,
@@ -2576,6 +2684,7 @@ wss.on("connection", (socket, req) => {
                 myTeam.upgrades.teamBuilding.polygonId = `teamBase:${myTeam.teamID}
                 `;
                 food_squares.assignRoom(base);
+                bullets.push(basesheild);
               } else {
                 createAnnocment(
                   `The team base has all ready been built`,
@@ -2599,10 +2708,10 @@ wss.on("connection", (socket, req) => {
                   maxhealth: 2000,
                   size: 500,
                   angle: 0,
-                  healrate: 1,
+                  healrate: 4,
                   x: players[myTeam.owner.id].x - 600,
                   y: players[myTeam.owner.id].y,
-                  centerX: players[myTeam.owner.id].x,
+                  centerX: players[myTeam.owner.id].x - 600,
                   centerY: players[myTeam.owner.id].y,
                   weight: Infinity,
                   body_damage: 10,
@@ -2614,8 +2723,30 @@ wss.on("connection", (socket, req) => {
                   randomID: myTeam.teamID,
                   respawn: false,
                   teamId: myTeam.teamID,
+                  lastDamaged: null,
+                  lastDamgers: [],
                 };
-                console.log("base", base);
+                var basesheild = {
+                  type: "sheild",
+                  bullet_distance: Infinity,
+                  transparency: 0.5,
+                  speed: 0,
+                  size: 650,
+                  angle: 0,
+                  bullet_damage: -1,
+                  distanceTraveled: 0,
+                  vertices: null,
+                  bullet_pentration: 0,
+                  x: players[myTeam.owner.id].x - 600,
+                  y: players[myTeam.owner.id].y,
+                  lifespan: 0,
+                  health: 10,
+                  xstart: players[myTeam.owner.id].x - 600,
+                  ystart: players[myTeam.owner.id].y,
+                  id: myTeam.teamID,
+                  teamID: myTeam.teamID,
+                  uniqueid: randID,
+                };
                 const rawvertices = calculateRotatedOctagonVertices(
                   base.x,
                   base.y,
@@ -2626,6 +2757,7 @@ wss.on("connection", (socket, req) => {
                 myTeam.upgrades.teamBuilding.built = true;
                 myTeam.upgrades.teamBuilding.polygonId = `teamBase:${myTeam.teamID}`;
                 food_squares.assignRoom(base);
+                bullets.push(basesheild);
                 players[myTeam.owner.id].score -= 10000;
                 leader_board.hidden.forEach((__index__) => {
                   if (__index__.id === myTeam.owner.id) {
@@ -2684,11 +2816,13 @@ wss.on("connection", (socket, req) => {
       }
 
       case "autoFiringUpdate": {
+        data.id = connection.playerId;
         players[data.id].autoFiring = data.autoFiring;
         break;
       }
 
       case "premotePlayer": {
+        data.premotor = players[connection.playerId];
         if (
           !data.players.includes(data.player) ||
           data.lowerLevelPlayers.includes(data.player)
@@ -2764,6 +2898,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "demotePlayer": {
+        data.premotor = players[connection.playerId];
         if (
           !data.players.includes(data.player) ||
           !data.lowerLevelPlayers.includes(data.player)
@@ -2780,7 +2915,7 @@ wss.on("connection", (socket, req) => {
           break;
         }
         let myTeam = teamlist.find((team) => team.teamID === data.myTeamID);
-        if (data.premotor.id === MYteam.owner.id) {
+        if (data.premotor.id === myTeam.owner.id) {
           if (!myTeam.powers.canDededicatePower) {
             badIP[req.socket.remoteAddress].warnings ??= 0;
             badIP[req.socket.remoteAddress].warnings += 1;
@@ -2843,6 +2978,9 @@ wss.on("connection", (socket, req) => {
       }
 
       case "newTeamCreated": {
+        data.owner = {};
+        data.owner.id = connection.playerId;
+        data.owner.username = players[connection.playerId].username;
         var id =
           Math.floor(Math.random() * 54968) +
           Date.now() * Math.random() +
@@ -2902,6 +3040,8 @@ wss.on("connection", (socket, req) => {
           data.createTeamScore = true;
         }
 
+        data.teamMessages = [];
+
         if (govType === "Constitutional") {
           var powers = CONFIG.powers.Constitutional;
           data.constitution = `
@@ -2955,7 +3095,6 @@ wss.on("connection", (socket, req) => {
         }
         data.taxInterval = setInterval(() => {
           data.players.forEach((player) => {
-            console.log(player);
             if (!players[player.id]) return;
             if (players[player.id].score > 0 && data.owner.id !== player.id) {
               var Scheduledtax =
@@ -3033,7 +3172,6 @@ wss.on("connection", (socket, req) => {
         data.powers = CONFIG.powers[data.govType];
 
         if (data.powers.canDedicatePower) {
-          console.log("Created lowerLevelPlayers");
           data.lowerLevelPlayers = [];
         }
 
@@ -3056,18 +3194,36 @@ wss.on("connection", (socket, req) => {
         if (PlayerTeam.hidden) {
           let code = Math.floor(100000 * Math.random());
           teamKeys.push(code);
-          createAnnocment(`The join code is ${code}`, data.owner.id, 3000);
+          createAnnocment(`The join code is ${code}`, data.owner.id, 5000);
           createAnnocment(
             `put this into the url bar like this: tankshark.fun/?team=code when someone wants to join`,
             data.owner.id,
-            3000
+            5000
           );
         }
+        console.log(teamlist)
         emit("pubteamlist", public_teams);
         break;
       }
 
+      case "postBite": {
+        data.id = connection.playerId;
+        if (!players[data.id]) break;
+        const clean = DOMPurify.sanitize(dirty);
+        if (clean.length > 255) { 
+          createAnnocment("Message is too long", data.id, {
+            color: "red",
+            delay: 3000,
+          });
+          break;
+        }
+        team.messages.push({clean, id: data.id, username: players[data.id].username});
+        emitTeam("postBiteMessage", team.messages, team.teamID);
+        break;
+      }
+
       case "playerJoinedTeam": {
+        data.id = connection.playerId;
         let MYteam = teamlist.find((team) => {
           return team.teamID === data.teamId;
         });
@@ -3139,6 +3295,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "playerLeftTeam": {
+        data.id = connection.playerId;
         let MYteam = teamlist.find((team) => {
           return team.teamID === players[data.id]?.team;
         });
@@ -3184,6 +3341,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "deleteTeam": {
+        data.playerId = connection.playerId;
         let MYteam = teamlist.find((team) => {
           return team.teamID === data.teamID;
         });
@@ -3192,7 +3350,7 @@ wss.on("connection", (socket, req) => {
           players[data.playerId].team !== MYteam.teamID ||
           data.playerId !== MYteam.owner.id
         ) {
-          socket.close(500, "invalid delete");
+          socket.close(403, "invalid delete");
         }
         MYteam.players.forEach((player) => {
           emit("playerJoinedTeam", { id: player.id, teamId: null });
@@ -3206,13 +3364,7 @@ wss.on("connection", (socket, req) => {
             return team;
           }
         });
-        for (const roomkey in food_squares) {
-          var room = food_squares[roomkey];
-          if (typeof room === "function") continue;
-          room.items = room.items.filter((item) => 
-            item.id !== team.teamID
-          );
-        }
+        deleteTeamBase(data.teamID);
         emit("pubteamlist", public_teams);
         break;
       }
@@ -3253,6 +3405,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "rotate": {
+        data.id = connection.playerId;
         var autoAngle = data.autoAngle;
         var turnhide = setInterval(() => {
           autoAngle += 4;
@@ -3349,6 +3502,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "playerSend": {
+        data.id = connection.playerId;
         emit("playerMessage", {
           text: data.text,
           exspiretime: 3000,
@@ -3373,6 +3527,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "unrotating": {
+        data.id = connection.playerId;
         hidden_broswers.filter((interval) => {
           if (data.id === interval.id) {
             clearInterval(interval.interval);
@@ -3384,7 +3539,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "windowStateChange": {
-        if (players[data.id] === undefined) return;
+        data.id = connection.playerId;
         var truefalse = data.vis === "visible";
         players[data.id].visible = truefalse;
         if (truefalse) {
@@ -3402,6 +3557,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "autoCannonADD": {
+        data.playerid = connection.playerId;
         autocannons.push(data);
         let cannosplayer = tankmeta[players[data.playerid].__type__].cannons;
         let cannonamountplayer = Object.keys(cannosplayer).length;
@@ -3429,6 +3585,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "typeChange": {
+        data.id = connection.playerId;
         if (!players[data.id]) {
           invaled_requests.push(data.id);
           break;
@@ -3437,21 +3594,16 @@ wss.on("connection", (socket, req) => {
           socket.close(999, "You hacker your IP has been permently banned");
           return false;
         }
-        if (data.id !== connection.playerId) {
-          // Do somethin here like put the cleints eyes out for hacken
-          console.warn("PLAYERS hacken man");
-          return "ahhhh";
-        }
         for (const prop in data) {
           let tempData = data[prop];
           players[connection.playerId][prop] = tempData;
         }
-        console.log(players[connection.playerId]);
         emit("type_Change", data);
         break;
       }
 
       case "playerCannonWidth": {
+        data.id = connection.playerId;
         if (!players[data.id]) {
           invaled_requests.push(data.id);
           break;
@@ -3466,6 +3618,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "statUpgrade": {
+        data.id = connection.playerId;
         if (!players[data.id]) return;
         var upgradetype = data.Upgradetype;
 
@@ -3514,40 +3667,14 @@ wss.on("connection", (socket, req) => {
         break;
       }
 
-      case "auto-x-update": {
-        autocannons.forEach((cannon) => {
-          if (cannon.CannonID === data.autoID && players[cannon.playerid]) {
-            if (cannon._type_ === "SwivelAutoCannon") {
-              var tankdatacannondata =
-                tankmeta[players[cannon.playerid].__type__].cannons[
-                  cannon.autoindex
-                ];
-              var offSet_x = tankdatacannondata["offSet-x"];
-              if (tankdatacannondata["offSet-x"] === "playerX") {
-                offSet_x =
-                  players[cannon.playerid].size * CONFIG.playerBaseSize;
-              }
-              if (tankdatacannondata["offSet-x-multpliyer"]) {
-                offSet_x *= -1;
-              }
-              var [X, Y] = rotatePointAroundPlayer(offSet_x, 0, data.angle);
-              cannon["x_"] = X;
-              cannon["y_"] = Y;
-            }
-          }
-        });
-        break;
-      }
-
       case "playerMoved": {
+        data.id = connection.playerId;
         if (!players[data.id]) return;
         players[data.id].x = data.x;
         players[data.id].y = data.y;
         if (!data.last) {
           return;
         }
-        let player = players[data.id];
-        let hasfoodchanged = false;
         /*food_squares = food_squares.filter((item, index) => {
         const distanceX = Math.abs(player.x - item.x);
         const distanceY = Math.abs(player.y - item.y);
@@ -3769,6 +3896,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "Sizeup": {
+        data.id = connection.playerId;
         if (!players[data.id]) return;
         players[data.id].size += data.plus;
         break;
@@ -3778,6 +3906,8 @@ wss.on("connection", (socket, req) => {
         let maxdistance = CONFIG.playerPlayerSightRange;
         let fire_at = null;
         let cannon = data.cannon;
+        data.playerId = connection.playerId;
+        data._cannon.playerid = connection.playerId;
         for (const playerID in players) {
           let player = players[playerID];
           var sameTeam =
@@ -4030,6 +4160,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "playerCannonMoved": {
+        data.id = connection.playerId;
         if (!players[data.id]) {
           invaled_requests.push(data.id);
           return;
@@ -4042,6 +4173,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "statechange": {
+        data.playerID = connection.playerId;
         if (!players[data.playerID]) {
           invaled_requests.push(data.playerID);
           return;
@@ -4052,43 +4184,45 @@ wss.on("connection", (socket, req) => {
       }
 
       case "healrate": {
+        data.id = connection.playerId;
         if (!players[data.id]) {
           invaled_requests.push(data.id);
           return;
         }
-        players[data.playerId].playerReheal = data.playerReheal;
+        players[data.id].playerReheal = data.playerReheal;
         break;
       }
 
       case "AddplayerHealTime": {
-        if (!players[data.ID]) {
-          invaled_requests.push(data.ID);
+        data.id = connection.playerId;
+        if (!players[data.id]) {
+          invaled_requests.push(data.id);
           return;
         }
-        players[data.ID].maxhealth = data.maxhealth;
-        players[data.ID].playerHealTime = data.playerHealTime;
-        emit("updaterHeal", { ID: data.ID, HEALTime: data.playerHealTime });
+        players[data.id].maxhealth = data.maxhealth;
+        players[data.id].playerHealTime = data.playerHealTime;
+        emit("updaterHeal", { ID: data.id, HEALTime: data.playerHealTime });
         if (
-          data.playerHealTime > players[data.ID].Regenspeed &&
-          players[data.ID].health < players[data.ID].maxhealth
+          data.playerHealTime > players[data.id].Regenspeed &&
+          players[data.id].health < players[data.id].maxhealth
         ) {
           let healer = setInterval(function () {
-            if (!players[data.ID]) {
+            if (!players[data.id]) {
               clearInterval(healer);
               return;
             }
-            players[data.ID].health += players[data.ID].playerReheal;
-            if (players[data.ID].health >= players[data.ID].maxhealth) {
-              players[data.ID].health = players[data.ID].maxhealth;
+            players[data.id].health += players[data.id].playerReheal;
+            if (players[data.id].health >= players[data.id].maxhealth) {
+              players[data.id].health = players[data.id].maxhealth;
               clearInterval(healer);
             }
-            if (players[data.ID].playerHealTime < players[data.ID].Regenspeed) {
-              players[data.ID].health -= players[data.ID].playerReheal;
+            if (players[data.id].playerHealTime < players[data.id].Regenspeed) {
+              players[data.id].health -= players[data.id].playerReheal;
               clearInterval(healer);
             }
             emit("playerHeal", {
-              HEALTH: players[data.ID].health,
-              ID: data.ID,
+              HEALTH: players[data.id].health,
+              id: data.id,
             });
           }, 50);
         }
@@ -4096,12 +4230,13 @@ wss.on("connection", (socket, req) => {
       }
 
       case "playerHealintterupted": {
-        if (!players[data.ID]) {
+        data.id = connection.playerId;
+        if (!players[data.id]) {
           invaled_requests.push(data.id);
-          return;
+          break;
         }
-        players[data.ID].playerHealTime = 0;
-        emit("updaterHeal", { ID: data.ID, HEALTime: 0 });
+        players[data.id].playerHealTime = 0;
+        emit("updaterHeal", { id: data.id, HEALTime: 0 });
         break;
       }
 
@@ -4125,6 +4260,7 @@ wss.on("connection", (socket, req) => {
               rewarder: player2.id,
               reward: reward,
             });
+            killplayer(player.id);
             players = Object.entries(players).reduce(
               (newPlayers, [key, value]) => {
                 if (key !== player.id) {
@@ -4147,6 +4283,7 @@ wss.on("connection", (socket, req) => {
               rewarder: player2.id,
               reward: reward,
             });
+            killplayer(player.id);
             players = Object.entries(players).reduce(
               (newPlayers, [key, value]) => {
                 if (key !== player.id) {
@@ -4171,11 +4308,6 @@ wss.on("connection", (socket, req) => {
         break;
       }
 
-      case "playerUPDATE": {
-        players[data.id] = data;
-        break;
-      }
-
       case "deletAuto": {
         autocannons.filter((cannons___0_0) => {
           if (cannons___0_0.playerid === connection.playerId) {
@@ -4187,6 +4319,7 @@ wss.on("connection", (socket, req) => {
       }
 
       case "bulletFired": {
+        data.id = connection.playerId;
         if (!players[data.id]) return;
         if (!players[data.id].statsTree) return;
 
@@ -4622,18 +4755,21 @@ wss.on("connection", (socket, req) => {
       }
 
       case "MouseAway": {
+        data.id = connection.playerId;
         if (!players[data.id]) break;
         players[data.id].mousestate = "held";
         break;
       }
 
       case "MousestateUpdate": {
+        data.id = connection.playerId;
         if (!players[data.id]) break;
         players[data.id].mousestate = "up";
         break;
       }
 
       case "FOVUpdate": {
+        data.id = connection.playerId;
         if (!players[data.id]) break;
         let player = players[data.id];
         player.canvasW = data.canvasW;
@@ -4644,117 +4780,11 @@ wss.on("connection", (socket, req) => {
         break;
       }
 
-      case "playerDied": {
-        roads = roads.filter((road) => {
-          if (road.id === connection.playerId) {
-            return false;
-          }
-          return true;
-        });
-        hidden_broswers = hidden_broswers.filter((interval) => {
-          if (connection.playerId === interval.id) {
-            clearInterval(interval.interval);
-            return false;
-          }
-          return true;
-        });
-        deadplayers.push(connection.playerId);
-        teamlist = teamlist.filter((team) => {
-          var teamplayers = team.players;
-          teamplayers = teamplayers.filter((player) => {
-            return player.id !== connection.playerId;
-          });
-          team.players = teamplayers;
-          if (teamplayers.length === 0) {
-            for (const roomkey in food_squares) {
-              var room = food_squares[roomkey];
-              if (typeof room === "function") continue;
-              room.items.forEach((item, index) => {
-                if (item.id === team.teamID) {
-                  room.items.splice(index, 1);
-                  return false;
-                }
-                return true;
-              });
-            }
-            return false;
-          }
-          if (team.owner.id === connection.playerId) {
-            if (teamplayers.length !== 0) {
-              if (team.lowerLevelPlayers.length > 0) {
-                team.owner = team.lowerLevelPlayers[0];
-                emit("newOwner", {
-                  teamID: team.teamID,
-                  playerid: team.lowerLevelPlayers[0].id,
-                });
-                PendingJoinRequests.forEach((_request) => {
-                  if (_request.owner === connection.playerId) {
-                    _request.owner = team.lowerLevelPlayers[0].id;
-                  }
-                });
-              } else {
-                team.owner = teamplayers[0];
-                emit("newOwner", {
-                  teamID: team.teamID,
-                  playerid: teamplayers[0].id,
-                });
-                PendingJoinRequests.forEach((_request) => {
-                  if (_request.owner === connection.playerId) {
-                    _request.owner = teamplayers[0].id;
-                  }
-                });
-              }
-            } else {
-              for (const roomkey in food_squares) {
-                var room = food_squares[roomkey];
-                if (typeof room === "function") continue;
-                room.items = room.items.filter((item) => 
-                  item.id !== team.teamID
-                );
-              }
-              return false;
-            }
-          }
-          return true;
-        });
-        var public_teams = [];
-        public_teams = teamlist.map((team) => {
-          if (!team.hidden) {
-            team.taxInterval = null;
-            return team;
-          }
-        });
-        emit("pubteamlist", public_teams);
-        try {
-          leader_board.shown = leader_board.shown.filter(
-            (__index__) => __index__.id !== connection.playerId
-          );
-          leader_board.hidden = leader_board.hidden.filter(
-            (__index__) => __index__.id !== connection.playerId
-          );
-          emit("boardUpdate", {
-            leader_board: leader_board.shown,
-          });
-        } catch (e) {
-          console.log(e);
-        }
-        emit("playerLeft", connection.playerId);
-        break;
-      }
-
       default: {
         console.log("Empty action received.");
       }
     }
   });
-
-  setInterval(function () {
-    for (const key in players) {
-      if (!players[key].hasOwnProperty("id")) {
-        delete players[key];
-      }
-    }
-  }, 5000);
 
   socket.on("close", () => {
     roads = roads.filter((road) => {
@@ -4832,13 +4862,7 @@ wss.on("connection", (socket, req) => {
       team.players = teamplayers;
       if (teamplayers.length === 0) {
         clearInterval(team.taxInterval);
-        for (const roomkey in food_squares) {
-          var room = food_squares[roomkey];
-          if (typeof room === "function") continue;
-          room.items = room.items.filter((item) => 
-            item.id !== team.teamID
-          );
-        }
+        deleteTeamBase(team.teamID);
         return false;
       }
       if (team.owner.id === connection.playerId) {
@@ -4868,13 +4892,7 @@ wss.on("connection", (socket, req) => {
           }
         } else {
           clearInterval(team.taxInterval);
-          for (const roomkey in food_squares) {
-            var room = food_squares[roomkey];
-            if (typeof room === "function") continue;
-            room.items = room.items.filter((item) => 
-              item.id !== team.teamID
-            );
-          }
+          deleteTeamBase(team.teamID);
           return false;
         }
       }
@@ -4988,12 +5006,10 @@ setInterval(() => {
                 );
 
                 maxdistance = distance;
-                console.log("player", player);
                 fire_at_ = player;
               }
             }
           }
-          //console.log(maxdistance)
           if (maxdistance > CONFIG.playerItemSightRange) {
             food_squares.forEach((item_) => {
               let distance = MathHypotenuse(
@@ -5013,7 +5029,6 @@ setInterval(() => {
                 );
 
                 maxdistance = distance;
-                //console.log("item",pointerAngle)
                 fire_at_ = item_;
               }
             });
@@ -5118,7 +5133,8 @@ setInterval(() => {
     if (
       bullet.type !== "directer" &&
       bullet.type !== "FreeNecromancer" &&
-      bullet.type !== "FreeSwarm"
+      bullet.type !== "FreeSwarm" &&
+      bullet.type !== "sheild"
     ) {
       bullet.distanceTraveled += MathHypotenuse(
         newX - bullet.x,
@@ -5142,7 +5158,7 @@ setInterval(() => {
       bullet.type === "roadMap" ||
       bullet.type === "directer" ||
       bullet.type === "FreeSwarm" ||
-      bullet.type === "FreeNecromancer"
+      (bullet.type === "FreeNecromancer" && bullet.type !== "sheild")
     ) {
       if (
         bullet.bullet_distance - bullet.distanceTraveled < 200 &&
@@ -5238,7 +5254,7 @@ setInterval(() => {
         0
       );
       bullet.vertices = rawvertices;
-    } else {
+    } else if (bullet.type !== "sheild") {
       bullets.forEach((bullet_) => {
         let distance = MathHypotenuse(
           bullet.x - bullet_.x,
@@ -5266,7 +5282,8 @@ setInterval(() => {
     }
     if (
       -(bullet.distanceTraveled - bullet.bullet_distance) <
-      25 * bullet.speed ** 2
+        25 * bullet.speed ** 2 &&
+      bullet.type !== "sheild"
     ) {
       bullet.transparency =
         1 - bullet.distanceTraveled / bullet.bullet_distance < 0
@@ -5278,11 +5295,15 @@ setInterval(() => {
       var player = players[playerId];
       var distance = MathHypotenuse(player.x - bullet.x, player.y - bullet.y);
       let player40 = player.size * CONFIG.playerBaseSize;
-      var sameTeam =
-        players[bullet.id]?.team === players[playerId]?.team &&
-        players[bullet.id]?.team !== null &&
-        players[playerId]?.team !== null;
-      if (player.state !== "start" && !sameTeam) {
+      if (bullet.type !== "sheild") {
+        var sameTeam =
+          players[bullet.id]?.team === players[playerId]?.team &&
+          players[bullet.id]?.team !== null &&
+          players[playerId]?.team !== null;
+      } else {
+        var sameTeam = bullet.teamId == players[playerId]?.team;
+      }
+      if (player.state !== "start") {
         let bulletsize = bullet.size;
         let con = false;
         if (bullet.boundtype === "square") {
@@ -5326,153 +5347,169 @@ setInterval(() => {
           con = distance < player40 + bullet.size && bullet.id !== player.id;
         }
         if (con) {
-          if (bullet.type === "trap" || bullet.type === "roadMap") {
-            player.health -=
-              (bullet.bullet_damage - 3.8) /
-              (player.size + 6 / bullet.size + 3);
-            bullet.bullet_distance /=
-              bullet.size / (bullet.bullet_pentration + 10);
-          } else if (
-            bullet.type === "directer" ||
-            bullet.type === "FreeNecromancer" ||
-            bullet.type === "FreeSwarm"
-          ) {
-            player.health -=
-              (bullet.bullet_damage - 4.4) /
-              (player.size + 6 / bullet.size + 5);
-            bullet.bullet_distance -=
-              bullet.size / (bullet.bullet_pentration + 10);
-          } else {
-            player.health -=
-              (bullet.bullet_damage - 3.8) /
-              ((player.size + 12) / bullet.speed);
-            bullet.bullet_distance -=
-              bullet.size / (bullet.bullet_pentration + 10);
-          }
-          emit("bulletDamage", {
-            playerID: player.id,
-            playerHealth: player.health,
-            BULLETS: bullets,
-          });
-          if (player.health <= 0) {
-            try {
-              var reward = Math.round(
-                player.score / (20 + players[bullet.id].score / 10000)
-              );
-              if (player.team !== null) {
-                var team = teamlist.find((team) => team.teamID === player.team);
-                if (team.owner.id !== player.id || team.createTeamScore) {
-                  reward -= reward * team.simpleTax;
-                }
-                if (team.createTeamScore) {
-                  team.teamScore += (reward * team.simpleTax) / 2;
-                } else {
-                  emit("playerScore", {
-                    bulletId: team.owner.id,
-                    socrepluse: reward * team.simpleTax,
-                  });
-                }
-                var complexTax = reward * ((player.score / 100000) * playerTax);
-                if (team.owner.id !== player.id || team.createTeamScore) {
-                  reward -= complexTax;
-                }
-                if (team.createTeamScore) {
-                  team.teamScore += complexTax / 1.5;
-                } else {
-                  emit("playerScore", {
-                    bulletId: team.owner.id,
-                    socrepluse: complexTax,
-                  });
-                }
-              }
-            } catch (e) {
-              console.log(bullet.id);
-            }
-            if (players[bullet.id]) {
-              player.score += reward;
-              emit("playerScore", {
-                bulletId: bullet.id,
-                socrepluse: reward,
-                kill: true,
-              });
-              createAnnocment(
-                `You killed ${player.username}'s ${player.__type__}`,
-                bullet.id
-              );
+          if (!sameTeam) {
+            if (bullet.type === "trap" || bullet.type === "roadMap") {
+              player.health -=
+                (bullet.bullet_damage - 3.8) /
+                (player.size + 6 / bullet.size + 3);
+              bullet.bullet_distance /=
+                bullet.size / (bullet.bullet_pentration + 10);
+            } else if (
+              bullet.type === "directer" ||
+              bullet.type === "FreeNecromancer" ||
+              bullet.type === "FreeSwarm"
+            ) {
+              player.health -=
+                (bullet.bullet_damage - 4.4) /
+                (player.size + 6 / bullet.size + 5);
+              bullet.bullet_distance -=
+                bullet.size / (bullet.bullet_pentration + 10);
             } else {
-              var boss = bosses.find(
-                (boss_) => boss_.cannons[0].id === bullet.id
-              );
-              boss.score += reward;
+              player.health -=
+                (bullet.bullet_damage - 3.8) /
+                ((player.size + 12) / bullet.speed);
+              bullet.bullet_distance -=
+                bullet.size / (bullet.bullet_pentration + 10);
             }
-            emit("playerDied", {
+            emit("bulletDamage", {
               playerID: player.id,
-              rewarder: bullet.id,
-              reward: reward,
+              playerHealth: player.health,
+              BULLETS: bullets,
             });
-            try {
-              leader_board.shown.forEach((__index__) => {
-                if (__index__.id === player.id) {
-                  leader_board.shown.splice(
-                    leader_board.shown.indexOf(__index__)
+            if (player.health <= 0) {
+              try {
+                var reward = Math.round(
+                  player.score / (20 + players[bullet.id].score / 10000)
+                );
+                if (player.team !== null) {
+                  var team = teamlist.find(
+                    (team) => team.teamID === player.team
                   );
+                  if (team.owner.id !== player.id || team.createTeamScore) {
+                    reward -= reward * team.simpleTax;
+                  }
+                  if (team.createTeamScore) {
+                    team.teamScore += (reward * team.simpleTax) / 2;
+                  } else {
+                    emit("playerScore", {
+                      bulletId: team.owner.id,
+                      socrepluse: reward * team.simpleTax,
+                    });
+                  }
+                  var complexTax =
+                    reward * ((player.score / 100000) * playerTax);
+                  if (team.owner.id !== player.id || team.createTeamScore) {
+                    reward -= complexTax;
+                  }
+                  if (team.createTeamScore) {
+                    team.teamScore += complexTax / 1.5;
+                  } else {
+                    emit("playerScore", {
+                      bulletId: team.owner.id,
+                      socrepluse: complexTax,
+                    });
+                  }
                 }
+              } catch (e) {
+                console.log(bullet.id);
+              }
+              if (players[bullet.id]) {
+                player.score += reward;
+                emit("playerScore", {
+                  bulletId: bullet.id,
+                  socrepluse: reward,
+                  kill: true,
+                });
+                createAnnocment(
+                  `You killed ${player.username}'s ${player.__type__}`,
+                  bullet.id
+                );
+              } else {
+                var boss = bosses.find(
+                  (boss_) => boss_.cannons[0].id === bullet.id
+                );
+                boss.score += reward;
+              }
+              emit("playerDied", {
+                playerID: player.id,
+                rewarder: bullet.id,
+                reward: reward,
               });
+              killplayer(player.id);
+              try {
+                leader_board.shown.forEach((__index__) => {
+                  if (__index__.id === player.id) {
+                    leader_board.shown.splice(
+                      leader_board.shown.indexOf(__index__)
+                    );
+                  }
+                });
+                leader_board.hidden.forEach((__index__) => {
+                  if (__index__.id === player.id) {
+                    leader_board.hidden.splice(
+                      leader_board.hidden.indexOf(__index__)
+                    );
+                  }
+                });
+                emit("boardUpdate", {
+                  leader_board: leader_board.shown,
+                });
+              } catch (e) {
+                console.log(e);
+              }
               leader_board.hidden.forEach((__index__) => {
-                if (__index__.id === player.id) {
-                  leader_board.hidden.splice(
-                    leader_board.hidden.indexOf(__index__)
-                  );
+                if (__index__.id === bullet.id) {
+                  __index__.score += reward;
+                  let isshown = false;
+                  isshown = leader_board.shown.find((__index__) => {
+                    if (__index__.id === bullet.id) {
+                      return true;
+                    }
+                  });
+                  if (leader_board.shown[10]) {
+                    if (leader_board.shown[10].score < __index__.score) {
+                      leader_board.shown[10] = __index__;
+                    }
+                  } else if (!leader_board.shown[10] && !isshown) {
+                    leader_board.shown.push(__index__);
+                  }
                 }
               });
+              leader_board.shown.forEach((__index__) => {
+                if (__index__.id === bullet.id) {
+                  __index__.score += reward;
+                }
+              });
+              rearrange();
               emit("boardUpdate", {
                 leader_board: leader_board.shown,
               });
-            } catch (e) {
-              console.log(e);
-            }
-            leader_board.hidden.forEach((__index__) => {
-              if (__index__.id === bullet.id) {
-                __index__.score += reward;
-                let isshown = false;
-                isshown = leader_board.shown.find((__index__) => {
-                  if (__index__.id === bullet.id) {
-                    return true;
-                  }
-                });
-                if (leader_board.shown[10]) {
-                  if (leader_board.shown[10].score < __index__.score) {
-                    leader_board.shown[10] = __index__;
-                  }
-                } else if (!leader_board.shown[10] && !isshown) {
-                  leader_board.shown.push(__index__);
-                }
-              }
-            });
-            leader_board.shown.forEach((__index__) => {
-              if (__index__.id === bullet.id) {
-                __index__.score += reward;
-              }
-            });
-            rearrange();
-            emit("boardUpdate", {
-              leader_board: leader_board.shown,
-            });
-          } else {
-            if (bullet.type !== "expoled") {
-              var knockBackX = bullet.speed * Math.cos(bullet.angle);
-              var knockBackY = bullet.speed * Math.sin(bullet.angle);
             } else {
-              var realPushBackAngle = Math.atan2(
-                bullet.x - player.x,
-                bullet.y - player.y
-              );
-              var knockBackX = bullet.exspandRate * Math.cos(realPushBackAngle);
-              var knockBackY = bullet.exspandRate * Math.sin(realPushBackAngle);
+              if (bullet.type !== "expoled") {
+                var knockBackX = bullet.speed * Math.cos(bullet.angle);
+                var knockBackY = bullet.speed * Math.sin(bullet.angle);
+              } else {
+                var realPushBackAngle = Math.atan2(
+                  bullet.x - player.x,
+                  bullet.y - player.y
+                );
+                var knockBackX =
+                  bullet.exspandRate * Math.cos(realPushBackAngle);
+                var knockBackY =
+                  bullet.exspandRate * Math.sin(realPushBackAngle);
+              }
+              emit("bouceBack", {
+                response: { x: knockBackX, y: knockBackY },
+                playerID: player.id,
+              });
             }
-            emit("bouceBack", {
-              response: { x: knockBackX, y: knockBackY },
+          }
+          if (bullet.type === "sheild" && sameTeam) {
+            if (player.health < player.maxhealth)
+            player.health -= bullet.bullet_damage;
+            emit("bulletHeal", {
               playerID: player.id,
+              playerHealth: player.health,
             });
           }
         }
@@ -5979,7 +6016,6 @@ setInterval(() => {
               }, 40 * l);
             }
           }
-          if (deadlist.length !== 0) console.log(deadlist);
           deadlist.filter((itemx) => {
             if (cannon.id === itemx) {
               cannon.current -= 1;
@@ -6043,7 +6079,6 @@ setInterval(() => {
               }, 40 * l);
             }
           }
-          if (deadlist.length !== 0) console.log(deadlist);
           deadlist.filter((itemx) => {
             if (cannon.id === itemx) {
               cannon.current -= 1;
@@ -6075,209 +6110,208 @@ setInterval(() => {
               players[playerId].team === item.teamId &&
               players[playerId].team !== null;
           }
-            var collisionCheck = isPlayerCollidingWithPolygon(
-              player,
-              item.vertices
-            );
+          var collisionCheck = isPlayerCollidingWithPolygon(
+            player,
+            item.vertices
+          );
 
-            if (collisionCheck[0]) {
-              if (!sameteam) {
-                var damageplayer = item.body_damage;
-                var damageother = player["bodyDamage"];
-                if (player.state !== "start") {
-                  player.health -= damageplayer;
-                }
+          if (collisionCheck[0]) {
+            if (!sameteam) {
+              var damageplayer = item.body_damage;
+              var damageother = player["bodyDamage"];
+              if (player.state !== "start") {
+                player.health -= damageplayer;
               }
+              item.lastDamaged = Date.now();
+              item.lastDamgers.push(player.id);
+              item.lastDamgers = item.lastDamgers.splice(0, 2);
+            }
 
-              if (player.health < 0 && !sameteam) {
-                emit("playerDied", {
-                  playerID: player.id,
-                  rewarder: null,
-                  reward: null,
-                });
-                players = Object.entries(players).reduce(
-                  (newPlayers, [key, value]) => {
-                    if (key !== player.id) {
-                      newPlayers[key] = value;
-                    }
-                    return newPlayers;
-                  },
-                  {}
-                );
-              }
-
-              emit("bouceBack", {
-                response: collisionCheck[1].overlapV,
+            if (player.health < 0 && !sameteam) {
+              emit("playerDied", {
                 playerID: player.id,
+                rewarder: null,
+                reward: null,
               });
-              for (let i = 0; i < 10; i++) {
-                var factor = item.weight / 5 < 1 ? 1 : item.weight / 5;
-                setTimeout(() => {
-                  let recoilX = collisionCheck[1].overlapV.x / 30;
-                  let recoilY = collisionCheck[1].overlapV.y / 30;
-                  item.x += recoilX / factor;
-                  item.y += recoilY / factor;
-                  item.centerX += recoilX / factor;
-                  item.centerY += recoilY / factor;
-                }, 50 * i);
-              }
-              if (0 >= item.health && !sameteam) {
-                var reward = item.score_add;
-                if (player.team !== null) {
-                  var team = teamlist.find(
-                    (team) => team.teamID === player.team
-                  );
-                  if (team.owner.id !== player.id || team.createTeamScore) {
-                    reward -= reward * team.simpleTax;
+              killplayer(player.id);
+              players = Object.entries(players).reduce(
+                (newPlayers, [key, value]) => {
+                  if (key !== player.id) {
+                    newPlayers[key] = value;
                   }
-                  if (team.createTeamScore) {
-                    team.teamScore += (reward * team.simpleTax) / 2;
-                  } else {
-                    emit("playerScore", {
-                      bulletId: team.owner.id,
-                      socrepluse: reward * team.simpleTax,
-                    });
-                  }
+                  return newPlayers;
+                },
+                {}
+              );
+            }
 
-                  console.log(reward * team.simpleTax);
-
-                  var complexTax =
-                    reward *
-                    (calculateTax(player.score, 10000000) / team.playerTax);
-                  if (team.owner.id !== player.id || team.createTeamScore) {
-                    console.log(complexTax);
-                    reward -= complexTax;
-                  }
-                  if (team.createTeamScore) {
-                    team.teamScore += complexTax / 1.5;
-                  } else {
-                    emit("playerScore", {
-                      bulletId: team.owner.id,
-                      socrepluse: complexTax,
-                    });
-                    players[team.owner.id].score += complexTax;
-                  }
+            emit("bouceBack", {
+              response: collisionCheck[1].overlapV,
+              playerID: player.id,
+            });
+            for (let i = 0; i < 10; i++) {
+              var factor = item.weight / 5 < 1 ? 1 : item.weight / 5;
+              setTimeout(() => {
+                let recoilX = collisionCheck[1].overlapV.x / 30;
+                let recoilY = collisionCheck[1].overlapV.y / 30;
+                item.x += recoilX / factor;
+                item.y += recoilY / factor;
+                item.centerX += recoilX / factor;
+                item.centerY += recoilY / factor;
+              }, 50 * i);
+            }
+            if (0 >= item.health && !sameteam) {
+              var reward = item.score_add;
+              if (player.team !== null) {
+                var team = teamlist.find((team) => team.teamID === player.team);
+                if (team.owner.id !== player.id || team.createTeamScore) {
+                  reward -= reward * team.simpleTax;
                 }
-                console.log(reward);
-                player.score += reward;
-                emit("playerScore", {
-                  bulletId: player.id,
-                  socrepluse: reward,
-                });
-                leader_board.hidden.forEach((__index__) => {
-                  if (__index__.id === player.id) {
-                    __index__.score += reward;
-                    let isshown = false;
-                    isshown = leader_board.shown.find((__index__) => {
-                      if (__index__.id === player.id) {
-                        return true;
-                      }
-                    });
-                    if (leader_board.shown[10]) {
-                      if (leader_board.shown[10].score < __index__.score) {
-                        leader_board.shown[10] = __index__;
-                      }
-                    } else if (!leader_board.shown[10] && !isshown) {
-                      leader_board.shown.push(__index__);
-                    }
-                  }
-                });
-                leader_board.shown.forEach((__index__) => {
-                  if (__index__.id === player.id) {
-                    __index__.score += reward;
-                  }
-                });
-                rearrange();
-                emit("boardUpdate", {
-                  leader_board: leader_board.shown,
-                });
-
-                cors_taken.filter((cor) => {
-                  if (cor.id === item.randomID) {
-                    return false;
-                  } else {
-                    return true;
-                  }
-                });
-
-                let respawnrai = item["respawn-raidis"] || CONFIG.map.innersize;
-                let x, y;
-                do {
-                  x = getRandomInt(-respawnrai, respawnrai);
-                  y = getRandomInt(-respawnrai, respawnrai);
-                } while (
-                  cors_taken.some(
-                    (c) =>
-                      between(
-                        x,
-                        c.x - CONFIG.map.boundRange,
-                        c.x + CONFIG.map.boundRange
-                      ) &&
-                      between(
-                        y,
-                        c.y - CONFIG.map.boundRange,
-                        c.y + CONFIG.map.boundRange
-                      )
-                  )
-                );
-                let randID = Math.random() * index * Date.now();
-
-                cors_taken.push({ x, y, id: randID });
-
-                const valueOp = getRandomInt(1, 15);
-                var type = "";
-                var color = "";
-                var health_max = "";
-                var score_add = 0;
-                var body_damage = 0;
-                var weight = 0;
-                if (!item["respawn-raidis"]) {
-                  switch (true) {
-                    case between(valueOp, 1, 10): // Adjusted to 1-6 for square
-                      type = "square";
-                      color = "Gold";
-                      health_max = 10;
-                      score_add = 10;
-                      body_damage = 2;
-                      weight = 3;
-                      break;
-                    case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
-                      type = "triangle";
-                      color = "Red";
-                      health_max = 15;
-                      score_add = 15;
-                      body_damage = 3.5;
-                      weight = 5;
-                      break;
-                    case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
-                      type = "pentagon";
-                      color = "#579bfa";
-                      health_max = 100;
-                      score_add = 120;
-                      body_damage = 4;
-                      weight = 10;
-                      break;
-                  }
+                if (team.createTeamScore) {
+                  team.teamScore += (reward * team.simpleTax) / 2;
                 } else {
-                  const valueOp2 = getRandomInt(1, 10);
+                  emit("playerScore", {
+                    bulletId: team.owner.id,
+                    socrepluse: reward * team.simpleTax,
+                  });
+                }
 
-                  type = "pentagon";
-                  color = "#579bfa";
-                  health_max = 100;
-                  score_add = 120;
-                  body_damage = 4;
-                  if (valueOp2 === 5) {
-                    var size = 150;
-                    score_add = 3000;
-                    health_max = 1000;
-                    body_damage = 9;
-                    weight = 300;
-                  } else {
-                    weight = 10;
-                    var size = 50;
+                var complexTax =
+                  reward *
+                  (calculateTax(player.score, 10000000) / team.playerTax);
+                if (team.owner.id !== player.id || team.createTeamScore) {
+                  reward -= complexTax;
+                }
+                if (team.createTeamScore) {
+                  team.teamScore += complexTax / 1.5;
+                } else {
+                  emit("playerScore", {
+                    bulletId: team.owner.id,
+                    socrepluse: complexTax,
+                  });
+                  players[team.owner.id].score += complexTax;
+                }
+              }
+              player.score += reward;
+              emit("playerScore", {
+                bulletId: player.id,
+                socrepluse: reward,
+              });
+              leader_board.hidden.forEach((__index__) => {
+                if (__index__.id === player.id) {
+                  __index__.score += reward;
+                  let isshown = false;
+                  isshown = leader_board.shown.find((__index__) => {
+                    if (__index__.id === player.id) {
+                      return true;
+                    }
+                  });
+                  if (leader_board.shown[10]) {
+                    if (leader_board.shown[10].score < __index__.score) {
+                      leader_board.shown[10] = __index__;
+                    }
+                  } else if (!leader_board.shown[10] && !isshown) {
+                    leader_board.shown.push(__index__);
                   }
                 }
-                let fooditem = {
+              });
+              leader_board.shown.forEach((__index__) => {
+                if (__index__.id === player.id) {
+                  __index__.score += reward;
+                }
+              });
+              rearrange();
+              emit("boardUpdate", {
+                leader_board: leader_board.shown,
+              });
+
+              cors_taken.filter((cor) => {
+                if (cor.id === item.randomID) {
+                  return false;
+                } else {
+                  return true;
+                }
+              });
+
+              let respawnrai = item["respawn-raidis"] || CONFIG.map.innersize;
+              let x, y;
+              do {
+                x = getRandomInt(-respawnrai, respawnrai);
+                y = getRandomInt(-respawnrai, respawnrai);
+              } while (
+                cors_taken.some(
+                  (c) =>
+                    between(
+                      x,
+                      c.x - CONFIG.map.boundRange,
+                      c.x + CONFIG.map.boundRange
+                    ) &&
+                    between(
+                      y,
+                      c.y - CONFIG.map.boundRange,
+                      c.y + CONFIG.map.boundRange
+                    )
+                )
+              );
+              let randID = Math.random() * index * Date.now();
+
+              cors_taken.push({ x, y, id: randID });
+
+              const valueOp = getRandomInt(1, 15);
+              var type = "";
+              var color = "";
+              var health_max = "";
+              var score_add = 0;
+              var body_damage = 0;
+              var weight = 0;
+              if (!item["respawn-raidis"]) {
+                switch (true) {
+                  case between(valueOp, 1, 10): // Adjusted to 1-6 for square
+                    type = "square";
+                    color = "Gold";
+                    health_max = 10;
+                    score_add = 10;
+                    body_damage = 2;
+                    weight = 3;
+                    break;
+                  case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
+                    type = "triangle";
+                    color = "Red";
+                    health_max = 15;
+                    score_add = 15;
+                    body_damage = 3.5;
+                    weight = 5;
+                    break;
+                  case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
+                    type = "pentagon";
+                    color = "#579bfa";
+                    health_max = 100;
+                    score_add = 120;
+                    body_damage = 4;
+                    weight = 10;
+                    break;
+                }
+              } else {
+                const valueOp2 = getRandomInt(1, 10);
+
+                type = "pentagon";
+                color = "#579bfa";
+                health_max = 100;
+                score_add = 120;
+                body_damage = 4;
+                if (valueOp2 === 5) {
+                  var size = 150;
+                  score_add = 3000;
+                  health_max = 1000;
+                  body_damage = 9;
+                  weight = 300;
+                } else {
+                  weight = 10;
+                  var size = 50;
+                }
+              }
+              if (!item["respawn-raidis"]) {
+                var fooditem = {
                   type: type,
                   health: health_max,
                   maxhealth: health_max,
@@ -6295,71 +6329,103 @@ setInterval(() => {
                   color: color,
                   score_add: score_add,
                   randomID: randID,
+                  lastDamaged: null,
+                  lastDamgers: [],
                 };
-                if (type === "square") {
-                  const rawvertices = calculateSquareVertices(
-                    fooditem.x,
-                    fooditem.y,
-                    fooditem.size,
-                    fooditem.angle
-                  );
-                  fooditem.vertices = rawvertices;
-                }
-                if (type === "triangle") {
-                  const rawvertices = calculateTriangleVertices(
-                    fooditem.x,
-                    fooditem.y,
-                    fooditem.size,
-                    fooditem.angle
-                  );
-                  fooditem.vertices = rawvertices;
-                }
-                if (type === "pentagon") {
-                  const rawvertices = calculateRotatedPentagonVertices(
-                    fooditem.x,
-                    fooditem.y,
-                    fooditem.size,
-                    fooditem.angle
-                  );
-                  fooditem.vertices = rawvertices;
-                }
-
-                if (!item.isdead && !item.hasOwnProperty("respawn")) {
-                  tempToPush.push(fooditem);
-                }
-
-                if (item.hasOwnProperty("respawn")) {
-                  var myTeam = teamlist.find(
-                    (team) => team.teamID === item.teamId
-                  );
-                  myTeam.upgrades.teamBuilding = {
-                    built: false,
-                    level: null,
-                    polygonId: null,
-                    boosts: {
-                      speed: 1,
-                      health: 1,
-                      cannons: {},
-                    },
-                    health: 2000,
-                  };
-                }
-
-                return false;
-              } else if (player.state !== "start" && !sameteam) {
-                  item.health -= damageother;
+              } else {
+                var fooditem = {
+                  type: type,
+                  health: health_max,
+                  maxhealth: health_max,
+                  size: size,
+                  angle: getRandomInt(0, 180),
+                  x: x,
+                  y: y,
+                  centerX: x,
+                  centerY: y,
+                  body_damage: body_damage,
+                  weight: weight,
+                  scalarX: getRandomInt(-100, 100),
+                  scalarY: getRandomInt(-100, 100),
+                  vertices: null,
+                  color: color,
+                  score_add: score_add,
+                  randomID: randID,
+                  "respawn-raidis": item["respawn-raidis"],
+                  lastDamaged: null,
+                  lastDamgers: [],
+                };
+              }
+              if (type === "square") {
+                const rawvertices = calculateSquareVertices(
+                  fooditem.x,
+                  fooditem.y,
+                  fooditem.size,
+                  fooditem.angle
+                );
+                fooditem.vertices = rawvertices;
+              }
+              if (type === "triangle") {
+                const rawvertices = calculateTriangleVertices(
+                  fooditem.x,
+                  fooditem.y,
+                  fooditem.size,
+                  fooditem.angle
+                );
+                fooditem.vertices = rawvertices;
+              }
+              if (type === "pentagon") {
+                const rawvertices = calculateRotatedPentagonVertices(
+                  fooditem.x,
+                  fooditem.y,
+                  fooditem.size,
+                  fooditem.angle
+                );
+                fooditem.vertices = rawvertices;
               }
 
-              if (player.state !== "start" && !sameteam) {
-                emit("shapeDamage", {
-                  PlayerId: player.id,
-                  playerDamage: damageplayer,
-                  shapes: food_squares,
-                });
+              if (!item.isdead && !item.hasOwnProperty("respawn")) {
+                tempToPush.push(fooditem);
               }
+
+              if (item.hasOwnProperty("respawn")) {
+                var myTeam = teamlist.find(
+                  (team) => team.teamID === item.teamId
+                );
+                myTeam.upgrades.teamBuilding = {
+                  built: false,
+                  level: null,
+                  polygonId: null,
+                  boosts: {
+                    speed: 1,
+                    health: 1,
+                    cannons: {},
+                  },
+                  health: 2000,
+                };
+              }
+
+              return false;
+            } else if (player.state !== "start" && !sameteam) {
+              item.health -= damageother;
             }
-          
+
+            if (player.state !== "start" && !sameteam) {
+              emit("shapeDamage", {
+                PlayerId: player.id,
+                playerDamage: damageplayer,
+                shapes: food_squares,
+              });
+            }
+          }
         }
+      }
+      if (
+        !item.isdead &&
+        Date.now() - item.lastDamaged > 30 * 1000 &&
+        item.health < item.maxhealth
+      ) {
+        item.health += item.healrate / 40;
       }
       bullets.forEach((bullet) => {
         if (
@@ -6390,6 +6456,10 @@ setInterval(() => {
               bullet.bullet_pentration) /
             5;
 
+          item.lastDamaged = Date.now();
+          item.lastDamgers.push(bullet.id);
+          item.lastDamgers = item.lastDamgers.splice(0, 2);
+
           if (
             damage >= item.health &&
             bullet.type !== "FreeNecromancer" &&
@@ -6416,13 +6486,10 @@ setInterval(() => {
                 });
               }
 
-              console.log(reward * team.simpleTax);
-
               var complexTax =
                 reward *
                 (calculateTax(player.score, 10000000) / team.playerTax);
               if (team.owner.id !== player.id || team.createTeamScore) {
-                console.log(complexTax);
                 reward -= complexTax;
               }
               if (team.createTeamScore) {
@@ -6436,7 +6503,6 @@ setInterval(() => {
               }
             }
 
-            console.log(reward);
             if (!item.isdead) {
               players[bullet.id].score += reward;
 
@@ -6579,6 +6645,8 @@ setInterval(() => {
                 color: color,
                 score_add: score_add,
                 randomID: randID,
+                lastDamaged: null,
+                lastDamgers: [],
               };
             }
             if (item["respawn-raidis"]) {
@@ -6601,6 +6669,8 @@ setInterval(() => {
                 score_add: score_add,
                 randomID: randID,
                 "respawn-raidis": 1000,
+                lastDamaged: null,
+                lastDamgers: [],
               };
             }
             let recoilX =
@@ -6914,6 +6984,8 @@ function createBoss(type_) {
         randomID: randID,
         updateXY: updateXY,
         reload: 500,
+        lastDamaged: null,
+        lastDamgers: [],
       };
       var cannonID = Math.random() * 3 * Date.now();
       boss = {
@@ -7001,6 +7073,8 @@ function createBoss(type_) {
         randomID: randID2,
         updateXY: updateXY,
         reload: 350,
+        lastDamaged: null,
+        lastDamgers: [],
       };
       var cannonID = Math.random() * 3 * Date.now();
       boss = {
