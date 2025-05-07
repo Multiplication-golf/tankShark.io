@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <title>TankShark.io</title>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="game-style.css" />
-    <link rel="stylesheet" href="media-querys.css" />
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./game-style.css" />
+    <link rel="stylesheet" href="./media-querys.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <meta name="twitter:title" content="TankShark.IO" />
@@ -17,7 +17,7 @@
       content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!"
     />
     <meta charset="utf-8" />
-    <meta name="twitter:image" content="/og-assets/tankshark-io.png" />
+    <meta name="twitter:image" content="./og-assets/tankshark-io.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta content="5/4/2025T12:10" itemprop="Last Updated" />
     <link rel="canonical" href="https://tankshark.fun" />
@@ -31,15 +31,20 @@
       property="og:description"
       content="TankShark.IO is a thrilling multiplayer open-world game. Explore exciting gameplay with unique tanks and shapes. Team up or compete to dominate the online battlefield!"
     />
-    <meta property="og:image" content="/og-assets/tankshark-io.png" />
+    <meta property="og:image" content="./og-assets/tankshark-io.png" />
     <meta property="og:type" content="website" />
 
     <link
       rel="icon"
       id="icon"
       type="image/x-icon"
-      href="/favicons/favicon.ico"
+      href="./favicons/favicon.ico"
     />
+    
+    <link rel="icon" type="image/png" href="./favicons/32x32.svg" sizes="32x32" />
+    <link rel="icon" type="image/png" href="./favicons/favicon.ico" sizes="16x16" />
+
+    <link rel="apple-touch-icon" href="./favicons/favicon.ico" />
   </head>
   <body>
     <script type="text/javascript">
@@ -91,7 +96,7 @@
     <header class="landing-page" id="landing-page">
       <img
         class="settings-img"
-        src="assets/cropped/gear.png"
+        src="./assets/cropped/gear.png"
         id="settingsOpener"
         role="button"
         title="settings"
@@ -121,16 +126,16 @@
         <div class="badgeLevelDiv-con">
           <div class="badgeLevelDiv" id="badgeLevelDiv">
             <div class="levelContainer">
-              <div class="level">Level 1: 1000</div>
-              <div class="level">Level 2: 40000</div>
-              <div class="level">Level 3: 70000</div>
-              <div class="level">Level 4: 100000</div>
-              <div class="level">Level 5: 200000</div>
-              <div class="level">Level 6: 350000</div>
-              <div class="level">Level 7: 500000</div>
-              <div class="level">Level 8: 650000</div>
-              <div class="level">Level 9: 800000</div>
-              <div class="level">Level 10: 1000000</div>
+              <div class="levelContainer">Level 1: 1000</div>
+              <div class="levelContainer">Level 2: 40000</div>
+              <div class="levelContainer">Level 3: 70000</div>
+              <div class="levelContainer">Level 4: 100000</div>
+              <div class="levelContainer">Level 5: 200000</div>
+              <div class="levelContainer">Level 6: 350000</div>
+              <div class="levelContainer">Level 7: 500000</div>
+              <div class="levelContainer">Level 8: 650000</div>
+              <div class="levelContainer">Level 9: 800000</div>
+              <div class="levelContainer">Level 10: 1000000</div>
             </div>
           </div>
         </div>
@@ -250,6 +255,13 @@
             or team score). Bases start with 2,000 health, no turrets, and a
             stationary, non-rotating structure.
           </li>
+          <img
+          itemprop="gameItem"
+            class="updates-img"
+            alt="Just me with a base"
+            id="baseimg"
+            src="./assets/teambase.webp"
+            loading="lazy">
           <li>
             <strong>Base Mobility:</strong> Bases are immobile once placed. They
             can be destroyed by enemies but cannot be moved — at least for now.
@@ -506,7 +518,7 @@
       class="mainframe"
     >
       <img
-        src="assets/youDied.webp"
+        src="./assets/youDied.webp"
         class="death-screen"
         itemprop="gameEvent"
         id="die"
@@ -594,7 +606,7 @@
         <div class="bar-holder">
           <img
             itemprop="characterAttribute"
-            src="assets/barXP.png"
+            src="./assets/barXP.png"
             class="bar-image"
             alt="level bar"
           />
@@ -607,22 +619,24 @@
       ></div>
       <canvas id="ghostCanvas" class="ghost-canvas"></canvas>
       <div class="aling-center-10" id="teamMain">
-        <div class="con-435874358">
-          <div class="social-con">
-            <div class="socialLevelDiv" id="social">
-              <div class="socialContainer">
-                <div class="flexbuild">
-                  <textarea
-                    cols="30"
-                    class="textsocial"
-                    id="posttext"
-                    maxlength="256"
-                  ></textarea>
-                  <button class="post-button" id="postBite">Post a bite</button>
+        <div id="socialContainer">
+          <div class="con-435874358">
+            <div class="social-con">
+              <div class="socialLevelDiv" id="social">
+                <div class="socialContainer">
+                  <div class="flexbuild">
+                    <textarea
+                      cols="30"
+                      class="textsocial"
+                      id="posttext"
+                      maxlength="256"
+                    ></textarea>
+                    <button class="post-button" id="postBite">Post a bite</button>
+                  </div>
+                  <a style="font-size: 10px" href="./posting-policy.html"
+                    >By posting your are agreeing to Tankshark's Posting Policy
+                  </a>
                 </div>
-                <a style="font-size: 10px" href="/posting-policy.html"
-                  >By posting your are agreeing to Tankshark's Posting Policy
-                </a>
               </div>
             </div>
           </div>
@@ -713,7 +727,7 @@
           <div class="scrollDiv" id="scrollDiv">
             <div class="configDiv">
               <div class="gear-holder">
-                <img src="assets/gear.png" style="width: 5vw; height: 5vw" />
+                <img src="./assets/gear.png" style="width: 5vw; height: 5vw" />
               </div>
               <label class="label" for="teamDescription"
                 >Team Description:</label
@@ -919,7 +933,7 @@
         </label>
       </div>
       <div class="centerleft">
-        <a href="/privacy.html">privacy policy</a>
+        <a href="./privacy.html">privacy policy</a>
       </div>
     </div>
     <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>

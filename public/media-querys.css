@@ -18,6 +18,9 @@
   .buttonMain {
     font-size: 1em !important;
   }
+  .flexcenter {
+    min-width: 27% !important;
+  }
 }
 
 @media only screen and (max-width: 810px) and (max-height: 500px) and (orientation: landscape) {
@@ -29,6 +32,9 @@
   }
   .badgeLevelDiv-con {
     height: 65% !important;
+  }
+  .flexcenter {
+    min-width: 27% !important;
   }
 }
 

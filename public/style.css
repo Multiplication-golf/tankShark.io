@@ -15,12 +15,14 @@ body {
   --background-white-200: rgb(17, 17, 17);
   --background-white-300: #383838;
   --background-white-400: #383838;
+  --background-black-200: #e7e7e7;
   --border-color-100: rgb(46, 46, 46);
   --border-color-200: rgb(17, 17, 17);
   --border-color-300: rgb(75, 74, 74);
   --border-color-400: rgb(53, 53, 53);
   --border-color-500: rgb(78, 78, 78);
   --text-color-100: rgb(255, 255, 255);
+  --inverted-text-color-100: rgb(0, 0, 0);
   --disabled-badge: rgb(7, 7, 7);
 }
 
@@ -30,12 +32,14 @@ body {
   --background-white-200: rgb(243, 243, 243);
   --background-white-300: #cccccc;
   --background-white-400: #ffffff;
+  --background-black-200: #232323;
   --border-color-100: rgb(226, 226, 226);
   --border-color-200: rgb(243, 243, 243);
   --border-color-300: rgb(199, 199, 199);
   --border-color-400: rgb(190, 190, 190);
   --border-color-500: rgb(226, 226, 226);
   --text-color-100: rgb(0, 0, 0);
+  --inverted-text-color-100: rgb(0, 0, 0);
   --disabled-badge: rgb(133, 133, 133);
 }
 
@@ -175,15 +179,12 @@ body {
 }
 
 .flexcenter {
-  /* position: absolute;
-  top: 0;
-  left: 0; */
   float: left;
   height: 0%;
   width: 27%;
+  min-width: 255px;
   display: flex;
   justify-content: center;
-  /* align-items: end; */
 }
 
 @keyframes pop {
@@ -330,7 +331,7 @@ body {
 }
 
 .upgrades-box {
-  width: 100%;
+  width: 95%;
   background-color: var(--background-white-0);
   height: 95%;
   border: 4px solid var(--background-white-200);
@@ -650,6 +651,50 @@ option {
   display: inline;
   width: 5vw;
   height: 5vw;
+  margin: 20px;
+  border: 8px var(--background-white-300) solid;
+  border-radius: 20px;
+}
+
+.message {
+  display: block;
+  max-height: 7vh;
+  border-radius: 15px;
+  padding: 2%;
+  margin: 2%;
+  background-color: var(--background-white-100);
+}
+
+.like-dislike-img {
+  display: inline;
+  margin: 1px;
+  width: 2vw;
+  height: 2vw;
+}
+
+.like-dislike-img:hover {
+  transform: scale(1.2);
+  transition: all 0.3s ease-in-out;
+}
+
+.like-dislike-div:hover::after {
+  content: "Username";
+  display: block;
+  background-color: var(--background-black-200);
+  color: var(--text-color-100);
+  max-height: 10vh;
+  padding: 1%;
+  border-radius: 15px;
+  width: 300%;
+  transform: translateX(-150%);
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.updates-img {
+  display: inline;
+  width: 10vw;
+  height: 10vw;
   margin: 20px;
   border: 8px var(--background-white-300) solid;
   border-radius: 20px;

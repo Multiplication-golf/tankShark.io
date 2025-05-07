@@ -94,6 +94,8 @@
   width: 100vw;
   text-align: center;
   display: none;
+  position: relative;
+  z-index: 79;
 }
 
 .con-435874358 {
@@ -179,7 +181,7 @@
   background: #fff;
   padding: -10px 20px 20px 20px;
   border-radius: 8px;
-  z-index: 9;
+  z-index: 89;
   width: 400px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   display: none;

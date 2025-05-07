@@ -2,9 +2,10 @@
   "name": "Tankshark",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "source": "public/index.html",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "postbuild": "cpy public/**/* dist --parents"
   },
   "keywords": [],
   "author": "",
@@ -22,5 +23,10 @@
     "protobufjs": "^7.4.0",
     "sat": "^0.9.0",
     "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "cpy-cli": "^5.0.0",
+    "parcel": "^2.14.4",
+    "svgo": "^3.3.2"
   }
 }

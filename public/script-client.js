@@ -7,7 +7,6 @@
     // document.getElementsByTagName("body")[0].innerHTML +=
     //   '<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>';
 
-
     try {
       await window.CrazyGames.SDK.init();
     } catch {
@@ -32,10 +31,8 @@
       console.log("Error on request responsive banner", e);
     }
   }
-  
-  var badgelevels = {
 
-  };
+  var badgelevels = {};
 
   var badgesToLoad = [
     "1.webp",
@@ -52,7 +49,10 @@
 
   badgesToLoad.forEach((badge) => {
     var img = new Image();
-    img.src = window.location.href !== "http://127.0.0.1:5501/public/index.html" ? `/badges/${badge}` : `/public/badges/${badge}`;
+    img.src =
+      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+        ? `/badges/${badge}`
+        : `/public/badges/${badge}`;
     badgelevels[`/badges/${badge}`] = img;
   });
 
@@ -62,7 +62,6 @@
       y: evt.clientY,
     };
   }
-
 
   function getMiddleOfElement(element) {
     const rect = element.getBoundingClientRect();
@@ -106,7 +105,7 @@
     "7.webp",
     "8.webp",
     "9.webp",
-    "10.webp"
+    "10.webp",
   ]; // Array of image paths
 
   imagePaths.forEach((path) => {
@@ -370,10 +369,12 @@
     var progress = 0.0;
     var pentarotate = 0;
     var requests = [];
+    var imgsrcs = ["assets/dislike.webp", "assets/like.webp"];
     var minimapLevels = [];
     var levels = {
       0: 15,
     };
+    var socialContainer = document.getElementById("socialContainer");
     let statsTree = {
       Health: 1,
       "Body Damage": 1,
@@ -391,6 +392,8 @@
       }, 300);
       canKeyPress = false;
     }
+
+    socialContainer.style.display = "none";
 
     function send(type, data) {
       if (socket.readyState === WebSocket.OPEN) {
@@ -865,117 +868,109 @@
             }
           }
         });
-        if (owner_of_team) {
-          document
-            .getElementsByClassName("outer-box")[0]
-            .classList.add("outer-onwer-box");
-          document
-            .getElementsByClassName("inner-box")[0]
-            .classList.add("inner-onwer-box");
-          document.getElementById("upgradesBox").style.display = "block";
-
-          document.getElementById("HomeBaseUpgrade").addEventListener("click",() => {
-            document.getElementById("confermationScreen").style.display = "flex";
-
-          });
-          document.getElementById("placeNo").addEventListener("click",() => {
-            document.getElementById("confermationScreen").style.display = "none";
-          });
-          document.getElementById("placeYes").addEventListener("click", () => {
-            document.getElementById("confermationScreen").style.display = "none";
-            send("requestUpgrade", {
-              upgradeType: "buildBase",
-              teamId: teamOn,
-            });
-          });
-
-          document
-            .getElementById("upgradeHealth")
-            .addEventListener("click", () => {
-              send("requestUpgrade", {
-                upgradeType: "statUpgrade",
-                stat: "Health",
-                teamId: teamOn,
-              });
-            });
-          document
-            .getElementById("upgradeBodyDamage")
-            .addEventListener("click", () => {
-              send("requestUpgrade", {
-                upgradeType: "statUpgrade",
-                stat: "Body Damage",
-                teamId: teamOn,
-              });
-            });
-          document
-            .getElementById("upgradeRegen")
-            .addEventListener("click", () => {
-              send("requestUpgrade", {
-                upgradeType: "statUpgrade",
-                stat: "Regen",
-                teamId: teamOn,
-              });
-            });
-          document
-            .getElementById("upgradeBulletPentration")
-            .addEventListener("click", () => {
-              send("requestUpgrade", {
-                upgradeType: "statUpgrade",
-                stat: "Bullet Pentration",
-                teamId: teamOn,
-              });
-            });
-          document
-            .getElementById("upgradeBulletSpeed")
-            .addEventListener("click", () => {
-              send("requestUpgrade", {
-                upgradeType: "statUpgrade",
-                stat: "Bullet Speed",
-                teamId: teamOn,
-              });
-            });
-          document
-            .getElementById("upgradeBulletDamage")
-            .addEventListener("click", () => {
-              send("requestUpgrade", {
-                upgradeType: "statUpgrade",
-                stat: "Body Damage",
-                teamId: teamOn,
-              });
-            });
-          document
-            .getElementById("upgradeBulletReload")
-            .addEventListener("click", () => {
-              send("requestUpgrade", {
-                upgradeType: "statUpgrade",
-                stat: "Bullet Reload",
-                teamId: teamOn,
-              });
-            });
-          document
-            .getElementById("upgradeSpeed")
-            .addEventListener("click", () => {
-              send("requestUpgrade", {
-                upgradeType: "statUpgrade",
-                stat: "Speed",
-                teamId: teamOn,
-              });
-            });
-        }
       }
     }
+
+    document
+      .getElementsByClassName("outer-box")[0]
+      .classList.add("outer-onwer-box");
+    document
+      .getElementsByClassName("inner-box")[0]
+      .classList.add("inner-onwer-box");
+    document.getElementById("upgradesBox").style.display = "block";
+
+    document.getElementById("HomeBaseUpgrade").addEventListener("click", () => {
+      document.getElementById("confermationScreen").style.display = "flex";
+    });
+    document.getElementById("placeNo").addEventListener("click", () => {
+      document.getElementById("confermationScreen").style.display = "none";
+    });
+    document.getElementById("placeYes").addEventListener("click", () => {
+      document.getElementById("confermationScreen").style.display = "none";
+      send("requestUpgrade", {
+        upgradeType: "buildBase",
+        teamId: teamOn,
+      });
+    });
+
+    document.getElementById("upgradeHealth").addEventListener("click", () => {
+      send("requestUpgrade", {
+        upgradeType: "statUpgrade",
+        stat: "Health",
+        teamId: teamOn,
+      });
+    });
+    document
+      .getElementById("upgradeBodyDamage")
+      .addEventListener("click", () => {
+        send("requestUpgrade", {
+          upgradeType: "statUpgrade",
+          stat: "Body Damage",
+          teamId: teamOn,
+        });
+      });
+    document.getElementById("upgradeRegen").addEventListener("click", () => {
+      send("requestUpgrade", {
+        upgradeType: "statUpgrade",
+        stat: "Regen",
+        teamId: teamOn,
+      });
+    });
+    document
+      .getElementById("upgradeBulletPentration")
+      .addEventListener("click", () => {
+        send("requestUpgrade", {
+          upgradeType: "statUpgrade",
+          stat: "Bullet Pentration",
+          teamId: teamOn,
+        });
+      });
+    document
+      .getElementById("upgradeBulletSpeed")
+      .addEventListener("click", () => {
+        send("requestUpgrade", {
+          upgradeType: "statUpgrade",
+          stat: "Bullet Speed",
+          teamId: teamOn,
+        });
+      });
+    document
+      .getElementById("upgradeBulletDamage")
+      .addEventListener("click", () => {
+        send("requestUpgrade", {
+          upgradeType: "statUpgrade",
+          stat: "Body Damage",
+          teamId: teamOn,
+        });
+      });
+    document
+      .getElementById("upgradeBulletReload")
+      .addEventListener("click", () => {
+        send("requestUpgrade", {
+          upgradeType: "statUpgrade",
+          stat: "Bullet Reload",
+          teamId: teamOn,
+        });
+      });
+    document.getElementById("upgradeSpeed").addEventListener("click", () => {
+      send("requestUpgrade", {
+        upgradeType: "statUpgrade",
+        stat: "Speed",
+        teamId: teamOn,
+      });
+    });
     var postText = document.getElementById("posttext");
     document.getElementById("postBite").addEventListener("click", () => {
-      send("postBite", { message: postText.value });
+      send("postBite", { message: postText.value, teamID: teamOn });
       postText.value = "";
     });
 
     window.onbeforeunload = (evt) => {
       if (!confirm("Reloading will not save your progress!")) {
         evt.preventDefault();
-        evt.returnValue = '';
+        evt.returnValue = "";
       }
-    }
+    };
 
     socket.onopen = function () {
       setTimeout(() => {
@@ -1331,7 +1326,7 @@
                   document.getElementById("tanktiles").style.display = "none";
                   if (isCrazyGames) window.CrazyGames.SDK.game.gameplayStop();
                 }, 10);
-                
+
                 dead = true;
 
                 clearInterval(healer);
@@ -1348,7 +1343,7 @@
                 canvas.style["z-index"] = "5";
                 let respawn = document.createElement("button");
 
-                send = (type,data) => {};
+                send = (type, data) => {};
 
                 respawn.innerHTML = "Respawn";
                 respawn.style.position = "absolute";
@@ -1362,12 +1357,19 @@
                 const reload = () => {
                   if (isCrazyGames) {
                     const callbacks = {
-                      adFinished: () => ongame(),
-                      adError: (error) => ongame(),
+                      adFinished: () => {
+                        socket.close();
+                        ongame();
+                      },
+                      adError: (error) => {
+                        socket.close();
+                        ongame();
+                      },
                       adStarted: () => {},
                     };
                     window.CrazyGames.SDK.ad.requestAd("midgame", callbacks);
                   } else {
+                    socket.close();
                     ongame();
                   }
                 };
@@ -1407,7 +1409,7 @@
                   statecycle = 0;
                   send("statechange", {
                     state: state,
-                    statecycle: statecycle
+                    statecycle: statecycle,
                   });
                 }, 1000);
               }
@@ -1570,6 +1572,7 @@
             case "JoinTeamSuccess": {
               if (data.id === playerId) {
                 joinedTeam = true;
+                socialContainer.style.display = "block";
               }
               if (isCrazyGames) {
                 const link = window.CrazyGames.SDK.game.inviteLink({
@@ -1582,6 +1585,7 @@
               players[data.id].team = data.teamId;
               if (data.id === playerId && data.teamId !== null) {
                 joinedTeam = true;
+                socialContainer.style.display = "block";
                 if (isCrazyGames) {
                   const link = window.CrazyGames.SDK.game.inviteLink({
                     teamId: data.teamId,
@@ -1591,6 +1595,7 @@
               }
               if (data.id === playerId && data.teamId === null) {
                 joinedTeam = false;
+                socialContainer.style.display = "none";
                 if (isCrazyGames) window.CrazyGames.SDK.game.hideInviteButton();
                 owner_of_team = false;
                 teamOn = null;
@@ -1610,7 +1615,7 @@
 
                 if (data.playerID == playerId) {
                   playerHealth = data.playerHealth;
-                  send("playerHealintterupted", { });
+                  send("playerHealintterupted", {});
                   playerHealTime = 0;
                   state = "damaged";
                   send("statechange", {
@@ -1668,7 +1673,7 @@
                   }, 1000);
                   playerHealth -= data.playerDamage;
                   playerHealTime = 0;
-                  send("playerHealintterupted", { });
+                  send("playerHealintterupted", {});
                 }
               } else {
                 console.warn(
@@ -1702,6 +1707,76 @@
             }
             case "type_Change": {
               players[data.id] = data;
+              break;
+            }
+            case "postBiteMessage": {
+              console.log(data);
+              data.forEach((message) => {
+                var socialContainer =
+                  document.getElementById("socialContainer");
+
+                socialContainer.innerHTML = `
+                  <div class="con-435874358">
+                    <div class="social-con">
+                      <div class="socialLevelDiv" id="social">
+                        <div class="socialContainer">
+                          <div class="flexbuild">
+                            <textarea
+                              cols="30"
+                              class="textsocial"
+                              id="posttext"
+                              maxlength="256"
+                            ></textarea>
+                            <button class="post-button" id="postBite">Post a bite</button>
+                          </div>
+                          <a style="font-size: 10px" href="/posting-policy.html"
+                            >By posting your are agreeing to Tankshark's Posting Policy
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+                var socialBox = document.getElementById("social");
+                var contentdiv = document.createElement("div");
+                var pContent = document.createElement("p");
+                contentdiv.classList.add("message");
+                pContent.innerText = `${message.username}: ${message.message}`;
+                contentdiv.appendChild(pContent);
+                pContent.style.display = "block";
+                for (let i = 0; i < 2; i++) {
+                  var imgDiv = document.createElement("div");
+                  var imglike = document.createElement("img");
+                  imglike.src = imgsrcs[i];
+                  contentdiv.appendChild(imgDiv);
+                  imglike.classList.add("like-dislike-img");
+                  imgDiv.classList.add("like-dislike-div");
+                  imglike.addEventListener("click", () => {
+                    send("likeDislike", {
+                      id: message.id,
+                      type: i,
+                    });
+                  });
+                  imgDiv.appendChild(imglike);
+                  imgDiv.style.display = "inline-block";
+                  var gentratedNames = () => {
+                    var namestring = "";
+                    if (i === 0) {
+                      message.dislikers.forEach((name) => {
+                        namestring += name + "\n";
+                      });
+                    }
+                    if (i === 1) {
+                      message.likers.forEach((name) => {
+                        namestring += name + "\n";
+                      });
+                    }
+                    return namestring;
+                  };
+                }
+                contentdiv.innerHTML += `<style>.like-dislike-div:hover::after {content: "${gentratedNames()}" !important}</style>`;
+                socialBox.insertBefore(contentdiv, socialBox.children[0]);
+              });
               break;
             }
             case "statechangeUpdate": {
@@ -2389,12 +2464,14 @@
               document
                 .getElementsByClassName("inner-box")[0]
                 .classList.remove("inner-onwer-box");
-              document.getElementById("confermationScreen").style.display = "none";
+              document.getElementById("confermationScreen").style.display =
+                "none";
               document.getElementById("upgradesBox").style.display = "none";
             }
             joinLeave.innerText = "Join";
             if (isCrazyGames) window.CrazyGames.SDK.game.hideInviteButton();
             joinedTeam = false;
+            socialContainer.style.display = "none";
             selected_class = null;
           }
         };
@@ -2444,7 +2521,7 @@
             FireIntervale(evt);
           } else {
             if (evt.button === 2 && !dead) {
-              send("MouseAway", { });
+              send("MouseAway", {});
             }
           }
         };
@@ -2458,7 +2535,7 @@
             canFire2 = true;
           }
 
-          send("MousestateUpdate", { });
+          send("MousestateUpdate", {});
         };
         document.addEventListener("mouseup", mouseStateChange);
       }, 0);
@@ -2592,7 +2669,7 @@
             id_self: playerId,
           });
           playerHealTime = 0;
-          send("playerHealintterupted", { });
+          send("playerHealintterupted", {});
           canmove = false;
           setTimeout(() => {
             canmove = true;
@@ -3093,7 +3170,7 @@
             waitpls();
           } else if (keysPressed["c"]) {
             if (autoRotating && !lockautoRotating) {
-              send("unrotating", { });
+              send("unrotating", {});
             } else {
               send("rotate", {
                 autoAngle: angle * (180 / pi),
@@ -4083,7 +4160,10 @@
           }
 
           if (/octagon/.test(item.type)) {
-            var realcolor = item.type.replace("octagon", "") === teamOn ? "#b3ffff" : "#A0DDFA";
+            var realcolor =
+              item.type.replace("octagon", "") === teamOn
+                ? "#b3ffff"
+                : "#A0DDFA";
             ctx.fillStyle = realcolor;
 
             const centerX = 0;
@@ -4108,7 +4188,10 @@
             ctx.fill();
 
             // Draw pentagon outline
-            ctx.strokeStyle = item.type.replace("octagon", "") === teamOn ? "#b1fcfc" : "#98D6F4";
+            ctx.strokeStyle =
+              item.type.replace("octagon", "") === teamOn
+                ? "#b1fcfc"
+                : "#98D6F4";
             ctx.beginPath();
             ctx.moveTo(vertices[0].x, vertices[0].y);
             for (let i = 1; i < vertices.length; i++) {
@@ -4365,10 +4448,10 @@
         var realx = bullet.x;
         var realy = bullet.y;
         if (
-          realx > -bullet.size + cavansX &&
-          realx < canvas.width + cavansX + bullet.size &&
-          realy - cavansY > -bullet.size &&
-          realy < canvas.height + cavansY + bullet.size
+          realx + bullet.size > cavansX &&
+          realx - bullet.size < canvas.width + cavansX &&
+          realy + bullet.size > cavansY &&
+          realy - bullet.size < canvas.height + cavansY
         ) {
           if (bullet.Zlevel !== 3) {
             unZbullets.push(bullet);
@@ -4415,10 +4498,10 @@
         var realy = bullet.y;
 
         if (
-          realx > 0 + cavansX &&
-          realx < canvas.width + cavansX &&
-          realy - cavansY > 0 &&
-          realy < canvas.height + cavansY
+          realx + bullet.size > cavansX &&
+          realx - bullet.size < canvas.width + cavansX &&
+          realy + bullet.size > cavansY &&
+          realy - bullet.size < canvas.height + cavansY
         ) {
           if (bullet.Zlevel === 2 && bullet.id === playerId) {
             zlevelbullets.push(bullet);
@@ -4436,7 +4519,8 @@
                 players[bullet.id]?.team !== null &&
                 players[playerId]?.team !== null;
             } else {
-              var sameTeam = bullet.teamId === players[playerId]?.team;
+              ctx.globalCompositeOperation = "destination-over";
+              var sameTeam = bullet.teamID === teamOn;
             }
             if (bullet.id === playerId || sameTeam) {
               ctx.fillStyle = "blue";
@@ -4458,6 +4542,7 @@
             ctx.lineWidth = 5;
             ctx.stroke();
             ctx.closePath();
+            ctx.globalCompositeOperation = "source-over";
           } else if (bullet.type === "FreeNecromancer") {
             ctx.save();
             ctx.translate(realx - cavansX, realy - cavansY);
@@ -5933,7 +6018,7 @@
       profileCtx.save();
       profileCtx.translate(playerCanvas.width / 2, playerCanvas.height / 2);
       profileCtx.rotate(pointerAngle);
-      profileCtx.drawImage(imageSRC,-40,-40,80,80);
+      profileCtx.drawImage(imageSRC, -40, -40, 80, 80);
       profileCtx.restore();
     }
     if (canAnimateProfile) requestAnimationFrame(createProfile);
