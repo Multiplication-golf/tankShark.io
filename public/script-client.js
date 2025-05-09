@@ -1436,6 +1436,7 @@
             }
             case "bulletUpdate": {
               bullets = data;
+              console.log(data);
               break;
             }
             case "roadUpdate": {
@@ -1610,7 +1611,6 @@
             }
             case "bulletDamage": {
               if (players[data.playerID]) {
-                bullets = data.BULLETS; // Check if the player exists
                 players[data.playerID].health = data.playerHealth;
 
                 if (data.playerID == playerId) {
@@ -5225,6 +5225,8 @@
             percentage /= 10;
             let newrgb2 = mix([130, 130, 130], [255, 255, 255], percentage);
             ctx.fillStyle = `rgb(${newrgb2[0]} ${newrgb2[1]} ${newrgb2[2]})`;
+            let newrgb = mix([170, 170, 170], [255, 255, 255], percentage);
+            ctx.strokeStyle = `rgb(${newrgb[0]} ${newrgb[1]} ${newrgb[2]})`;
           } else {
             ctx.fillStyle = "#828282";
             ctx.strokeStyle = "#aaaaaa";
@@ -5287,7 +5289,7 @@
             playerY - cavansY + 55 * FOV,
             90 * FOV,
             10 * player.size * FOV,
-            (10 * player.size) / 2
+            5 * player.size
           );
           ctx.fill();
           ctx.closePath();
@@ -5302,7 +5304,7 @@
             playerY - cavansY + 55 * FOV,
             healthWidth,
             10 * player.size * FOV,
-            (10 * player.size) / 2
+            5 * player.size
           );
           ctx.fill();
           ctx.closePath();
@@ -5455,13 +5457,6 @@
 
           // Draw border
           ctx.lineWidth = 1;
-          ctx.strokeStyle = "grey";
-          ctx.strokeRect(
-            playerX - cavansX - 50,
-            playerY - cavansY + 55,
-            90 * player.size * FOV,
-            10 * player.size * FOV
-          );
         }
       }
 

@@ -330,6 +330,15 @@ body {
   line-height: 25px;
 }
 
+@keyframes rotater {
+  0% {
+    transform: rotate3d(0, 1, 0, 0deg);
+  }
+  100% {
+    transform: rotate3d(0, 1, 0, 360deg);
+  }
+}
+
 .upgrades-box {
   width: 95%;
   background-color: var(--background-white-0);

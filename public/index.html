@@ -40,9 +40,19 @@
       type="image/x-icon"
       href="./favicons/favicon.ico"
     />
-    
-    <link rel="icon" type="image/png" href="./favicons/32x32.svg" sizes="32x32" />
-    <link rel="icon" type="image/png" href="./favicons/favicon.ico" sizes="16x16" />
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="./favicons/32x32.svg"
+      sizes="32x32"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="./favicons/favicon.ico"
+      sizes="16x16"
+    />
 
     <link rel="apple-touch-icon" href="./favicons/favicon.ico" />
   </head>
@@ -102,7 +112,48 @@
         title="settings"
         alt="settings"
       />
-      <div style="top: 10px; right: 20px; position: fixed">© 2025</div>
+      <div id="money-holder" style="position: relative; top: 1vw; float:right; display: flex; align-items: center; margin-right: 10vw; transform: scale(2);">
+        <svg viewBox="0 0 500 500" width="5.5vw" height="5vw" style="display:inline-block; margin: -10px; animation: rotater 2s linear infinite;">
+          <defs>
+            <radialGradient gradientUnits="userSpaceOnUse" cx="250" cy="250" r="50" id="gradient-0">
+              <stop offset="0" style="stop-color: rgb(100% 76.471% 29.02%)"></stop>
+              <stop offset="1" style="stop-color: rgb(61.357% 42.409% 0%)"></stop>
+            </radialGradient>
+            <radialGradient gradientUnits="userSpaceOnUse" cx="250" cy="250" r="50" id="gradient-1">
+              <stop offset="0" style="stop-color: rgb(100% 78.431% 12.157%)"></stop>
+              <stop offset="1" style="stop-color: rgb(60.154% 44.014% 0%)"></stop>
+            </radialGradient>
+            <linearGradient bx:pinned="true" id="color-0">
+              <stop style="stop-color: rgb(0, 194, 255);" offset="0"></stop>
+              <stop style="stop-color: #6dd5fa;" offset="0.609"></stop>
+              <stop style="stop-color: rgb(61, 214, 255);" offset="1"></stop>
+            </linearGradient>
+            <radialGradient id="color-0-0" href="#color-0" gradientUnits="userSpaceOnUse" cx="-239.845" cy="-134.277" r="19.845" gradientTransform="matrix(1, 0, 0, 1, 0, 0)"></radialGradient>
+            <radialGradient id="color-0-1" href="#color-0" gradientUnits="userSpaceOnUse" cx="239.845" cy="96.069" r="19.845"></radialGradient>
+            <linearGradient bx:pinned="true" id="color-1">
+              <stop style="stop-color: rgb(105, 70, 0);" offset="0.033"></stop>
+              <stop style="stop-color: #ba8b02;" offset="0.793"></stop>
+            </linearGradient>
+            <radialGradient id="color-1-0" href="#color-1" gradientUnits="userSpaceOnUse" cx="564.5" cy="594.5" r="182.5"></radialGradient>
+            <linearGradient bx:pinned="true" id="color-2">
+              <stop style="stop-color: rgb(207, 164, 0);" offset="0"></stop>
+              <stop style="stop-color: rgba(146, 102, 0, 0);" offset="1"></stop>
+            </linearGradient>
+            <radialGradient id="color-2-0" href="#color-2" gradientUnits="userSpaceOnUse" cx="239.69" cy="115.449" r="125" gradientTransform="matrix(1, 0, 0, 1, 10.31, 134.550995)"></radialGradient>
+          </defs>
+          <ellipse style="stroke: rgba(0, 0, 0, 0); fill: url(#color-2-0);" cx="250" cy="250" rx="125" ry="125"></ellipse>
+          <path style="stroke: rgb(168, 134, 19); stroke-linejoin: round; stroke-width: 12.7468px; fill: url(#color-1-0);" transform="matrix(0.55371, 0, 0, 0.544608, -62.015507, -74.323029)" d="M 542.173 412 L 586.827 412 L 596.251 480.203 A 118.625 118.625 0 0 1 622.869 491.229 L 677.759 449.665 L 709.335 481.241 L 667.771 536.131 A 118.625 118.625 0 0 1 678.797 562.749 L 747 572.173 L 747 616.827 L 678.797 626.251 A 118.625 118.625 0 0 1 667.771 652.869 L 709.335 707.759 L 677.759 739.335 L 622.869 697.771 A 118.625 118.625 0 0 1 596.251 708.797 L 586.827 777 L 542.173 777 L 532.749 708.797 A 118.625 118.625 0 0 1 506.131 697.771 L 451.241 739.335 L 419.665 707.759 L 461.229 652.869 A 118.625 118.625 0 0 1 450.203 626.251 L 382 616.827 L 382 572.173 L 450.203 562.749 A 118.625 118.625 0 0 1 461.229 536.131 L 419.665 481.241 L 451.241 449.665 L 506.131 491.229 A 118.625 118.625 0 0 1 532.749 480.203 Z M 564.5 539.75 A 54.75 54.75 0 0 0 564.5 649.25 A 54.75 54.75 0 0 0 564.5 539.75" bx:shape="cog 564.5 594.5 54.75 118.625 182.5 0.38 8 1@40087b98"></path>
+          <ellipse style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0);" cx="250" cy="250" rx="20" ry="20"></ellipse>
+          <ellipse style="stroke-linecap: round; stroke: url(#gradient-0); fill-rule: nonzero; fill: url(#gradient-1); stroke-miterlimit: 8.65; stroke-width: 5px;" cx="250" cy="250" rx="50" ry="50"></ellipse>
+          <g transform="matrix(1, 0, 0, 1, 10.309998, 134.551498)">
+            <path d="M 239.845 76.966 L 259.69 115.172 L 220 115.172 L 239.845 76.966 Z" bx:shape="triangle 220 76.966 39.69 38.206 0.5 0 1@5e71b228" style="fill: url(#color-0-1); stroke: rgb(100, 88, 10); stroke-width: 0px;"></path>
+            <path d="M -239.845 -153.38 L -220 -115.174 L -259.69 -115.174 L -239.845 -153.38 Z" bx:shape="triangle -259.69 -153.38 39.69 38.206 0.5 0 1@e161b593" style="paint-order: stroke; fill: url(#color-0-0); transform-box: fill-box; transform-origin: 50% 50%; stroke: rgb(100, 88, 10); stroke-width: 0px;" transform="matrix(-1, 0, 0, -1, 479.690002, 268.554012)"></path>
+            <path style="fill: rgba(216, 216, 216, 0); stroke: rgb(171, 133, 0); stroke-width: 5px; stroke-linejoin: round;" d="M 220 115.172 L 239.934 76.966 L 259.657 115.174"></path>
+            <path style="fill: rgba(216, 216, 216, 0); stroke: rgb(171, 133, 0); stroke-width: 5px; stroke-linejoin: round; transform-box: fill-box; transform-origin: 50% 50%;" d="M 220.033 153.378 L 239.967 115.172 L 259.69 153.38" transform="matrix(-1, 0, 0, -1, 0.000011, -0.000023)"></path>
+          </g>
+        </svg><p style="margin: -10px; display: inline;">:0</p>
+      </div>
+      <div style="top: 5px; right: 20px; position: fixed">© 2025</div>
       <div class="topcenterAD">
         <div id="adbox" class="innercenterAD"></div>
       </div>
@@ -255,13 +306,18 @@
             or team score). Bases start with 2,000 health, no turrets, and a
             stationary, non-rotating structure.
           </li>
-          <img
-          itemprop="gameItem"
-            class="updates-img"
-            alt="Just me with a base"
-            id="baseimg"
-            src="./assets/teambase.webp"
-            loading="lazy">
+          <li stye="list-style-type: none;
+          margin: 0;
+          padding: 0;">
+            <img
+              itemprop="gameItem"
+              class="updates-img"
+              alt="Just me with a base"
+              id="baseimg"
+              src="./assets/teambase.webp"
+              loading="lazy"
+            />
+          </li>
           <li>
             <strong>Base Mobility:</strong> Bases are immobile once placed. They
             can be destroyed by enemies but cannot be moved — at least for now.
@@ -631,7 +687,9 @@
                       id="posttext"
                       maxlength="256"
                     ></textarea>
-                    <button class="post-button" id="postBite">Post a bite</button>
+                    <button class="post-button" id="postBite">
+                      Post a bite
+                    </button>
                   </div>
                   <a style="font-size: 10px" href="./posting-policy.html"
                     >By posting your are agreeing to Tankshark's Posting Policy
