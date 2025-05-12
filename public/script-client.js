@@ -15,7 +15,7 @@
         window.location.href = "/";
       }, 5000);
     }
-    const available = window.CrazyGames.SDK.user.isUserAccountAvailable;
+    var available = window.CrazyGames.SDK.user.isUserAccountAvailable;
     if (available) {
       const crazyUserObject = await window.CrazyGames.SDK.user.getUser()
         .username;
@@ -23,14 +23,14 @@
         await window.CrazyGames.SDK.user.getUser().username;
     }
   }
-
+  var token = null;
   if (isCrazyGames) {
-    try {
-      await window.CrazyGames.SDK.banner.requestResponsiveBanner("adbox");
-    } catch (e) {
-      console.log("Error on request responsive banner", e);
+    window.CrazyGames.SDK.game.loadingStart();
+    if (available) {
+      token = await window.CrazyGames.SDK.user.getUserToken();
     }
   }
+  console.log(token);
 
   var badgelevels = {};
 
@@ -111,7 +111,7 @@
   imagePaths.forEach((path) => {
     const img = new Image();
     img.src =
-      (window.location.href !== "https://tankshark.fun/"
+      (window.location.href === "http://127.0.0.1:5501/public/index.html"
         ? "/public/skins/"
         : "/skins/") + path;
     images.push(img);
@@ -177,6 +177,376 @@
   var canSeeNames = true;
 
   function ongame() {
+    document.getElementById("game").innerHTML = `
+      <img
+        src="./assets/youDied.webp"
+        class="death-screen"
+        itemprop="gameEvent"
+        id="die"
+        alt="death screen"
+      />
+      <div id="keyscontainer" class="keycontener">
+        <svg width="6vh" height="6vh"></svg>
+        <svg width="6vh" height="6vh" id="up">
+          <rect
+            width="6vh"
+            height="6vh"
+            rx="15"
+            fill="rgba(255,255,255,0.8)"
+            stroke="rgba(255,255,255,0.9)"
+            stroke-width="1"
+          />
+          <text
+            x="2vh"
+            y="2.5vh"
+            font-size="25"
+            text-anchor="middle"
+            alignment-baseline="middle"
+          >
+            W
+          </text>
+        </svg>
+        <br />
+        <svg width="6vh" height="6vh" id="left">
+          <rect width="6vh" height="6vh" rx="15" fill="rgba(255,255,255,0.8)" />
+          <text
+            x="2vh"
+            y="2.5vh"
+            font-size="25"
+            text-anchor="middle"
+            alignment-baseline="middle"
+          >
+            A
+          </text>
+        </svg>
+        <svg width="6vh" height="6vh" id="down">
+          <rect width="6vh" height="6vh" rx="15" fill="rgba(255,255,255,0.8)" />
+          <text
+            x="2vh"
+            y="2.5vh"
+            font-size="25"
+            text-anchor="middle"
+            alignment-baseline="middle"
+          >
+            S
+          </text>
+        </svg>
+        <svg width="6vh" height="6vh" id="right">
+          <rect width="6vh" height="6vh" rx="15" fill="rgba(255,255,255,0.8)" />
+          <text
+            x="2vh"
+            y="2.5vh"
+            font-size="25"
+            text-anchor="middle"
+            alignment-baseline="middle"
+          >
+            D
+          </text>
+        </svg>
+      </div>
+      <div class="background-grid" id="gridDark"></div>
+      <div class="background-grid" id="gridLight"></div>
+      <div id="confermationScreen" class="shaded100">
+        <div class="confimation-pop-up">
+          <strong
+            ><span class="join-text"
+              >The hub will be unmoveble until it is destroyed by another
+              team/player.<br />
+              It will place just to your left. Choose your spot wisely!
+              <br />
+              <button class="allow-join" id="placeNo">
+                <strong>no</strong></button
+              ><button class="allow-join" id="placeYes">
+                <strong>yes</strong>
+              </button>
+            </span></strong
+          >
+        </div>
+      </div>
+      <div class="UI-contaniner" id="container">
+        <div class="bar-holder">
+          <img
+            itemprop="characterAttribute"
+            src="./assets/barXP.png"
+            class="bar-image"
+            alt="level bar"
+          />
+        </div>
+      </div>
+      <div
+        itemprop="characterAttribute"
+        id="tanktiles"
+        class="upgrade-tiles"
+      ></div>
+      <canvas id="ghostCanvas" class="ghost-canvas"></canvas>
+      <div class="aling-center-10" id="teamMain">
+        <div id="socialContainer">
+          <div class="con-435874358">
+            <div class="social-con">
+              <div class="socialLevelDiv" id="social">
+                <div class="socialContainer">
+                  <div class="flexbuild">
+                    <textarea
+                      cols="30"
+                      class="textsocial"
+                      id="posttext"
+                      maxlength="256"
+                    ></textarea>
+                    <button class="post-button" id="postBite">
+                      Post a bite
+                    </button>
+                  </div>
+                  <a style="font-size: 10px" href="./posting-policy.html"
+                    >By posting your are agreeing to Tankshark's Posting Policy
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="outer-box">
+          <div style="display: flex; height: 85%">
+            <div class="inner-box">
+              <span class="close-btn" id="Xbutton">X</span>
+              <div class="containerA" id="teamcontainer">
+                <div class="team">Team1</div>
+                <div class="team">Team2</div>
+                <div class="team">Team3</div>
+                <div class="team">Team4</div>
+              </div>
+            </div>
+            <div class="con-12849" id="upgradesBox">
+              <div class="upgrades-box">
+                <button class="upgrade-button" id="miniMap">
+                  Upgrade mini-map player tracking: 3000
+                </button>
+                <div class="upgrade-button">
+                  Upgrade stats: 200 per stat<br />
+                  <div class="upgrade-div" id="upgradeHealth">Health</div>
+                  <div class="upgrade-div" id="upgradeBodyDamage">
+                    Body Damage
+                  </div>
+                  <div class="upgrade-div" id="upgradeRegen">Regen</div>
+                  <div class="upgrade-div" id="upgradeBulletPentration">
+                    Bullet Pentration
+                  </div>
+                  <div class="upgrade-div" id="upgradeBulletSpeed">
+                    Bullet Speed
+                  </div>
+                  <div class="upgrade-div" id="upgradeBulletDamage">
+                    Bullet Damage
+                  </div>
+                  <div class="upgrade-div" id="upgradeBulletReload">
+                    Bullet Reload
+                  </div>
+                  <div class="upgrade-div" id="upgradeSpeed">Speed</div>
+                </div>
+                <button class="upgrade-button" id="HomeBaseUpgrade">
+                  Build homebase: 10000
+                </button>
+              </div>
+            </div>
+          </div>
+          <div style="display: block; height: 14%">
+            <div class="button-container">
+              <button class="btn btn-join" id="join/leave">Join</button>
+              <button class="btn btn-create" id="create/delete">
+                Create team
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="request-join" id="requestJoin">
+        <strong
+          ><span class="join-text"
+            >Allow Join
+            <br />
+            <button class="allow-join" id="allowNo">
+              <strong>no</strong></button
+            ><button class="allow-join" id="allowYes">
+              <strong>yes</strong>
+            </button>
+          </span></strong
+        >
+      </div>
+
+      <div style="width: 100%">
+        <div id="teambox" class="team-contaniner">
+          <h1 class="high-index">Your team name</h1>
+          <label class="label" for="checkbox">Hidden:</label>
+          <label class="switch" id="checkbox">
+            <input type="checkbox" id="hidden" class="null" />
+            <span class="slider round" id="getval"></span>
+          </label>
+          <br /><br />
+          <label class="label" for="checkbox2">Private:</label>
+          <label class="switch" id="checkbox2">
+            <input type="checkbox" id="private" class="null2" />
+            <span class="slider round" id="getval2"></span>
+          </label>
+
+          <h2>Config</h2>
+          <div class="scrollDiv" id="scrollDiv">
+            <div class="configDiv">
+              <div class="gear-holder">
+                <img src="./assets/gear.png" style="width: 5vw; height: 5vw" />
+              </div>
+              <label class="label" for="teamDescription"
+                >Team Description:</label
+              >
+              <input
+                type="text"
+                itemprop="description"
+                id="teamDescription"
+                placeholder="Enter your team's description"
+                autocomplete="off"
+                maxlength="200"
+              />
+              <br />
+              <label class="label" for="teamSelcetor">Team type:</label>
+              <br />
+              <div id="teamSelcetor" class="aling-left">
+                <div>
+                  <input
+                    type="radio"
+                    id="Anarchy"
+                    name="teamType"
+                    value="Anarchy"
+                    class="inlineRadio"
+                    itemprop="gameMode"
+                    checked
+                  />
+                  <label for="Anarchy">Anarchy</label>
+                </div>
+
+                <div>
+                  <input
+                    type="radio"
+                    id="Democracy"
+                    name="teamType"
+                    value="Democracy"
+                    class="inlineRadio"
+                    itemprop="gameMode"
+                  />
+                  <label for="Democracy">Democracy</label>
+                </div>
+
+                <div>
+                  <input
+                    type="radio"
+                    id="Communist"
+                    name="teamType"
+                    value="Communist"
+                    class="inlineRadio"
+                    itemprop="gameMode"
+                  />
+                  <label for="Communist">Communist</label>
+                </div>
+
+                <div>
+                  <input
+                    type="radio"
+                    id="Constitutional"
+                    name="teamType"
+                    value="Constitutional"
+                    class="inlineRadio"
+                    itemprop="gameMode"
+                  />
+                  <label for="Constitutional">Constitutional</label>
+                </div>
+              </div>
+
+              <div id="taxContiener" style="margin-top: 10%"></div>
+              <div class="centerer">
+                <div class="coolLineBreak"></div>
+              </div>
+              <h1>Taxes D:</h1>
+              <label class="label" for="teamScore">Create a team score:</label>
+              <label class="switch" id="teamScore_">
+                <input type="checkbox" id="teamScore" class="null3" />
+                <span class="slider round" id="getTeamScore"></span> </label
+              ><br />
+              <p class="addedInfo">
+                Not creating a team score will foward the 50% of the score to
+                you
+              </p>
+              <br />
+              <input
+                type="range"
+                id="Simple"
+                name="Simple"
+                min="0"
+                max="1.00"
+                value="0.05"
+                step="0.01"
+                class="taxRange"
+                list="markers"
+              />
+              <p for="Simple" class="taxLable">Flat tax rate</p>
+              <br />
+              <input
+                type="range"
+                id="scoreBased"
+                name="scoreBased"
+                min="0"
+                max="1.00"
+                value="0"
+                step="0.01"
+                class="taxRange"
+                list="markers"
+              />
+              <p for="scoreBased" class="taxLable">
+                Player's score based tax rate
+              </p>
+              <br />
+              <input
+                type="range"
+                id="ScheduledBased"
+                name="ScheduledBased"
+                min="0"
+                max="1.00"
+                value="0"
+                step="0.01"
+                class="taxRange"
+                list="markers"
+              />
+              <br />
+              <select id="time-select" title="tax rate interval">
+                <option value="1">1m</option>
+                <option value="2">2m</option>
+                <option value="4">4m</option>
+                <option value="8">8m</option>
+                <option value="16">16m</option>
+                <option value="0.00016666666">0.01s (do it I dare you)</option>
+              </select>
+              <br />
+              <p for="scoreBased">Scheduled tax rate</p>
+
+              <datalist id="markers">
+                <option value="0"></option>
+                <option value="0.25"></option>
+                <option value="0.50"></option>
+                <option value="0.75"></option>
+                <option value="1.00"></option>
+              </datalist>
+            </div>
+          </div>
+
+          <input
+            type="text"
+            id="teamname"
+            itemprop="name"
+            style="z-index: 10"
+            placeholder="Enter your team name"
+            autocomplete="given-name"
+            maxlength="11"
+          />
+          <button id="teamButton" class="create-team-button">
+            Create team
+          </button>
+        </div>
+      </div>`;
     let getIP = document.getElementById("IP").value;
 
     const socket =
@@ -198,7 +568,7 @@
     canvas.itemprop = "gamePlatform";
 
     document.getElementsByTagName("body")[0].style.cursor =
-      window.location.href !== "https://tankshark.fun/"
+      window.location.href === "http://127.0.0.1:5501/public/index.html"
         ? `url('${window.location.origin}/public/targetpointer1.cur'), auto`
         : `url('${window.location.origin}/targetpointer1.cur'), auto`;
     var pi180 = Math.PI / 180;
@@ -808,6 +1178,7 @@
             }
           }
           if (MYteam.owner.id === playerId || amLower) {
+            document.getElementById("upgradesBox").style.display = "block";
             var canPremote = amLower
               ? MYteam.powers.lowerlevelpowers.canDedicatePower
               : MYteam.powers.canDedicatePower;
@@ -877,7 +1248,6 @@
     document
       .getElementsByClassName("inner-box")[0]
       .classList.add("inner-onwer-box");
-    document.getElementById("upgradesBox").style.display = "block";
 
     document.getElementById("HomeBaseUpgrade").addEventListener("click", () => {
       document.getElementById("confermationScreen").style.display = "flex";
@@ -973,15 +1343,23 @@
     };
 
     socket.onopen = function () {
-      setTimeout(() => {
+      setTimeout(async () => {
         console.time("preconnect");
+        var token = null;
         if (isCrazyGames)
           var teamKey = window.CrazyGames.SDK.game.getInviteParam("teamId");
-        if (isCrazyGames) window.CrazyGames.SDK.game.loadingStart();
+        if (isCrazyGames) {
+          window.CrazyGames.SDK.game.loadingStart();
+          if (available) {
+            token = await window.CrazyGames.SDK.user.getUserToken();
+          }
+        }
+        console.log(token);
         let resolveDraw, rejectDraw;
         let resolveDraw2, rejectDraw2;
         let resolveDraw3, rejectDraw3;
         let resolveDraw4, rejectDraw4;
+        let resolveDraw5, rejectDraw5;
 
         var configPromise = new Promise((resolve, reject) => {
           resolveDraw = resolve;
@@ -1003,11 +1381,17 @@
           rejectDraw4 = reject;
         });
 
+        var loginPromise = new Promise((resolve, reject) => {
+          resolveDraw5 = resolve;
+          rejectDraw5 = reject;
+        });
+
         var recivedData = [
           configPromise,
           tankmetaPromise,
           levelPromise,
           IDPromise,
+          loginPromise,
         ];
 
         Promise.allSettled(recivedData).then(() => {
@@ -1039,6 +1423,7 @@
           username: username,
           level: level,
           state: state,
+          token: token,
           statecycle: statecycle,
           playerHealTime: playerHealTime,
           maxhealth: maxhealth,
@@ -1058,6 +1443,7 @@
           skin: skin,
           isCrazy: isCrazyGames,
           teamKey: teamKey,
+          token: token,
           statsTree: {
             Health: 1,
             "Body Damage": 1,
@@ -1079,7 +1465,10 @@
         img.onload = function () {
           ctx.drawImage(img, canvas.width / 2, canvas.height - 60);
         };
-        img.src = `https://deip-io3.glitch.me${badge}?nocache=${Date.now()}`;
+        img.src =
+          window.location.href !== "http://127.0.0.1:5501/public/index.html"
+            ? `${badge}`
+            : `public/${badge}`;
 
         socket.onmessage = function (event) {
           var type;
@@ -1270,7 +1659,12 @@
             }
             case "badgeToplayer": {
               badge = data.badge;
-              img.src = `https://deip-io3.glitch.me${badge}?nocache=${Date.now()}`;
+              img.src = `${
+                window.location.href ===
+                "http://127.0.0.1:5501/public/index.html"
+                  ? "/public/"
+                  : ""
+              }${badge}`;
               break;
             }
             case "announcements": {
@@ -1806,8 +2200,13 @@
               break;
             }
             case "newid": {
+              resolveDraw5();
               userId = data.newid;
               setCookie("userId", userId, 365);
+              break;
+            }
+            case "resovleID": {
+              resolveDraw5();
               break;
             }
             case "playerSpeedBoost": {
@@ -2629,18 +3028,28 @@
 
     const movePlayer = (dx, dy, last) => {
       movementTimeouts.shift();
-      cavansX += dx;
-      playerY += dy;
-      cavansY += dy;
-      playerX += dx;
+      const steps = 10; // Number of interpolation steps
+      const stepX = dx / steps;
+      const stepY = dy / steps;
 
-      send("playerMoved", {
-        x: playerX,
-        y: playerY,
-        dx: dx,
-        dy: dy,
-        last: last,
-      });
+      for (let i = 0; i < steps; i++) {
+        setTimeout(() => {
+          cavansX += stepX;
+          playerY += stepY;
+          cavansY += stepY;
+          playerX += stepX;
+
+          if (i === steps - 1) {
+            send("playerMoved", {
+              x: playerX,
+              y: playerY,
+              dx: dx,
+              dy: dy,
+              last: last,
+            });
+          }
+        }, i * 16); // 16ms per step for ~60fps
+      }
     };
 
     function MathHypotenuse(x, y) {
@@ -4117,7 +4526,12 @@
             ctx.fill();
 
             // Draw pentagon outline
-            ctx.strokeStyle = "#3976cc";
+            if (item.color === "#C2A248") {
+              ctx.strokeStyle = "#A3883B";
+            } else {
+              ctx.strokeStyle = "#3976cc";
+            }
+
             ctx.beginPath();
             ctx.moveTo(vertices[0].x, vertices[0].y);
             for (let i = 1; i < vertices.length; i++) {
@@ -5618,13 +6032,15 @@
             canvas.width - 125 * upscaleX,
             72 + i * 30 * upscaleY
           );
-          ctx.drawImage(
-            badgelevels[entre.badge],
-            canvas.width - (40 + 205 * upscaleX) * upscaleX,
-            52 + i * 30 * upscaleY,
-            button40,
-            (40 * upscaleY) / 1.8
-          );
+          try {
+            ctx.drawImage(
+              badgelevels[entre.badge],
+              canvas.width - (40 + 205 * upscaleX) * upscaleX,
+              52 + i * 30 * upscaleY,
+              button40,
+              (40 * upscaleY) / 1.8
+            );
+          } catch (error) {}
         });
       }
 
@@ -5634,7 +6050,7 @@
 
   async function getBagdeData() {
     const url =
-      window.location.href === "https://tankshark.fun/"
+      window.location.href !== "http://127.0.0.1:5501/public/index.html"
         ? "https://websocketpointer.duckdns.org/currentbadge"
         : "http://localhost:4500/currentbadge";
     try {
@@ -5656,11 +6072,48 @@
     }
   }
 
+  async function getGearData() {
+    const url =
+      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+        ? "https://websocketpointer.duckdns.org/currentgears"
+        : "http://localhost:4500/currentgears";
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: getCookie("userId") }),
+      });
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  async function loadGearData() {
+    var gearCount = await getGearData();
+    document.getElementById("gearCount").innerText = gearCount.gears;
+  }
+  try {
+    loadGearData();
+  } catch {}
   document.getElementById("subfeedback").addEventListener("click", subfeedback);
+
+  if (isCrazyGames && !available) {
+    document.getElementById("loginWithCrazy").style.display = "block";
+  } else {
+    document.getElementById("loginWithCrazy").style.display = "none";
+  }
 
   async function subfeedback() {
     const url =
-      window.location.href === "https://tankshark.fun/"
+      window.location.href !== "http://127.0.0.1:5501/public/index.html"
         ? "https://websocketpointer.duckdns.org/submit-feedback"
         : "http://localhost:4500/submit-feedback";
     try {
@@ -5698,7 +6151,7 @@
 
   async function getLeaderBoardData() {
     const url =
-      window.location.href === "https://tankshark.fun/"
+      window.location.href !== "http://127.0.0.1:5501/public/index.html"
         ? "https://websocketpointer.duckdns.org/leaderboard"
         : "http://localhost:4500/leaderboard";
     try {
@@ -5724,7 +6177,7 @@
       leaderBoard.appendChild(holderDiv);
       holderDiv.appendChild(holderImg);
       holderImg.src =
-        window.location.href !== "https://tankshark.fun/"
+        window.location.href === "http://127.0.0.1:5501/public/index.html"
           ? `/public${leader.badge.badge}`
           : `${leader.badge.badge}`;
       holderDiv.classList.add("entrie-box");
@@ -5736,12 +6189,13 @@
       holderImg.alt = "io leaderboard badge";
     });
   }
-
-  buildLeaderBoard();
+  try {
+    buildLeaderBoard();
+  } catch {}
 
   async function ping() {
     const urls =
-      window.location.href !== "https://tankshark.fun/"
+      window.location.href === "http://127.0.0.1:5501/public/index.html"
         ? [
             "http://localhost:4500/ping",
             "https://websocketpointer.duckdns.org/ping",
@@ -5765,20 +6219,23 @@
     ).then(() => {
       if (false) {
         window.location.href =
-          window.location.href !== "https://tankshark.fun/"
+          window.location.href !== "http://127.0.0.1:5501/public/index.html"
             ? "/public/server-down.html"
             : "/server-down.html";
       }
     });
   }
+  try {
+    if (window.location.href !== "http://127.0.0.1:5501/public/index.html") {
+      document.getElementById("squareimg").src = "/how-to-imgs/square.webp";
+      document.getElementById("triangleimg").src = "/how-to-imgs/triangle.webp";
+      document.getElementById("pentagonimg").src = "/how-to-imgs/pentagon.webp";
+    }
+  } catch {}
 
-  if (window.location.href === "https://tankshark.fun/") {
-    document.getElementById("squareimg").src = "/how-to-imgs/square.webp";
-    document.getElementById("triangleimg").src = "/how-to-imgs/triangle.webp";
-    document.getElementById("pentagonimg").src = "/how-to-imgs/pentagon.webp";
-  }
-
-  ping();
+  try {
+    ping();
+  } catch {}
 
   var levelData = null;
 
@@ -5841,7 +6298,7 @@
             <circle cx="65" cy="50" r="45" stroke="black" stroke-width="8" fill="none"> </circle>
             <circle cx="65" cy="50" r="45" class="meter-1" id="fillcircle"> </circle>
             <image x="35" y="20" width="60" height="60" href='${
-              window.location.href !== "https://tankshark.fun/"
+              window.location.href === "http://127.0.0.1:5501/public/index.html"
                 ? window.location.origin + "/public/" + level.badge
                 : window.location.origin + level.badge
             }'> </image>
@@ -5867,7 +6324,7 @@
       }
 
       imageForDiv.src =
-        window.location.href !== "https://tankshark.fun/"
+        window.location.href === "http://127.0.0.1:5501/public/index.html"
           ? `/public${level.badge}`
           : `${level.badge}`;
       imageForDiv.alt = `badge level: ${level}`;
@@ -5892,8 +6349,15 @@
   }
 
   let pointerAngle = 0;
+  try {
+    build();
+  } catch {}
 
-  build();
+  if (window.location.href !== "https://tankshark.fun/") {
+    document.getElementById("founder").style.display = "none";
+    document.getElementById("howToPlay").style.display = "none";
+    document.getElementById("howToPlay").style.display = "none";
+  }
 
   var canAnimateProfile = true;
 
@@ -5911,10 +6375,14 @@
     if (darkMode) {
       document.getElementById("gridDark").style.display = "grid";
       document.getElementById("gridLight").style.display = "none";
+      document.getElementById("lightcrazy").style.display = "block";
+      document.getElementById("darkcrazy").style.display = "none";
     }
     if (!darkMode) {
       document.getElementById("gridDark").style.display = "none";
       document.getElementById("gridLight").style.display = "grid";
+      document.getElementById("lightcrazy").style.display = "none";
+      document.getElementById("darkcrazy").style.display = "block";
     }
   };
   darkmode.addEventListener("click", themeChanger);
@@ -6057,10 +6525,14 @@
   if (darkMode) {
     document.getElementById("gridDark").style.display = "grid";
     document.getElementById("gridLight").style.display = "none";
+    document.getElementById("lightcrazy").style.display = "block";
+    document.getElementById("darkcrazy").style.display = "none";
   }
   if (!darkMode) {
     document.getElementById("gridDark").style.display = "none";
     document.getElementById("gridLight").style.display = "grid";
+    document.getElementById("lightcrazy").style.display = "none";
+    document.getElementById("darkcrazy").style.display = "block";
   }
 
   // set theme on button press
@@ -6077,7 +6549,7 @@
   var badgeLevelDiv = document.getElementById("badgeLevelDiv");
 
   playerCanvas.style["background-image"] =
-    window.location.href !== "https://tankshark.fun/"
+    window.location.href === "http://127.0.0.1:5501/public/index.html"
       ? `url(${window.location.origin}/public/assets/cropped/hexbackground.webp)`
       : `url(${window.location.origin}/assets/cropped/hexbackground.webp)`;
 
@@ -6103,7 +6575,7 @@
     skinGrid.appendChild(skinDiv);
     skinDiv.appendChild(skinImg);
     skinImg.src =
-      window.location.href !== "https://tankshark.fun/"
+      window.location.href === "http://127.0.0.1:5501/public/index.html"
         ? `/public/skins/${i}.webp`
         : `/skins/${i}.webp`;
 
@@ -6175,11 +6647,32 @@
       startGame();
     }
   }
-  window.addEventListener("load", () => {
-    document
-      .getElementById("playButton")
-      .addEventListener("mousedown", startGame);
-  });
+  if (!isCrazyGames) {
+    window.addEventListener("load", () => {
+      document
+        .getElementById("playButton")
+        .addEventListener("mousedown", startGame);
+      document.getElementById("full-screen").style.display = "none";
+    });
+  }
+  if (isCrazyGames) {
+    var game = {
+      start: () => {
+        document
+          .getElementById("playButton")
+          .addEventListener("mousedown", startGame);
+        document.getElementById("full-screen").style.display = "none";
+      },
+    };
+    try {
+      await window.CrazyGames.SDK.banner.requestResponsiveBanner("adbox");
+    } catch (e) {
+      console.log("Error on request responsive banner", e);
+    }
+    CrazyGames.SDK.init().then(() => {
+      game.start();
+    });
+  }
 })();
 
 console.log(
