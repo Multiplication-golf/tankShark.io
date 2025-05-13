@@ -1,7 +1,7 @@
 // LOL, you little kids can't mess with my game
 (async function () {
   /* Warning! DO NOT TOUCH */
-  const isCrazyGames = false;
+  const isCrazyGames = true /*window.location.origin.endsWith("crazygames.com");*/;
 
   if (isCrazyGames) {
     // document.getElementsByTagName("body")[0].innerHTML +=
@@ -17,10 +17,9 @@
     }
     var available = window.CrazyGames.SDK.user.isUserAccountAvailable;
     if (available) {
-      const crazyUserObject = await window.CrazyGames.SDK.user.getUser()
-        .username;
-      document.getElementById("username").value =
-        await window.CrazyGames.SDK.user.getUser().username;
+      var user = 
+        await window.CrazyGames.SDK.user.getUser();
+      document.getElementById("username").value = user.username;
     }
   }
   var token = null;
@@ -6099,17 +6098,35 @@
   async function loadGearData() {
     var gearCount = await getGearData();
     document.getElementById("gearCount").innerText = gearCount.gears;
+    document.getElementById("levelProgress").value = gearCount.levelBoost ?gearCount.levelBoost : 0;
+    console.log(gearCount);
   }
   try {
     loadGearData();
-  } catch {}
+  } catch {console.log("e")}
   document.getElementById("subfeedback").addEventListener("click", subfeedback);
 
   if (isCrazyGames && !available) {
     document.getElementById("loginWithCrazy").style.display = "block";
+    document.getElementById("loginWithCrazy").addEventListener("click", async () => {
+      try {
+        const user = await window.CrazyGames.SDK.user.showAuthPrompt();
+        console.log("Auth prompt result", user);
+      } catch (e) {
+          console.log("Error:", e);
+      }
+    })
   } else {
     document.getElementById("loginWithCrazy").style.display = "none";
   }
+  const listener = async () => {
+    available = true;
+    document.getElementById("username").value =
+      await window.CrazyGames.SDK.user.getUser().username;
+  }
+
+  // add listener
+  if (isCrazyGames) window.CrazyGames.SDK.user.addAuthListener(listener);
 
   async function subfeedback() {
     const url =

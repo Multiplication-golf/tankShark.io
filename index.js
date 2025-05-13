@@ -100,6 +100,7 @@ handleUpgrade(serverHttps, "HTTPS");
 const helmet = require("helmet");
 const protobuf = require("protobufjs");
 const { connect } = require("http2");
+const { error } = require("console");
 
 const schema = `
 syntax = "proto3";
@@ -2228,14 +2229,48 @@ app.post("/currentgears", (req, res) => {
     if (_player !== undefined) {
       gears = _player.goldenGears;
     } else {
-      badge = 0;
+      gears = 0;
     }
+    res.send({
+      gears: gears,
+      levelBoost: _player?.startLevels
+    });
   } else {
     gears = 0;
+    res.send({
+      gears: 0,
+      levelBoost: 0
+    });
   }
-  res.send({
-    gears: gears,
-  });
+});
+
+app.post("/buylevels", (req, res) => {
+  var purchaseSuccsefull = false;
+  if (req.body.userId) {
+    var _player = userbase.find((_player) => {
+      return comparePasswords(_player.userid, req.body.userId);
+    });
+
+    if (_player !== undefined) {
+      if (_player.goldenGears >= 100) {
+        _player.goldenGears -= 100;
+        purchaseSuccsefull = true;
+        if (_player.startLevels === -1) _player.startLevels = 0;
+        _player.startLevels += 15;
+      }
+    }
+    res.send({
+      purchaseSuccsefull: purchaseSuccsefull,
+      gears: _player?.goldenGears,
+      levelBoost: _player?.startLevels
+    });
+  } else {
+    res.send({
+      purchaseSuccsefull: false,
+      gears: 0,
+      levelBoost: 0
+    });
+  }
 });
 
 app.post("/submit-feedback", (req, res) => {
@@ -2378,6 +2413,7 @@ wss.on("connection", (socket, req) => {
           console.log(await curse.filter(
             players[newId].username
           ));
+          console.log("user data recived");
           socket.send(JSON.stringify({ type: "newId", data: newId }));
           connection.playerId = newId;
           connections.forEach((con) => {
@@ -2398,7 +2434,7 @@ wss.on("connection", (socket, req) => {
             return false;
           }
           var badge;
-          emit("playerJoined", data); // Emit playerJoined event to notify all clients
+          emit("playerJoined", data);
           emit("autoCannonUPDATE-ADD", autocannons);
           emit("colorUpgrades", CONFIG.colorUpgardes);
           emit("Levels", levels);
@@ -2406,9 +2442,12 @@ wss.on("connection", (socket, req) => {
           emit("Config", CONFIG);
           emit("teamColorUpgrades", CONFIG.colorTeamUpgardes);
 
+          console.log("data sent");
+
           socket.send(
             JSON.stringify({ type: "RETURNtankmeta", data: tankmeta })
           );
+          data.score = 0;
           var public_teams = [];
           public_teams = teamlist.map((team) => {
             if (!team.hidden) {
@@ -2457,8 +2496,10 @@ wss.on("connection", (socket, req) => {
             ) ||
             !confirmplayerradia(x, y)
           );
+          console.log("cors sent")
           if (data.userId) {
             (async function () {
+              try {
               if (data.token && Object.keys(data.token).length > 0 && data.token != null && data.token !== undefined) {
                 const DecodeCGToken = async (_token) => {
                   let key = "";
@@ -2530,9 +2571,30 @@ wss.on("connection", (socket, req) => {
                     username: data.username,
                     skins: ["0.webp"],
                     goldenGears: 0,
+                    startLevels: 0,
                   });
                 }
+                console.log("user setup complete")
               }
+            } catch (e) {
+              console.log(e);
+              (async function () {
+                var newid = await hashPassword(crypto.randomUUID());
+                players[newId].userId = newid;
+                userbase.push({
+                  userid: newid,
+                  scores: [],
+                  username: data.username,
+                  skins: ["0.webp"],
+                  goldenGears: 0,
+                  startLevels: 0,
+                });
+                socket.send(
+                  JSON.stringify({ type: "newid", data: { newid: newid } })
+                );
+                badge = "/badges/1.webp";
+              })();
+            }
             })();
             if (!data.token) {
               var _player = userbase.find((_player) => {
@@ -2566,6 +2628,8 @@ wss.on("connection", (socket, req) => {
                   badge = "/badges/1.webp";
                 }
                 socket.send(JSON.stringify({ type: "resovleID", data: {} }));
+                data.score = levels[_player.startLevels];
+                _player.startLevels = -1;
               }
             } else if (!data.token) {
               (async function () {
@@ -2577,6 +2641,7 @@ wss.on("connection", (socket, req) => {
                   username: data.username,
                   skins: ["0.webp"],
                   goldenGears: 0,
+                  startLevels: 0,
                 });
                 socket.send(
                   JSON.stringify({ type: "newid", data: { newid: newid } })
@@ -2597,6 +2662,7 @@ wss.on("connection", (socket, req) => {
                 username: data.username,
                 skins: ["0.webp"],
                 goldenGears: 0,
+                startLevels: 0,
               });
               badge = "/badges/1.webp";
             })();
@@ -2606,20 +2672,21 @@ wss.on("connection", (socket, req) => {
               JSON.stringify({ type: "badgeToplayer", data: { badge: badge } })
             );
           }
+          console.log("userbase initilized")
           emit("new_X_Y", { x: x, y: y, id: newId });
           players[newId].x = x;
           players[newId].y = y;
           createExsplosion("ksiejf48jfq", x, y + 400);
           leader_board.hidden.push({
             id: newId,
-            score: 0,
+            score: data.score,
             name: data.username,
             badge: badge,
           });
           if (!leader_board.shown[10]) {
             leader_board.shown.push({
               id: newId,
-              score: 0,
+              score: data.score,
               name: data.username,
               badge: badge,
             });
@@ -2628,7 +2695,7 @@ wss.on("connection", (socket, req) => {
             if (0 > leader_board.shown[10].score) {
               leader_board.shown.push({
                 id: newId,
-                score: 0,
+                score: data.score,
                 name: data.username,
                 badge: badge,
               });
@@ -2636,12 +2703,13 @@ wss.on("connection", (socket, req) => {
             if (0 > leader_board.shown[10].score) {
               leader_board.shown[10] = {
                 id: newId,
-                score: 0,
+                score: data.score,
                 name: data.username,
                 badge: badge,
               };
             }
           }
+          console.log("leader board built")
 
           emit("boardUpdate", {
             leader_board: leader_board.shown,
@@ -2688,7 +2756,12 @@ wss.on("connection", (socket, req) => {
               }, 300);
             }
           }, 6000);
+          console.log("intervals created")
+          socket.send(JSON.stringify({type:"playerScore", data:{
+            bulletId: newId,
+            socrepluse: data.score}}));
           })();
+          
           break;
         }
 
@@ -5133,36 +5206,44 @@ wss.on("connection", (socket, req) => {
   });
 
   socket.on("close", () => {
-    roads = roads.filter((road) => {
-      if (road.id === connection.playerId) {
-        return false;
-      }
-      return true;
-    });
-    IPs = IPs.splice(IPs.indexOf(req.socket.remoteAddress), 1);
-    hidden_broswers = hidden_broswers.filter((interval) => {
-      if (connection.playerId === interval.id) {
-        clearInterval(interval.interval);
-        return false;
-      }
-      return true;
-    });
-    const index = () => {
-      var realindex = -1;
-      connection.forEach((connection_, index) => {
-        if (connection.playerId === connection_.playerId) {
-          realindex = index;
+    try {
+      roads = roads.filter((road) => {
+        if (road.id === connection.playerId) {
+          return false;
         }
+        return true;
       });
-      return realindex;
-    };
-    deadplayers = deadplayers.splice(
-      deadplayers.indexOf(connection.playerId),
-      1
-    );
-    if (index !== -1) {
-      connections.splice(index, 1); // Remove the connection from the list
-    }
+    } catch (e) {console.log(e)}
+    try {
+      IPs = IPs.splice(IPs.indexOf(req.socket.remoteAddress), 1);
+    } catch (e) {console.log(e)}
+    try {
+      hidden_broswers = hidden_broswers.filter((interval) => {
+        if (connection.playerId === interval.id) {
+          clearInterval(interval.interval);
+          return false;
+        }
+        return true;
+      });
+      } catch (e) {console.log(e)}
+    try {
+      const index = () => {
+        var realindex = -1;
+        connection.forEach((connection_, index) => {
+          if (connection.playerId === connection_.playerId) {
+            realindex = index;
+          }
+        });
+        return realindex;
+      };
+      deadplayers = deadplayers.splice(
+        deadplayers.indexOf(connection.playerId),
+        1
+      );
+      if (index !== -1) {
+        connections.splice(index, 1); // Remove the connection from the list
+      }
+    } catch (e) {console.log(e)}
     try {
       leader_board.shown = leader_board.shown.filter(
         (__index__) => __index__.id !== connection.playerId
@@ -5204,75 +5285,83 @@ wss.on("connection", (socket, req) => {
     } catch (e) {
       console.log(e);
     }
-    clearInterval(stateupdate);
-    if (players[connection.playerId]) {
-      clearTimeout(players[connection.playerId]?.stateTimeout);
-    }
-    teamlist = teamlist.filter((team) => {
-      var teamplayers = team.players;
-      teamplayers = teamplayers.filter((player) => {
-        return player.id !== connection.playerId;
-      });
-      team.players = teamplayers;
-      if (teamplayers.length === 0) {
-        clearInterval(team.taxInterval);
-        deleteTeamBase(team.teamID);
-        return false;
+    try {
+      clearInterval(stateupdate);
+      if (players[connection.playerId]) {
+        clearTimeout(players[connection.playerId]?.stateTimeout);
       }
-      if (team.owner.id === connection.playerId) {
-        if (teamplayers.length !== 0) {
-          if (team.lowerLevelPlayers.length > 0) {
-            team.owner = team.lowerLevelPlayers[0];
-            emit("newOwner", {
-              teamID: team.teamID,
-              playerid: team.lowerLevelPlayers[0].id,
-            });
-            PendingJoinRequests.forEach((_request) => {
-              if (_request.owner === connection.playerId) {
-                _request.owner = team.lowerLevelPlayers[0].id;
-              }
-            });
-          } else {
-            team.owner = teamplayers[0];
-            emit("newOwner", {
-              teamID: team.teamID,
-              playerid: teamplayers[0].id,
-            });
-            PendingJoinRequests.forEach((_request) => {
-              if (_request.owner === connection.playerId) {
-                _request.owner = teamplayers[0].id;
-              }
-            });
-          }
-        } else {
+    } catch (e) {console.log(e)}
+    try {
+      teamlist = teamlist.filter((team) => {
+        var teamplayers = team.players;
+        teamplayers = teamplayers.filter((player) => {
+          return player.id !== connection.playerId;
+        });
+        team.players = teamplayers;
+        if (teamplayers.length === 0) {
           clearInterval(team.taxInterval);
           deleteTeamBase(team.teamID);
           return false;
         }
-      }
-      return true;
-    });
-    var public_teams = [];
-    public_teams = teamlist.map((team) => {
-      if (!team.hidden) {
-        team.taxInterval = null;
-        team.powers = {};
-        return team;
-      }
-    });
-    emit("pubteamlist", public_teams);
+        if (team.owner.id === connection.playerId) {
+          if (teamplayers.length !== 0) {
+            if (team.lowerLevelPlayers.length > 0) {
+              team.owner = team.lowerLevelPlayers[0];
+              emit("newOwner", {
+                teamID: team.teamID,
+                playerid: team.lowerLevelPlayers[0].id,
+              });
+              PendingJoinRequests.forEach((_request) => {
+                if (_request.owner === connection.playerId) {
+                  _request.owner = team.lowerLevelPlayers[0].id;
+                }
+              });
+            } else {
+              team.owner = teamplayers[0];
+              emit("newOwner", {
+                teamID: team.teamID,
+                playerid: teamplayers[0].id,
+              });
+              PendingJoinRequests.forEach((_request) => {
+                if (_request.owner === connection.playerId) {
+                  _request.owner = teamplayers[0].id;
+                }
+              });
+            }
+          } else {
+            clearInterval(team.taxInterval);
+            deleteTeamBase(team.teamID);
+            return false;
+          }
+        }
+        return true;
+      });
+    } catch (e) {console.log(e)}
+    try {
+      var public_teams = [];
+      public_teams = teamlist.map((team) => {
+        if (!team.hidden) {
+          team.taxInterval = null;
+          team.powers = {};
+          return team;
+        }
+      });
+    } catch (e) {console.log(e)}
+    try {
+      emit("pubteamlist", public_teams);
 
-    players = Object.entries(players).reduce((newPlayers, [key, value]) => {
-      if (key !== connection.playerId) {
-        newPlayers[key] = value;
-      }
-      return newPlayers;
-    }, {});
-    autocannons = autocannons.filter((cannons___0_0) => {
-      return connection.playerId !== cannons___0_0.playerid;
-    });
-    emit("autoCannonUPDATE-ADD", autocannons);
-    emit("playerLeft", { playerID: connection.playerId });
+      players = Object.entries(players).reduce((newPlayers, [key, value]) => {
+        if (key !== connection.playerId) {
+          newPlayers[key] = value;
+        }
+        return newPlayers;
+      }, {});
+      autocannons = autocannons.filter((cannons___0_0) => {
+        return connection.playerId !== cannons___0_0.playerid;
+      });
+      emit("autoCannonUPDATE-ADD", autocannons);
+      emit("playerLeft", { playerID: connection.playerId });
+    } catch (e) {console.log(e)}
   });
 
   socket.on("error", (error) => {

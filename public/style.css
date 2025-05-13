@@ -389,6 +389,30 @@ body {
   color: var(--text-color-100);
 }
 
+.boost-bar {
+  width: 20vw;
+  height: 4vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.boost-bar-fill {
+  width: 0%;
+  height: 100%;
+  background-color: #33f0ff;
+  transition: width 0.3s ease-in-out;
+}
+
+.boost-bar-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1em;
+  color: var(--text-color-100);
+  font-weight: bold;
+}
+
 .colon {
   width: 1ch;
   height: 1em;
@@ -693,7 +717,7 @@ option {
   overflow: hidden;
   min-width: 250px;
   width: 20%;
-  height: 83vh;
+  height: 80vh;
   margin-top: 2.5%;
   margin-bottom: 2.5%;
   margin-left: 5%;
