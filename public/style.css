@@ -155,6 +155,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 1000;
 }
 
 .center1000 {
@@ -536,6 +537,7 @@ body {
     --angle: 360deg;
   }
 }
+
 .buttonMain {
   background-image: none;
   background-color: #0184ff;
@@ -551,13 +553,64 @@ body {
   cursor: pointer;
 }
 
+.boost {
+  background-image: none;
+  background-color: #01ff0e;
+  border-radius: 10px;
+  width: 100%;
+  height: 100%;
+  font-family: Nunito;
+  font-weight: 1000;
+  border: none;
+  color: var(--text-color-100);
+  display: block;
+  font-size: 2em;
+  cursor: pointer;
+}
+
+.boost-con {
+  display: inline-block;
+  animation: rotateBackground 1s linear infinite;
+
+  padding: 0.5% 1%;
+  width: 30%;
+  height: 10%;
+
+  background-color: #8aff7f;
+  border-radius: 10px;
+  color: var(--text-color-100);
+  font-size: 0.7em;
+  --angle: 0deg;
+  min-width: 84px;
+
+  background-origin: border-box;
+
+  /* Remove the background-color to let gradient show */
+  background-image: linear-gradient(
+      var(--angle),
+      rgba(16, 179, 1, 0.8),
+      rgba(255, 0, 0, 0) 70.71%
+    ),
+    linear-gradient(
+      var(--angle),
+      rgba(0, 217, 255, 0.8),
+      rgba(0, 255, 0, 0) 70.71%
+    );
+  border: 0.3rem solid transparent;
+  animation: rotateBackground 4s linear infinite;
+  cursor: pointer;
+}
+
+.boost:hover {
+  background-color: #00a308;
+}
+
 .skin-button {
-  display: none;
   background-image: none;
   background-color: var(--background-white-100);
   border-radius: 10px;
   width: 20vh;
-  height: 15vw;
+  height: 5vw;
   font-family: Nunito;
   font-weight: 1000;
   border: 8px var(--border-color-200) solid;
@@ -722,6 +775,14 @@ option {
   margin-bottom: 2.5%;
   margin-left: 5%;
   z-index: 20;
+}
+
+.lock-img {
+  position: absolute;
+  top: 0;
+  left:0;
+  width: 100%;
+  height: 100%;
 }
 
 .social-con {
@@ -986,15 +1047,28 @@ option {
   z-index: 20;
 }
 
+.copyrightNotice {
+  top: 5px;
+  right: 20px;
+  position: fixed;
+}
+
+.center-flex {
+  display: flex; 
+  align-items: center; 
+  justify-content: center
+}
+
 /* Miscellaneous Styles */
 .x-out {
   position: fixed;
   top: 16vh;
-  right: 17vw;
+  right: 7.7vw;
   width: 1vw;
   height: 1vw;
   font-size: 27px;
   font-weight: 700;
+  z-index: 150;
   border: none;
   background: none;
   color: var(--text-color-100);
@@ -1003,6 +1077,12 @@ option {
   color: red;
   border: none;
   background: none;
+}
+
+.scroll-holder {
+  height: 75vh;
+  z-index: 24;
+  border-radius: 80px;
 }
 
 .coolLineBreak {
@@ -1108,30 +1188,60 @@ option {
   overflow: visible;
 }
 
+
 .skins-grid {
   display: grid;
-  --real-deal-width: calc(25vw - 6.66666666667px);
-  grid-template-columns: repeat(3, var(--real-deal-width));
+  --real-deal-width: calc(15vw - 6.66666666667px);
+  grid-template-columns: repeat(6, var(--real-deal-width));
   gap: 0px 0px;
   grid-auto-flow: row;
-  border-radius: 60px;
+  grid-template-rows: repeat(6, 1fr);
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 65%; /* Ensure it doesn't exceed parent height */
+  border-top: var(--border-color-300) solid 8px;
+}
+
+.skins-grid-container {
+  height: 100%; /* Ensure parent container has a height */
+  overflow-y: auto; /* Enable scrolling */
+}
+
+.high-height {
+  overflow: hidden;
   background-color: var(--background-white-0);
   border: var(--border-color-300) solid 8px;
   width: 98%;
   height: 98%;
-  z-index: 24;
-  overflow-y: scroll;
-  overflow-x: hidden;
+  border-radius: 60px;
+}
+
+.h-40-30 {
+  width: 100%;
+  height: 35%;
 }
 
 .skin-div {
+  position: relative;
   margin: 20px;
   border-radius: 20px;
   background-color: var(--background-white-100);
   border: var(--border-color-100) solid 8px;
-  /* width: 20%; */
-  height: auto;
+  width: 10vw;
+  height: 10vw;
   aspect-ratio: 1;
+}
+
+.skin-div img {
+  border-radius: 15px;
+}
+
+.skin-frame {
+  position: absolute;
+  top:0;
+  left:0;
+  width: 100%;
+  height: 100%;
 }
 
 .sudo-tool-tip {

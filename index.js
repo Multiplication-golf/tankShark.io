@@ -10,7 +10,7 @@ const SAT = require("sat");
 const { setTimeout } = require("timers");
 const WebSocket = require("ws");
 const cors = require("cors");
-const DOMPurify = require("dompurify");
+// const DOMPurify = require("dompurify");
 const bcrypt = require("bcrypt");
 const curse = require("curse-filter");
 const jwt = require("jsonwebtoken");
@@ -94,13 +94,20 @@ function getRoomAndBounding(x, y) {
   return { items: baseItems };
 }
 
+function getRoomAndBoundingForBullets(roomkey) {
+  var baseItems = [...food_squares[roomkey]?.items] || [];
+  var otherRooms = getAdjacentRoomKeys(roomkey);
+  otherRooms.forEach((_room_) => {
+    baseItems.push(...food_squares[roomkey].bullets);
+  });
+  return baseItems;
+}
+
 handleUpgrade(httpServer, "HTTP");
 handleUpgrade(serverHttps, "HTTPS");
 
 const helmet = require("helmet");
 const protobuf = require("protobufjs");
-const { connect } = require("http2");
-const { error } = require("console");
 
 const schema = `
 syntax = "proto3";
@@ -213,56 +220,67 @@ const skinAllowlist = [
   "8.webp",
   "9.webp",
   "10.webp",
+  "11.webp",
+  "12.webp",
+  "13.webp",
+  "14.webp",
+  "15.webp",
+  "16.webp",
+  "17.webp",
+  "18.webp",
+  "19.webp",
+  "20.webp",
+  "21.webp",
+  "22.webp",
+  "23.webp",
+  "24.webp",
+  "25.webp",
+  "26.webp",
+  "27.webp",
   "0.webp",
 ];
 
-function assignRooms(item) {
-  let found = false;
-  var thisroom = {};
-  try {
-    for (const roomkey in food_squares) {
-      var room = food_squares[roomkey];
-      if (
-        item.x >= room.bounds?.x1 &&
-        item.x <= room.bounds?.x2 &&
-        item.y >= room.bounds?.y1 &&
-        item.y <= room.bounds?.y2
-      ) {
-        thisroom = room;
-      }
-    }
-    thisroom.items.push(item);
-  } catch {
-    console.log("room", room, item.x, item.y);
-  }
-}
-
-function getRoom(x, y) {
-  let thisroom = null;
-  for (const roomkey in food_squares) {
-    var room = food_squares[roomkey];
-    if (
-      x >= room.bounds?.x1 &&
-      x <= room.bounds?.x2 &&
-      y >= room.bounds?.y1 &&
-      y <= room.bounds?.y2
-    ) {
-      thisroom = room;
-    }
-  }
-  return thisroom;
-}
+const skinDatalist = {
+  "1.webp": "basic",
+  "2.webp": "uncommon",
+  "3.webp": "epic",
+  "4.webp": "basic",
+  "5.webp": "uncommon",
+  "6.webp": "rare",
+  "7.webp": "basic",
+  "8.webp": "uncommon",
+  "9.webp": "rare",
+  "10.webp": "basic",
+  "11.webp": "uncommon",
+  "12.webp": "rare",
+  "13.webp": "uncommon",
+  "14.webp": "rare",
+  "15.webp": "epic",
+  "16.webp": "basic",
+  "17.webp": "uncommon",
+  "18.webp": "rare",
+  "19.webp": "basic",
+  "20.webp": "uncommon",
+  "21.webp": "rare",
+  "22.webp": "uncommon",
+  "23.webp": "rare",
+  "24.webp": "epic",
+  "25.webp": "basic",
+  "26.webp": "uncommon",
+  "27.webp": "rare",
+  "0.webp": "basic",
+};
 
 async function hashPassword(password) {
-  const saltRounds = 15; // Number of salt rounds (higher is more secure but slower)
-  console.log(password,saltRounds)
+  const saltRounds = 13; // Number of salt rounds (higher is more secure but slower)
+  console.log(password, saltRounds);
   const hashedPassword = await bcrypt.hash(password, saltRounds);
   return hashedPassword;
 }
 
 async function comparePasswords(enteredPassword, hashedPassword) {
   const match = enteredPassword === hashedPassword;
-  return match; // Returns true if the passwords match, false otherwise
+  return match; // Returns true if the passwords match, false otherwise 602 + 
 }
 
 function getKeyRoom(x, y) {
@@ -282,21 +300,44 @@ function getKeyRoom(x, y) {
   return thisroom;
 }
 
-function reassignRoom(item, room) {
-  let found = false;
-  var thisroom = {};
+function reassignRoomItem(item) {
+  item.roomsIn = [];
   for (const roomkey in food_squares) {
     var room = food_squares[roomkey];
     if (
-      item.x >= room.bounds?.x1 &&
-      item.x <= room.bounds?.x2 &&
-      item.y >= room.bounds?.y1 &&
-      item.y <= room.bounds?.y2
+      item.x + item.size >= room.bounds?.x1 &&
+      item.x - item.size <= room.bounds?.x2 &&
+      item.y + item.size >= room.bounds?.y1 &&
+      item.y - item.size <= room.bounds?.y2
     ) {
-      thisroom = room;
+      item.roomsIn.push(roomkey);
+      if (room?.items?.some((b_) => item.randomID === b_.randomID)) continue;
+      room?.items?.push(item);
+    } else {
+      var index = item.roomsIn.indexOf(roomkey);
+      if (index !== -1) item.roomsIn.splice(index, 1);
     }
   }
-  thisroom?.items?.push(item);
+}
+
+function reassignRoomBullet(bullet) {
+  bullet.roomsIn = [];
+  for (const roomkey in food_squares) {
+    var room = food_squares[roomkey];
+    if (
+      bullet.x + bullet.size >= room.bounds?.x1 &&
+      bullet.x - bullet.size <= room.bounds?.x2 &&
+      bullet.y + bullet.size >= room.bounds?.y1 &&
+      bullet.y - bullet.size <= room.bounds?.y2
+    ) {
+      bullet.roomsIn.push(roomkey);
+      if (room.bullets.some((b_) => bullet.uniqueid === b_.uniqueid)) continue;
+      room?.bullets?.push(bullet);
+    } else {
+      var index = bullet.roomsIn.indexOf(roomkey);
+      if (index !== -1) bullet.roomsIn.splice(index, 1);
+    }
+  }
 }
 
 let players = {};
@@ -389,7 +430,7 @@ fs.readFile("data/users.json", function (err, data) {
   if (err) throw err;
   data = JSON.parse(data);
   userbase = data.userbase;
-  console.log(userbase);
+  console.log("userbase",userbase);
 });
 
 // don't touch pls
@@ -420,6 +461,7 @@ const CONFIG = {
     boundRange: 50,
     buildSize: 1000,
   },
+  messageIntervals: {long:15, short:6, medium: 10},
   badgeLevels: [
     { minScore: 50000000, maxScore: null, badge: "/badges/10.webp" },
     { minScore: 25000000, maxScore: 49999999, badge: "/badges/9.webp" },
@@ -528,6 +570,7 @@ for (let i = 0; i < 10; i++) {
         y2: currenty + CONFIG.map.buildSize,
       },
       items: [],
+      bullets: [],
     };
     food_squares[k.toString()] = room;
     currentx += CONFIG.map.buildSize;
@@ -536,10 +579,6 @@ for (let i = 0; i < 10; i++) {
   currentx = -CONFIG.map.size;
   currenty += CONFIG.map.buildSize;
 }
-
-food_squares.assignRoom = (item) => {
-  assignRooms(item);
-};
 
 Object.freeze(CONFIG);
 
@@ -1259,6 +1298,7 @@ function findBullet(id) {
 }
 
 function toSATPolygon(vertices, points = []) {
+  vertices = vertices ? vertices : [0, 0, 0]
   const len = vertices.length;
   for (let i = 0; i < len; i++) {
     points[i] = new SAT.Vector(vertices[i].x, vertices[i].y);
@@ -1299,7 +1339,7 @@ function findThisBoss(id) {
 const log = (...a) => {
   var v = JSON.stringify(a);
   v = v.slice(1, v.length - 1);
-  console.log(v);
+  console.log("1346",v);
 };
 
 function isTargetInSwivelRange(
@@ -1461,7 +1501,7 @@ function createExsplosion(
       cannonIndex: 0,
       exspandRate: (maxsize - size) / (lifeSpan / 16),
     };
-    bullets.push(bullet);
+    reassignRoomBullet(bullet);
   }
 }
 
@@ -1638,7 +1678,7 @@ function killplayer(id) {
       leader_board: leader_board.shown,
     });
   } catch (e) {
-    console.log(e);
+    console.log("killplayer",e);
   }
   emit("playerLeft", id);
   players[id].state = "dead";
@@ -1648,7 +1688,7 @@ function killplayer(id) {
 
 function limitedLog(message, ...optionalParams) {
   if (logCounter < LOG_LIMIT) {
-    console.log(message, ...optionalParams);
+    console.log("1695", message, ...optionalParams);
     logCounter++;
   } else if (logCounter === LOG_LIMIT) {
     console.log("Logging limit reached. Further logs will be suppressed.");
@@ -1739,6 +1779,7 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
   }
   let fooditem = {
     type: type,
+    subtype: null,
     health: health_max,
     maxhealth: health_max,
     size: 50,
@@ -1756,8 +1797,13 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
     color: color,
     score_add: score_add,
     randomID: randID,
+    "respawn-raidis": undefined,
     lastDamaged: null,
     lastDamgers: [],
+    goldenGears: null,
+    cannons: null,
+    boss: null,
+    reload: Infinity,
   };
   if (type === "square") {
     const rawvertices = calculateSquareVertices(
@@ -1787,7 +1833,7 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
     fooditem.vertices = rawvertices;
   }
 
-  food_squares.assignRoom(fooditem);
+  reassignRoomItem(fooditem);
 }
 
 for (let i = 0; i < getRandomInt(50, 75); i++) {
@@ -1838,6 +1884,7 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
 
   let fooditem = {
     type: type,
+    subtype: null,
     health: health_max,
     maxhealth: health_max,
     size: size,
@@ -1858,6 +1905,10 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
     "respawn-raidis": 1000,
     lastDamaged: null,
     lastDamgers: [],
+    goldenGears: null,
+    cannons: null,
+    boss: null,
+    reload: Infinity,
   };
   if (type === "square") {
     const rawvertices = calculateSquareVertices(
@@ -1887,7 +1938,7 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
     fooditem.vertices = rawvertices;
   }
 
-  food_squares.assignRoom(fooditem);
+  reassignRoomItem(fooditem);
 }
 
 for (let i = 0; i < getRandomInt(20, 25); i++) {
@@ -1948,7 +1999,7 @@ for (let i = 0; i < getRandomInt(20, 25); i++) {
     randomID: randID,
     lastDamaged: null,
     lastDamgers: [],
-    goldenGears: getRandomInt(1, 3)
+    goldenGears: getRandomInt(1, 3),
   };
   if (type === "pentagon") {
     const rawvertices = calculateRotatedPentagonVertices(
@@ -1960,7 +2011,7 @@ for (let i = 0; i < getRandomInt(20, 25); i++) {
     fooditem.vertices = rawvertices;
   }
 
-  food_squares.assignRoom(fooditem);
+  reassignRoomItem(fooditem);
 }
 
 function getRandomTime(instancevars) {
@@ -2233,19 +2284,19 @@ app.post("/currentgears", (req, res) => {
     }
     res.send({
       gears: gears,
-      levelBoost: _player?.startLevels
+      levelBoost: _player?.startLevels,
     });
   } else {
     gears = 0;
     res.send({
       gears: 0,
-      levelBoost: 0
+      levelBoost: 0,
     });
   }
 });
 
 app.post("/buylevels", (req, res) => {
-  var purchaseSuccsefull = false;
+  var purchaseSuccsefull = 'fail';
   if (req.body.userId) {
     var _player = userbase.find((_player) => {
       return comparePasswords(_player.userid, req.body.userId);
@@ -2254,21 +2305,29 @@ app.post("/buylevels", (req, res) => {
     if (_player !== undefined) {
       if (_player.goldenGears >= 100) {
         _player.goldenGears -= 100;
-        purchaseSuccsefull = true;
+        purchaseSuccsefull = 'success';
         if (_player.startLevels === -1) _player.startLevels = 0;
         _player.startLevels += 15;
+      } else {
+        purchaseSuccsefull = 'noEnoughCoins';
       }
+      res.send({
+        purchaseSuccsefull: purchaseSuccsefull,
+        gears: _player?.goldenGears,
+        levelBoost: _player?.startLevels,
+      });
+    } else {
+      res.send({
+        purchaseSuccsefull: 'AccountError',
+        gears: 0,
+        levelBoost: 0,
+      });
     }
-    res.send({
-      purchaseSuccsefull: purchaseSuccsefull,
-      gears: _player?.goldenGears,
-      levelBoost: _player?.startLevels
-    });
   } else {
     res.send({
-      purchaseSuccsefull: false,
+      purchaseSuccsefull: 'noAccount',
       gears: 0,
-      levelBoost: 0
+      levelBoost: 0,
     });
   }
 });
@@ -2323,6 +2382,31 @@ app.get("/leaderboard", (req, res) => {
   res.send({
     leader_board: postLeaderBorad,
   });
+});
+
+app.post("/skindata", (req, res) => {
+  if (req.body.userId) {
+    var _player = userbase.find((_player) => {
+      return comparePasswords(_player.userid, req.body.userId);
+    });
+
+    if (_player !== undefined) {
+      res.send({
+        skins: _player.skins,
+        skindata: skinDatalist,
+      });
+    } else {
+      res.send({
+        skins: ["0.webp"],
+        skindata: skinDatalist,
+      });
+    }
+  } else {
+    res.send({
+      skins: ["0.webp"],
+      skindata: skinDatalist,
+    });
+  }
 });
 
 let illegalIPs = [];
@@ -2398,142 +2482,245 @@ wss.on("connection", (socket, req) => {
         case "newPlayer": {
           (async function () {
             var newId = crypto.randomUUID();
-          data.dead = false;
-          isSetUp = true;
-          Object.defineProperty(players, `${newId}`, {
-            value: data,
-            writable: false,
-            configurable: false,
-            enumerable: true,
-          });
-          players[newId].id = newId;
-          players[newId].username = await curse.filter(
-            players[newId].username
-          );
-          console.log(await curse.filter(
-            players[newId].username
-          ));
-          console.log("user data recived");
-          socket.send(JSON.stringify({ type: "newId", data: newId }));
-          connection.playerId = newId;
-          connections.forEach((con) => {
-            if (con.socket === connection.socket) {
-              con.playerId = newId;
-            }
-          });
-          if (!skinAllowlist.includes(data.skin)) {
-            socket.close(1007, "You hacker, your IP has been permently banned");
-            illegalIPs.push(req.socket.remoteAddress);
-            fs.writeFile(
-              "data/illegal.json",
-              JSON.stringify(illegalIPs),
-              function (err, data) {
-                if (err) throw err;
-              }
+            data.dead = false;
+            isSetUp = true;
+            Object.defineProperty(players, `${newId}`, {
+              value: data,
+              writable: false,
+              configurable: false,
+              enumerable: true,
+            });
+
+            players[newId].id = newId;
+            players[newId].username = await curse.filter(
+              players[newId].username
             );
-            return false;
-          }
-          var badge;
-          emit("playerJoined", data);
-          emit("autoCannonUPDATE-ADD", autocannons);
-          emit("colorUpgrades", CONFIG.colorUpgardes);
-          emit("Levels", levels);
-          emit("NewMessages", messages);
-          emit("Config", CONFIG);
-          emit("teamColorUpgrades", CONFIG.colorTeamUpgardes);
-
-          console.log("data sent");
-
-          socket.send(
-            JSON.stringify({ type: "RETURNtankmeta", data: tankmeta })
-          );
-          data.score = 0;
-          var public_teams = [];
-          public_teams = teamlist.map((team) => {
-            if (!team.hidden) {
-              team.taxInterval = null;
-              return team;
-            }
-          });
-
-          if (data.teamKey) {
-            var team = teamKeys[data.teamKey];
-            if (team) {
-              emit("playerJoinedTeam", { id: newId, teamId: team });
-              createAnnocment("You joined a private team successfuly", newId, {
-                color: "green",
-              });
-            } else if (data.teamKey !== null) {
-              createAnnocment("Bad key!", newId, { color: "red" });
-            } else if (data.isCrazy) {
-              createAnnocment(
-                "Did you know you can invite freinds to your team? To do so simply click the invite button in crazy games",
-                newId,
-                {
-                  color: "blue",
+            console.log("username",await curse.filter(players[newId].username));
+            console.log("user data recived:", data);
+            socket.send(JSON.stringify({ type: "newId", data: newId }));
+            connection.playerId = newId;
+            connections.forEach((con) => {
+              if (con.socket === connection.socket) {
+                con.playerId = newId;
+              }
+            });
+            if (!skinAllowlist.includes(data.skin)) {
+              socket.close(
+                1007,
+                "You hacker, your IP has been permently banned"
+              );
+              illegalIPs.push(req.socket.remoteAddress);
+              fs.writeFile(
+                "data/illegal.json",
+                JSON.stringify(illegalIPs),
+                function (err, data) {
+                  if (err) throw err;
                 }
               );
+              return false;
             }
-          }
-          emit("pubteamlist", public_teams);
-          let x, y;
-          do {
-            x = getRandomInt(-CONFIG.map.innersize, CONFIG.map.innersize);
-            y = getRandomInt(-CONFIG.map.innersize, CONFIG.map.innersize);
-          } while (
-            cors_taken.some(
-              (c) =>
-                between(
-                  x,
-                  c.x - CONFIG.map.boundRange,
-                  c.x + CONFIG.map.boundRange
-                ) &&
-                between(
-                  y,
-                  c.y - CONFIG.map.boundRange,
-                  c.y + CONFIG.map.boundRange
-                )
-            ) ||
-            !confirmplayerradia(x, y)
-          );
-          console.log("cors sent")
-          if (data.userId) {
-            (async function () {
-              try {
-              if (data.token && Object.keys(data.token).length > 0 && data.token != null && data.token !== undefined) {
-                const DecodeCGToken = async (_token) => {
-                  let key = "";
+            var badge;
+            emit("playerJoined", data);
+            emit("autoCannonUPDATE-ADD", autocannons);
+            emit("colorUpgrades", CONFIG.colorUpgardes);
+            emit("Levels", levels);
+            emit("NewMessages", messages);
+            emit("Config", CONFIG);
+            emit("teamColorUpgrades", CONFIG.colorTeamUpgardes);
 
-                  try {
-                    const resp = await axios.get(
-                      "https://sdk.crazygames.com/publicKey.json"
-                    );
-                    key = resp.data["publicKey"];
-                  } catch (e) {
-                    console.error("Failed to fetch CrazyGames public key", e);
+            console.log("data sent");
+
+            socket.send(
+              JSON.stringify({ type: "RETURNtankmeta", data: tankmeta })
+            );
+            data.score = 0;
+            var public_teams = [];
+            public_teams = teamlist.map((team) => {
+              if (!team.hidden) {
+                team.taxInterval = null;
+                return team;
+              }
+            });
+
+            if (data.teamKey) {
+              var team = teamKeys[data.teamKey];
+              if (team) {
+                emit("playerJoinedTeam", { id: newId, teamId: team });
+                createAnnocment(
+                  "You joined a private team successfuly",
+                  newId,
+                  {
+                    color: "green",
+                    delay: CONFIG.messageIntervals.medium
                   }
-
-                  if (!key) {
-                    throw new Error(
-                      "Key is empty when decoding CrazyGames token"
-                    );
+                );
+              } else if (data.teamKey !== null) {
+                createAnnocment("Bad key!", newId, { color: "red", delay: CONFIG.messageIntervals.long });
+              } else if (data.isCrazy) {
+                createAnnocment(
+                  "Did you know you can invite freinds to your team? To do so simply click the invite button in crazy games",
+                  newId,
+                  {
+                    color: "blue",
+                    delay: CONFIG.messageIntervals.long
                   }
+                );
+              }
+            }
+            emit("pubteamlist", public_teams);
+            let x, y;
+            do {
+              x = getRandomInt(-CONFIG.map.innersize, CONFIG.map.innersize);
+              y = getRandomInt(-CONFIG.map.innersize, CONFIG.map.innersize);
+            } while (
+              cors_taken.some(
+                (c) =>
+                  between(
+                    x,
+                    c.x - CONFIG.map.boundRange,
+                    c.x + CONFIG.map.boundRange
+                  ) &&
+                  between(
+                    y,
+                    c.y - CONFIG.map.boundRange,
+                    c.y + CONFIG.map.boundRange
+                  )
+              ) ||
+              !confirmplayerradia(x, y)
+            );
+            console.log("cors sent");
+            if (data.userId) {
+              (async function () {
+                try {
+                  if (
+                    data.token &&
+                    Object.keys(data.token).length > 0 &&
+                    data.token != null &&
+                    data.token !== undefined
+                  ) {
+                    const DecodeCGToken = async (_token) => {
+                      let key = "";
 
-                  const payload = jwt.verify(_token, key, {
-                    algorithms: ["RS256"],
-                  });
-                  return payload;
-                };
-                console.log(data.token);
-                const raw = await DecodeCGToken(data.token);
-                console.log(raw);
-                const userID_ = raw.userId
-                const token = await hashPassword(userID_);
-                var isUserFound = userbase.find((_player) => {
-                  return comparePasswords(_player.userid, token);
+                      try {
+                        const resp = await axios.get(
+                          "https://sdk.crazygames.com/publicKey.json"
+                        );
+                        key = resp.data["publicKey"];
+                      } catch (e) {
+                        console.error(
+                          "Failed to fetch CrazyGames public key",
+                          e
+                        );
+                      }
+
+                      if (!key) {
+                        throw new Error(
+                          "Key is empty when decoding CrazyGames token"
+                        );
+                      }
+
+                      const payload = jwt.verify(_token, key, {
+                        algorithms: ["RS256"],
+                      });
+                      return payload;
+                    };
+                    console.log("token",data.token);
+                    const raw = await DecodeCGToken(data.token);
+                    console.log("rawtoken",raw);
+                    const userID_ = raw.userId;
+                    const token = await hashPassword(userID_);
+                    var isUserFound = userbase.find((_player) => {
+                      return comparePasswords(_player.userid, token);
+                    });
+                    if (isUserFound !== undefined) {
+                      let score__$ = isUserFound.scores.reduce((a, b) => {
+                        return a + b.score;
+                      }, 0);
+                      if (score__$ >= 50000000) {
+                        badge = "/badges/10.webp";
+                      } else if (score__$ >= 25000000) {
+                        badge = "/badges/9.webp";
+                      } else if (score__$ >= 10000000) {
+                        badge = "/badges/8.webp";
+                      } else if (score__$ >= 5000000) {
+                        badge = "/badges/7.webp";
+                      } else if (score__$ >= 2500000) {
+                        badge = "/badges/6.webp";
+                      } else if (score__$ >= 1000000) {
+                        badge = "/badges/5.webp";
+                      } else if (score__$ >= 500000) {
+                        badge = "/badges/4.webp";
+                      } else if (score__$ >= 250000) {
+                        badge = "/badges/3.webp";
+                      } else if (score__$ >= 100000) {
+                        badge = "/badges/2.webp";
+                      } else {
+                        badge = "/badges/1.webp";
+                      }
+                      socket.send(
+                        JSON.stringify({ type: "resovleID", data: {} })
+                      );
+                      socket.send(
+                        JSON.stringify({
+                          type: "badgeToplayer",
+                          data: { badge: badge },
+                        })
+                      );
+                      if (!isUserFound.skins.includes(data.skin)) {
+                        socket.close(
+                          1007,
+                          "You hacker, your IP has been permently banned"
+                        );
+                        illegalIPs.push(req.socket.remoteAddress);
+                        fs.writeFile(
+                          "data/illegal.json",
+                          JSON.stringify(illegalIPs),
+                          function (err, data) {
+                            if (err) throw err;
+                          }
+                        );
+                        return false;
+                      }
+                    } else {
+                      userbase.push({
+                        userid: token,
+                        scores: [],
+                        username: data.username,
+                        skins: ["0.webp"],
+                        goldenGears: 0,
+                        startLevels: 0,
+                      });
+                    }
+                    console.log("user setup complete");
+                  }
+                } catch (e) {
+                  console.log("2699",e);
+                  (async function () {
+                    var newid = await hashPassword(crypto.randomUUID());
+                    players[newId].userId = newid;
+                    userbase.push({
+                      userid: newid,
+                      scores: [],
+                      username: data.username,
+                      skins: ["0.webp"],
+                      goldenGears: 0,
+                      startLevels: 0,
+                    });
+                    socket.send(
+                      JSON.stringify({ type: "newid", data: { newid: newid } })
+                    );
+                    badge = "/badges/1.webp";
+                  })();
+                }
+              })();
+              if (!data.token) {
+                var _player = userbase.find((_player) => {
+                  return comparePasswords(_player.userid, data.userId);
                 });
-                if (isUserFound !== undefined) {
-                  let score__$ = isUserFound.scores.reduce((a, b) => {
+
+                if (_player !== undefined) {
+                  _player.username = data.username;
+                  let score__$ = _player.scores.reduce((a, b) => {
                     return a + b.score;
                   }, 0);
                   if (score__$ >= 50000000) {
@@ -2558,82 +2745,63 @@ wss.on("connection", (socket, req) => {
                     badge = "/badges/1.webp";
                   }
                   socket.send(JSON.stringify({ type: "resovleID", data: {} }));
-                  socket.send(
-                    JSON.stringify({
-                      type: "badgeToplayer",
-                      data: { badge: badge },
-                    })
-                  );
+                  data.score = levels[_player.startLevels];
+                  _player.startLevels = -1;
+                  if (!_player.skins.includes(data.skin)) {
+                    socket.close(
+                      1007,
+                      "You hacker, your IP has been permently banned"
+                    );
+                    illegalIPs.push(req.socket.remoteAddress);
+                    fs.writeFile(
+                      "data/illegal.json",
+                      JSON.stringify(illegalIPs),
+                      function (err, data) {
+                        if (err) throw err;
+                      }
+                    );
+                    return false;
+                  }
                 } else {
-                  userbase.push({
-                    userid: token,
-                    scores: [],
-                    username: data.username,
-                    skins: ["0.webp"],
-                    goldenGears: 0,
-                    startLevels: 0,
-                  });
+                  (async function () {
+                    var newid = await hashPassword(crypto.randomUUID());
+                    players[newId].userId = newid;
+                    userbase.push({
+                      userid: newid,
+                      scores: [],
+                      username: data.username,
+                      skins: ["0.webp"],
+                      goldenGears: 0,
+                      startLevels: 0,
+                    });
+                    if (players[newId].skin !== "0.webp") {
+                      socket.close(
+                        1007,
+                        "You hacker, your IP has been permently banned"
+                      );
+                      illegalIPs.push(req.socket.remoteAddress);
+                      fs.writeFile(
+                        "data/illegal.json",
+                        JSON.stringify(illegalIPs),
+                        function (err, data) {
+                          if (err) throw err;
+                        }
+                      );
+                      return false;
+                    }
+                    socket.send(
+                      JSON.stringify({ type: "newid", data: { newid: newid } })
+                    );
+                    badge = "/badges/1.webp";
+                  })();
                 }
-                console.log("user setup complete")
-              }
-            } catch (e) {
-              console.log(e);
-              (async function () {
-                var newid = await hashPassword(crypto.randomUUID());
-                players[newId].userId = newid;
-                userbase.push({
-                  userid: newid,
-                  scores: [],
-                  username: data.username,
-                  skins: ["0.webp"],
-                  goldenGears: 0,
-                  startLevels: 0,
-                });
-                socket.send(
-                  JSON.stringify({ type: "newid", data: { newid: newid } })
-                );
-                badge = "/badges/1.webp";
-              })();
-            }
-            })();
-            if (!data.token) {
-              var _player = userbase.find((_player) => {
-                return comparePasswords(_player.userid, data.userId);
-              });
-
-              if (_player !== undefined) {
-                _player.username = data.username;
-                let score__$ = _player.scores.reduce((a, b) => {
-                  return a + b.score;
-                }, 0);
-                if (score__$ >= 50000000) {
-                  badge = "/badges/10.webp";
-                } else if (score__$ >= 25000000) {
-                  badge = "/badges/9.webp";
-                } else if (score__$ >= 10000000) {
-                  badge = "/badges/8.webp";
-                } else if (score__$ >= 5000000) {
-                  badge = "/badges/7.webp";
-                } else if (score__$ >= 2500000) {
-                  badge = "/badges/6.webp";
-                } else if (score__$ >= 1000000) {
-                  badge = "/badges/5.webp";
-                } else if (score__$ >= 500000) {
-                  badge = "/badges/4.webp";
-                } else if (score__$ >= 250000) {
-                  badge = "/badges/3.webp";
-                } else if (score__$ >= 100000) {
-                  badge = "/badges/2.webp";
-                } else {
-                  badge = "/badges/1.webp";
-                }
-                socket.send(JSON.stringify({ type: "resovleID", data: {} }));
-                data.score = levels[_player.startLevels];
-                _player.startLevels = -1;
               }
             } else if (!data.token) {
               (async function () {
                 var newid = await hashPassword(crypto.randomUUID());
+                socket.send(
+                  JSON.stringify({ type: "newid", data: { newid: newid } })
+                );
                 players[newId].userId = newid;
                 userbase.push({
                   userid: newid,
@@ -2643,56 +2811,44 @@ wss.on("connection", (socket, req) => {
                   goldenGears: 0,
                   startLevels: 0,
                 });
-                socket.send(
-                  JSON.stringify({ type: "newid", data: { newid: newid } })
-                );
+                if (players[newId].skin !== "0.webp") {
+                  socket.close(
+                    1007,
+                    "You hacker, your IP has been permently banned"
+                  );
+                  illegalIPs.push(req.socket.remoteAddress);
+                  fs.writeFile(
+                    "data/illegal.json",
+                    JSON.stringify(illegalIPs),
+                    function (err, data) {
+                      if (err) throw err;
+                    }
+                  );
+                  return false;
+                }
                 badge = "/badges/1.webp";
               })();
             }
-          } else if (!data.token) {
-            (async function () {
-              var newid = await hashPassword(crypto.randomUUID());
+            if (!data.token) {
               socket.send(
-                JSON.stringify({ type: "newid", data: { newid: newid } })
+                JSON.stringify({
+                  type: "badgeToplayer",
+                  data: { badge: badge },
+                })
               );
-              players[newId].userId = newid;
-              userbase.push({
-                userid: newid,
-                scores: [],
-                username: data.username,
-                skins: ["0.webp"],
-                goldenGears: 0,
-                startLevels: 0,
-              });
-              badge = "/badges/1.webp";
-            })();
-          }
-          if (!data.token) {
-            socket.send(
-              JSON.stringify({ type: "badgeToplayer", data: { badge: badge } })
-            );
-          }
-          console.log("userbase initilized")
-          emit("new_X_Y", { x: x, y: y, id: newId });
-          players[newId].x = x;
-          players[newId].y = y;
-          createExsplosion("ksiejf48jfq", x, y + 400);
-          leader_board.hidden.push({
-            id: newId,
-            score: data.score,
-            name: data.username,
-            badge: badge,
-          });
-          if (!leader_board.shown[10]) {
-            leader_board.shown.push({
+            }
+            console.log("userbase initilized");
+            emit("new_X_Y", { x: x, y: y, id: newId });
+            players[newId].x = x;
+            players[newId].y = y;
+            createExsplosion("ksiejf48jfq", x, y + 400);
+            leader_board.hidden.push({
               id: newId,
               score: data.score,
               name: data.username,
               badge: badge,
             });
-          }
-          if (leader_board.shown[10]) {
-            if (0 > leader_board.shown[10].score) {
+            if (!leader_board.shown[10]) {
               leader_board.shown.push({
                 id: newId,
                 score: data.score,
@@ -2700,68 +2856,83 @@ wss.on("connection", (socket, req) => {
                 badge: badge,
               });
             }
-            if (0 > leader_board.shown[10].score) {
-              leader_board.shown[10] = {
-                id: newId,
-                score: data.score,
-                name: data.username,
-                badge: badge,
-              };
+            if (leader_board.shown[10]) {
+              if (0 > leader_board.shown[10].score) {
+                leader_board.shown.push({
+                  id: newId,
+                  score: data.score,
+                  name: data.username,
+                  badge: badge,
+                });
+              }
+              if (0 > leader_board.shown[10].score) {
+                leader_board.shown[10] = {
+                  id: newId,
+                  score: data.score,
+                  name: data.username,
+                  badge: badge,
+                };
+              }
             }
-          }
-          console.log("leader board built")
+            console.log("leader board built");
 
-          emit("boardUpdate", {
-            leader_board: leader_board.shown,
-          });
-          let statecycle = 0;
-          let state = "start";
-          var start = setInterval(() => {
-            try {
-              players[newId].state = data.state;
-              let _data = {
+            emit("boardUpdate", {
+              leader_board: leader_board.shown,
+            });
+            let statecycle = 0;
+            let state = "start";
+            var start = setInterval(() => {
+              try {
+                players[newId].state = data.state;
+                let _data = {
+                  state: state,
+                  playerID: newId,
+                };
+                emit("statechangeUpdate", _data, socket);
+              } catch {
+                start = null;
+              }
+            }, CONFIG.updateInterval);
+            stateupdate = setInterval(() => {
+              statecycle += 1;
+              let _data__ = {
                 state: state,
+                statecycle: statecycle,
                 playerID: newId,
               };
-              emit("statechangeUpdate", _data, socket);
-            } catch {
-              start = null;
-            }
-          }, CONFIG.updateInterval);
-          stateupdate = setInterval(() => {
-            statecycle += 1;
-            let _data__ = {
-              state: state,
-              statecycle: statecycle,
-              playerID: newId,
-            };
-            emit("statecycleUpdate", _data__);
-          }, CONFIG.updateInterval);
+              emit("statecycleUpdate", _data__);
+            }, CONFIG.updateInterval);
 
-          players[newId].stateTimeout = setTimeout(() => {
-            start = null;
-            state = "normal";
-            players[newId].state = state ?? "start";
-            let _data = {
-              state: state,
-              statecycle: statecycle,
-              playerID: newId,
-            };
-            if (players[newId]) {
-              players[newId].state = _data.state;
-              emit("statechangeUpdate", _data, socket);
-              setTimeout(() => {
+            players[newId].stateTimeout = setTimeout(() => {
+              start = null;
+              state = "normal";
+              players[newId].state = state ?? "start";
+              let _data = {
+                state: state,
+                statecycle: statecycle,
+                playerID: newId,
+              };
+              if (players[newId]) {
                 players[newId].state = _data.state;
                 emit("statechangeUpdate", _data, socket);
-              }, 300);
-            }
-          }, 6000);
-          console.log("intervals created")
-          socket.send(JSON.stringify({type:"playerScore", data:{
-            bulletId: newId,
-            socrepluse: data.score}}));
+                setTimeout(() => {
+                  players[newId].state = _data.state;
+                  emit("statechangeUpdate", _data, socket);
+                }, 300);
+              }
+            }, 6000);
+            console.log("intervals created");
+            socket.send(
+              JSON.stringify({
+                type: "playerScore",
+                data: {
+                  bulletId: newId,
+                  socrepluse: data.score,
+                },
+              })
+            );
           })();
-          
+
           break;
         }
 
@@ -2849,7 +3020,7 @@ wss.on("connection", (socket, req) => {
                 createAnnocment(
                   `Not enough Team score. The team has ${myTeam.teamScore}`,
                   data.id,
-                  { color: "red", delay: 3000 }
+                  { color: "red", delay: CONFIG.messageIntervals.short }
                 );
               }
             } else {
@@ -2891,7 +3062,7 @@ wss.on("connection", (socket, req) => {
                 createAnnocment(
                   `Not enough score. You have ${players[data.id].score}`,
                   data.id,
-                  { color: "red", delay: 3000 }
+                  { color: "red", delay: CONFIG.messageIntervals.short }
                 );
               }
             }
@@ -2906,14 +3077,14 @@ wss.on("connection", (socket, req) => {
                 } else {
                   createAnnocment(`Stat has reached it max limit`, data.id, {
                     color: "orange",
-                    delay: 3000,
+                    delay: CONFIG.messageIntervals.short,
                   });
                 }
               } else {
                 createAnnocment(
                   `Not enough Team score. The team has ${myTeam.teamScore}`,
                   data.id,
-                  { color: "red", delay: 3000 }
+                  { color: "red", delay: CONFIG.messageIntervals.short }
                 );
               }
             } else {
@@ -2956,14 +3127,14 @@ wss.on("connection", (socket, req) => {
                 } else {
                   createAnnocment(`Stat has reached it max limit`, data.id, {
                     color: "orange",
-                    delay: 3000,
+                    delay: CONFIG.messageIntervals.short,
                   });
                 }
               } else {
                 createAnnocment(
                   `Not enough score. You have ${players[data.id].score}`,
                   data.id,
-                  { color: "red", delay: 3000 }
+                  { color: "red", delay: CONFIG.messageIntervals.short }
                 );
               }
             }
@@ -3026,20 +3197,20 @@ wss.on("connection", (socket, req) => {
                   myTeam.upgrades.teamBuilding.built = true;
                   myTeam.upgrades.teamBuilding.polygonId = `teamBase:${myTeam.teamID}
                   `;
-                  food_squares.assignRoom(base);
-                  bullets.push(basesheild);
+                  reassignRoomItem(base);
+                  reassignRoomBullet(basesheild);
                 } else {
                   createAnnocment(
                     `The team base has all ready been built`,
                     data.id,
-                    { color: "orange", delay: 3000 }
+                    { color: "orange", delay: CONFIG.messageIntervals.short }
                   );
                 }
               } else {
                 createAnnocment(
                   `Not enough Team score. The team has ${myTeam.teamScore}`,
                   data.id,
-                  { color: "red", delay: 3000 }
+                  { color: "red", delay: CONFIG.messageIntervals.short }
                 );
               }
             } else {
@@ -3099,8 +3270,8 @@ wss.on("connection", (socket, req) => {
                   base.vertices = rawvertices;
                   myTeam.upgrades.teamBuilding.built = true;
                   myTeam.upgrades.teamBuilding.polygonId = `teamBase:${myTeam.teamID}`;
-                  food_squares.assignRoom(base);
-                  bullets.push(basesheild);
+                  reassignRoomItem(base);
+                  reassignRoomBullet(basesheild);
                   players[myTeam.owner.id].score -= 10000;
                   leader_board.hidden.forEach((__index__) => {
                     if (__index__.id === myTeam.owner.id) {
@@ -3133,14 +3304,14 @@ wss.on("connection", (socket, req) => {
                   createAnnocment(
                     `The team base has all ready been built`,
                     data.id,
-                    { color: "orange", delay: 3000 }
+                    { color: "orange", delay: CONFIG.messageIntervals.short }
                   );
                 }
               } else {
                 createAnnocment(
                   `Not enough score. You have ${players[data.id].score}`,
                   data.id,
-                  { color: "red", delay: 3000 }
+                  { color: "red", delay: CONFIG.messageIntervals.short }
                 );
               }
             }
@@ -3201,7 +3372,7 @@ wss.on("connection", (socket, req) => {
                 players[data.player.id].username
               } to a higher level player in ${myTeam.teamname}.`,
               data.player.id,
-              { color: "green", delay: 5000 }
+              { color: "green", delay: CONFIG.messageIntervals.short }
             );
           }
           if (data.lowerLevelPlayers.includes(data.premotor)) {
@@ -3225,7 +3396,7 @@ wss.on("connection", (socket, req) => {
                 data.premotor.username
               }.`,
               data.player.id,
-              { color: "green", delay: 5000 }
+              { color: "green", delay: CONFIG.messageIntervals.short }
             );
           }
           var public_teams = [];
@@ -3280,7 +3451,7 @@ wss.on("connection", (socket, req) => {
                 data.premotor.username
               }.`,
               data.player.id,
-              { color: "orange", delay: 5000 }
+              { color: "orange", delay: CONFIG.messageIntervals.medium }
             );
           }
           if (data.lowerLevelPlayers.includes(data.premotor)) {
@@ -3305,7 +3476,7 @@ wss.on("connection", (socket, req) => {
                 data.premotor.username
               }.`,
               data.player.id,
-              { color: "orange", delay: 5000 }
+              { color: "orange", delay: CONFIG.messageIntervals.short }
             );
           }
           var public_teams = [];
@@ -3379,7 +3550,7 @@ wss.on("connection", (socket, req) => {
               createAnnocment(
                 "Some configerations were overridden due to team type",
                 data.owner.id,
-                { color: "orange", delay: 4000 }
+                { color: "orange", delay: CONFIG.messageIntervals.short }
               );
               data.createTeamScore = true;
             }
@@ -3454,10 +3625,17 @@ wss.on("connection", (socket, req) => {
                     players[player.id].score - Scheduledtax;
                   if (data.createTeamScore) {
                     data.teamScore += Scheduledtax;
+                    public_teams = teamlist.map((team) => {
+                      if (!team.hidden) {
+                        team.taxInterval = null;
+                        return team;
+                      }
+                    });
+                    emit("pubteamlist", public_teams);
                     createAnnocment(
                       `Tax Taken ${data.ScheduledBasedTax}%`,
                       player.id,
-                      { color: "red" }
+                      { color: "red", delay: CONFIG.messageIntervals.short }
                     );
                     emit("playerScore", {
                       bulletId: data.owner.id,
@@ -3545,11 +3723,11 @@ wss.on("connection", (socket, req) => {
             if (PlayerTeam.hidden) {
               let code = Math.floor(100000 * Math.random());
               teamKeys.push(code);
-              createAnnocment(`The join code is ${code}`, data.owner.id, 5000);
+              createAnnocment(`The join code is ${code}`, data.owner.id, CONFIG.messageIntervals.long);
               createAnnocment(
                 `put this into the url bar like this: tankshark.fun/?team=code when someone wants to join`,
                 data.owner.id,
-                5000
+                {delay: CONFIG.messageIntervals.long}
               );
             }
             emit("pubteamlist", public_teams);
@@ -3566,7 +3744,7 @@ wss.on("connection", (socket, req) => {
             if (clean.length > 255) {
               createAnnocment("Message is too long", data.id, {
                 color: "red",
-                delay: 3000,
+                delay: CONFIG.messageIntervals.short,
               });
               return;
             }
@@ -3582,7 +3760,7 @@ wss.on("connection", (socket, req) => {
               dislikers: {},
             });
             sortMessages(team.messages);
-            console.log(team.messages);
+            console.log("3758",team.messages);
             emitTeam("postBiteMessage", team.messages, team.teamID);
             return;
           })();
@@ -3905,13 +4083,13 @@ wss.on("connection", (socket, req) => {
             data.text = await curse.filter(data.text);
             emit("playerMessage", {
               text: data.text,
-              exspiretime: 3000,
+              exspiretime: CONFIG.messageIntervals.short,
               id: data.id,
               hidetime: Date.now() + 2500,
             });
             messages.push({
               text: data.text,
-              exspiretime: 3000,
+              exspiretime: CONFIG.messageIntervals.short,
               id: data.id,
               hidetime: Date.now() + 2500,
             });
@@ -3941,7 +4119,6 @@ wss.on("connection", (socket, req) => {
         }
 
         case "windowStateChange": {
-          console.log(data);
           data.id = connection.playerId;
           var truefalse = data.vis === "visible";
           players[data.id].visible = truefalse;
@@ -4560,8 +4737,7 @@ wss.on("connection", (socket, req) => {
             }, 20 * l); // Updated to prevent overlap
           }
 
-          bullets.push(bullet);
-          var [_index_, CO] = finder_(data);
+          reassignRoomBullet(bullet);
           break;
         }
 
@@ -4703,7 +4879,7 @@ wss.on("connection", (socket, req) => {
               );
             }
           } catch (error) {
-            console.log(error);
+            console.log("4877",error);
             return;
           }
 
@@ -4751,6 +4927,8 @@ wss.on("connection", (socket, req) => {
                 }
               }
             };
+          } else {
+            data.wander = new (function () {})();
           }
           if (data.type === "roadMap") {
             var road = {
@@ -4764,7 +4942,10 @@ wss.on("connection", (socket, req) => {
             };
             roads.push(road);
             data.road = road;
+          } else {
+            data.road = {};
           }
+          data.Zlevel = data.Zlevel ? data.Zlevel : 1;
 
           var sedoRoom = getKeyRoom(data.x, data.y) ?? "room-0";
           data.sedoRoomKey = sedoRoom;
@@ -4791,7 +4972,8 @@ wss.on("connection", (socket, req) => {
               CONFIG.levelMultiplyer;
             data.speed += speedUP;
           }
-          bullets.push(data);
+          data.lookedAt = false;
+          reassignRoomBullet(data);
           let indexbullet = bullets.indexOf(data);
           let bullet = bullets[indexbullet];
           if (data.type === "trap") {
@@ -4864,11 +5046,6 @@ wss.on("connection", (socket, req) => {
                     player.y - bullet.y
                   );
                   if (distance < maxdistance) {
-                    let angle = Math.atan2(
-                      player.y - bullet.y, // y difference
-                      player.x - bullet.x // x difference
-                    );
-
                     maxdistance = distance;
                     fire_at = player;
                   }
@@ -4881,11 +5058,6 @@ wss.on("connection", (socket, req) => {
                     item.y - bullet.y
                   );
                   if (distance < maxdistance) {
-                    let angle = Math.atan2(
-                      item.y - bullet.y, // y difference
-                      item.x - bullet.x // x difference
-                    );
-
                     maxdistance = distance;
                     fire_at = item;
                   }
@@ -4915,9 +5087,6 @@ wss.on("connection", (socket, req) => {
 
               let bullet_size_l = (bullet.size * cannon["bulletSize"]) / 1.8;
 
-              let randomNumber = generateRandomNumber(-0.2, 0.2);
-
-              var offSet_x = cannon["offSet-x"];
               if (cannon["offSet-x"] === "playerX") {
                 offSet_x =
                   (players[bullet.id].size / 2) * CONFIG.playerBaseSize;
@@ -4977,7 +5146,7 @@ wss.on("connection", (socket, req) => {
                 cannonIndex: data.cannonIndex,
               };
 
-              bullets.push(bullet____);
+              reassignRoomBullet(bullet____);
 
               for (let l = 0; l < 10; l++) {
                 setTimeout(() => {
@@ -4997,7 +5166,7 @@ wss.on("connection", (socket, req) => {
               }
 
               var interval__;
-              var reload_bullet = setTimeout(() => {
+              setTimeout(() => {
                 let canfire = true;
                 bullet_intervals.forEach((intervals) => {
                   if (intervals.id === bullet.uniqueid) {
@@ -5123,9 +5292,9 @@ wss.on("connection", (socket, req) => {
                 cannonIndex: data.cannonIndex,
               };
 
-              bullets.push(bullet____);
+              reassignRoomBullet(bullet____);
               var interval__;
-              var reload_bullet = setTimeout(() => {
+              setTimeout(() => {
                 let canfire = true;
                 bullet_intervals.forEach((intervals) => {
                   if (intervals.id === bullet.uniqueid) {
@@ -5199,7 +5368,7 @@ wss.on("connection", (socket, req) => {
         }
       }
     } catch (e) {
-      console.log(e);
+      console.log("5366",e);
       socket.close(1003, "Invalid data received.");
       return;
     }
@@ -5213,10 +5382,14 @@ wss.on("connection", (socket, req) => {
         }
         return true;
       });
-    } catch (e) {console.log(e)}
+    } catch (e) {
+      console.log("5381",e);
+    }
     try {
       IPs = IPs.splice(IPs.indexOf(req.socket.remoteAddress), 1);
-    } catch (e) {console.log(e)}
+    } catch (e) {
+      console.log("5386",e);
+    }
     try {
       hidden_broswers = hidden_broswers.filter((interval) => {
         if (connection.playerId === interval.id) {
@@ -5225,7 +5398,9 @@ wss.on("connection", (socket, req) => {
         }
         return true;
       });
-      } catch (e) {console.log(e)}
+    } catch (e) {
+      console.log("5397",e);
+    }
     try {
       const index = () => {
         var realindex = -1;
@@ -5243,7 +5418,9 @@ wss.on("connection", (socket, req) => {
       if (index !== -1) {
         connections.splice(index, 1); // Remove the connection from the list
       }
-    } catch (e) {console.log(e)}
+    } catch (e) {
+      console.log("5417",e);
+    }
     try {
       leader_board.shown = leader_board.shown.filter(
         (__index__) => __index__.id !== connection.playerId
@@ -5255,7 +5432,7 @@ wss.on("connection", (socket, req) => {
         leader_board: leader_board.shown,
       });
     } catch (e) {
-      console.log(e);
+      console.log("5430",e);
     }
     try {
       var _player = userbase.find((_player_) => {
@@ -5283,14 +5460,16 @@ wss.on("connection", (socket, req) => {
         }
       );
     } catch (e) {
-      console.log(e);
+      console.log("5458",e);
     }
     try {
       clearInterval(stateupdate);
       if (players[connection.playerId]) {
         clearTimeout(players[connection.playerId]?.stateTimeout);
       }
-    } catch (e) {console.log(e)}
+    } catch (e) {
+      console.log("5466",e);
+    }
     try {
       teamlist = teamlist.filter((team) => {
         var teamplayers = team.players;
@@ -5336,7 +5515,9 @@ wss.on("connection", (socket, req) => {
         }
         return true;
       });
-    } catch (e) {console.log(e)}
+    } catch (e) {
+      console.log("5514",e);
+    }
     try {
       var public_teams = [];
       public_teams = teamlist.map((team) => {
@@ -5346,7 +5527,9 @@ wss.on("connection", (socket, req) => {
           return team;
         }
       });
-    } catch (e) {console.log(e)}
+    } catch (e) {
+      console.log("5526",e);
+    }
     try {
       emit("pubteamlist", public_teams);
 
@@ -5361,7 +5544,9 @@ wss.on("connection", (socket, req) => {
       });
       emit("autoCannonUPDATE-ADD", autocannons);
       emit("playerLeft", { playerID: connection.playerId });
-    } catch (e) {console.log(e)}
+    } catch (e) {
+      console.log("5543",e);
+    }
   });
 
   socket.on("error", (error) => {
@@ -5372,630 +5557,10 @@ wss.on("connection", (socket, req) => {
 let tempToPush = [];
 let tempBulletToPush = [];
 let buildArray = [];
+let deadlist = [];
 
 setInterval(() => {
   frame++;
-  // Filter and update bullets
-  var deadlist = [];
-  bullets = bullets.filter((bullet) => {
-    let WanderControlled = false;
-    if (bullet.type === "directer") {
-      try {
-        if (!players[bullet.id].autoFiring) {
-          let recipracailFOV = 1 + (1 - players[bullet.id].FOV);
-          let dx =
-            players[bullet.id].x -
-            players[bullet.id].canvasW / 2 +
-            players[bullet.id].MouseX / players[bullet.id].FOV;
-
-          let dy =
-            players[bullet.id].y -
-            players[bullet.id].canvasH / 2 +
-            players[bullet.id].MouseY / players[bullet.id].FOV;
-
-          let angle = Math.atan2(dy - bullet.y, dx - bullet.x);
-          if (
-            Math.abs(players[bullet.id].y - dy) < bullet.speed * 2 &&
-            Math.abs(players[bullet.id].x - dx) < bullet.speed * 2
-          ) {
-            bullet.angle += 0.5 * (pi / 180);
-          } else {
-            bullet.angle = angle;
-            if (players[bullet.id]?.mousestate === "held") {
-              bullet.angle = Math.atan2(bullet.y - dy, bullet.x - dx);
-            }
-          }
-        } else if (players[bullet.id].autoFiring) {
-          let buildframe = {
-            x: players[bullet.id].canvasW / CONFIG.droneRange,
-            y: players[bullet.id].canvasH / CONFIG.droneRange,
-          };
-          var pointerAngle;
-          let buildrect = {
-            v1: players[bullet.id].x - buildframe.x,
-            v2: players[bullet.id].x + buildframe.x,
-            v3: players[bullet.id].y - buildframe.y,
-            v4: players[bullet.id].y + buildframe.y,
-          };
-          let fire_at_ = null;
-          let cannon =
-            tankmeta[players[bullet.id].__type__]["cannons"][
-              bullet.cannonIndex
-            ];
-          var maxdistance = 5001;
-          for (const playerID in players) {
-            let player = players[playerID];
-            var sameTeam =
-              player.team === players[bullet.id].team &&
-              player.team !== null &&
-              players[bullet.id].team !== null;
-            if (playerID !== bullet.id && !sameTeam) {
-              let distance = MathHypotenuse(
-                player.x - bullet.x,
-                player.y - bullet.y
-              );
-              if (
-                player.x > buildrect.v1 &&
-                player.x < buildrect.v2 &&
-                player.y > buildrect.v3 &&
-                player.y < buildrect.v4 &&
-                distance < maxdistance
-              ) {
-                pointerAngle = Math.atan2(
-                  player.y - bullet.y,
-                  player.x - bullet.x
-                );
-
-                maxdistance = distance;
-                fire_at_ = player;
-              }
-            }
-          }
-          if (maxdistance > CONFIG.playerItemSightRange) {
-            food_squares.forEach((item_) => {
-              let distance = MathHypotenuse(
-                item_.x - bullet.x,
-                item_.y - bullet.y
-              );
-              if (
-                item_.x > buildrect.v1 &&
-                item_.x < buildrect.v2 &&
-                item_.y > buildrect.v3 &&
-                item_.y < buildrect.v4 &&
-                distance < maxdistance
-              ) {
-                pointerAngle = Math.atan2(
-                  item_.y - bullet.y,
-                  item_.x - bullet.x
-                );
-
-                maxdistance = distance;
-                fire_at_ = item_;
-              }
-            });
-          }
-          if (fire_at_) {
-            bullet.angle = pointerAngle;
-            var newX = bullet.x + bullet.speed * Math.cos(pointerAngle);
-            var newY = bullet.y + bullet.speed * Math.sin(pointerAngle);
-          }
-          if (!fire_at_) {
-            bullet.wander.think();
-            bullet.setBaseXY();
-            var pointerAngle_ = bullet.wander.returnAngle();
-            bullet.angle = pointerAngle_;
-            var newX = bullet.x + bullet.speed * Math.cos(pointerAngle_);
-            var newY = bullet.y + bullet.speed * Math.sin(pointerAngle_);
-          }
-        } else {
-          throw Error("dirty player state");
-        }
-      } catch (e) {
-        // delet bad bullets
-        console.log(e);
-        if (players[bullet.id]) {
-          emit("dronekilled", { droneID: bullet.id });
-        }
-        return false;
-      }
-    }
-    let collied = false;
-    if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
-      // choose a player to attak
-      if (frame % 3 === 0) {
-        var maxdistance = 600;
-        var maxfov = 2400;
-        var target = { x: bullet.x, y: bullet.y };
-        var foundTarget = false;
-        for (const playerId in players) {
-          var player = players[playerId];
-          let newdistance = MathHypotenuse(
-            player.x - bullet.x,
-            player.y - bullet.y
-          );
-          if (newdistance < maxfov) {
-            target = { x: player.x, y: player.y, distance: newdistance };
-            newdistance = maxdistance;
-            foundTarget = true;
-          }
-        }
-        if (foundTarget && target?.distance < maxdistance) {
-          bullet.target = target;
-        } else if (foundTarget) {
-          bullet.target = target;
-        } else if (!foundTarget) {
-          bullet.target = { x: 0, y: 0, distance: 4000 };
-        }
-
-        var __angle = Math.atan2(
-          bullet.target.y - bullet.y,
-          bullet.target.x - bullet.x
-        );
-
-        bullet.angle = __angle;
-      }
-      if (
-        bullet.target &&
-        bullet.target?.distance < CONFIG.playerBaseSize &&
-        __angle !== 0
-      ) {
-        var newX = bullet.x;
-        var newY = bullet.y;
-        bullet.wander.setXY(bullet.x, bullet.y);
-      } else if (bullet.target?.distance < 600) {
-        var boss = findThisBoss(bullet.id);
-        bullet.wander.setBaseXY(boss.x, boss.y);
-        var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
-        var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
-        bullet.wander.setXY(newX, newY);
-      } else if (
-        bullet.target &&
-        bullet.target?.distance > 600 &&
-        bullet.target?.distance < 2400
-      ) {
-        var boss = findThisBoss(bullet.id);
-        bullet.wander.think();
-        bullet.wander.setBaseXY(boss.x, boss.y);
-        let tempAngle = bullet.wander.returnAngle();
-        var newX = bullet.x + bullet.speed * Math.cos(tempAngle);
-        var newY = bullet.y + bullet.speed * Math.sin(tempAngle);
-        bullet.wander.setXY(newX, newY);
-      } else {
-        bullet.wander.setXY(bullet.x, bullet.y);
-        var newX = bullet.x;
-        var newY = bullet.y;
-      }
-    } else {
-      var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
-      var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
-    }
-    var newX__;
-    var newY__;
-    if (
-      bullet.type !== "directer" &&
-      bullet.type !== "FreeNecromancer" &&
-      bullet.type !== "FreeSwarm" &&
-      bullet.type !== "sheild"
-    ) {
-      bullet.distanceTraveled += MathHypotenuse(
-        newX - bullet.x,
-        newY - bullet.y
-      );
-
-      if (
-        !(
-          bullet.x >= food_squares[bullet.sedoRoomKey]?.bounds?.x1 &&
-          bullet.x <= food_squares[bullet.sedoRoomKey]?.bounds?.x2 &&
-          bullet.y >= food_squares[bullet.sedoRoomKey]?.bounds?.y1 &&
-          bullet.y <= food_squares[bullet.sedoRoomKey]?.bounds?.y2
-        )
-      ) {
-        bullet.sedoRoomKey = getKeyRoom(newX, newY) ?? bullet.sedoRoomKey;
-      }
-    }
-
-    if (
-      bullet.type === "trap" ||
-      bullet.type === "roadMap" ||
-      bullet.type === "directer" ||
-      bullet.type !== "FreeSwarm" ||
-      (bullet.type !== "FreeNecromancer" && bullet.type !== "sheild")
-    ) {
-      if (
-        bullet.bullet_distance - bullet.distanceTraveled < 200 &&
-        bullet.type === "roadMap"
-      ) {
-        bullet.speed -= (bullet.bullet_distance - bullet.distanceTraveled) / 85;
-        if (bullet.speed <= 0) bullet.speed = 0;
-      }
-
-      for (let i = 0; i < bullets.length; i++) {
-        var bullet_ = bullets[i];
-        if (WanderControlled) return;
-        var bullet_speed = bullet.speed;
-        var _bullet_speed = bullet_.speed;
-
-        if (
-          bullet.id !== bullet_.id &&
-          !WanderControlled &&
-          !(
-            players[bullet?.id]?.team === players[bullet_?.id]?.team &&
-            players[bullet?.id]?.team !== null &&
-            players[bullet_?.id]?.team !== null
-          ) &&
-          Math.abs(bullet.x - bullet_.x) < bullet.size * 2 + bullet_.size * 2 &&
-          Math.abs(bullet.y - bullet_.y) < bullet.size * 2 + bullet_.size * 2
-        ) {
-          if (
-            (bullet_speed !== 0 &&
-              bullet_speed !== 0 &&
-              (!bullet_.speed || !bullet_speed) &&
-              bullet.type === "trap") ||
-            bullet.type === "roadMap"
-          )
-            return;
-          bullet.bullet_distance -=
-            bullet_.speed *
-            (bullet_.size / 5 +
-              Math.cos(Math.abs(bullet.angle - bullet_.angle)));
-          bullet_.bullet_distance -=
-            bullet_speed *
-            (bullet.size / 2 +
-              Math.cos(Math.abs(bullet.angle - bullet_.angle)));
-        }
-        var realangle =
-          bullet_.angle === 0 ? bullet_.angle : getRandomInt(-pi, pi);
-        var mathSin = Math.sin(realangle);
-        var mathCos = Math.sin(realangle);
-        if (
-          bullet.id === bullet_.id &&
-          bullet.uniqueid !== bullet_.uniqueid &&
-          bullet.type === bullet_.type &&
-          bullet_speed !== 0 &&
-          _bullet_speed !== 0 &&
-          players[bullet.id] &&
-          players[bullet_.id] &&
-          !(
-            players[bullet.id]?.team === players[bullet_.id]?.team &&
-            players[bullet.id]?.team !== null &&
-            players[bullet_.id]?.team !== null
-          ) &&
-          bullet.type !== "FreeNecromancer" &&
-          bullet.type !== "FreeSwarm" &&
-          Math.abs(bullet.x - bullet_.x) < bullet.size * 2 + bullet_.size * 2 &&
-          Math.abs(bullet.y - bullet_.y) < bullet.size * 2 + bullet_.size * 2
-        ) {
-          newX__ = (bullet.size / 5) * -0.9 * mathSin;
-          newY__ = (bullet.size / 5) * -0.9 * mathCos;
-          collied = true;
-          bullet_.x += -newX__;
-          bullet_.y += -newY__;
-        }
-        if (
-          bullet.id === bullet_.id &&
-          bullet.uniqueid !== bullet_.uniqueid &&
-          bullet.type === bullet_.type &&
-          (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") &&
-          !WanderControlled
-        ) {
-          newX__ = bullet.size * -0.9 * mathSin;
-          newY__ = bullet.size * -0.9 * mathCos;
-          collied = true;
-          bullet_.x += -newX__;
-          bullet_.y += -newY__;
-        }
-      }
-
-      const rawvertices = calculateTriangleVertices(
-        bullet.x,
-        bullet.y,
-        bullet.size * 3,
-        0
-      );
-      bullet.vertices = rawvertices;
-    } else if (bullet.type !== "sheild") {
-      for (let i = 0; i < bullets.length; i++) {
-        var bullet_ = bullets[i];
-        if (WanderControlled) return;
-
-        if (
-          bullet.id !== bullet_.id &&
-          !players[bullet.id]?.team === players[bullet_.id]?.team &&
-          players[bullet.id]?.team !== null &&
-          players[bullet_.id]?.team !== null &&
-          Math.abs(bullet.x - bullet_.x) < bullet.size * 2 + bullet_.size * 2 &&
-          Math.abs(bullet.y - bullet_.y) < bullet.size * 2 + bullet_.size * 2
-        ) {
-          bullet.bullet_distance -=
-            bullet_.speed *
-            (bullet_.size / 5 +
-              Math.cos(Math.abs(bullet.angle - bullet_.angle)));
-        }
-      }
-    }
-    if (
-      -(bullet.distanceTraveled - bullet.bullet_distance) <
-        25 * bullet.speed ** 2 &&
-      bullet.type !== "sheild"
-    ) {
-      bullet.transparency =
-        1 - bullet.distanceTraveled / bullet.bullet_distance < 0
-          ? 0.000000000000001
-          : 1 - bullet.distanceTraveled / bullet.bullet_distance;
-    }
-
-    for (const playerId in players) {
-      var player = players[playerId];
-      let player40 = player.size * CONFIG.playerBaseSize;
-      if (bullet.type !== "sheild") {
-        var sameTeam =
-          players[bullet.id]?.team === players[playerId]?.team &&
-          players[bullet.id]?.team !== null &&
-          players[playerId]?.team !== null;
-      } else {
-        var sameTeam = bullet.teamID == players[playerId]?.team;
-      }
-      if (player.state !== "start") {
-        let con = false;
-        if (bullet.boundtype === "square") {
-          const rawvertices = calculateSquareVertices(
-            bullet.x,
-            bullet.y,
-            bullet.size,
-            bullet.angle
-          );
-          if (
-            Math.abs(player.x - bullet.x) < 2 * player40 + 2 * bullet.size &&
-            Math.abs(player.y - bullet.y) < 2 * player40 + 2 * bullet.size &&
-            bullet.id !== player.id
-          ) {
-            var collisionCheck = isPlayerCollidingWithPolygon(
-              player,
-              rawvertices
-            );
-            con = collisionCheck[0];
-          }
-        } else if (bullet.boundtype === "triangle") {
-          const rawvertices = calculateTriangleVertices(
-            bullet.x,
-            bullet.y,
-            bullet.size,
-            bullet.angle
-          );
-          if (
-            Math.abs(player.x - bullet.x) < 2 * player40 + 2 * bullet.size &&
-            Math.abs(player.y - bullet.y) < 2 * player40 + 2 * bullet.size &&
-            bullet.id !== player.id
-          ) {
-            var collisionCheck = isPlayerCollidingWithPolygon(
-              player,
-              rawvertices
-            );
-            con = collisionCheck[0];
-          }
-        } else {
-          con =
-            Math.abs(player.x - bullet.x) < 2 * player40 + 2 * bullet.size &&
-            Math.abs(player.y - bullet.y) < 2 * player40 + 2 * bullet.size &&
-            bullet.id !== player.id;
-        }
-        if (con) {
-          if (!sameTeam) {
-            if (bullet.type === "trap" || bullet.type === "roadMap") {
-              player.health -=
-                (bullet.bullet_damage - 3.8) /
-                (player.size + 6 / bullet.size + 3);
-              bullet.bullet_distance /=
-                bullet.size / (bullet.bullet_pentration + 10);
-            } else if (
-              bullet.type === "directer" ||
-              bullet.type === "FreeNecromancer" ||
-              bullet.type === "FreeSwarm"
-            ) {
-              player.health -=
-                (bullet.bullet_damage - 4.4) /
-                (player.size + 6 / bullet.size + 5);
-              bullet.bullet_distance -=
-                bullet.size / (bullet.bullet_pentration + 10);
-            } else {
-              player.health -=
-                (bullet.bullet_damage - 3.8) /
-                ((player.size + 22) / bullet.speed);
-              bullet.bullet_distance -=
-                bullet.size / (bullet.bullet_pentration + 10);
-            }
-            emit("bulletDamage", {
-              playerID: player.id,
-              playerHealth: player.health,
-            });
-            if (player.health <= 0) {
-              try {
-                var reward = Math.round(
-                  player.score / (20 + players[bullet.id].score / 10000)
-                );
-                if (player.team !== null) {
-                  var team = teamlist.find(
-                    (team) => team.teamID === player.team
-                  );
-                  if (team.owner.id !== player.id || team.createTeamScore) {
-                    reward -= reward * team.simpleTax;
-                  }
-                  if (team.createTeamScore) {
-                    team.teamScore += (reward * team.simpleTax) / 2;
-                  } else {
-                    emit("playerScore", {
-                      bulletId: team.owner.id,
-                      socrepluse: reward * team.simpleTax,
-                    });
-                  }
-                  var complexTax =
-                    reward * ((player.score / 100000) * playerTax);
-                  if (team.owner.id !== player.id || team.createTeamScore) {
-                    reward -= complexTax;
-                  }
-                  if (team.createTeamScore) {
-                    team.teamScore += complexTax / 1.5;
-                  } else {
-                    emit("playerScore", {
-                      bulletId: team.owner.id,
-                      socrepluse: complexTax,
-                    });
-                  }
-                }
-              } catch (e) {
-                console.log(bullet.id);
-              }
-              if (players[bullet.id]) {
-                player.score += reward;
-                emit("playerScore", {
-                  bulletId: bullet.id,
-                  socrepluse: reward,
-                  kill: true,
-                });
-                createAnnocment(
-                  `You killed ${player.username}'s ${player.__type__}`,
-                  bullet.id
-                );
-              } else {
-                var boss = bosses.find(
-                  (boss_) => boss_.cannons[0].id === bullet.id
-                );
-                boss.score += reward;
-              }
-              emit("playerDied", {
-                playerID: player.id,
-                rewarder: bullet.id,
-                reward: reward,
-              });
-              killplayer(player.id);
-              try {
-                leader_board.shown.forEach((__index__) => {
-                  if (__index__.id === player.id) {
-                    leader_board.shown.splice(
-                      leader_board.shown.indexOf(__index__)
-                    );
-                  }
-                });
-                leader_board.hidden.forEach((__index__) => {
-                  if (__index__.id === player.id) {
-                    leader_board.hidden.splice(
-                      leader_board.hidden.indexOf(__index__)
-                    );
-                  }
-                });
-                emit("boardUpdate", {
-                  leader_board: leader_board.shown,
-                });
-              } catch (e) {
-                console.log(e);
-              }
-              leader_board.hidden.forEach((__index__) => {
-                if (__index__.id === bullet.id) {
-                  __index__.score += reward;
-                  let isshown = false;
-                  isshown = leader_board.shown.find((__index__) => {
-                    if (__index__.id === bullet.id) {
-                      return true;
-                    }
-                  });
-                  if (leader_board.shown[10]) {
-                    if (leader_board.shown[10].score < __index__.score) {
-                      leader_board.shown[10] = __index__;
-                    }
-                  } else if (!leader_board.shown[10] && !isshown) {
-                    leader_board.shown.push(__index__);
-                  }
-                }
-              });
-              leader_board.shown.forEach((__index__) => {
-                if (__index__.id === bullet.id) {
-                  __index__.score += reward;
-                }
-              });
-              rearrange();
-              emit("boardUpdate", {
-                leader_board: leader_board.shown,
-              });
-            } else {
-              if (bullet.type !== "expoled") {
-                var knockBackX = bullet.speed * Math.cos(bullet.angle);
-                var knockBackY = bullet.speed * Math.sin(bullet.angle);
-              } else {
-                var realPushBackAngle = Math.atan2(
-                  bullet.x - player.x,
-                  bullet.y - player.y
-                );
-                var knockBackX =
-                  bullet.exspandRate * Math.cos(realPushBackAngle);
-                var knockBackY =
-                  bullet.exspandRate * Math.sin(realPushBackAngle);
-              }
-              emit("bouceBack", {
-                response: { x: knockBackX, y: knockBackY },
-                playerID: player.id,
-              });
-            }
-          }
-          if (bullet.type === "sheild" && sameTeam) {
-            if (player.health < player.maxhealth)
-              player.health -= bullet.bullet_damage;
-            emit("bulletHeal", {
-              playerID: player.id,
-              playerHealth: player.health,
-            });
-          }
-        }
-      }
-    }
-    if (bullet.type === "expoled") {
-      bullet.size += bullet.exspandRate;
-      if (Date.now() > bullet.endTime) {
-        return false;
-      }
-    }
-    if (bullet.distanceTraveled <= bullet.bullet_distance) {
-      bullet.x = newX;
-      bullet.y = newY;
-      if (bullet.type === "roadMap") {
-        let road = bullet.road;
-        road.x = newX;
-        road.y = newY;
-      }
-      if (bullet.type === "directer") {
-        bullet.wander.setXY(newX, newY);
-      }
-      if (collied) {
-        bullet.x += newX__;
-        bullet.y += newY__;
-      }
-
-      return true;
-    }
-
-    if (bullet.type === "directer") {
-      emit("dronekilled", { droneID: bullet.id });
-    } else if (bullet.type === "roadMap") {
-      let road = roads.find((road) => road.uniqueid === bullet.uniqueid);
-      roads = roads.splice(roads.indexOf(road), 1);
-    } else if (
-      bullet.type === "FreeNecromancer" ||
-      bullet.type === "FreeSwarm"
-    ) {
-      deadlist.push(bullet.id);
-    } else if (bullet.type === "AutoBullet") {
-      autocannons = autocannons.filter((cannon) => {
-        if (bullet.id === cannon.playerid) return false;
-        return true;
-      });
-    }
-
-    bullet_intervals.forEach((__bullet_) => {
-      if (bullet.uniqueid === __bullet_.id) {
-        __bullet_.canfire = false;
-      }
-    });
-    return false;
-  });
 
   autocannons.forEach((cannon) => {
     let maxdistance = 2000;
@@ -6063,14 +5628,6 @@ setInterval(() => {
               player.y - players[cannon.playerid].y, // y difference
               player.x - (players[cannon.playerid].x + offSet_x) // x difference
             );
-          }
-
-          if (cannon._type_ !== "bulletAuto") {
-            var playerRadangle = (players[cannon.playerid].angle * pi) / 180;
-          }
-          if (cannon._type_ === "bulletAuto") {
-            var playerRadangle =
-              (players[__parentBullet__.id].angle * pi) / 180;
           }
 
           if (cannon._type_ === "SwivelAutoCannon") {
@@ -6162,14 +5719,6 @@ setInterval(() => {
               item.y - players[cannon.playerid].y, // y difference
               item.x - (players[cannon.playerid].x + offSet_x) // x difference
             );
-          }
-
-          if (cannon._type_ !== "bulletAuto") {
-            var playerRadangle = (players[cannon.playerid].angle * pi) / 180;
-          }
-          if (cannon._type_ === "bulletAuto") {
-            var playerRadangle =
-              (players[__parentBullet__.id].angle * pi) / 180;
           }
 
           if (cannon._type_ === "SwivelAutoCannon") {
@@ -6291,23 +5840,31 @@ setInterval(() => {
     }
   });
 
-  tempToPush = [];
-  tempBulletToPush = [];
   for (const roomkey in food_squares) {
     var room = food_squares[roomkey];
     if (typeof room === "function") continue;
     room.items = room.items.filter((item, index) => {
       if (
         !(
-          item.x >= room.bounds?.x1 &&
-          item.x <= room.bounds?.x2 &&
-          item.y >= room.bounds?.y1 &&
-          item.y <= room.bounds?.y2
+          item.x >= room.bounds.x1 &&
+          item.x <= room.bounds.x2 &&
+          item.y >= room.bounds.y1 &&
+          item.y <= room.bounds.y2
         )
       ) {
-        reassignRoom(item, room);
+        reassignRoomItem(item);
+      }
+      if (
+        !(
+          item.x + item.size >= room.bounds.x1 &&
+          item.x - item.size <= room.bounds.x2 &&
+          item.y + item.size >= room.bounds.y1 &&
+          item.y - item.size <= room.bounds.y2
+        )
+      ) {
         return false;
       }
+      if (item.roomsIn[0] !== roomkey) return true;
       if (
         item.subtype !== "Enemyboss:Square" &&
         item.subtype !== "Enemyboss:Triangle"
@@ -6318,27 +5875,40 @@ setInterval(() => {
         item.subtype === "Enemyboss:Square" ||
         item.subtype === "Enemyboss:Triangle"
       ) {
-        var maxdistance = CONFIG.bossLookUpRange;
-        var target = { x: item.x, y: item.y };
+        var target = {
+          x: null,
+          distanceX: CONFIG.bossLookUpRange,
+          y: null,
+          distanceY: CONFIG.bossLookUpRange,
+        };
         for (const playerId in players) {
           var player = players[playerId];
-          let newdistance = MathHypotenuse(
-            Math.abs(player.x - item.x),
-            Math.abs(player.y - item.y)
-          );
-          if (newdistance < maxdistance) {
-            target = { x: player.x, y: player.y };
-            newdistance = maxdistance;
+          if (
+            target.distanceX > Math.abs(player.x - item.x) ||
+            target.distanceY > Math.abs(player.y - item.y)
+          ) {
+            target = {
+              x: player.x,
+              distanceX: Math.abs(player.x - item.x),
+              distanceY: Math.abs(player.y - item.y),
+              y: player.y,
+            };
           }
         }
         let __angle = Math.atan2(target.y - item.y, target.x - item.x);
-        let newX = item.x + item.speed * Math.cos(__angle);
-        let newY = item.y + item.speed * Math.sin(__angle);
+        if (target.x && target.y) {
+          var newX = item.x + item.speed * Math.cos(__angle);
+          var newY = item.y + item.speed * Math.sin(__angle);
+        } else {
+          var newX = item.x;
+          var newY = item.y;
+        }
         item.centerX = newX;
         item.centerY = newY;
         item.x = newX;
         item.y = newY;
-        item.updateXY(item.randomID, item.x, item.y);
+        item.boss.x = item.x;
+        item.boss.y = item.y;
       }
       if (item.type === "pentagon") {
         item.angle += CONFIG.rotationSpeed.pentagon;
@@ -6603,6 +6173,13 @@ setInterval(() => {
                 }
                 if (team.createTeamScore) {
                   team.teamScore += (reward * team.simpleTax) / 2;
+                  public_teams = teamlist.map((team) => {
+                    if (!team.hidden) {
+                      team.taxInterval = null;
+                      return team;
+                    }
+                  });
+                  emit("pubteamlist", public_teams);
                 } else {
                   emit("playerScore", {
                     bulletId: team.owner.id,
@@ -6618,6 +6195,13 @@ setInterval(() => {
                 }
                 if (team.createTeamScore) {
                   team.teamScore += complexTax / 1.5;
+                  public_teams = teamlist.map((team) => {
+                    if (!team.hidden) {
+                      team.taxInterval = null;
+                      return team;
+                    }
+                  });
+                  emit("pubteamlist", public_teams);
                 } else {
                   emit("playerScore", {
                     bulletId: team.owner.id,
@@ -6631,6 +6215,7 @@ setInterval(() => {
                 bulletId: player.id,
                 socrepluse: reward,
               });
+              console.log(reward,"ram");
               leader_board.hidden.forEach((__index__) => {
                 if (__index__.id === player.id) {
                   __index__.score += reward;
@@ -6708,7 +6293,7 @@ setInterval(() => {
                       " has collected a golden gear! Total: " +
                       _player.goldenGears,
                     player.id,
-                    {delay: 2500, color: "gold"}
+                    { delay: CONFIG.messageIntervals.long, color: "gold" }
                   );
                 }
                 valueOp = 16;
@@ -6790,7 +6375,7 @@ setInterval(() => {
                   randomID: randID,
                   lastDamaged: null,
                   lastDamgers: [],
-                  goldenGears:goldenGears
+                  goldenGears: goldenGears,
                 };
               } else {
                 var fooditem = {
@@ -6887,8 +6472,9 @@ setInterval(() => {
       ) {
         item.health += item.healrate / 40;
       }
-      for (let i = 0; i < bullets.length; i++) {
-        var bullet = bullets[i];
+      var bulletsToTest = getRoomAndBoundingForBullets(roomkey);
+      for (let i = 0; i < bulletsToTest.length; i++) {
+        var bullet = bulletsToTest[i];
         if (
           Math.abs(bullet.x - item.x) < item.size * 2 + bullet.size * 2 &&
           Math.abs(bullet.y - item.y) < item.size * 2 + bullet.size * 2
@@ -6940,6 +6526,13 @@ setInterval(() => {
               }
               if (team.createTeamScore) {
                 team.teamScore += (reward * team.simpleTax) / 2;
+                public_teams = teamlist.map((team) => {
+                  if (!team.hidden) {
+                    team.taxInterval = null;
+                    return team;
+                  }
+                });
+                emit("pubteamlist", public_teams);
               } else if (team.owner.id !== player.id) {
                 emit("playerScore", {
                   bulletId: team.owner.id,
@@ -6955,6 +6548,14 @@ setInterval(() => {
               }
               if (team.createTeamScore) {
                 team.teamScore += complexTax / 1.5;
+                var public_teams = [];
+                public_teams = teamlist.map((team) => {
+                  if (!team.hidden) {
+                    team.taxInterval = null;
+                    return team;
+                  }
+                });
+                emit("pubteamlist", public_teams);
               } else if (team.owner.id !== player.id) {
                 emit("playerScore", {
                   bulletId: team.owner.id,
@@ -6998,6 +6599,7 @@ setInterval(() => {
                 bulletId: bullet.id,
                 socrepluse: reward,
               });
+              console.log(reward,"bullet");
             }
 
             var randID = Math.random() * index * Date.now();
@@ -7032,15 +6634,16 @@ setInterval(() => {
               !confirmplayerradia(x, y)
             );
 
-            
-
             cors_taken.push({ x, y, id: randID });
 
             var valueOp = getRandomInt(1, 15);
             var type = "";
             if (item.goldenGears) {
               var _player = userbase.find((_player) => {
-                return comparePasswords(_player.userid, players[bullet.id].userId);
+                return comparePasswords(
+                  _player.userid,
+                  players[bullet.id].userId
+                );
               });
               if (_player) {
                 _player.goldenGears += 1;
@@ -7049,7 +6652,7 @@ setInterval(() => {
                     " has collected a golden gear! Total: " +
                     _player.goldenGears,
                   bullet.id,
-                  {delay: 1000, color: "gold"}
+                  { delay: CONFIG.messageIntervals.long, color: "gold" }
                 );
               }
               valueOp = 16;
@@ -7135,10 +6738,11 @@ setInterval(() => {
                 randomID: randID,
                 lastDamaged: null,
                 lastDamgers: [],
-                goldenGears: goldenGears
+                goldenGears: goldenGears,
               };
             }
             if (item["respawn-raidis"]) {
+              var goldenGears = item.goldenGears ? item.goldenGears : null;
               var fooditem__XX = {
                 type: type,
                 health: health_max,
@@ -7160,6 +6764,7 @@ setInterval(() => {
                 "respawn-raidis": 1000,
                 lastDamaged: null,
                 lastDamgers: [],
+                goldenGears: goldenGears,
               };
             }
             let recoilX =
@@ -7341,10 +6946,719 @@ setInterval(() => {
         return true;
       }
     });
+    room.bullets = room.bullets.filter((bullet) => {
+      let WanderControlled = false;
+      if (
+        !(
+          bullet.x + bullet.size * 2 >= room.bounds?.x1 &&
+          bullet.x - bullet.size * 2 <= room.bounds?.x2 &&
+          bullet.y + bullet.size * 2 >= room.bounds?.y1 &&
+          bullet.y - bullet.size * 2 <= room.bounds?.y2
+        )
+      ) {
+        return false;
+      }
+      if (
+        !(
+          bullet.x >= room.bounds?.x1 &&
+          bullet.x <= room.bounds?.x2 &&
+          bullet.y >= room.bounds?.y1 &&
+          bullet.y <= room.bounds?.y2
+        )
+      ) {
+        reassignRoomBullet(bullet);
+      }
+      if (bullet.roomsIn[0] !== roomkey) return true;
+      if (bullet.type === "directer") {
+        try {
+          if (!players[bullet.id].autoFiring) {
+            let dx =
+              players[bullet.id].x -
+              players[bullet.id].canvasW / 2 +
+              players[bullet.id].MouseX / players[bullet.id].FOV;
+
+            let dy =
+              players[bullet.id].y -
+              players[bullet.id].canvasH / 2 +
+              players[bullet.id].MouseY / players[bullet.id].FOV;
+
+            let angle = Math.atan2(dy - bullet.y, dx - bullet.x);
+            if (
+              Math.abs(players[bullet.id].y - dy) < bullet.speed * 2 &&
+              Math.abs(players[bullet.id].x - dx) < bullet.speed * 2
+            ) {
+              bullet.angle += 0.5 * (pi / 180);
+            } else {
+              bullet.angle = angle;
+              if (players[bullet.id]?.mousestate === "held") {
+                bullet.angle = Math.atan2(bullet.y - dy, bullet.x - dx);
+              }
+            }
+          } else if (players[bullet.id].autoFiring) {
+            let buildframe = {
+              x: players[bullet.id].canvasW / CONFIG.droneRange,
+              y: players[bullet.id].canvasH / CONFIG.droneRange,
+            };
+            var pointerAngle;
+            let buildrect = {
+              v1: players[bullet.id].x - buildframe.x,
+              v2: players[bullet.id].x + buildframe.x,
+              v3: players[bullet.id].y - buildframe.y,
+              v4: players[bullet.id].y + buildframe.y,
+            };
+            let fire_at_ = null;
+            var maxdistance = 5001;
+            for (const playerID in players) {
+              let player = players[playerID];
+              var sameTeam =
+                player.team === players[bullet.id].team &&
+                player.team !== null &&
+                players[bullet.id].team !== null;
+              if (playerID !== bullet.id && !sameTeam) {
+                let distance = MathHypotenuse(
+                  player.x - bullet.x,
+                  player.y - bullet.y
+                );
+                if (
+                  player.x > buildrect.v1 &&
+                  player.x < buildrect.v2 &&
+                  player.y > buildrect.v3 &&
+                  player.y < buildrect.v4 &&
+                  distance < maxdistance
+                ) {
+                  pointerAngle = Math.atan2(
+                    player.y - bullet.y,
+                    player.x - bullet.x
+                  );
+
+                  maxdistance = distance;
+                  fire_at_ = player;
+                }
+              }
+            }
+            if (maxdistance > CONFIG.playerItemSightRange) {
+              food_squares.forEach((item_) => {
+                let distance = MathHypotenuse(
+                  item_.x - bullet.x,
+                  item_.y - bullet.y
+                );
+                if (
+                  item_.x > buildrect.v1 &&
+                  item_.x < buildrect.v2 &&
+                  item_.y > buildrect.v3 &&
+                  item_.y < buildrect.v4 &&
+                  distance < maxdistance
+                ) {
+                  pointerAngle = Math.atan2(
+                    item_.y - bullet.y,
+                    item_.x - bullet.x
+                  );
+
+                  maxdistance = distance;
+                  fire_at_ = item_;
+                }
+              });
+            }
+            if (fire_at_) {
+              bullet.angle = pointerAngle;
+              var newX = bullet.x + bullet.speed * Math.cos(pointerAngle);
+              var newY = bullet.y + bullet.speed * Math.sin(pointerAngle);
+            }
+            if (!fire_at_) {
+              bullet.wander.think();
+              bullet.setBaseXY();
+              var pointerAngle_ = bullet.wander.returnAngle();
+              bullet.angle = pointerAngle_;
+              var newX = bullet.x + bullet.speed * Math.cos(pointerAngle_);
+              var newY = bullet.y + bullet.speed * Math.sin(pointerAngle_);
+            }
+          } else {
+            throw Error("dirty player state");
+          }
+        } catch (e) {
+          // delet bad bullets
+          console.log("7045", e);
+          if (players[bullet.id]) {
+            emit("dronekilled", { droneID: bullet.id });
+          }
+          return false;
+        }
+      }
+      let collied = false;
+      if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
+        // choose a player to attak
+        if (frame % 5 === 0) {
+          var maxdistance = 600;
+          var maxfov = 2400;
+          var target = { x: bullet.x, y: bullet.y };
+          var foundTarget = false;
+          for (const playerId in players) {
+            var player = players[playerId];
+            let newdistance = MathHypotenuse(
+              player.x - bullet.x,
+              player.y - bullet.y
+            );
+            if (newdistance < maxfov) {
+              target = { x: player.x, y: player.y, distance: newdistance };
+              newdistance = maxdistance;
+              foundTarget = true;
+            }
+          }
+          if (foundTarget && target?.distance < maxdistance) {
+            bullet.target = target;
+          } else if (foundTarget) {
+            bullet.target = target;
+          } else if (!foundTarget) {
+            bullet.target = { x: 0, y: 0, distance: 4000 };
+          }
+
+          var __angle = Math.atan2(
+            bullet.target.y - bullet.y,
+            bullet.target.x - bullet.x
+          );
+
+          bullet.angle = __angle;
+        }
+        if (
+          bullet.target &&
+          bullet.target?.distance < CONFIG.playerBaseSize &&
+          __angle !== 0
+        ) {
+          var newX = bullet.x;
+          var newY = bullet.y;
+          bullet.wander.setXY(bullet.x, bullet.y);
+        } else if (bullet.target?.distance < 600) {
+          var boss = findThisBoss(bullet.id);
+          bullet.wander.setBaseXY(boss.x, boss.y);
+          var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
+          var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
+          bullet.wander.setXY(newX, newY);
+        } else if (
+          bullet.target &&
+          bullet.target?.distance > 600 &&
+          bullet.target?.distance < 2400
+        ) {
+          var boss = findThisBoss(bullet.id);
+          bullet.wander.think();
+          bullet.wander.setBaseXY(boss.x, boss.y);
+          let tempAngle = bullet.wander.returnAngle();
+          var newX = bullet.x + bullet.speed * Math.cos(tempAngle);
+          var newY = bullet.y + bullet.speed * Math.sin(tempAngle);
+          bullet.wander.setXY(newX, newY);
+        } else {
+          bullet.wander.setXY(bullet.x, bullet.y);
+          var newX = bullet.x;
+          var newY = bullet.y;
+        }
+      } else {
+        var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
+        var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
+      }
+      var newX__;
+      var newY__;
+      if (
+        bullet.type !== "directer" &&
+        bullet.type !== "FreeNecromancer" &&
+        bullet.type !== "FreeSwarm" &&
+        bullet.type !== "sheild"
+      ) {
+        bullet.distanceTraveled += MathHypotenuse(
+          newX - bullet.x,
+          newY - bullet.y
+        );
+
+        if (
+          !(
+            bullet.x >= food_squares[bullet.sedoRoomKey]?.bounds?.x1 &&
+            bullet.x <= food_squares[bullet.sedoRoomKey]?.bounds?.x2 &&
+            bullet.y >= food_squares[bullet.sedoRoomKey]?.bounds?.y1 &&
+            bullet.y <= food_squares[bullet.sedoRoomKey]?.bounds?.y2
+          )
+        ) {
+          bullet.sedoRoomKey = getKeyRoom(newX, newY) ?? bullet.sedoRoomKey;
+        }
+      }
+
+      if (
+        bullet.type === "trap" ||
+        bullet.type === "roadMap" ||
+        bullet.type === "directer" ||
+        bullet.type !== "FreeSwarm" ||
+        (bullet.type !== "FreeNecromancer" && bullet.type !== "sheild")
+      ) {
+        if (
+          bullet.bullet_distance - bullet.distanceTraveled < 200 &&
+          bullet.type === "roadMap"
+        ) {
+          bullet.speed -=
+            (bullet.bullet_distance - bullet.distanceTraveled) / 85;
+          if (bullet.speed <= 0) bullet.speed = 0;
+        }
+
+        for (let i = 0; i < bullets.length; i++) {
+          var bullet_ = bullets[i];
+
+          if (
+            bullet.id !== bullet_.id &&
+            !WanderControlled &&
+            !(
+              players[bullet?.id]?.team === players[bullet_?.id]?.team &&
+              players[bullet?.id]?.team !== null &&
+              players[bullet_?.id]?.team !== null
+            ) &&
+            Math.abs(bullet.x - bullet_.x) <
+              bullet.size * 2 + bullet_.size * 2 &&
+            Math.abs(bullet.y - bullet_.y) <
+              bullet.size * 2 + bullet_.size * 2 &&
+            !(
+              (bullet.speed !== 0 &&
+                bullet.speed !== 0 &&
+                (!bullet_.speed || !bullet.speed) &&
+                bullet.type === "trap") ||
+              bullet.type === "roadMap"
+            )
+          ) {
+            const dx = bullet.x - bullet_.x;
+            const dy = bullet.y - bullet_.y;
+
+            const mag = Math.sqrt(dx * dx + dy * dy);
+            const nx = dx / mag;
+            const ny = dy / mag;
+
+            const vx = Math.cos(bullet.angle);
+            const vy = Math.sin(bullet.angle);
+
+            const dot = vx * nx + vy * ny;
+
+            const rx = vx - 2 * dot * nx;
+            const ry = vy - 2 * dot * ny;
+
+            bullet.angle = Math.atan2(ry, rx);
+            const dx2 = bullet_.x - bullet.x;
+            const dy2 = bullet_.y - bullet.y;
+
+            const mag2 = Math.sqrt(dx * dx + dy * dy);
+            const nx2 = dx2 / mag2;
+            const ny2 = dy2 / mag2;
+
+            const vx2 = Math.cos(bullet_.angle);
+            const vy2 = Math.sin(bullet_.angle);
+
+            const dot2 = vx2 * nx2 + vy2 * ny2;
+
+            const rx2 = vx - 2 * dot2 * nx;
+            const ry2 = vy - 2 * dot2 * ny;
+
+            bullet_.angle = Math.atan2(ry2, rx2);
+            collied = true;
+            bullet.speed -=
+              (bullet_.bullet_pentration * bullet_.size + bullet_.speed) / 1000;
+            bullet.distanceTraveled +=
+              (bullet_.bullet_pentration * bullet_.size + bullet_.speed) / 500;
+            bullet_.speed -=
+              (bullet_.bullet_pentration * bullet.size + bullet.speed) / 1000;
+            bullet_.distanceTraveled +=
+              (bullet.bullet_pentration * bullet.size + bullet.speed) / 500;
+          }
+          if (
+            bullet.id === bullet_.id &&
+            bullet.uniqueid !== bullet_.uniqueid &&
+            bullet.speed !== 0 &&
+            bullet_.speed !== 0 &&
+            players[bullet.id] &&
+            players[bullet_.id] &&
+            !(
+              players[bullet.id]?.team === players[bullet_.id]?.team &&
+              players[bullet.id]?.team !== null &&
+              players[bullet_.id]?.team !== null
+            ) &&
+            bullet.type === "trap" &&
+            Math.abs(bullet.x - bullet_.x) <
+              bullet.size * 2 + bullet_.size * 2 &&
+            Math.abs(bullet.y - bullet_.y) < bullet.size * 2 + bullet_.size * 2
+          ) {
+            const dx = bullet.x - bullet_.x;
+            const dy = bullet.y - bullet_.y;
+
+            const mag = Math.sqrt(dx * dx + dy * dy);
+            const nx = dx / mag;
+            const ny = dy / mag;
+
+            const rx =
+              Math.cos(bullet.angle) -
+              2 * Math.cos(bullet.angle) * nx +
+              Math.sin(bullet.angle) * ny * nx;
+            const ry =
+              Math.sin(bullet.angle) -
+              2 * Math.cos(bullet.angle) * nx +
+              Math.sin(bullet.angle) * ny * ny;
+
+            bullet.angle = Math.atan2(ry, rx);
+            collied = true;
+          }
+          if (
+            bullet.id === bullet_.id &&
+            bullet.uniqueid !== bullet_.uniqueid &&
+            (bullet.type === "FreeNecromancer" ||
+              bullet.type === "FreeSwarm" ||
+              bullet.type === "drone") &&
+            !WanderControlled &&
+            Math.abs(bullet.x - bullet_.x) <
+              bullet.size * 2 + bullet_.size * 2 &&
+            Math.abs(bullet.y - bullet_.y) < bullet.size * 2 + bullet_.size * 2
+          ) {
+            const dx = bullet.x - bullet_.x;
+            const dy = bullet.y - bullet_.y;
+
+            const mag = Math.sqrt(dx * dx + dy * dy);
+            const nx = dx / mag;
+            const ny = dy / mag;
+
+            const vx = Math.cos(bullet.angle);
+            const vy = Math.sin(bullet.angle);
+
+            const dot = vx * nx + vy * ny;
+
+            const rx = vx - 2 * dot * nx;
+            const ry = vy - 2 * dot * ny;
+
+            bullet.angle = Math.atan2(ry, rx);
+          }
+        }
+
+        const rawvertices = calculateTriangleVertices(
+          bullet.x,
+          bullet.y,
+          bullet.size * 3,
+          0
+        );
+        bullet.vertices = rawvertices;
+      } else if (bullet.type !== "sheild") {
+        for (let i = 0; i < bullets.length; i++) {
+          var bullet_ = bullets[i];
+          if (WanderControlled) return;
+
+          if (
+            bullet.id !== bullet_.id &&
+            !players[bullet.id]?.team === players[bullet_.id]?.team &&
+            players[bullet.id]?.team !== null &&
+            players[bullet_.id]?.team !== null &&
+            Math.abs(bullet.x - bullet_.x) <
+              bullet.size * 2 + bullet_.size * 2 &&
+            Math.abs(bullet.y - bullet_.y) < bullet.size * 2 + bullet_.size * 2
+          ) {
+            bullet.bullet_distance -=
+              bullet_.speed *
+              (bullet_.size / 5 +
+                Math.cos(Math.abs(bullet.angle - bullet_.angle)));
+          }
+        }
+      }
+      if (
+        -(bullet.distanceTraveled - bullet.bullet_distance) <
+          25 * bullet.speed ** 2 &&
+        bullet.type !== "sheild"
+      ) {
+        bullet.transparency =
+          1 - bullet.distanceTraveled / bullet.bullet_distance < 0
+            ? 0.000000000000001
+            : 1 - bullet.distanceTraveled / bullet.bullet_distance;
+      }
+
+      for (const playerId in players) {
+        var player = players[playerId];
+        let player40 = player.size * CONFIG.playerBaseSize;
+        if (bullet.type !== "sheild") {
+          var sameTeam =
+            players[bullet.id]?.team === players[playerId]?.team &&
+            players[bullet.id]?.team !== null &&
+            players[playerId]?.team !== null;
+        } else {
+          var sameTeam = bullet.teamID == players[playerId]?.team;
+        }
+        if (player.state !== "start") {
+          let con = false;
+          if (bullet.boundtype === "square") {
+            const rawvertices = calculateSquareVertices(
+              bullet.x,
+              bullet.y,
+              bullet.size,
+              bullet.angle
+            );
+            if (
+              Math.abs(player.x - bullet.x) < 2 * player40 + 2 * bullet.size &&
+              Math.abs(player.y - bullet.y) < 2 * player40 + 2 * bullet.size &&
+              bullet.id !== player.id
+            ) {
+              var collisionCheck = isPlayerCollidingWithPolygon(
+                player,
+                rawvertices
+              );
+              con = collisionCheck[0];
+            }
+          } else if (bullet.boundtype === "triangle") {
+            const rawvertices = calculateTriangleVertices(
+              bullet.x,
+              bullet.y,
+              bullet.size,
+              bullet.angle
+            );
+            if (
+              Math.abs(player.x - bullet.x) < 2 * player40 + 2 * bullet.size &&
+              Math.abs(player.y - bullet.y) < 2 * player40 + 2 * bullet.size &&
+              bullet.id !== player.id
+            ) {
+              var collisionCheck = isPlayerCollidingWithPolygon(
+                player,
+                rawvertices
+              );
+              con = collisionCheck[0];
+            }
+          } else {
+            con =
+              Math.abs(player.x - bullet.x) < 2 * player40 + 2 * bullet.size &&
+              Math.abs(player.y - bullet.y) < 2 * player40 + 2 * bullet.size &&
+              bullet.id !== player.id;
+          }
+          if (con) {
+            if (!sameTeam) {
+              if (bullet.type === "trap" || bullet.type === "roadMap") {
+                player.health -=
+                  (bullet.bullet_damage - 3.8) /
+                  (player.size + 6 / bullet.size + 3);
+                bullet.bullet_distance /=
+                  bullet.size / (bullet.bullet_pentration + 10);
+              } else if (
+                bullet.type === "directer" ||
+                bullet.type === "FreeNecromancer" ||
+                bullet.type === "FreeSwarm"
+              ) {
+                player.health -=
+                  (bullet.bullet_damage - 4.4) /
+                  (player.size + 6 / bullet.size + 5);
+                bullet.bullet_distance -=
+                  bullet.size / (bullet.bullet_pentration + 10);
+              } else {
+                player.health -=
+                  (bullet.bullet_damage - 3.8) /
+                  ((player.size + 22) / bullet.speed);
+                bullet.bullet_distance -=
+                  bullet.size / (bullet.bullet_pentration + 10);
+              }
+              emit("bulletDamage", {
+                playerID: player.id,
+                playerHealth: player.health,
+              });
+              if (player.health <= 0) {
+                try {
+                  var reward = Math.round(
+                    player.score / (20 + players[bullet.id].score / 10000)
+                  );
+                  if (player.team !== null) {
+                    var team = teamlist.find(
+                      (team) => team.teamID === player.team
+                    );
+                    if (team.owner.id !== player.id || team.createTeamScore) {
+                      reward -= reward * team.simpleTax;
+                    }
+                    if (team.createTeamScore) {
+                      team.teamScore += (reward * team.simpleTax) / 2;
+                      var public_teams = [];
+                      public_teams = teamlist.map((team) => {
+                        if (!team.hidden) {
+                          team.taxInterval = null;
+                          return team;
+                        }
+                      });
+                      emit("pubteamlist", public_teams);
+                    } else {
+                      emit("playerScore", {
+                        bulletId: team.owner.id,
+                        socrepluse: reward * team.simpleTax,
+                      });
+                    }
+                    var complexTax =
+                      reward * ((player.score / 100000) * playerTax);
+                    if (team.owner.id !== player.id || team.createTeamScore) {
+                      reward -= complexTax;
+                    }
+                    if (team.createTeamScore) {
+                      team.teamScore += complexTax / 1.5;
+                      var public_teams = [];
+                      public_teams = teamlist.map((team) => {
+                        if (!team.hidden) {
+                          team.taxInterval = null;
+                          return team;
+                        }
+                      });
+                      emit("pubteamlist", public_teams);
+                    } else {
+                      emit("playerScore", {
+                        bulletId: team.owner.id,
+                        socrepluse: complexTax,
+                      });
+                    }
+                  }
+                } catch (e) {
+                  console.log("7452", bullet.id);
+                }
+                if (players[bullet.id]) {
+                  player.score += reward;
+                  emit("playerScore", {
+                    bulletId: bullet.id,
+                    socrepluse: reward,
+                    kill: true,
+                  });
+                  createAnnocment(
+                    `You killed ${player.username}'s ${player.__type__}`,
+                    bullet.id,
+                    {color:"black", trans: 0.3, delay: CONFIG.messageIntervals.medium}
+                  );
+                } else {
+                  var boss = bosses.find(
+                    (boss_) => boss_.cannons[0].id === bullet.id
+                  );
+                  boss.score += reward;
+                }
+                emit("playerDied", {
+                  playerID: player.id,
+                  rewarder: bullet.id,
+                  reward: reward,
+                });
+                killplayer(player.id);
+                try {
+                  leader_board.shown.forEach((__index__) => {
+                    if (__index__.id === player.id) {
+                      leader_board.shown.splice(
+                        leader_board.shown.indexOf(__index__)
+                      );
+                    }
+                  });
+                  leader_board.hidden.forEach((__index__) => {
+                    if (__index__.id === player.id) {
+                      leader_board.hidden.splice(
+                        leader_board.hidden.indexOf(__index__)
+                      );
+                    }
+                  });
+                  emit("boardUpdate", {
+                    leader_board: leader_board.shown,
+                  });
+                } catch (e) {
+                  console.log("7496",e);
+                }
+                leader_board.hidden.forEach((__index__) => {
+                  if (__index__.id === bullet.id) {
+                    __index__.score += reward;
+                    let isshown = false;
+                    isshown = leader_board.shown.find((__index__) => {
+                      if (__index__.id === bullet.id) {
+                        return true;
+                      }
+                    });
+                    if (leader_board.shown[10]) {
+                      if (leader_board.shown[10].score < __index__.score) {
+                        leader_board.shown[10] = __index__;
+                      }
+                    } else if (!leader_board.shown[10] && !isshown) {
+                      leader_board.shown.push(__index__);
+                    }
+                  }
+                });
+                leader_board.shown.forEach((__index__) => {
+                  if (__index__.id === bullet.id) {
+                    __index__.score += reward;
+                  }
+                });
+                rearrange();
+                emit("boardUpdate", {
+                  leader_board: leader_board.shown,
+                });
+              } else {
+                if (bullet.type !== "expoled") {
+                  var knockBackX = bullet.speed * Math.cos(bullet.angle);
+                  var knockBackY = bullet.speed * Math.sin(bullet.angle);
+                } else {
+                  var realPushBackAngle = Math.atan2(
+                    bullet.x - player.x,
+                    bullet.y - player.y
+                  );
+                  var knockBackX =
+                    bullet.exspandRate * Math.cos(realPushBackAngle);
+                  var knockBackY =
+                    bullet.exspandRate * Math.sin(realPushBackAngle);
+                }
+                emit("bouceBack", {
+                  response: { x: knockBackX, y: knockBackY },
+                  playerID: player.id,
+                });
+              }
+            }
+            if (bullet.type === "sheild" && sameTeam) {
+              if (player.health < player.maxhealth)
+                player.health -= bullet.bullet_damage;
+              emit("bulletHeal", {
+                playerID: player.id,
+                playerHealth: player.health,
+              });
+            }
+          }
+        }
+      }
+      if (bullet.type === "expoled") {
+        bullet.size += bullet.exspandRate;
+        if (Date.now() > bullet.endTime) {
+          return false;
+        }
+      }
+      if (bullet.distanceTraveled <= bullet.bullet_distance) {
+        bullet.x = newX;
+        bullet.y = newY;
+        if (bullet.type === "roadMap") {
+          let road = bullet.road;
+          road.x = newX;
+          road.y = newY;
+        }
+        if (bullet.type === "directer") {
+          bullet.wander.setXY(newX, newY);
+        }
+        if (collied) {
+          bullet.x += newX__;
+          bullet.y += newY__;
+        }
+
+        bullets.push(bullet);
+        return true;
+      }
+
+      if (bullet.type === "directer") {
+        emit("dronekilled", { droneID: bullet.id });
+      } else if (bullet.type === "roadMap") {
+        let road = roads.find((road) => road.uniqueid === bullet.uniqueid);
+        roads = roads.splice(roads.indexOf(road), 1);
+      } else if (
+        bullet.type === "FreeNecromancer" ||
+        bullet.type === "FreeSwarm"
+      ) {
+        deadlist.push(bullet.id);
+      } else if (bullet.type === "AutoBullet") {
+        autocannons = autocannons.filter((cannon) => {
+          if (bullet.id === cannon.playerid) return false;
+          return true;
+        });
+      }
+
+      bullet_intervals.forEach((__bullet_) => {
+        if (bullet.uniqueid === __bullet_.id) {
+          __bullet_.canfire = false;
+        }
+      });
+      return false;
+    });
   }
 
   tempToPush.forEach((item) => {
-    food_squares.assignRoom(item);
+    reassignRoomItem(item);
   });
 
   explosions = explosions.filter((exsplosion) => {
@@ -7406,7 +7720,7 @@ setInterval(() => {
   });
 
   tempBulletToPush.forEach((item) => {
-    bullets.push(item);
+    reassignRoomItem(item);
   });
 
   announcements = announcements.filter(
@@ -7421,28 +7735,26 @@ setInterval(() => {
   messageEmit("announcements", announcements);
   createAndSendGameObjects(buildArray);
   buildArray = [];
+  bullets = [];
+  tempToPush = [];
+  tempBulletToPush = [];
+  deadlist = [];
 }, CONFIG.updateInterval);
 
-function createAndSendGameObjects(playerArray) {
-  const root = protobuf.parse(schema).root;
-  const GameObject = root.lookupType("GameObject");
-  const GameObjectList = root.lookupType("GameObjectList");
+const root = protobuf.parse(schema).root;
+const GameObjectList = root.lookupType("GameObjectList");
 
+function createAndSendGameObjects(playerArray) {
   const gameObjectList = { objects: playerArray };
 
   const messageBuffer = GameObjectList.encode(gameObjectList).finish();
 
-  smartemitBinary("gameUpdate", messageBuffer);
+  smartemitBinary(messageBuffer);
 }
 
 function createBoss(type_) {
   var boss = {};
   var fooditem = {};
-  var updateXY = (id, x, y) => {
-    let thisBoss = bosses.find((boss) => boss.id === id);
-    thisBoss.x = x;
-    thisBoss.y = y;
-  };
   switch (type_) {
     case "Necromancer":
       let x = 0;
@@ -7471,7 +7783,6 @@ function createBoss(type_) {
         color: color,
         score_add: 3500,
         randomID: randID,
-        updateXY: updateXY,
         reload: 500,
         lastDamaged: null,
         lastDamgers: [],
@@ -7561,7 +7872,6 @@ function createBoss(type_) {
         color: color,
         score_add: 3000,
         randomID: randID2,
-        updateXY: updateXY,
         reload: 350,
         lastDamaged: null,
         lastDamgers: [],
@@ -7591,12 +7901,12 @@ function createBoss(type_) {
       break;
   }
   bosses.push(boss);
-  food_squares.assignRoom(fooditem);
+  reassignRoomItem(fooditem);
 }
 
 createBoss("Guardian");
 
-function smartemitBinary(type, data) {
+function smartemitBinary(data) {
   connections.forEach((conn) => {
     if (
       conn.playerId == null ||

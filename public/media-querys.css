@@ -11,7 +11,7 @@
   }
 }
 
-@media only screen and (max-width: 850px) and (min-width: 600px) {
+@media only screen and (max-width: 850px) and (min-width: 700px) {
   .badgeLevelDiv-con {
     min-width: 200px !important;
   }
@@ -54,14 +54,14 @@
   }
 }
 
-@media only screen and (max-width: 600px) and (orientation: portrait) {
+@media only screen and (max-width: 700px) and (orientation: portrait) {
   .leader-board {
     min-width: calc(100vw - 24px) !important;
     --realwidth: calc(-100vw + 8px);
     transform: translateX(var(--realwidth)) !important;
     margin-bottom: auto;
     margin-left: 0px;
-    height: 25vh;
+    height: 16vh;
     overflow-y: scroll;
   }
   .surronder {
@@ -89,6 +89,7 @@
   .badgeLevelDiv-con {
     margin-left: 0px !important;
     height: 15vh !important;
+    margin-top: -12%;
   }
   .botton-footer2 {
     display: none;
@@ -127,6 +128,7 @@
   }
   .skin-button {
     display: block;
+    height: 15vh;
   }
   .topcenterAD {
     height: 2.5vw;
@@ -134,7 +136,7 @@
   }
 }
 
-@media only screen and (600px < width < 1048px) {
+@media only screen and (700px < width < 1048px) {
   .social-share {
     font-size: 1.25vw;
   }

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" xmlns:bx="https://boxy-svg.com">
+  <rect width="500" height="500" style="stroke: rgba(0, 0, 0, 0); fill: rgba(0, 0, 0, 0.41);"></rect>
+  <path d="M 250 150.891 m -65 0 a 65 85 0 1 0 130 0 a 65 85 0 1 0 -130 0 Z M 250 150.891 m -39 0 a 39 51 0 0 1 78 0 a 39 51 0 0 1 -78 0 Z" bx:shape="ring 250 150.891 39 51 65 85 1@ccf45ec3" style="fill: rgb(216, 216, 216); stroke: rgba(0, 0, 0, 0);"></path>
+  <rect x="175" y="150" width="150" height="200" style="transform-origin: 253.904px 209.524px; stroke-linejoin: round; stroke-width: 22px; fill: rgb(216, 216, 216); stroke: rgb(207, 207, 207);"></rect>
+  <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 0px;" cx="250" cy="285" rx="35" ry="35"></ellipse>
+  <path style="stroke: rgb(0, 0, 0);" d="M 242.5 199.336 H 257.5 A 15 15 0 0 1 272.5 214.336 V 262.459 H 227.5 V 214.336 A 15 15 0 0 1 242.5 199.336 Z" bx:shape="rect 227.5 199.336 45 63.123 15 15 0 0 1@8743f722"></path>
+  <text style="fill: rgba(233, 233, 233, 0.906); font-family: Nunito; font-size: 28px; stroke: rgba(85, 207, 218, 0.863); stroke-dashoffset: -3px; stroke-miterlimit: 12.28; stroke-width: 1.21586px; white-space: pre; text-anchor: middle;" transform="matrix(1.611301, 0, 0, 2.052632, 113.924889, -409.762665)" x="85.825" y="405.315">Open a skin chest to <tspan x="85.82499694824219" dy="1em">​</tspan>unlock this skin!</text>
+  <defs>
+    <style bx:fonts="Nunito" bx:pinned="true">@import url(https://fonts.googleapis.com/css2?family=Nunito%3Aital%2Cwght%400%2C200..1000%3B1%2C200..1000&amp;display=swap);</style>
+  </defs>
+</svg>

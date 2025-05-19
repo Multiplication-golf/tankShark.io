@@ -84,7 +84,7 @@
 
 .keycontener {
   position: absolute;
-  bottom: 50vh;
+  bottom: 30vh;
   left: 20px;
   z-index: 25;
   display: none;

@@ -121,24 +121,40 @@
         title="settings"
         alt="settings"
       />
-      <div style="top: 5px; right: 20px; position: fixed">© 2025</div>
+      <div class="copyrightNotice">© 2025</div>
       <div class="topcenterAD">
         <div id="adbox" class="innercenterAD"></div>
       </div>
       <div style="height: 0px">
         <div class="center1000" id="skinCon">
           <div
-            style="
-              overflow: hidden;
-              height: 75vh;
-              z-index: 24;
-              border-radius: 60px;
-            "
+            class="scroll-holder"
           >
-            <div class="skins-grid" id="skins-grid">
+            <div class="high-height">
+              <div class="h-40-30">
+
+              </div>
               <button class="x-out" id="close" title="close button">X</button>
+              <div class="skins-grid" id="skins-grid">
+                
+              </div>
             </div>
           </div>
+        </div>
+      </div>
+      <div id="confermationScreen2" class="shaded100">
+        <div class="confimation-pop-up">
+          <strong
+            ><span class="join-text">
+              Boost are non-refundeble <br> Cost: 100 golden gears Boosts give you 15 levels each Up to 45 levels
+              <br>
+              <button class="allow-join" id="buyNo">
+                <strong>no</strong></button
+              ><button class="allow-join" id="buyYes">
+                <strong>yes</strong>
+              </button>
+            </span>
+          </strong>
         </div>
       </div>
       <div class="flexcenter">
@@ -379,7 +395,7 @@
         <br>
         </div>
           <div
-            style="display: flex; align-items: center; justify-content: center"
+            class="center-flex"
           >
             <button class="skin-button" id="skinsButton">Skins</button>
           </div>
@@ -392,7 +408,11 @@
           </div>
           <div class="center0">
             <div class="login-button">
-              <meter min="-1" max="45" value="0" id="levelProgress" class="boost-bar"></meter>
+              <p>Level Boost</p>
+              <meter min="-1" max="45" value="0" id="levelProgress" class="boost-bar"></meter><br>
+              <div class="boost-con" id='booster'>
+                <button class="boost">Boost</button>
+              </div>
             </div>
           </div>
         </div>
@@ -761,62 +781,11 @@
       />
       <div id="keyscontainer" class="keycontener">
         <svg width="6vh" height="6vh"></svg>
-        <svg width="6vh" height="6vh" id="up">
-          <rect
-            width="6vh"
-            height="6vh"
-            rx="15"
-            fill="rgba(255,255,255,0.8)"
-            stroke="rgba(255,255,255,0.9)"
-            stroke-width="1"
-          />
-          <text
-            x="2vh"
-            y="2.5vh"
-            font-size="25"
-            text-anchor="middle"
-            alignment-baseline="middle"
-          >
-            W
-          </text>
-        </svg>
+        <div style="width: 6vh; height: 6vh; border-radius: 20px; background-color:rgba(255,255,255,0.8)" id="up">W<div>
         <br />
-        <svg width="6vh" height="6vh" id="left">
-          <rect width="6vh" height="6vh" rx="15" fill="rgba(255,255,255,0.8)" />
-          <text
-            x="2vh"
-            y="2.5vh"
-            font-size="25"
-            text-anchor="middle"
-            alignment-baseline="middle"
-          >
-            A
-          </text>
-        </svg>
-        <svg width="6vh" height="6vh" id="down">
-          <rect width="6vh" height="6vh" rx="15" fill="rgba(255,255,255,0.8)" />
-          <text
-            x="2vh"
-            y="2.5vh"
-            font-size="25"
-            text-anchor="middle"
-            alignment-baseline="middle"
-          >
-            S
-          </text>
-        </svg>
-        <svg width="6vh" height="6vh" id="right">
-          <rect width="6vh" height="6vh" rx="15" fill="rgba(255,255,255,0.8)" />
-          <text
-            x="2vh"
-            y="2.5vh"
-            font-size="25"
-            text-anchor="middle"
-            alignment-baseline="middle"
-          >
-            D
-          </text>
-        </svg>
+        <div style="width: 6vh; height: 6vh; border-radius: 20px; background-color:rgba(255,255,255,0.8)" id="left">A<div>
+        <div style="width: 6vh; height: 6vh; border-radius: 20px; background-color:rgba(255,255,255,0.8)" id="down">S<div>
+        <div style="width: 6vh; height: 6vh; border-radius: 20px; background-color:rgba(255,255,255,0.8)" id="right">D<div>
       </div>
       <div class="background-grid" id="gridDark"></div>
       <div class="background-grid" id="gridLight"></div>

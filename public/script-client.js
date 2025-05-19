@@ -1,8 +1,9 @@
 // LOL, you little kids can't mess with my game
 (async function () {
   /* Warning! DO NOT TOUCH */
-  const isCrazyGames = true /*window.location.origin.endsWith("crazygames.com");*/;
+  const isCrazyGames = document.referrer !== ''; /*window.location.origin.endsWith("crazygames.com");*/
 
+  console.log(document.referrer)
   if (isCrazyGames) {
     // document.getElementsByTagName("body")[0].innerHTML +=
     //   '<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>';
@@ -17,8 +18,7 @@
     }
     var available = window.CrazyGames.SDK.user.isUserAccountAvailable;
     if (available) {
-      var user = 
-        await window.CrazyGames.SDK.user.getUser();
+      var user = await window.CrazyGames.SDK.user.getUser();
       document.getElementById("username").value = user.username;
     }
   }
@@ -44,6 +44,24 @@
     "8.webp",
     "9.webp",
     "10.webp",
+    "11.webp",
+    "12.webp",
+    "13.webp",
+    "14.webp",
+    "15.webp",
+    "16.webp",
+    "17.webp",
+    "18.webp",
+    "19.webp",
+    "20.webp",
+    "21.webp",
+    "22.webp",
+    "23.webp",
+    "24.webp",
+    "25.webp",
+    "26.webp",
+    "27.webp",
+    "0.webp",
   ];
 
   badgesToLoad.forEach((badge) => {
@@ -771,6 +789,9 @@
         } catch (e) {
           if (errors > 2) return;
           setTimeout(() => {
+            alert(
+              "There is an error or socket disconnection. Please report this if the error is not related to a closing state error."
+            );
             window.location.reload();
           }, 2500);
           alert(
@@ -780,7 +801,7 @@
         }
       } else {
         setTimeout(() => {
-          //window.location.reload();
+          window.location.reload();
         }, 1);
         setTimeout(() => {
           alert(`There is a disconnection. ${socket.readyState}`);
@@ -825,6 +846,51 @@
 
     setCookie("score", 25000000, 100);
 
+    var upgradeColors = [
+      "#CC0000",
+      "#00CC00",
+      "#0000CC",
+      "#CCCC00",
+      "#CC00CC",
+      "#00CCCC",
+      "#660000",
+      "#666600",
+      "#006600",
+      "#660066",
+      "#006666",
+      "#000066",
+      "#CC8400",
+      "#7F1F1F",
+      "#4C7A8A",
+      "#66CC00",
+      "#A0521E",
+      "#4A7BC5",
+      "#B01030",
+      "#00A9A9",
+    ];
+    var upgradeColorsDark = [
+      "#FF0000",
+      "#00FF00",
+      "#0000FF",
+      "#FFFF00",
+      "#FF00FF",
+      "#00FFFF",
+      "#800000",
+      "#808000",
+      "#008000",
+      "#800080",
+      "#008080",
+      "#000080",
+      "#FFA500",
+      "#A52A2A",
+      "#5F9EA0",
+      "#7FFF00",
+      "#D2691E",
+      "#6495ED",
+      "#DC143C",
+      "#00CED1",
+    ];
+
     function levelUpgrader(tankdata) {
       var out = false;
       if (tankdata["upgrades"] == undefined) return;
@@ -843,12 +909,64 @@
 
           var upgrade = tankdata["upgrades"][KEY];
 
-          var img__ = document.createElement("img");
-          var tileImg = upgrade.img;
+          var img__ = document.createElement("canvas");
+
           tankstiles.appendChild(img__);
 
-          img__.src = "tanktiles/" + tileImg + ".png";
-          img__.style = "width: 6vw; height: 6vw; margin: 10px; z-index: 100;";
+          img__.style =
+            "width: 10vw; height: 10vw; margin: 10px; z-index: 100;";
+
+          img__.width = img__.getBoundingClientRect().height + 20;
+          img__.height = img__.getBoundingClientRect().height + 20;
+          
+          const __ctx__ = img__.getContext("2d", { willReadFrequently: false });
+          __ctx__.beginPath();
+          __ctx__.roundRect(
+            7,
+            7,
+            img__.getBoundingClientRect().width,
+            img__.getBoundingClientRect().height,
+            5
+          );
+          __ctx__.fillStyle = upgradeColors[i];
+          __ctx__.strokeStyle = upgradeColorsDark[i];
+          __ctx__.lineWidth = 7;
+          __ctx__.stroke();
+          __ctx__.fill();
+          __ctx__.closePath();
+
+          var players_ = {
+            sdfjdsj9ew8932rs89f8: {
+              id: "sdfjdsj9ew8932rs89f8",
+              x: img__.getBoundingClientRect().width / 2 + 5,
+              y: img__.getBoundingClientRect().width / 2  + 5,
+              health: 100,
+              size: 1,
+              cannonW: [],
+              cannonH: 0,
+              __type__: Object.keys(tankdata["upgrades"])[i],
+              cannon_angle: 0,
+              score: 0,
+              username: "",
+              state: "normal",
+              maxhealth: 100,
+              skin: "0.webp",
+              team: teamOn,
+              statecycle: 0,
+            },
+          };
+          var canndata = tankmeta[Object.keys(tankdata["upgrades"])[i]];
+          console.log(tankmeta[Object.keys(tankdata["upgrades"])[i]]["cannons"],Object.keys(tankdata["upgrades"])[i])
+          for (
+            let i = 0;
+            i <
+            canndata["cannons"].length;
+            i++
+          ) {
+            players_["sdfjdsj9ew8932rs89f8"].cannonW.push(0);
+          }
+
+          drawPlayers(__ctx__, players_, 0, 0, true);
 
           img__.addEventListener("click", function (evt) {
             evt.stopPropagation();
@@ -1058,6 +1176,7 @@
           var info = document.createElement("p");
           info.innerText = `
           Team type: ${team.govType}
+          Team score: ${team.teamScore}
           Taxes: 
           Flat rate ${team.simpleTax}
           Player based rate ${team.playerTax}
@@ -1563,6 +1682,7 @@
                 }
               }
               resolveDraw();
+              console.log("background built");
               break;
             }
             case "requests": {
@@ -1603,6 +1723,7 @@
             case "RETURNtankmeta": {
               tankmeta = data;
               resolveDraw2();
+              console.log("tankMeta recived");
               break;
             }
             case "NewMessages": {
@@ -1630,6 +1751,7 @@
             case "Levels": {
               levels = data;
               resolveDraw3();
+              console.log("levelDataRecived");
               break;
             }
             case "handshake": {
@@ -1747,7 +1869,7 @@
                 respawn.style["z-index"] = "12";
                 document.getElementsByTagName("body")[0].style.cursor = "auto";
                 document.getElementById("game").appendChild(respawn);
-                const reload = () => {
+                const reload_ = () => {
                   if (isCrazyGames) {
                     const callbacks = {
                       adFinished: () => {
@@ -1766,7 +1888,7 @@
                     ongame();
                   }
                 };
-                respawn.addEventListener("click", reload);
+                respawn.addEventListener("click", reload_);
               } else if (data["rewarder"] === playerId && data.reward) {
                 score += data.reward;
               }
@@ -1829,7 +1951,6 @@
             }
             case "bulletUpdate": {
               bullets = data;
-              console.log(data);
               break;
             }
             case "roadUpdate": {
@@ -2200,12 +2321,21 @@
             }
             case "newid": {
               resolveDraw5();
+              console.log("NewId");
               userId = data.newid;
-              setCookie("userId", userId, 365);
+              setCookie("userId", userId, 99999);
+              break;
+            }
+            case "secureId": {
+              resolveDraw5();
+              console.log("NewId");
+              userId = data.newid;
+              setCookie("secureId", userId, 99999);
               break;
             }
             case "resovleID": {
               resolveDraw5();
+              console.log("idResovled");
               break;
             }
             case "playerSpeedBoost": {
@@ -2308,7 +2438,7 @@
             messaging = !messaging;
           }
         };
-
+        console.log(window.outerHeight, window.outerWidth);
         if (window.outerHeight > window.outerWidth) {
           var mouseUpPress = false;
           document.getElementById("keyscontainer").style.display = "block";
@@ -4373,6 +4503,645 @@
       }
     }
 
+    function drawPlayers(ctx, players, cavansX, cavansY, isFake) {
+      for (const playerId__ in players) {
+        if (players.hasOwnProperty(playerId__) && playerId__ != playerId) {
+          let player = players[playerId__];
+
+          let tankdata = tankmeta[player.__type__];
+
+          console.log(tankdata);
+
+          let tankdatacannon = tankdata["cannons"];
+
+          let playerX = player.x;
+          let playerY = player.y;
+
+          var sameTeam = !isFake
+            ? players[player.id].team === players[playerId].team &&
+              players[player.id].team !== null &&
+              players[playerId].team !== null
+            : true;
+
+          let FOVplayerz = player.size;
+
+          if (tankdata.decor) {
+            tankdata.decor.forEach((decor_) => {
+              if (decor_.type === "octaspinner") {
+                ctx.fillStyle = "black";
+                ctx.save();
+                ctx.translate(
+                  playerX - cavansX + decor_.offsetX,
+                  playerY - cavansY + decor_.offsetY
+                );
+                let angle = player.cannon_angle;
+                ctx.rotate(angle + decor_.offsetAngle);
+
+                ctx.beginPath();
+                for (let i = 0; i < 8; i++) {
+                  // calculate the rotation
+                  const rotation = ((Math.PI * 2) / 8) * i;
+
+                  // for the first point move to
+                  if (i === 0) {
+                    ctx.moveTo(
+                      decor_.size * Math.cos(rotation),
+                      decor_.size * Math.sin(rotation)
+                    );
+                  } else {
+                    // for the rest draw a line
+                    ctx.lineTo(
+                      decor_.size * Math.cos(rotation),
+                      decor_.size * Math.sin(rotation)
+                    );
+                  }
+                }
+
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+              }
+            });
+          }
+
+          let gradient = ctx.createRadialGradient(
+            playerX - cavansX,
+            playerY - cavansY,
+            (playerSize * playerBaseSize) / 1.5,
+            playerX - cavansX,
+            playerY - cavansY,
+            radiusConfig.radius
+          );
+
+          gradient.addColorStop(radiusConfig.build[0], "#FFFFFF00");
+          if (sameTeam) {
+            gradient.addColorStop(radiusConfig.build[1], "#61f7ff");
+          } else {
+            gradient.addColorStop(radiusConfig.build[1], "#ff2121");
+          }
+
+          gradient.addColorStop(radiusConfig.build[2], "#FFFFFF00");
+
+          ctx.beginPath();
+          ctx.arc(
+            playerX - cavansX,
+            playerY - cavansY,
+            radiusConfig.radius,
+            0,
+            2 * Math.PI,
+            false
+          );
+          ctx.fillStyle = gradient;
+          ctx.fill();
+
+          ctx.closePath();
+
+          console.log(Object.keys(tankdatacannon).length);
+
+          for (let i = 0; i < Object.keys(tankdatacannon).length; i++) {
+            ctx.fillStyle = "#b3b3b3";
+            let tankdatacannondata = tankdatacannon[i];
+
+            let cannon_widthFOV =
+              tankdatacannondata["cannon-width"] * FOVplayerz;
+            let cannon_heightFOV =
+              tankdatacannondata["cannon-height"] * FOVplayerz;
+            if (tankdatacannondata["type"] === "basicCannon") {
+              ctx.save();
+              ctx.translate(playerX - cavansX, playerY - cavansY);
+              let angle = player.cannon_angle;
+
+              let angle_offset = tankdatacannondata["offset-angle"];
+              ctx.rotate(angle + angle_offset);
+              // Draw the square
+              let basex =
+                -cannon_widthFOV / 2 +
+                cannon_heightFOV +
+                tankdatacannondata["offSet-x"] -
+                player.cannonW[i];
+              let basey =
+                -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
+
+              ctx.fillRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
+
+              // Add a border to the cannon
+              ctx.strokeStyle = "lightgrey"; // Set border color
+              ctx.lineWidth = 3; // Set border width
+              ctx.strokeRect(basex, basey, cannon_widthFOV, cannon_heightFOV); // Draw the border
+              // Restore the previous transformation matrix
+              ctx.restore();
+            } else if (
+              tankdatacannondata["type"] === "trapezoid" ||
+              tankdatacannondata["type"] === "directer"
+            ) {
+              ctx.save();
+              ctx.translate(playerX - cavansX, playerY - cavansY);
+              let angle = player.cannon_angle;
+
+              let angle_offset = tankdatacannondata["offset-angle"];
+              ctx.rotate(angle + angle_offset);
+              // Draw the square
+              const cannonWidth_bottom =
+                tankdatacannondata["cannon-width-bottom"] * player.size * FOV;
+
+              let basex =
+                cannonWidth_bottom / 2 +
+                cannon_heightFOV +
+                tankdatacannondata["offSet-x"] -
+                player.cannonW[i];
+              let basey =
+                -cannon_heightFOV / 2 +
+                cannon_heightFOV / 2 -
+                tankdatacannondata["offSet-y"];
+
+              const cannonHeight = cannon_heightFOV;
+              const cannonWidth_top =
+                tankdatacannondata["cannon-width-top"] * player.size * FOV;
+
+              var canwB2 = cannonWidth_bottom / 2;
+              var canwH2 = cannonWidth_top / 2;
+              ctx.beginPath();
+              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
+              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
+              ctx.lineTo(basex, basey + canwH2);
+              ctx.lineTo(basex, basey - canwH2);
+              ctx.closePath(); // Close the path
+              ctx.fill();
+
+              // Add a border to the cannon
+              ctx.strokeStyle = "lightgrey"; // Set border color
+              ctx.lineWidth = 3; // Set border width
+              ctx.beginPath();
+              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
+              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
+              ctx.lineTo(basex, basey + canwH2);
+              ctx.lineTo(basex, basey - canwH2);
+              ctx.closePath(); // Close the path
+              ctx.stroke(); // Draw the border
+              ctx.restore();
+            } else if (
+              tankdatacannondata["type"] === "trap" ||
+              tankdatacannondata["type"] === "paver"
+            ) {
+              let cannonheight = tankdatacannondata["cannon-height"];
+              ctx.save();
+
+              ctx.translate(playerX - cavansX, playerY - cavansY);
+              let angle = player.cannon_angle;
+
+              let angle_offset = tankdatacannondata["offset-angle"];
+              let trapR = tankdatacannondata["trap-to-cannon-ratio"];
+              ctx.rotate(angle + angle_offset);
+              // Draw the square
+              let basex =
+                -cannon_widthFOV / 2 +
+                cannonheight +
+                tankdatacannondata["offSet-x"] -
+                player.cannonW[i];
+              let reH = cannon_widthFOV * (1 - trapR);
+              let basey =
+                -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
+              ctx.fillRect(
+                basex,
+                basey,
+                cannon_widthFOV - reH,
+                cannon_heightFOV
+              );
+              // Add a border to the cannon
+
+              ctx.strokeStyle = "lightgrey"; // Set border color
+              ctx.lineWidth = 3; // Set border width
+              ctx.strokeRect(
+                basex,
+                basey,
+                cannon_widthFOV - reH,
+                cannon_heightFOV
+              );
+              // Restore the previous transformation matrix
+              const cannonHeight = reH;
+              const cannonWidth_top = cannon_heightFOV * 1.4;
+              const cannonWidth_bottom = cannon_heightFOV;
+
+              basex = basex + (cannon_widthFOV - trapR);
+
+              var canwB2 = cannonWidth_bottom / 2;
+              var canwH2 = cannonWidth_top / 2;
+              basey += canwB2;
+              ctx.beginPath();
+              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
+              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
+              ctx.lineTo(basex, basey + canwH2);
+              ctx.lineTo(basex, basey - canwH2);
+              ctx.closePath(); // Close the path
+              ctx.fill();
+
+              // Add a border to the cannon
+              ctx.strokeStyle = "lightgrey"; // Set border color
+              ctx.lineWidth = 3; // Set border width
+              ctx.beginPath();
+              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
+              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
+              ctx.lineTo(basex, basey + canwH2);
+              ctx.lineTo(basex, basey - canwH2);
+              ctx.closePath(); // Close the path
+              ctx.stroke(); // Draw the border
+              ctx.restore();
+              if (tankdatacannondata["type"] === "paver") {
+                cannon_widthFOV /= 2;
+                cannon_heightFOV /= 2;
+                ctx.save();
+                ctx.translate(playerX - cavansX, playerY - cavansY);
+                let angle = player.cannon_angle;
+
+                let angle_offset = tankdatacannondata["offset-angle"];
+                ctx.rotate(angle + angle_offset);
+                // Draw the square
+                let basex =
+                  -cannon_widthFOV / 2 +
+                  cannon_heightFOV +
+                  tankdatacannondata["offSet-x"] -
+                  player.cannonW[i];
+                let basey =
+                  -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
+
+                ctx.fillRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
+
+                // Add a border to the cannon
+                ctx.strokeStyle = "lightgrey"; // Set border color
+                ctx.lineWidth = 3; // Set border width
+                ctx.strokeRect(basex, basey, cannon_widthFOV, cannon_heightFOV); // Draw the border
+                // Restore the previous transformation matrix
+                ctx.restore();
+              }
+            } else if (tankdatacannondata["type"] === "AutoBulletCannon") {
+              ctx.save();
+              ctx.translate(playerX - cavansX, playerY - cavansY);
+              let angle = player.cannon_angle;
+
+              let angle_offset = tankdatacannondata["offset-angle"];
+              ctx.rotate(angle + angle_offset);
+              // Draw the square
+
+              let basex =
+                -cannon_widthFOV / 2 +
+                cannon_heightFOV +
+                tankdatacannondata["offSet-x"] -
+                player.cannonW[i];
+              let basey =
+                -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
+
+              ctx.fillRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
+
+              // Add a border to the cannon
+              ctx.strokeStyle = "lightgrey"; // Set border color
+              ctx.lineWidth = 3; // Set border width
+              ctx.strokeRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
+
+              ctx.beginPath();
+              ctx.arc(
+                basex + 40 + cannon_widthFOV / 4,
+                basey + cannon_heightFOV / 2,
+                (playerSize * FOV * playerBaseSize) / 4,
+                0,
+                2 * Math.PI,
+                false
+              );
+              ctx.fill();
+              ctx.lineWidth = 5;
+              ctx.strokeStyle = "lightgrey";
+              ctx.stroke();
+              ctx.closePath();
+              ctx.restore();
+            } else if (tankdatacannondata["type"] === "rocketer") {
+              ctx.save();
+              // Translate to the center of the square
+              ctx.translate(playerX - cavansX, playerY - cavansY);
+              let tankdatacannondata = tankdatacannon[i];
+              var angle_offset = tankdatacannondata["offset-angle"];
+              let angle = player.cannon_angle;
+              ctx.rotate(angle + angle_offset);
+              let cannwidthtop =
+                tankdatacannondata["cannon-width-top"] * FOVplayerz;
+              let cannwidthbottom =
+                tankdatacannondata["cannon-width-bottom"] * FOVplayerz;
+              let cannonHeight =
+                tankdatacannondata["cannon-height"] * FOVplayerz;
+              // Draw the square
+              let basex =
+                cannwidthbottom / 2 +
+                cannon_heightFOV +
+                tankdatacannondata["offSet-x"] -
+                player.cannonW[i];
+              let basey =
+                -cannon_heightFOV / 2 +
+                cannon_heightFOV / 2 +
+                tankdatacannondata["offSet-y"];
+
+              const cannonWidth_top = cannwidthtop;
+              const cannonWidth_bottom = cannwidthbottom;
+
+              var canwB2 = cannonWidth_bottom / 2;
+              var canwH2 = cannonWidth_top / 2;
+              ctx.beginPath();
+              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
+              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
+              ctx.lineTo(basex, basey + canwH2);
+              ctx.lineTo(basex, basey - canwH2);
+              ctx.closePath(); // Close the path
+              ctx.fill();
+
+              // Add a border to the cannon
+              ctx.strokeStyle = "lightgrey"; // Set border color
+              ctx.lineWidth = 3; // Set border width
+              ctx.beginPath();
+              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
+              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
+              ctx.lineTo(basex, basey + canwH2);
+              ctx.lineTo(basex, basey - canwH2);
+              ctx.closePath(); // Close the path
+              ctx.stroke();
+
+              ctx.fillRect(
+                cannon_heightFOV +
+                  (cannon_heightFOV - 25) * (1 + (1 - player.size)),
+                basey - canwH2,
+                cannon_heightFOV - 40,
+                cannwidthtop
+              );
+
+              ctx.strokeStyle = "lightgrey"; // Set border color
+              ctx.lineWidth = 3; // Set border width
+              ctx.strokeRect(
+                cannon_heightFOV +
+                  (cannon_heightFOV - 25) * (1 + (1 - player.size)),
+                basey - canwH2,
+                cannon_heightFOV - 40,
+                cannwidthtop
+              );
+
+              ctx.restore();
+            }
+          }
+
+          ctx.beginPath();
+
+          ctx.arc(
+            playerX - cavansX,
+            playerY - cavansY,
+            player.size * playerBaseSize,
+            0,
+            2 * Math.PI,
+            false
+          );
+          if (player.state === "start" || player.state === "damaged") {
+            let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
+            let percentage =
+              player.statecycle % 10 <= 5
+                ? player.statecycle % 10
+                : backwardsObj[(player.statecycle % 10) - 5];
+            percentage /= 10;
+            let newrgb2 = mix([130, 130, 130], [255, 255, 255], percentage);
+            ctx.fillStyle = `rgb(${newrgb2[0]} ${newrgb2[1]} ${newrgb2[2]})`;
+            let newrgb = mix([170, 170, 170], [255, 255, 255], percentage);
+            ctx.strokeStyle = `rgb(${newrgb[0]} ${newrgb[1]} ${newrgb[2]})`;
+          } else {
+            ctx.fillStyle = "#828282";
+            ctx.strokeStyle = "#aaaaaa";
+          }
+          ctx.fill();
+          ctx.lineWidth = 5;
+
+          ctx.stroke();
+          ctx.closePath();
+
+          if (player.skin !== "0.webp") {
+            ctx.save();
+            ctx.translate(playerX - cavansX, playerY - cavansY);
+            ctx.rotate(player.cannon_angle);
+            ctx.drawImage(
+              inverted[player.skin],
+              0 - player.size * playerBaseSize,
+              0 - player.size * playerBaseSize,
+              playerBaseSize * 2,
+              playerBaseSize * 2
+            );
+            ctx.restore();
+          }
+
+          // Draw background bar
+          let mymessages = [];
+          playerMessages.forEach((massege) => {
+            if (massege.id === player.id) {
+              mymessages.push(massege);
+            }
+          });
+          if (canSeeChat) {
+            mymessages.forEach((message) => {
+              ctx.save();
+              if (message.hidetime < Date.now()) {
+                if (1 > 1 - (Date.now() - message.hidetime) / 500) {
+                  ctx.globalAlpha = 1 - (Date.now() - message.hidetime) / 500;
+                }
+              }
+              ctx.translate(
+                playerX - cavansX,
+                playerY -
+                  cavansY -
+                  player.size * 40 -
+                  30 * mymessages.length -
+                  25
+              );
+              ctx.fillStyle = "black";
+              ctx.textAlign = "center";
+              ctx.font = `bold ${21 * upscaleX}px Nunito`;
+              ctx.fillText(message.text, 0, 0);
+              ctx.globalAlpha = 1;
+              ctx.restore();
+            });
+          }
+          ctx.beginPath();
+          ctx.fillStyle = "black";
+          ctx.roundRect(
+            playerX - cavansX - 50 * FOV,
+            playerY - cavansY + 55 * FOV,
+            90 * FOV,
+            10 * player.size * FOV,
+            5 * player.size
+          );
+          ctx.fill();
+          ctx.closePath();
+
+          // Draw health bar
+          ctx.beginPath();
+          const healthWidth =
+            (player.health / player.maxhealth) * 90 * player.size * FOV;
+          ctx.fillStyle = "green";
+          ctx.roundRect(
+            playerX - cavansX - 50 * FOV,
+            playerY - cavansY + 55 * FOV,
+            healthWidth,
+            10 * player.size * FOV,
+            5 * player.size
+          );
+          ctx.fill();
+          ctx.closePath();
+          // cannons on top of player
+          for (let i = 0; i < Object.keys(tankdatacannon).length; i++) {
+            ctx.fillStyle = "#b3b3b3";
+
+            let tankdatacannondata = tankdatacannon[i];
+            let cannon_widthFOV =
+              tankdatacannondata["cannon-width"] * FOVplayerz;
+            let cannon_heightFOV =
+              tankdatacannondata["cannon-height"] * FOVplayerz;
+            var cannonangle;
+            var cannonWidth_;
+            autocannons.forEach((cannonA) => {
+              if (cannonA.playerid === playerId__ && cannonA.autoindex === i) {
+                cannonangle = cannonA.angle;
+                cannonWidth_ = cannonA.cannonWidth;
+              }
+            });
+            if (isFake) {
+              cannonangle = 0;
+              cannonWidth_ = 40;
+            }
+            if (tankdatacannondata["type"] === "autoCannon") {
+              ctx.save();
+              var [x, y] = rotatePointAroundPlayer();
+              ctx.translate(playerX - cavansX, playerY - cavansY);
+              let angle = cannonangle;
+
+              let angle_offset = tankdatacannondata["offset-angle"];
+              ctx.rotate(angle + angle_offset);
+              // Draw the square
+
+              var offSet_x = tankdatacannondata["offSet-x"];
+              if (tankdatacannondata["offSet-x"] === "playerX") {
+                offSet_x = player.size * 2;
+              }
+
+              let basex = -cannon_widthFOV / 2 + cannon_heightFOV + offSet_x;
+              let basey =
+                -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
+
+              ctx.beginPath();
+              ctx.fillRect(
+                basex - 5,
+                basey - 2.5,
+                cannon_widthFOV + 10 - cannonWidth_,
+                cannon_heightFOV + 5
+              );
+
+              ctx.strokeStyle = "lightgrey"; // Set border color
+              ctx.lineWidth = 3; // Set border width
+              ctx.strokeRect(
+                basex - 5,
+                basey - 2.5,
+                cannon_widthFOV + 10 - cannonWidth_,
+                cannon_heightFOV + 5
+              ); // Draw the border
+              // Restore the previous transformation matrix
+              ctx.rotate(-(angle + angle_offset));
+              ctx.arc(0, 0, cannon_widthFOV / 2, 0, 2 * Math.PI, false);
+
+              ctx.fill();
+              ctx.stroke();
+              ctx.closePath();
+              ctx.restore();
+            } else if (tankdatacannondata["type"] === "SwivelAutoCannon") {
+              ctx.save();
+              let cannonangle;
+              let cannonWidth_;
+              autocannons.forEach((cannonA) => {
+                if (cannonA.playerid === player.id && cannonA.autoindex === i) {
+                  cannonangle = cannonA.angle;
+                  cannonWidth_ = cannonA.cannonWidth;
+                }
+              });
+              var offSet_x = tankdatacannondata["offSet-x"];
+              if (tankdatacannondata["offSet-x"] === "playerX") {
+                offSet_x = playerSize * playerBaseSize;
+              }
+              if (tankdatacannondata["offSet-x-multpliyer"]) {
+                offSet_x *= -1;
+              }
+              let angle0 = getCannonAngle();
+              var [x, y] = rotatePointAroundPlayer(
+                offSet_x,
+                0,
+                angle0 * (180 / Math.PI)
+              );
+
+              ctx.translate(playerX - cavansX, playerY - cavansY);
+
+              let angle = cannonangle;
+
+              let angle_offset = tankdatacannondata["offset-angle"];
+              ctx.rotate(angle + angle_offset);
+              // Draw the square
+
+              let basex = -cannon_widthFOV / 2 + cannon_heightFOV + 0;
+              let basey =
+                -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
+
+              ctx.beginPath();
+              ctx.fillRect(
+                basex - 5,
+                basey - 2.5,
+                cannon_widthFOV + 10 - cannonWidth_,
+                cannon_heightFOV + 5
+              );
+
+              ctx.strokeStyle = "lightgrey"; // Set border color
+              ctx.lineWidth = 3; // Set border width
+              ctx.strokeRect(
+                basex - 5,
+                basey - 2.5,
+                cannon_widthFOV + 10 - cannonWidth_,
+                cannon_heightFOV + 5
+              ); // Draw the border
+              // Restore the previous transformation matrix
+              ctx.rotate(-(angle + angle_offset));
+              ctx.arc(0, 0, cannon_widthFOV / 2, 0, 2 * Math.PI, false);
+
+              ctx.fill();
+              ctx.stroke();
+              ctx.closePath();
+              ctx.restore();
+            }
+          }
+
+          ctx.strokeStyle = "black";
+          ctx.fillStyle = "white";
+          ctx.textAlign = "center";
+          ctx.font = "bold 20px Nunito";
+          ctx.strokeText(
+            player.score,
+            playerX - cavansX,
+            playerY - cavansY - 55
+          );
+          ctx.fillText(player.score, playerX - cavansX, playerY - cavansY - 55);
+
+          if (canSeeNames) {
+            ctx.strokeText(
+              player.username,
+              playerX - cavansX,
+              playerY - cavansY - 75
+            );
+            ctx.fillText(
+              player.username,
+              playerX - cavansX,
+              playerY - cavansY - 75
+            );
+          }
+
+          // Draw border
+          ctx.lineWidth = 1;
+        }
+      }
+    }
+
     function drawbar(item) {
       ctx.fillStyle = "black";
       ctx.beginPath();
@@ -5245,634 +6014,7 @@
         }
       });
 
-      for (const playerId__ in players) {
-        if (players.hasOwnProperty(playerId__) && playerId__ != playerId) {
-          let player = players[playerId__];
-
-          let tankdata = tankmeta[player.__type__];
-
-          let tankdatacannon = tankdata["cannons"];
-
-          let playerX = player.x;
-          let playerY = player.y;
-
-          let FOVplayerz = player.size;
-
-          if (tankdata.decor) {
-            tankdata.decor.forEach((decor_) => {
-              if (decor_.type === "octaspinner") {
-                ctx.fillStyle = "black";
-                ctx.save();
-                ctx.translate(
-                  playerX - cavansX + decor_.offsetX,
-                  playerY - cavansY + decor_.offsetY
-                );
-                let angle = player.cannon_angle;
-                ctx.rotate(angle + decor_.offsetAngle);
-
-                ctx.beginPath();
-                for (let i = 0; i < 8; i++) {
-                  // calculate the rotation
-                  const rotation = ((Math.PI * 2) / 8) * i;
-
-                  // for the first point move to
-                  if (i === 0) {
-                    ctx.moveTo(
-                      decor_.size * Math.cos(rotation),
-                      decor_.size * Math.sin(rotation)
-                    );
-                  } else {
-                    // for the rest draw a line
-                    ctx.lineTo(
-                      decor_.size * Math.cos(rotation),
-                      decor_.size * Math.sin(rotation)
-                    );
-                  }
-                }
-
-                ctx.closePath();
-                ctx.fill();
-                ctx.restore();
-              }
-            });
-          }
-
-          let gradient = ctx.createRadialGradient(
-            playerX - cavansX,
-            playerY - cavansY,
-            (playerSize * playerBaseSize) / 1.5,
-            playerX - cavansX,
-            playerY - cavansY,
-            radiusConfig.radius
-          );
-
-          gradient.addColorStop(radiusConfig.build[0], "#FFFFFF00");
-          if (sameTeam) {
-            gradient.addColorStop(radiusConfig.build[1], "#61f7ff");
-          } else {
-            gradient.addColorStop(radiusConfig.build[1], "#ff2121");
-          }
-
-          gradient.addColorStop(radiusConfig.build[2], "#FFFFFF00");
-
-          ctx.beginPath();
-          ctx.arc(
-            playerX - cavansX,
-            playerY - cavansY,
-            radiusConfig.radius,
-            0,
-            2 * Math.PI,
-            false
-          );
-          ctx.fillStyle = gradient;
-          ctx.fill();
-
-          ctx.closePath();
-
-          for (let i = 0; i < Object.keys(tankdatacannon).length; i++) {
-            ctx.fillStyle = "#b3b3b3";
-            let tankdatacannondata = tankdatacannon[i];
-
-            let cannon_widthFOV =
-              tankdatacannondata["cannon-width"] * FOVplayerz;
-            let cannon_heightFOV =
-              tankdatacannondata["cannon-height"] * FOVplayerz;
-            if (tankdatacannondata["type"] === "basicCannon") {
-              ctx.save();
-              ctx.translate(playerX - cavansX, playerY - cavansY);
-              let angle = player.cannon_angle;
-
-              let angle_offset = tankdatacannondata["offset-angle"];
-              ctx.rotate(angle + angle_offset);
-              // Draw the square
-              let basex =
-                -cannon_widthFOV / 2 +
-                cannon_heightFOV +
-                tankdatacannondata["offSet-x"] -
-                player.cannonW[i];
-              let basey =
-                -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
-
-              ctx.fillRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
-
-              // Add a border to the cannon
-              ctx.strokeStyle = "lightgrey"; // Set border color
-              ctx.lineWidth = 3; // Set border width
-              ctx.strokeRect(basex, basey, cannon_widthFOV, cannon_heightFOV); // Draw the border
-              // Restore the previous transformation matrix
-              ctx.restore();
-            } else if (
-              tankdatacannondata["type"] === "trapezoid" ||
-              tankdatacannondata["type"] === "directer"
-            ) {
-              ctx.save();
-              ctx.translate(playerX - cavansX, playerY - cavansY);
-              let angle = player.cannon_angle;
-
-              let angle_offset = tankdatacannondata["offset-angle"];
-              ctx.rotate(angle + angle_offset);
-              // Draw the square
-              const cannonWidth_bottom =
-                tankdatacannondata["cannon-width-bottom"] * player.size * FOV;
-
-              let basex =
-                cannonWidth_bottom / 2 +
-                cannon_heightFOV +
-                tankdatacannondata["offSet-x"] -
-                player.cannonW[i];
-              let basey =
-                -cannon_heightFOV / 2 +
-                cannon_heightFOV / 2 -
-                tankdatacannondata["offSet-y"];
-
-              const cannonHeight = cannon_heightFOV;
-              const cannonWidth_top =
-                tankdatacannondata["cannon-width-top"] * player.size * FOV;
-
-              var canwB2 = cannonWidth_bottom / 2;
-              var canwH2 = cannonWidth_top / 2;
-              ctx.beginPath();
-              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
-              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
-              ctx.lineTo(basex, basey + canwH2);
-              ctx.lineTo(basex, basey - canwH2);
-              ctx.closePath(); // Close the path
-              ctx.fill();
-
-              // Add a border to the cannon
-              ctx.strokeStyle = "lightgrey"; // Set border color
-              ctx.lineWidth = 3; // Set border width
-              ctx.beginPath();
-              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
-              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
-              ctx.lineTo(basex, basey + canwH2);
-              ctx.lineTo(basex, basey - canwH2);
-              ctx.closePath(); // Close the path
-              ctx.stroke(); // Draw the border
-              ctx.restore();
-            } else if (
-              tankdatacannondata["type"] === "trap" ||
-              tankdatacannondata["type"] === "paver"
-            ) {
-              let cannonheight = tankdatacannondata["cannon-height"];
-              ctx.save();
-
-              ctx.translate(playerX - cavansX, playerY - cavansY);
-              let angle = player.cannon_angle;
-
-              let angle_offset = tankdatacannondata["offset-angle"];
-              let trapR = tankdatacannondata["trap-to-cannon-ratio"];
-              ctx.rotate(angle + angle_offset);
-              // Draw the square
-              let basex =
-                -cannon_widthFOV / 2 +
-                cannonheight +
-                tankdatacannondata["offSet-x"] -
-                player.cannonW[i];
-              let reH = cannon_widthFOV * (1 - trapR);
-              let basey =
-                -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
-              ctx.fillRect(
-                basex,
-                basey,
-                cannon_widthFOV - reH,
-                cannon_heightFOV
-              );
-              // Add a border to the cannon
-
-              ctx.strokeStyle = "lightgrey"; // Set border color
-              ctx.lineWidth = 3; // Set border width
-              ctx.strokeRect(
-                basex,
-                basey,
-                cannon_widthFOV - reH,
-                cannon_heightFOV
-              );
-              // Restore the previous transformation matrix
-              const cannonHeight = reH;
-              const cannonWidth_top = cannon_heightFOV * 1.4;
-              const cannonWidth_bottom = cannon_heightFOV;
-
-              basex = basex + (cannon_widthFOV - trapR);
-
-              var canwB2 = cannonWidth_bottom / 2;
-              var canwH2 = cannonWidth_top / 2;
-              basey += canwB2;
-              ctx.beginPath();
-              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
-              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
-              ctx.lineTo(basex, basey + canwH2);
-              ctx.lineTo(basex, basey - canwH2);
-              ctx.closePath(); // Close the path
-              ctx.fill();
-
-              // Add a border to the cannon
-              ctx.strokeStyle = "lightgrey"; // Set border color
-              ctx.lineWidth = 3; // Set border width
-              ctx.beginPath();
-              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
-              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
-              ctx.lineTo(basex, basey + canwH2);
-              ctx.lineTo(basex, basey - canwH2);
-              ctx.closePath(); // Close the path
-              ctx.stroke(); // Draw the border
-              ctx.restore();
-              if (tankdatacannondata["type"] === "paver") {
-                cannon_widthFOV /= 2;
-                cannon_heightFOV /= 2;
-                ctx.save();
-                ctx.translate(playerX - cavansX, playerY - cavansY);
-                let angle = player.cannon_angle;
-
-                let angle_offset = tankdatacannondata["offset-angle"];
-                ctx.rotate(angle + angle_offset);
-                // Draw the square
-                let basex =
-                  -cannon_widthFOV / 2 +
-                  cannon_heightFOV +
-                  tankdatacannondata["offSet-x"] -
-                  player.cannonW[i];
-                let basey =
-                  -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
-
-                ctx.fillRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
-
-                // Add a border to the cannon
-                ctx.strokeStyle = "lightgrey"; // Set border color
-                ctx.lineWidth = 3; // Set border width
-                ctx.strokeRect(basex, basey, cannon_widthFOV, cannon_heightFOV); // Draw the border
-                // Restore the previous transformation matrix
-                ctx.restore();
-              }
-            } else if (tankdatacannondata["type"] === "AutoBulletCannon") {
-              ctx.save();
-              ctx.translate(playerX - cavansX, playerY - cavansY);
-              let angle = player.cannon_angle;
-
-              let angle_offset = tankdatacannondata["offset-angle"];
-              ctx.rotate(angle + angle_offset);
-              // Draw the square
-
-              let basex =
-                -cannon_widthFOV / 2 +
-                cannon_heightFOV +
-                tankdatacannondata["offSet-x"] -
-                player.cannonW[i];
-              let basey =
-                -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
-
-              ctx.fillRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
-
-              // Add a border to the cannon
-              ctx.strokeStyle = "lightgrey"; // Set border color
-              ctx.lineWidth = 3; // Set border width
-              ctx.strokeRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
-
-              ctx.beginPath();
-              ctx.arc(
-                basex + 40 + cannon_widthFOV / 4,
-                basey + cannon_heightFOV / 2,
-                (playerSize * FOV * playerBaseSize) / 4,
-                0,
-                2 * Math.PI,
-                false
-              );
-              ctx.fill();
-              ctx.lineWidth = 5;
-              ctx.strokeStyle = "lightgrey";
-              ctx.stroke();
-              ctx.closePath();
-              ctx.restore();
-            } else if (tankdatacannondata["type"] === "rocketer") {
-              ctx.save();
-              // Translate to the center of the square
-              ctx.translate(playerX - cavansX, playerY - cavansY);
-              let tankdatacannondata = tankdatacannon[i];
-              var angle_offset = tankdatacannondata["offset-angle"];
-              let angle = player.cannon_angle;
-              ctx.rotate(angle + angle_offset);
-              let cannwidthtop =
-                tankdatacannondata["cannon-width-top"] * FOVplayerz;
-              let cannwidthbottom =
-                tankdatacannondata["cannon-width-bottom"] * FOVplayerz;
-              let cannonHeight =
-                tankdatacannondata["cannon-height"] * FOVplayerz;
-              // Draw the square
-              let basex =
-                cannwidthbottom / 2 +
-                cannon_heightFOV +
-                tankdatacannondata["offSet-x"] -
-                player.cannonW[i];
-              let basey =
-                -cannon_heightFOV / 2 +
-                cannon_heightFOV / 2 +
-                tankdatacannondata["offSet-y"];
-
-              const cannonWidth_top = cannwidthtop;
-              const cannonWidth_bottom = cannwidthbottom;
-
-              var canwB2 = cannonWidth_bottom / 2;
-              var canwH2 = cannonWidth_top / 2;
-              ctx.beginPath();
-              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
-              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
-              ctx.lineTo(basex, basey + canwH2);
-              ctx.lineTo(basex, basey - canwH2);
-              ctx.closePath(); // Close the path
-              ctx.fill();
-
-              // Add a border to the cannon
-              ctx.strokeStyle = "lightgrey"; // Set border color
-              ctx.lineWidth = 3; // Set border width
-              ctx.beginPath();
-              ctx.moveTo(basex - cannonHeight, basey - canwB2); // Move to the top-left corner
-              ctx.lineTo(basex - cannonHeight, basey + canwB2); // Draw to the bottom-left corner
-              ctx.lineTo(basex, basey + canwH2);
-              ctx.lineTo(basex, basey - canwH2);
-              ctx.closePath(); // Close the path
-              ctx.stroke();
-
-              ctx.fillRect(
-                cannon_heightFOV +
-                  (cannon_heightFOV - 25) * (1 + (1 - player.size)),
-                basey - canwH2,
-                cannon_heightFOV - 40,
-                cannwidthtop
-              );
-
-              ctx.strokeStyle = "lightgrey"; // Set border color
-              ctx.lineWidth = 3; // Set border width
-              ctx.strokeRect(
-                cannon_heightFOV +
-                  (cannon_heightFOV - 25) * (1 + (1 - player.size)),
-                basey - canwH2,
-                cannon_heightFOV - 40,
-                cannwidthtop
-              );
-
-              ctx.restore();
-            }
-          }
-
-          ctx.beginPath();
-
-          ctx.arc(
-            playerX - cavansX,
-            playerY - cavansY,
-            player.size * playerBaseSize,
-            0,
-            2 * Math.PI,
-            false
-          );
-
-          var sameTeam =
-            players[player.id].team === players[playerId].team &&
-            players[player.id].team !== null &&
-            players[playerId].team !== null;
-          if (player.state === "start" || player.state === "damaged") {
-            let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
-            let percentage =
-              player.statecycle % 10 <= 5
-                ? player.statecycle % 10
-                : backwardsObj[(player.statecycle % 10) - 5];
-            percentage /= 10;
-            let newrgb2 = mix([130, 130, 130], [255, 255, 255], percentage);
-            ctx.fillStyle = `rgb(${newrgb2[0]} ${newrgb2[1]} ${newrgb2[2]})`;
-            let newrgb = mix([170, 170, 170], [255, 255, 255], percentage);
-            ctx.strokeStyle = `rgb(${newrgb[0]} ${newrgb[1]} ${newrgb[2]})`;
-          } else {
-            ctx.fillStyle = "#828282";
-            ctx.strokeStyle = "#aaaaaa";
-          }
-          ctx.fill();
-          ctx.lineWidth = 5;
-
-          ctx.stroke();
-          ctx.closePath();
-
-          if (player.skin !== "0.webp") {
-            ctx.save();
-            ctx.translate(playerX - cavansX, playerY - cavansY);
-            ctx.rotate(player.cannon_angle);
-            ctx.drawImage(
-              inverted[player.skin],
-              0 - player.size * playerBaseSize,
-              0 - player.size * playerBaseSize,
-              playerBaseSize * 2,
-              playerBaseSize * 2
-            );
-            ctx.restore();
-          }
-
-          // Draw background bar
-          let mymessages = [];
-          playerMessages.forEach((massege) => {
-            if (massege.id === player.id) {
-              mymessages.push(massege);
-            }
-          });
-          if (canSeeChat) {
-            mymessages.forEach((message) => {
-              ctx.save();
-              if (message.hidetime < Date.now()) {
-                if (1 > 1 - (Date.now() - message.hidetime) / 500) {
-                  ctx.globalAlpha = 1 - (Date.now() - message.hidetime) / 500;
-                }
-              }
-              ctx.translate(
-                playerX - cavansX,
-                playerY -
-                  cavansY -
-                  player.size * 40 -
-                  30 * mymessages.length -
-                  25
-              );
-              ctx.fillStyle = "black";
-              ctx.textAlign = "center";
-              ctx.font = `bold ${21 * upscaleX}px Nunito`;
-              ctx.fillText(message.text, 0, 0);
-              ctx.globalAlpha = 1;
-              ctx.restore();
-            });
-          }
-          ctx.beginPath();
-          ctx.fillStyle = "black";
-          ctx.roundRect(
-            playerX - cavansX - 50 * FOV,
-            playerY - cavansY + 55 * FOV,
-            90 * FOV,
-            10 * player.size * FOV,
-            5 * player.size
-          );
-          ctx.fill();
-          ctx.closePath();
-
-          // Draw health bar
-          ctx.beginPath();
-          const healthWidth =
-            (player.health / player.maxhealth) * 90 * player.size * FOV;
-          ctx.fillStyle = "green";
-          ctx.roundRect(
-            playerX - cavansX - 50 * FOV,
-            playerY - cavansY + 55 * FOV,
-            healthWidth,
-            10 * player.size * FOV,
-            5 * player.size
-          );
-          ctx.fill();
-          ctx.closePath();
-          // cannons on top of player
-          for (let i = 0; i < Object.keys(tankdatacannon).length; i++) {
-            ctx.fillStyle = "#b3b3b3";
-
-            let tankdatacannondata = tankdatacannon[i];
-            let cannon_widthFOV =
-              tankdatacannondata["cannon-width"] * FOVplayerz;
-            let cannon_heightFOV =
-              tankdatacannondata["cannon-height"] * FOVplayerz;
-            let cannonangle;
-            var cannonWidth_;
-            autocannons.forEach((cannonA) => {
-              if (cannonA.playerid === playerId__ && cannonA.autoindex === i) {
-                cannonangle = cannonA.angle;
-                cannonWidth_ = cannonA.cannonWidth;
-              }
-            });
-            if (tankdatacannondata["type"] === "autoCannon") {
-              ctx.save();
-              var [x, y] = rotatePointAroundPlayer();
-              ctx.translate(playerX - cavansX, playerY - cavansY);
-              let angle = cannonangle;
-
-              let angle_offset = tankdatacannondata["offset-angle"];
-              ctx.rotate(angle + angle_offset);
-              // Draw the square
-
-              var offSet_x = tankdatacannondata["offSet-x"];
-              if (tankdatacannondata["offSet-x"] === "playerX") {
-                offSet_x = player.size * 2;
-              }
-
-              let basex = -cannon_widthFOV / 2 + cannon_heightFOV + offSet_x;
-              let basey =
-                -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
-
-              ctx.beginPath();
-              ctx.fillRect(
-                basex - 5,
-                basey - 2.5,
-                cannon_widthFOV + 10 - cannonWidth_,
-                cannon_heightFOV + 5
-              );
-
-              ctx.strokeStyle = "lightgrey"; // Set border color
-              ctx.lineWidth = 3; // Set border width
-              ctx.strokeRect(
-                basex - 5,
-                basey - 2.5,
-                cannon_widthFOV + 10 - cannonWidth_,
-                cannon_heightFOV + 5
-              ); // Draw the border
-              // Restore the previous transformation matrix
-              ctx.rotate(-(angle + angle_offset));
-              ctx.arc(0, 0, cannon_widthFOV / 2, 0, 2 * Math.PI, false);
-
-              ctx.fill();
-              ctx.stroke();
-              ctx.closePath();
-              ctx.restore();
-            } else if (tankdatacannondata["type"] === "SwivelAutoCannon") {
-              ctx.save();
-              let cannonangle;
-              let cannonWidth_;
-              autocannons.forEach((cannonA) => {
-                if (cannonA.playerid === player.id && cannonA.autoindex === i) {
-                  cannonangle = cannonA.angle;
-                  cannonWidth_ = cannonA.cannonWidth;
-                }
-              });
-              var offSet_x = tankdatacannondata["offSet-x"];
-              if (tankdatacannondata["offSet-x"] === "playerX") {
-                offSet_x = playerSize * playerBaseSize;
-              }
-              if (tankdatacannondata["offSet-x-multpliyer"]) {
-                offSet_x *= -1;
-              }
-              let angle0 = getCannonAngle();
-              var [x, y] = rotatePointAroundPlayer(
-                offSet_x,
-                0,
-                angle0 * (180 / Math.PI)
-              );
-
-              ctx.translate(playerX - cavansX, playerY - cavansY);
-
-              let angle = cannonangle;
-
-              let angle_offset = tankdatacannondata["offset-angle"];
-              ctx.rotate(angle + angle_offset);
-              // Draw the square
-
-              let basex = -cannon_widthFOV / 2 + cannon_heightFOV + 0;
-              let basey =
-                -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
-
-              ctx.beginPath();
-              ctx.fillRect(
-                basex - 5,
-                basey - 2.5,
-                cannon_widthFOV + 10 - cannonWidth_,
-                cannon_heightFOV + 5
-              );
-
-              ctx.strokeStyle = "lightgrey"; // Set border color
-              ctx.lineWidth = 3; // Set border width
-              ctx.strokeRect(
-                basex - 5,
-                basey - 2.5,
-                cannon_widthFOV + 10 - cannonWidth_,
-                cannon_heightFOV + 5
-              ); // Draw the border
-              // Restore the previous transformation matrix
-              ctx.rotate(-(angle + angle_offset));
-              ctx.arc(0, 0, cannon_widthFOV / 2, 0, 2 * Math.PI, false);
-
-              ctx.fill();
-              ctx.stroke();
-              ctx.closePath();
-              ctx.restore();
-            }
-          }
-
-          ctx.strokeStyle = "black";
-          ctx.fillStyle = "white";
-          ctx.textAlign = "center";
-          ctx.font = "bold 20px Nunito";
-          ctx.strokeText(
-            player.score,
-            playerX - cavansX,
-            playerY - cavansY - 55
-          );
-          ctx.fillText(player.score, playerX - cavansX, playerY - cavansY - 55);
-
-          if (canSeeNames) {
-            ctx.strokeText(
-              player.username,
-              playerX - cavansX,
-              playerY - cavansY - 75
-            );
-            ctx.fillText(
-              player.username,
-              playerX - cavansX,
-              playerY - cavansY - 75
-            );
-          }
-
-          // Draw border
-          ctx.lineWidth = 1;
-        }
-      }
-
+      drawPlayers(ctx, players, cavansX, cavansY, false);
       ctx.fillStyle = squareColor;
 
       if (!dead) {
@@ -6098,24 +6240,39 @@
   async function loadGearData() {
     var gearCount = await getGearData();
     document.getElementById("gearCount").innerText = gearCount.gears;
-    document.getElementById("levelProgress").value = gearCount.levelBoost ?gearCount.levelBoost : 0;
+    document.getElementById("levelProgress").value = gearCount.levelBoost
+      ? gearCount.levelBoost
+      : 0;
     console.log(gearCount);
+    if (gearCount.gears >= 100) {
+      document.getElementById("booster").addEventListener("click", () => {
+        document.getElementById("confermationScreen2").style.display = "flex";
+        document.getElementById("booster").style.filter = "brightness(1)";
+      });
+    } else {
+      document.getElementById("booster").style.filter = "brightness(0.5)";
+      document.getElementById("booster").title = "You need at least 100 gears to buy a boost";
+    }
   }
   try {
     loadGearData();
-  } catch {console.log("e")}
+  } catch {
+    console.log("e");
+  }
   document.getElementById("subfeedback").addEventListener("click", subfeedback);
 
   if (isCrazyGames && !available) {
     document.getElementById("loginWithCrazy").style.display = "block";
-    document.getElementById("loginWithCrazy").addEventListener("click", async () => {
-      try {
-        const user = await window.CrazyGames.SDK.user.showAuthPrompt();
-        console.log("Auth prompt result", user);
-      } catch (e) {
+    document
+      .getElementById("loginWithCrazy")
+      .addEventListener("click", async () => {
+        try {
+          const user = await window.CrazyGames.SDK.user.showAuthPrompt();
+          console.log("Auth prompt result", user);
+        } catch (e) {
           console.log("Error:", e);
-      }
-    })
+        }
+      });
   } else {
     document.getElementById("loginWithCrazy").style.display = "none";
   }
@@ -6123,7 +6280,7 @@
     available = true;
     document.getElementById("username").value =
       await window.CrazyGames.SDK.user.getUser().username;
-  }
+  };
 
   // add listener
   if (isCrazyGames) window.CrazyGames.SDK.user.addAuthListener(listener);
@@ -6209,6 +6366,56 @@
   try {
     buildLeaderBoard();
   } catch {}
+
+  document.getElementById("buyNo").addEventListener("click", () => {
+    document.getElementById("confermationScreen2").style.display = "none";
+  });
+
+
+
+  async function AData() {
+    const url =
+      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+        ? "https://websocketpointer.duckdns.org/buylevels"
+        : "http://localhost:4500/buylevels";
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: getCookie("userId") }),
+      });
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+  document.getElementById("buyYes").addEventListener("click", async () => {
+    document.getElementById("confermationScreen2").style.display = "none";
+
+    var gearCount = await AData();
+    document.getElementById("gearCount").innerText = gearCount.gears;
+    document.getElementById("levelProgress").value = gearCount.levelBoost
+      ? gearCount.levelBoost
+      : 0;
+    if (gearCount.purchaseSuccsefull === "noAccount") {
+      alert("purchase error; You need to play a least once to by a boost");
+    } else if (gearCount.purchaseSuccsefull === "AccountError") {
+      alert(
+        "account error; Account not found; Play to refresh your token; it may have expired"
+      );
+    } else if (gearCount.purchaseSuccsefull === "noEnoughCoins") {
+      alert(
+        "currency error; You do not have enough Golden gears; Purchase or play to get more!"
+      );
+    }
+  });
 
   async function ping() {
     const urls =
@@ -6583,34 +6790,77 @@
   var selected_ele = {};
 
   document.getElementById("skinsButton").addEventListener("click", () => {
-    document.getElementById("skinCon").style.display = "block";
+    document.getElementById("skinCon").style.display = "grid";
   });
 
-  for (let i = 0; i < 11; i++) {
-    var skinDiv = document.createElement("div");
-    var skinImg = document.createElement("img");
-    skinGrid.appendChild(skinDiv);
-    skinDiv.appendChild(skinImg);
-    skinImg.src =
-      window.location.href === "http://127.0.0.1:5501/public/index.html"
-        ? `/public/skins/${i}.webp`
-        : `/skins/${i}.webp`;
-
-    skinImg.classList.add("_100per_");
-    skinDiv.classList.add("skin-div");
-    var selectSkin = () => {
-      skinID = i;
-      skin = `${i}.webp`;
-      [...document.getElementById("skins-grid").children].forEach((skin) => {
-        skin.classList.remove("selected-skin");
+  async function getSkinData() {
+    const url =
+      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+        ? "https://websocketpointer.duckdns.org/skindata"
+        : "http://localhost:4500/skindata";
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: getCookie("userId") }),
       });
-      document
-        .getElementById("skins-grid")
-        .children[i + 1].classList.add("selected-skin");
-      selected_ele = skinImg;
-    };
-    skinDiv.addEventListener("click", selectSkin);
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(error.message);
+    }
   }
+  (async function () {
+    var reqdata = await getSkinData();
+    var skinData = reqdata.skins;
+    var skinDataTeirs = reqdata.skindata;
+    console.log(reqdata);
+    for (let i = 0; i < 28; i++) {
+      var skinDiv = document.createElement("div");
+      var skinImg = document.createElement("img");
+      skinGrid.appendChild(skinDiv);
+      skinDiv.appendChild(skinImg);
+      skinImg.src =
+        window.location.href === "http://127.0.0.1:5501/public/index.html"
+          ? `/public/skins/${i}.webp`
+          : `/skins/${i}.webp`;
+
+      skinImg.classList.add("_100per_");
+      skinDiv.classList.add("skin-div");
+      var selectSkin = () => {
+        skinID = i;
+        skin = `${i}.webp`;
+        [...document.getElementById("skins-grid").children].forEach((skin) => {
+          skin.classList.remove("selected-skin");
+        });
+        document
+          .getElementById("skins-grid")
+          .children[i + 1].classList.add("selected-skin");
+        selected_ele = skinImg;
+      };
+      if (skinData.includes(`${i}.webp`)) {
+        skinDiv.addEventListener("click", selectSkin);
+      } else {
+        var lockedImg = document.createElement("img");
+        lockedImg.src =
+          window.location.href === "http://127.0.0.1:5501/public/index.html"
+            ? `/public/assets/locked.svg`
+            : `/assets/locked.svg`;
+        lockedImg.classList.add("lock-img");
+        skinDiv.appendChild(lockedImg);
+      }
+      var skinImgFrame = document.createElement("img");
+      skinImgFrame.src = `./skin-background/${skinDataTeirs[`${i}.webp`]}.webp`;
+      skinImgFrame.classList.add("skin-frame");
+      skinDiv.append(skinImgFrame);
+    }
+  })();
 
   var skinShown = false;
   const skinsTabOpener = () => {
