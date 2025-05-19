@@ -1,13 +1,2 @@
 {
-    "headers": [
-        {
-            "source": "/.*",
-            "headers": [
-                {
-                    "key": "Content-Security-Policy",
-                    "value": "frame-ancestors 'self' *.crazygames.com crazygames.* www.crazygames.com de.crazygames.com it.crazygames.com vn.crazygames.com gr.crazygames.com ar.crazygames.com th.crazygames.com www.crazygames.fr www.crazygames.co.id www.crazygames.cz www.crazygames.dk www.crazygames.hu www.crazygames.nl www.crazygames.no www.crazygames.pl www.crazygames.com.br www.crazygames.ro www.crazygames.fi www.crazygames.se www.crazygames.ru www.crazygames.com.ua www.crazygames.at www.crazygames.jp www.crazygames.pt www.crazygames.vn www.crazygames.com.vn www.crazygames.co.kr games.crazygames.com;"
-                }
-            ]
-        }
-    ]
 }
