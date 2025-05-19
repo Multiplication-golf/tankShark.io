@@ -2454,7 +2454,7 @@ wss.on("connection", (socket, req) => {
 
   setInterval(() => {
     current = 0;
-  }, 998);
+  }, 999);
 
   let stateupdate = null;
   let isSetUp = false;
