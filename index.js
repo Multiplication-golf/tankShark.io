@@ -4679,9 +4679,15 @@ wss.on("connection", (socket, req) => {
           let rotated_offset_y =
             (offSet_x + xxx) * Math.sin(angle_) +
             (cannon["offSet-y"] + yyy) * Math.cos(angle_);
-          let bullet_start_x = data.playerX + rotated_offset_x;
-          let bullet_start_y = data.playerY + rotated_offset_y;
-          // lol
+
+          if (cannon._type_ === "SwivelAutoCannon") {
+            var bullet_start_x = (players[cannon.playerid].x + cannon["x_"]) + 0;
+            var bullet_start_y = (players[cannon.playerid].y + cannon["y_"]) + 0;
+          } else {
+            var bullet_start_x = (players[cannon.playerid].x) + rotated_offset_x;
+            var bullet_start_y = (players[cannon.playerid].y) + rotated_offset_y;
+          }
+
           let identdfire = Date.now() + Math.random();
           let damageUP = 0;
           if (players[data.playerId].statsTree["Bullet Damage"] !== 1) {
