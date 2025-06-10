@@ -144,6 +144,128 @@ body {
   z-index: 40;
 }
 
+.leverbase {
+  position: relative;
+  display: flex;
+  width: calc(10vw - 40px);
+  height: calc(5vh - 40px);
+  background-color: #cccccc;
+  border-radius: 20px;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-size: 2em;
+  font-weight: bolder;
+}
+
+.lever {
+  width: 10vw;
+  height: 1vh;
+  background-color: #ff0000;
+  border-radius: 10px;
+  transform-origin: 0.5vh 50%;
+  margin-left: calc(50% + 0.25vh);
+  transform: translateY(400%) rotate(360deg);
+}
+
+@keyframes levelmover {
+  50% {
+    transform: translateY(400%) rotate(180deg);
+  }
+  100% {
+    transform: translateY(400%) rotate(360deg);
+  }
+}
+
+.disc {
+  width: 2.5vw;
+  height: 2.5vw;
+  background-color: #dddddd;
+  border-radius: 50%;
+  transform: translateY(50%) translateX(calc(5vw - 50%));
+  /* transform-origin: bottom center; */
+}
+
+.leverInnerHolder {
+  margin-left: 26%;
+  margin-top: -14%;
+}
+
+.leverHolder {
+  position: absolute;
+  display: block;
+  justify-content: center;
+  text-align: center;
+}
+
+/*
+spiner
+*/
+
+.spiner {
+  width: 15.5vw;
+  height: 65%;
+  margin: 0.5%;
+  margin-bottom: 2.5%;
+  margin-top: 2.5%;
+  border-radius: 20px;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.spinerRotater {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    0,
+    #ebebeb 0%,
+    #ffffff 40%,
+    #ffffff 60%,
+    #ebebeb 100%
+  );
+  z-index: 1;
+  border-radius: 20px;
+}
+
+.spinerOverlay {
+  position: relative;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-origin: border-box;
+  background-repeat: no-repeat;
+  background-size: cover;
+  z-index: 3;
+  border-radius: 20px;
+}
+
+@property --rotatorerangle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.spin-img {
+  transform: translateZ(-100px) rotate3d(1, 0, 0, var(--rotatorerangle));
+  transform-style: preserve-3d;
+  transform-origin: 0% 50% -400px;
+  position: absolute;
+  top: calc(50% - 7.5vh);
+  left: 0;
+  animation: rotater2 4s infinite;
+}
+
+@keyframes rotater2 {
+  0% {
+    --rotatorerangle: 90deg;
+  }
+  100% {
+    --rotatorerangle: 270deg;
+  }
+}
+
 .shaded100 {
   width: 100vw;
   text-align: center;
@@ -159,7 +281,8 @@ body {
 }
 
 .center1000 {
-  display: none;
+  visibility: hidden;
+  display: grid;
   position: relative;
   z-index: 24;
   width: 100%;
@@ -280,6 +403,15 @@ body {
   );
 }
 
+.leader-board h2 {
+  font-size: 2vw;
+  font-weight: 900;
+  margin: 5px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  color: var(--text-color-100);
+}
+
 ::-webkit-scrollbar-track {
   background: linear-gradient(
     to bottom,
@@ -350,9 +482,6 @@ body {
   }
 }
 
-
-
-
 .upgrades-box {
   width: 95%;
   background-color: var(--background-white-0);
@@ -385,7 +514,7 @@ body {
 }
 
 .login-button p {
-  margin: 0; 
+  margin: 0;
   font-size: 16px;
   color: var(--text-color-100);
 }
@@ -450,7 +579,6 @@ body {
   font-size: 17px;
 }
 
-
 .subbmit-feedback input[type="submit"] {
   width: 15%;
   padding: 2%;
@@ -499,8 +627,8 @@ body {
   align-items: center;
   margin: 2px;
   font-size: max(2vw, 1vh);
-  width:2vw;
-  height:2vw;
+  width: 2vw;
+  height: 2vw;
   background-color: var(--border-color-300);
   border: 2px solid var(--background-white-200);
   border-radius: 5px;
@@ -551,6 +679,187 @@ body {
   display: block;
   font-size: 2em;
   cursor: pointer;
+}
+
+.divMain:hover {
+  filter: brightness(1.5);
+  transform: scale(1.05);
+  transition: filter, transform, 0.3s ease-in-out;
+}
+.divMain:hover button {
+  background-image: radial-gradient(
+    circle,
+    rgb(74, 228, 255) 45%,
+    rgb(8, 144, 255) 65%,
+    rgb(47, 0, 255) 100%
+  );
+  transition: background-image 0.3s ease-in-out;
+}
+
+.bubble {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background-image: url("./assets/bubble.webp");
+  background-size: contain;
+  background-repeat: no-repeat;
+  animation: floatUp linear infinite;
+  opacity: 0.7;
+  visibility: hidden;
+}
+
+@keyframes floatUp {
+  0% {
+    visibility: visible;
+    transform: translateY(67vh);
+  }
+  100% {
+    visibility: visible;
+    transform: translateY(-27vh);
+  }
+}
+
+@keyframes wobble {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  50% {
+    transform: translateX(20px) rotate(6deg);
+  }
+}
+
+.bubble-holder {
+  overflow: hidden;
+  border-radius: 2vw;
+}
+
+/* Generate multiple bubbles with varied timing and positions */
+/* Evenly distributed bubbles with varied animation timing */
+.bubble:nth-child(1) {
+  left: 2%;
+  animation-duration: 8s;
+  animation-delay: 0.9s;
+}
+.bubble:nth-child(2) {
+  left: 7%;
+  animation-duration: 7s;
+  animation-delay: 8s;
+}
+.bubble:nth-child(3) {
+  left: 12%;
+  animation-duration: 9s;
+  animation-delay: 4s;
+}
+.bubble:nth-child(4) {
+  left: 17%;
+  animation-duration: 6.9s;
+  animation-delay: 8s;
+}
+.bubble:nth-child(5) {
+  left: 22%;
+  animation-duration: 10.1s;
+  animation-delay: 4.7s;
+}
+.bubble:nth-child(6) {
+  left: 27%;
+  animation-duration: 8.5s;
+  animation-delay: 2.5s;
+}
+.bubble:nth-child(7) {
+  left: 32%;
+  animation-duration: 7s;
+  animation-delay: 1.35s;
+}
+.bubble:nth-child(8) {
+  left: 37%;
+  animation-duration: 9s;
+  animation-delay: 7.5s;
+}
+.bubble:nth-child(9) {
+  left: 42%;
+  animation-duration: 8.9s;
+  animation-delay: 3.5s;
+}
+.bubble:nth-child(10) {
+  left: 47%;
+  animation-duration: 7.5s;
+  animation-delay: 2s;
+}
+.bubble:nth-child(11) {
+  left: 52%;
+  animation-duration: 10s;
+  animation-delay: 1s;
+}
+.bubble:nth-child(12) {
+  left: 57%;
+  animation-duration: 8s;
+  animation-delay: 0s;
+}
+.bubble:nth-child(13) {
+  left: 62%;
+  animation-duration: 9s;
+  animation-delay: 2.5s;
+}
+.bubble:nth-child(14) {
+  left: 67%;
+  animation-duration: 7s;
+  animation-delay: 3.6s;
+}
+.bubble:nth-child(15) {
+  left: 72%;
+  animation-duration: 8s;
+  animation-delay: 0.5s;
+}
+.bubble:nth-child(16) {
+  left: 77%;
+  animation-duration: 9s;
+  animation-delay: 2.1s;
+}
+.bubble:nth-child(17) {
+  left: 82%;
+  animation-duration: 7s;
+  animation-delay: 2.8s;
+}
+.bubble:nth-child(18) {
+  left: 87%;
+  animation-duration: 8s;
+  animation-delay: 1s;
+}
+.bubble:nth-child(19) {
+  left: 92%;
+  animation-duration: 10s;
+  animation-delay: 0s;
+}
+.bubble:nth-child(20) {
+  left: 97%;
+  animation-duration: 8s;
+  animation-delay: -5s;
+}
+.bubble:nth-child(21) {
+  left: 2%;
+  animation-duration: 6s;
+  animation-delay: 0s;
+}
+.bubble:nth-child(22) {
+  left: 7%;
+  animation-duration: 3s;
+  animation-delay: -1s;
+}
+.bubble:nth-child(23) {
+  left: 12%;
+  animation-duration: 4.6s;
+  animation-delay: -2s;
+}
+.bubble:nth-child(24) {
+  left: 17%;
+  animation-duration: 3.5s;
+  animation-delay: -3s;
+}
+.bubble:nth-child(25) {
+  left: 22%;
+  animation-duration: 10s;
+  animation-delay: -2s;
 }
 
 .boost {
@@ -619,6 +928,13 @@ body {
   margin: 2vh;
 }
 
+.skin-button:hover {
+  filter: brightness(1.5);
+  transform: scale(1.05);
+  background-color: var(--background-white-100);
+  transition: filter, transform, 0.3s ease-in-out;
+}
+
 .divMain {
   display: inline-block;
   animation: rotateBackground 1s linear infinite;
@@ -653,6 +969,7 @@ body {
 
 button:hover {
   background-color: #46fcff;
+  transition: background-color 0.3s ease-in;
 }
 
 /* Labels and Text Styles */
@@ -780,7 +1097,7 @@ option {
 .lock-img {
   position: absolute;
   top: 0;
-  left:0;
+  left: 0;
   width: 100%;
   height: 100%;
 }
@@ -1054,9 +1371,9 @@ option {
 }
 
 .center-flex {
-  display: flex; 
-  align-items: center; 
-  justify-content: center
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Miscellaneous Styles */
@@ -1156,6 +1473,12 @@ option {
   height: 100%;
 }
 
+._10per_ {
+  width: 15vh;
+  height: 15vh;
+  margin-left: calc(15.5vw / 2 - 15vh / 2);
+}
+
 .slider.round {
   border-radius: 34px;
 }
@@ -1188,7 +1511,6 @@ option {
   overflow: visible;
 }
 
-
 .skins-grid {
   display: grid;
   --real-deal-width: calc(15vw - 6.66666666667px);
@@ -1198,7 +1520,7 @@ option {
   grid-template-rows: repeat(6, 1fr);
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: 65%; /* Ensure it doesn't exceed parent height */
+  max-height: 55%; /* Ensure it doesn't exceed parent height */
   border-top: var(--border-color-300) solid 8px;
 }
 
@@ -1218,7 +1540,17 @@ option {
 
 .h-40-30 {
   width: 100%;
-  height: 35%;
+  height: 45%;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+}
+
+.spiner-con {
+  height: 100%;
+  justify-content: center;
+  align-items: baseline;
+  margin: 20px;
 }
 
 .skin-div {
@@ -1238,8 +1570,8 @@ option {
 
 .skin-frame {
   position: absolute;
-  top:0;
-  left:0;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
 }

@@ -95,10 +95,10 @@ function getRoomAndBounding(x, y) {
 }
 
 function getRoomAndBoundingForBullets(roomkey) {
-  var baseItems = [...food_squares[roomkey]?.items] || [];
+  var baseItems = [...food_squares[roomkey]?.bullets] || [];
   var otherRooms = getAdjacentRoomKeys(roomkey);
   otherRooms.forEach((_room_) => {
-    baseItems.push(...food_squares[roomkey].bullets);
+    baseItems.push(...food_squares[_room_].bullets);
   });
   return baseItems;
 }
@@ -255,7 +255,7 @@ const skinDatalist = {
   "12.webp": "rare",
   "13.webp": "uncommon",
   "14.webp": "rare",
-  "15.webp": "epic",
+  "15.webp": "legendary",
   "16.webp": "basic",
   "17.webp": "uncommon",
   "18.webp": "rare",
@@ -272,7 +272,7 @@ const skinDatalist = {
 };
 
 async function hashPassword(password) {
-  const saltRounds = 13; // Number of salt rounds (higher is more secure but slower)
+  const saltRounds = 13;
   console.log(password, saltRounds);
   const hashedPassword = await bcrypt.hash(password, saltRounds);
   return hashedPassword;
@@ -280,7 +280,7 @@ async function hashPassword(password) {
 
 async function comparePasswords(enteredPassword, hashedPassword) {
   const match = enteredPassword === hashedPassword;
-  return match; // Returns true if the passwords match, false otherwise 602 + 
+  return match;
 }
 
 function getKeyRoom(x, y) {
@@ -301,41 +301,31 @@ function getKeyRoom(x, y) {
 }
 
 function reassignRoomItem(item) {
-  item.roomsIn = [];
   for (const roomkey in food_squares) {
     var room = food_squares[roomkey];
     if (
-      item.x + item.size >= room.bounds?.x1 &&
-      item.x - item.size <= room.bounds?.x2 &&
-      item.y + item.size >= room.bounds?.y1 &&
-      item.y - item.size <= room.bounds?.y2
+      item.x >= room.bounds.x1 &&
+      item.x <= room.bounds.x2 &&
+      item.y >= room.bounds.y1 &&
+      item.y <= room.bounds.y2
     ) {
-      item.roomsIn.push(roomkey);
-      if (room?.items?.some((b_) => item.randomID === b_.randomID)) continue;
-      room?.items?.push(item);
-    } else {
-      var index = item.roomsIn.indexOf(roomkey);
-      if (index !== -1) item.roomsIn.splice(index, 1);
+      room.items.push(item);
+      return true;
     }
   }
 }
 
 function reassignRoomBullet(bullet) {
-  bullet.roomsIn = [];
   for (const roomkey in food_squares) {
     var room = food_squares[roomkey];
     if (
-      bullet.x + bullet.size >= room.bounds?.x1 &&
-      bullet.x - bullet.size <= room.bounds?.x2 &&
-      bullet.y + bullet.size >= room.bounds?.y1 &&
-      bullet.y - bullet.size <= room.bounds?.y2
+      bullet.x >= room.bounds?.x1 &&
+      bullet.x <= room.bounds?.x2 &&
+      bullet.y >= room.bounds?.y1 &&
+      bullet.y <= room.bounds?.y2
     ) {
-      bullet.roomsIn.push(roomkey);
-      if (room.bullets.some((b_) => bullet.uniqueid === b_.uniqueid)) continue;
-      room?.bullets?.push(bullet);
-    } else {
-      var index = bullet.roomsIn.indexOf(roomkey);
-      if (index !== -1) bullet.roomsIn.splice(index, 1);
+      room.bullets.push(bullet);
+      break;
     }
   }
 }
@@ -409,9 +399,6 @@ let buildMiniMapTeams = [];
 let explosions = [];
 /**/
 
-/* warning very senstive*/
-let purge_limit = 5;
-
 let frame = 0;
 
 var levels = {};
@@ -419,18 +406,26 @@ fs.readFile("data/levelData.json", function (err, data) {
   levels = JSON.parse(data).levelData;
 });
 
-const sqrt23 = Math.sqrt(3);
 const pi = Math.PI;
 const pi180 = pi / 180;
-const sqrt3 = Math.sqrt(3);
 const piby2 = -pi / 2;
 var response = new SAT.Response();
+
+function writeToUserbase() {
+  fs.writeFile(
+    "data/users.json",
+    JSON.stringify({ userbase: userbase }),
+    function (err, data) {
+      if (err) throw err;
+    }
+  );
+}
 
 fs.readFile("data/users.json", function (err, data) {
   if (err) throw err;
   data = JSON.parse(data);
   userbase = data.userbase;
-  console.log("userbase",userbase);
+  console.log("userbase", userbase);
 });
 
 // don't touch pls
@@ -452,7 +447,7 @@ const CONFIG = {
   deathTime: 200,
   itemCollisionRangeMultiplyer: 1.5,
   playerCollisionRangeMultiplyer: 2,
-  roadMaxConectLength: 300,
+  roadMaxConectLength: 600,
   map: {
     size: 5000,
     innersize: 4500,
@@ -461,7 +456,14 @@ const CONFIG = {
     boundRange: 50,
     buildSize: 1000,
   },
-  messageIntervals: {long:15, short:6, medium: 10},
+  skincost: {
+    basic: 199,
+    uncommon: 349,
+    rare: 449,
+    epic: 899,
+    legendary: 999,
+  },
+  messageIntervals: { long: 15, short: 6, medium: 10 },
   badgeLevels: [
     { minScore: 50000000, maxScore: null, badge: "/badges/10.webp" },
     { minScore: 25000000, maxScore: 49999999, badge: "/badges/9.webp" },
@@ -951,7 +953,7 @@ const tankmeta = {
     "health-m": 1,
     "regen-m": 1,
     fov: 0,
-    AutoRoting: true,
+    autoRoting: true,
     "BodyDamage-m": 1,
     "reaload-m": 1,
     upgrades: {},
@@ -1090,7 +1092,7 @@ const tankmeta = {
         "offSet-x": 0,
         "offSet-y": 0,
         "offset-angle": -0.785398,
-        bulletSize: 0.5,
+        bulletSize: 1,
         bulletSpeed: 0.5,
         delay: 0,
         reloadM: 1,
@@ -1105,7 +1107,7 @@ const tankmeta = {
         "offSet-x": 0,
         "offSet-y": 0,
         "offset-angle": 0.785398,
-        bulletSize: 0.5,
+        bulletSize: 1,
         bulletSpeed: 0.5,
         delay: 0,
         reloadM: 1,
@@ -1170,12 +1172,6 @@ function MathHypotenuse(x, y) {
   return Math.sqrt(x * x + y * y);
 }
 
-function mmalizeAngleRadians(angle) {
-  while (angle >= Math.PI) angle -= 2 * Math.PI;
-  while (angle < -Math.PI) angle += 2 * Math.PI;
-  return angle;
-}
-
 function calculateTriangleVertices(x, y, sideLength, angle) {
   const rad = angle * (Math.PI / 180);
   const radius = sideLength / Math.sqrt(3);
@@ -1222,15 +1218,15 @@ function calculateRotatedOctagonVertices(cx, cy, r, rotation) {
   return vertices;
 }
 
-function isPointInTriangle(p, a, b, c) {
+function isPointInTriangle(point, vertexA, vertexB, vertexC) {
   const area =
-    0.5 * (-b.y * c.x + a.y * (-b.x + c.x) + a.x * (b.y - c.y) + b.x * c.y);
+    0.5 * (-vertexB.y * vertexC.x + vertexA.y * (-vertexB.x + vertexC.x) + vertexA.x * (vertexB.y - vertexC.y) + vertexB.x * vertexC.y);
   const s =
     (1 / (2 * area)) *
-    (a.y * c.x - a.x * c.y + (c.y - a.y) * p.x + (a.x - c.x) * p.y);
+    (vertexA.y * vertexC.x - vertexA.x * vertexC.y + (vertexC.y - vertexA.y) * point.x + (vertexA.x - vertexC.x) * point.y);
   const t =
     (1 / (2 * area)) *
-    (a.x * b.y - a.y * b.x + (a.y - b.y) * p.x + (b.x - a.x) * p.y);
+    (vertexA.x * vertexB.y - vertexA.y * vertexB.x + (vertexA.y - vertexB.y) * point.x + (vertexB.x - vertexA.x) * point.y);
   const u = 1 - s - t;
 
   return s >= 0 && t >= 0 && u >= 0;
@@ -1269,6 +1265,190 @@ function buildTriArray(roads) {
   return triRoads;
 }
 
+function getTarget(cannon, tankdatacannon__) {
+  let maxdistance = 2000;
+  let fire_at__ = null;
+  let target_enity_type = null;
+  for (const playerID in players) {
+    let player = players[playerID];
+    if (
+      playerID !== cannon.playerid &&
+      players[cannon.playerid] &&
+      !(
+        players[playerID].team === players[cannon.playerid].team &&
+        players[playerID].team !== null &&
+        players[cannon.playerid].team !== null
+      )
+    ) {
+      var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
+      if (tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
+        offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
+      }
+      if (tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
+        offSet_x *= -1;
+      }
+      if (cannon["x_"]) {
+        var distance = MathHypotenuse(
+          player.x - (players[cannon.playerid].x + cannon["x_"]),
+          player.y - (players[cannon.playerid].y + cannon["y_"])
+        );
+      } else if (cannon._type_ === "bulletAuto") {
+        let parentBullet = findBullet(cannon.playerid);
+        var distance = MathHypotenuse(
+          player.x - parentBullet.x,
+          player.y - parentBullet.y
+        );
+      } else {
+        var distance = MathHypotenuse(
+          player.x - (players[cannon.playerid].x + offSet_x),
+          player.y - players[cannon.playerid].y
+        );
+      }
+      if (distance < maxdistance) {
+        var angle = 0;
+        if (cannon._type_ === "SwivelAutoCannon") {
+          angle = Math.atan2(
+            player.y - players[cannon.playerid].y, // y difference
+            player.x - players[cannon.playerid].x // x difference
+          );
+        } else if (cannon._type_ === "bulletAuto") {
+          let parentBullet = findBullet(cannon.playerid);
+          angle = Math.atan2(
+            player.y - parentBullet.y,
+            player.x - parentBullet.x
+          );
+        } else {
+          angle = Math.atan2(
+            player.y - players[cannon.playerid].y, // y difference
+            player.x - (players[cannon.playerid].x + offSet_x) // x difference
+          );
+        }
+
+        if (cannon._type_ === "SwivelAutoCannon") {
+          if (
+            tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"] === -1
+          ) {
+            if (
+              isTargetInSwivelRange(
+                players[cannon.playerid].cannon_angle,
+                angle * (180 / pi),
+                180
+              )
+            ) {
+              maxdistance = distance;
+              fire_at__ = player;
+              target_enity_type = "player";
+            }
+          } else {
+            if (
+              isTargetInSwivelRange(
+                players[cannon.playerid].cannon_angle,
+                angle * (180 / pi),
+                0
+              )
+            ) {
+              maxdistance = distance;
+              fire_at__ = player;
+              target_enity_type = "player";
+            }
+          }
+        } else {
+          maxdistance = distance;
+          fire_at__ = player;
+          target_enity_type = "player";
+        }
+      }
+    }
+  }
+  if (maxdistance > CONFIG.playerItemSightRange) {
+    var TX = cannon._type_ === "bulletAuto" ? cannon.x: players[cannon.playerid].x;
+    var TY = cannon._type_ === "bulletAuto" ? cannon.y: players[cannon.playerid].y;
+    getRoomAndBounding(
+      TX,
+      TY
+    ).items.forEach((item) => {
+      var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
+      if (tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
+        offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
+      }
+      if (tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
+        offSet_x *= -1;
+      }
+      if (cannon["x_"]) {
+        var distance = MathHypotenuse(
+          item.x - (players[cannon.playerid].x + cannon["x_"]),
+          item.y - (players[cannon.playerid].y + cannon["y_"])
+        );
+      } else if (cannon._type_ === "bulletAuto") {
+        let parentBullet = findBullet(cannon.playerid);
+        var distance = MathHypotenuse(
+          item.x - parentBullet.x,
+          item.y - parentBullet.y
+        );
+      } else {
+        var distance = MathHypotenuse(
+          item.x - (players[cannon.playerid].x + offSet_x),
+          item.y - players[cannon.playerid].y
+        );
+      }
+      if (distance < maxdistance) {
+        var angle;
+        if (cannon._type_ === "SwivelAutoCannon") {
+          angle = Math.atan2(
+            item.y - (players[cannon.playerid].y + cannon["y_"]),
+            item.x - (players[cannon.playerid].x + cannon["x_"])
+          );
+        } else if (cannon._type_ === "bulletAuto") {
+          let parentBullet = findBullet(cannon.playerid);
+          angle = Math.atan2(item.y - parentBullet.y, item.x - parentBullet.x);
+        } else {
+          angle = Math.atan2(
+            item.y - players[cannon.playerid].y,
+            item.x - (players[cannon.playerid].x + offSet_x)
+          );
+        }
+
+        if (cannon._type_ === "SwivelAutoCannon") {
+          if (
+            tankmeta[players[cannon.playerid].__type__]["cannons"][
+              cannon.autoindex
+            ]["offSet-x-multpliyer"] === -1
+          ) {
+            if (
+              isTargetInSwivelRange(
+                players[cannon.playerid].cannon_angle,
+                angle * (180 / pi),
+                180
+              )
+            ) {
+              maxdistance = distance;
+              fire_at__ = item;
+              target_enity_type = "food";
+            }
+          } else {
+            if (
+              isTargetInSwivelRange(
+                players[cannon.playerid].cannon_angle,
+                angle * (180 / pi),
+                0
+              )
+            ) {
+              maxdistance = distance;
+              fire_at__ = item;
+              target_enity_type = "food";
+            }
+          }
+        } else {
+          maxdistance = distance;
+          fire_at__ = item;
+          target_enity_type = "food";
+        }
+      }
+    });
+  }
+  return { target: fire_at__, type: target_enity_type };
+}
+
 function calculateSquareVertices(cx, cy, size, angle) {
   var halfSize = size / 2;
 
@@ -1294,11 +1474,17 @@ function calculateSquareVertices(cx, cy, size, angle) {
 }
 
 function findBullet(id) {
-  return bullets.find((bullet) => id === bullet.uniqueid);
+  var mybullet;
+  for (const roomkey in food_squares) {
+    var room = food_squares[roomkey];
+    mybullet = room.bullets.find((v) => id === v.uniqueid);
+    if (mybullet) break;
+  }
+  return mybullet;
 }
 
 function toSATPolygon(vertices, points = []) {
-  vertices = vertices ? vertices : [0, 0, 0]
+  vertices = vertices ? vertices : [0, 0, 0];
   const len = vertices.length;
   for (let i = 0; i < len; i++) {
     points[i] = new SAT.Vector(vertices[i].x, vertices[i].y);
@@ -1310,7 +1496,12 @@ function normalizeAngle(angle) {
   return angle % 360;
 }
 
-function rotatePointAroundPlayer(cannonOffsetX, cannonOffsetY, playerRotation) {
+// Rotates a point (cannonOffsetX, cannonOffsetY) around the origin by playerRotation (in radians)
+function rotatePointAroundPlayer(
+  cannonOffsetX,
+  cannonOffsetY,
+  playerRotation
+) {
   // Convert player rotation to radians for math
   const playerRotationRad = playerRotation * (Math.PI / 180);
 
@@ -1339,22 +1530,21 @@ function findThisBoss(id) {
 const log = (...a) => {
   var v = JSON.stringify(a);
   v = v.slice(1, v.length - 1);
-  console.log("1346",v);
+  console.log("1346", v);
 };
 
 function isTargetInSwivelRange(
   playerRotation,
   targetAngle,
-  logging,
   offset_degress
 ) {
   // Normalize player's rotation and target angle
-  playerRotation = normalizeAngle(playerRotation + offset_degress);
-  targetAngle = normalizeAngle(targetAngle);
+  let playerRotation_ = normalizeAngle_2(playerRotation + offset_degress);
+  targetAngle = normalizeAngle_2(targetAngle);
 
   // Define the swivel range around the player's current rotation
-  const minSwivelAngle = normalizeAngle(playerRotation - 85); // 90 degrees left of player
-  const maxSwivelAngle = normalizeAngle(playerRotation + 85); // 90 degrees right of player
+  const minSwivelAngle = normalizeAngle_2(playerRotation_ - 85 * (Math.PI /180) ); // 90 degrees left of player
+  const maxSwivelAngle = normalizeAngle_2(playerRotation_ + 85 * (Math.PI /180)); // 90 degrees right of player
 
   // Check if the target is within the swivel range
   if (minSwivelAngle <= maxSwivelAngle) {
@@ -1393,10 +1583,10 @@ function sortMessages(messages) {
     var dateA = (Date.now() - messageA.date) * 200;
     var dateB = (Date.now() - messageB.date) * 200;
     for (const key in keywords) {
-      if (messageA.text.includes(key)) {
+      if (messageA.text.split(" ").includes(key)) {
         xA += keywords[key];
       }
-      if (messageB.text.includes(key)) {
+      if (messageB.text.split(" ").includes(key)) {
         xB += keywords[key];
       }
     }
@@ -1426,7 +1616,6 @@ function createExsplosion(
   y,
   {
     createbullet = true,
-    doesDamage = false,
     damage = 1,
     dealsDamgage = { players: true, shapes: false },
     knockBack = { players: true, shapes: true },
@@ -1678,7 +1867,7 @@ function killplayer(id) {
       leader_board: leader_board.shown,
     });
   } catch (e) {
-    console.log("killplayer",e);
+    console.log("killplayer", e);
   }
   emit("playerLeft", id);
   players[id].state = "dead";
@@ -1707,14 +1896,23 @@ function normalizeAngle_2(angle) {
 function moveCannonAngle(cannon) {
   let deltaAngle = normalizeAngle_2(cannon.targetAngle - cannon.angle);
 
-  let reloadStat = players[cannon.playerid]?.statsTree?.["Bullet Reload"];
+  // Ensure reloadStat is a valid number, default to 1 if undefined
+  let reloadStat = players[cannon.playerid]?.statsTree?.["Bullet Reload"] ?? 1;
 
-  let denominator = 3.5 - (reloadStat - 1) / 3;
+  // Prevent denominator from being zero or negative
+  let denominator = Math.max(0.5, 3.5 - ((reloadStat - 1) / 3));
 
-  let adjustment = Math.abs(deltaAngle) / denominator;
+  // Clamp adjustment to a reasonable maximum step to avoid overshooting
+  let maxStep = 0.15; // radians per update, adjust as needed
+  let adjustment = Math.min(Math.abs(deltaAngle) / denominator, maxStep);
 
-  cannon.angle += Math.sign(deltaAngle) * adjustment;
-  cannon.angle = normalizeAngle_2(cannon.angle);
+  // If the angle difference is very small, snap to target
+  if (Math.abs(deltaAngle) < 0.01) {
+    cannon.angle = cannon.targetAngle;
+  } else {
+    cannon.angle += Math.sign(deltaAngle) * adjustment;
+    cannon.angle = normalizeAngle_2(cannon.angle);
+  }
 
   emit("autoCannonUPDATE-ANGLE", {
     angle: cannon.angle,
@@ -2268,6 +2466,7 @@ app.post("/currentbadge", (req, res) => {
     playerScore: playerScore,
     levelData: CONFIG.badgeLevels,
   });
+  writeToUserbase();
 });
 
 app.post("/currentgears", (req, res) => {
@@ -2293,10 +2492,11 @@ app.post("/currentgears", (req, res) => {
       levelBoost: 0,
     });
   }
+  writeToUserbase();
 });
 
 app.post("/buylevels", (req, res) => {
-  var purchaseSuccsefull = 'fail';
+  var purchaseSuccsefull = "fail";
   if (req.body.userId) {
     var _player = userbase.find((_player) => {
       return comparePasswords(_player.userid, req.body.userId);
@@ -2305,11 +2505,11 @@ app.post("/buylevels", (req, res) => {
     if (_player !== undefined) {
       if (_player.goldenGears >= 100) {
         _player.goldenGears -= 100;
-        purchaseSuccsefull = 'success';
+        purchaseSuccsefull = "success";
         if (_player.startLevels === -1) _player.startLevels = 0;
         _player.startLevels += 15;
       } else {
-        purchaseSuccsefull = 'noEnoughCoins';
+        purchaseSuccsefull = "noEnoughCoins";
       }
       res.send({
         purchaseSuccsefull: purchaseSuccsefull,
@@ -2318,18 +2518,146 @@ app.post("/buylevels", (req, res) => {
       });
     } else {
       res.send({
-        purchaseSuccsefull: 'AccountError',
+        purchaseSuccsefull: "AccountError",
         gears: 0,
         levelBoost: 0,
       });
     }
   } else {
     res.send({
-      purchaseSuccsefull: 'noAccount',
+      purchaseSuccsefull: "noAccount",
       gears: 0,
       levelBoost: 0,
     });
   }
+  writeToUserbase();
+});
+
+app.post("/skinpurchase", (req, res) => {
+  var purchaseSuccsefull = "fail";
+  var sysPuchaseBuild = {
+    basic: [],
+    uncommon: [],
+    rare: [],
+    epic: [],
+    legendary: [],
+  };
+  if (req.body.userId && req.body.skinLevel) {
+    var _player = userbase.find((_player) => {
+      return comparePasswords(_player.userid, req.body.userId);
+    });
+
+    if (_player !== undefined) {
+      var noPuchase = skinAllowlist.filter(
+        (skin) => !_player.skins.includes(skin)
+      );
+
+      noPuchase.forEach((skin) => {
+        switch (skinDatalist[skin]) {
+          case "basic": {
+            sysPuchaseBuild.basic.push(skin);
+            break;
+          }
+          case "uncommon": {
+            sysPuchaseBuild.uncommon.push(skin);
+            break;
+          }
+          case "rare": {
+            sysPuchaseBuild.rare.push(skin);
+            break;
+          }
+          case "epic": {
+            sysPuchaseBuild.epic.push(skin);
+            break;
+          }
+          case "legendary": {
+            sysPuchaseBuild.legendary.push(skin);
+            break;
+          }
+        }
+      });
+
+      if (sysPuchaseBuild[req.body.skinLevel].length < 1) {
+        res.send({
+          purchaseSuccsefull: purchaseSuccsefull,
+          gears: _player?.goldenGears,
+          levelBoost: _player?.startLevels,
+          i: -1,
+          skinAllowlist: skinAllowlist,
+        });
+        return;
+      }
+
+      var index_$_ = getRandomInt(
+        -1,
+        sysPuchaseBuild[req.body.skinLevel].length - 2
+      );
+      function skinBuy(cost) {
+        var addskin = sysPuchaseBuild[req.body.skinLevel][index_$_ + 1];
+        if (_player.goldenGears >= cost) {
+          _player.goldenGears -= cost;
+          purchaseSuccsefull = "success";
+          _player.skins.push(addskin);
+        } else {
+          purchaseSuccsefull = "noEnoughCoins";
+        }
+      }
+
+      switch (req.body.skinLevel) {
+        case "basic": {
+          skinBuy(CONFIG.skincost.basic);
+          break;
+        }
+        case "uncommon": {
+          skinBuy(CONFIG.skincost.uncommon);
+          break;
+        }
+        case "rare": {
+          skinBuy(CONFIG.skincost.rare);
+          break;
+        }
+        case "epic": {
+          skinBuy(CONFIG.skincost.epic);
+          break;
+        }
+        case "legendary": {
+          skinBuy(CONFIG.skincost.legendary);
+          break;
+        }
+      }
+
+      if (purchaseSuccsefull === "success") {
+        res.send({
+          purchaseSuccsefull: purchaseSuccsefull,
+          gears: _player?.goldenGears,
+          levelBoost: _player?.startLevels,
+          i: index_$_,
+          skinAllowlist: skinAllowlist,
+        });
+      } else {
+        res.send({
+          purchaseSuccsefull: purchaseSuccsefull,
+          gears: _player?.goldenGears,
+          levelBoost: _player?.startLevels,
+          i: -1,
+          skinAllowlist: skinAllowlist,
+        });
+      }
+    } else {
+      res.send({
+        purchaseSuccsefull: "AccountError",
+        gears: 0,
+        levelBoost: 0,
+      });
+    }
+  } else {
+    res.send({
+      purchaseSuccsefull: "noAccount",
+      gears: 0,
+      levelBoost: 0,
+    });
+  }
+  writeToUserbase();
 });
 
 app.post("/submit-feedback", (req, res) => {
@@ -2348,6 +2676,7 @@ app.post("/submit-feedback", (req, res) => {
       console.log("Date written to file, ", filename);
     }
   );
+  writeToUserbase();
 });
 
 app.get("/leaderboard", (req, res) => {
@@ -2390,23 +2719,58 @@ app.post("/skindata", (req, res) => {
       return comparePasswords(_player.userid, req.body.userId);
     });
 
+    var skinCounts = { basic: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 };
+    var allowedskins = {};
+    Object.keys(skinDatalist).forEach((ele) => {
+      if (!_player.skins.includes(ele)) allowedskins[ele] = skinDatalist[ele];
+    });
+    for (const skin in allowedskins) {
+      console.log(allowedskins[skin]);
+      switch (allowedskins[skin]) {
+        case "basic": {
+          skinCounts.basic++;
+          break;
+        }
+        case "uncommon": {
+          skinCounts.uncommon++;
+          break;
+        }
+        case "rare": {
+          skinCounts.rare++;
+          break;
+        }
+        case "epic": {
+          skinCounts.epic++;
+          break;
+        }
+        case "legendary": {
+          skinCounts.legendary++;
+          break;
+        }
+      }
+    }
+
     if (_player !== undefined) {
       res.send({
         skins: _player.skins,
         skindata: skinDatalist,
+        skinCounts: skinCounts,
       });
     } else {
       res.send({
         skins: ["0.webp"],
         skindata: skinDatalist,
+        skinCounts: skinCounts,
       });
     }
   } else {
     res.send({
       skins: ["0.webp"],
       skindata: skinDatalist,
+      skinCounts: skinCounts,
     });
   }
+  writeToUserbase();
 });
 
 let illegalIPs = [];
@@ -2495,8 +2859,10 @@ wss.on("connection", (socket, req) => {
             players[newId].username = await curse.filter(
               players[newId].username
             );
-            console.log("username",await curse.filter(players[newId].username));
-            console.log("user data recived:", data);
+            console.log(
+              "username",
+              await curse.filter(players[newId].username)
+            );
             socket.send(JSON.stringify({ type: "newId", data: newId }));
             connection.playerId = newId;
             connections.forEach((con) => {
@@ -2504,6 +2870,7 @@ wss.on("connection", (socket, req) => {
                 con.playerId = newId;
               }
             });
+            data.speedBoost = 1;
             if (!skinAllowlist.includes(data.skin)) {
               socket.close(
                 1007,
@@ -2551,18 +2918,21 @@ wss.on("connection", (socket, req) => {
                   newId,
                   {
                     color: "green",
-                    delay: CONFIG.messageIntervals.medium
+                    delay: CONFIG.messageIntervals.medium,
                   }
                 );
               } else if (data.teamKey !== null) {
-                createAnnocment("Bad key!", newId, { color: "red", delay: CONFIG.messageIntervals.long });
+                createAnnocment("Bad key!", newId, {
+                  color: "red",
+                  delay: CONFIG.messageIntervals.long,
+                });
               } else if (data.isCrazy) {
                 createAnnocment(
                   "Did you know you can invite freinds to your team? To do so simply click the invite button in crazy games",
                   newId,
                   {
                     color: "blue",
-                    delay: CONFIG.messageIntervals.long
+                    delay: CONFIG.messageIntervals.long,
                   }
                 );
               }
@@ -2624,9 +2994,9 @@ wss.on("connection", (socket, req) => {
                       });
                       return payload;
                     };
-                    console.log("token",data.token);
+                    console.log("token", data.token);
                     const raw = await DecodeCGToken(data.token);
-                    console.log("rawtoken",raw);
+                    console.log("rawtoken", raw);
                     const userID_ = raw.userId;
                     const token = await hashPassword(userID_);
                     var isUserFound = userbase.find((_player) => {
@@ -2694,7 +3064,7 @@ wss.on("connection", (socket, req) => {
                     console.log("user setup complete");
                   }
                 } catch (e) {
-                  console.log("2699",e);
+                  console.log("2699", e);
                   (async function () {
                     var newid = await hashPassword(crypto.randomUUID());
                     players[newId].userId = newid;
@@ -2931,6 +3301,7 @@ wss.on("connection", (socket, req) => {
                 },
               })
             );
+            console.log("user data recived:", data);
           })();
 
           break;
@@ -3140,8 +3511,7 @@ wss.on("connection", (socket, req) => {
             }
           } else if ("buildBase" === data.upgradeType) {
             if (myTeam.createTeamScore) {
-              if (myTeam.createTeamScore >= 10000) {
-                if (!myTeam.upgrades.teamBuilding.built) {
+              if (!myTeam.upgrades.teamBuilding.built) {
                   myTeam.teamScore -= 10000;
                   let base = {
                     type: `octagon${myTeam.teamID}`,
@@ -3207,13 +3577,6 @@ wss.on("connection", (socket, req) => {
                   );
                 }
               } else {
-                createAnnocment(
-                  `Not enough Team score. The team has ${myTeam.teamScore}`,
-                  data.id,
-                  { color: "red", delay: CONFIG.messageIntervals.short }
-                );
-              }
-            } else {
               if (players[data.id].score >= 10000) {
                 if (!myTeam.upgrades.teamBuilding.built) {
                   let base = {
@@ -3723,11 +4086,15 @@ wss.on("connection", (socket, req) => {
             if (PlayerTeam.hidden) {
               let code = Math.floor(100000 * Math.random());
               teamKeys.push(code);
-              createAnnocment(`The join code is ${code}`, data.owner.id, CONFIG.messageIntervals.long);
+              createAnnocment(
+                `The join code is ${code}`,
+                data.owner.id,
+                CONFIG.messageIntervals.long
+              );
               createAnnocment(
                 `put this into the url bar like this: tankshark.fun/?team=code when someone wants to join`,
                 data.owner.id,
-                {delay: CONFIG.messageIntervals.long}
+                { delay: CONFIG.messageIntervals.long }
               );
             }
             emit("pubteamlist", public_teams);
@@ -3760,7 +4127,7 @@ wss.on("connection", (socket, req) => {
               dislikers: {},
             });
             sortMessages(team.messages);
-            console.log("3758",team.messages);
+            console.log("3758", team.messages);
             emitTeam("postBiteMessage", team.messages, team.teamID);
             return;
           })();
@@ -3980,7 +4347,7 @@ wss.on("connection", (socket, req) => {
           data.id = connection.playerId;
           var autoAngle = data.autoAngle;
           var turnhide = setInterval(() => {
-            autoAngle += 4;
+            autoAngle += 4 / 5;
             if (359.8 <= autoAngle) {
               autoAngle = 0;
             }
@@ -4006,6 +4373,7 @@ wss.on("connection", (socket, req) => {
               MouseX: MouseX_,
               MouseY: MouseY_,
             };
+            socket.send(JSON.stringify({ type: "autoAngle", data: autoAngle }));
             smartbroadcast("playerCannonUpdated", data_, socket);
 
             data.autoIntevals.forEach((Inteval) => {
@@ -4072,7 +4440,7 @@ wss.on("connection", (socket, req) => {
                 }
               });
             });
-          }, 75);
+          }, 15);
           hidden_broswers.push({ interval: turnhide, id: data.id });
           break;
         }
@@ -4139,8 +4507,8 @@ wss.on("connection", (socket, req) => {
         case "autoCannonADD": {
           data.playerid = connection.playerId;
           autocannons.push(data);
-          let cannosplayer = tankmeta[players[data.playerid].__type__].cannons;
-          let cannonamountplayer = Object.keys(cannosplayer).length;
+          let cannonsplayer = tankmeta[players[data.playerid].__type__].cannons;
+          let cannonamountplayer = Object.keys(cannonsplayer).length;
           let find = function () {
             let cannons = 0;
             autocannons.forEach((cannon) => {
@@ -4482,128 +4850,47 @@ wss.on("connection", (socket, req) => {
         }
 
         case "Autofire": {
-          let maxdistance = CONFIG.playerPlayerSightRange;
           let fire_at = null;
           let cannon = data.cannon;
+
           data.playerId = connection.playerId;
           data._cannon.playerid = connection.playerId;
-          for (const playerID in players) {
-            let player = players[playerID];
-            var sameTeam =
-              player.team === players[data.playerId].team &&
-              player.team !== null &&
-              players[data.playerId].team !== null;
-            if (
-              playerID !== data.playerId &&
-              player.state !== "start" &&
-              !sameTeam
-            ) {
-              var distance = MathHypotenuse(
-                player.x - data.x,
-                player.y - data.y
-              );
-              if (distance < maxdistance) {
-                let angle = Math.atan2(
-                  player.y - players[data.playerId].y, // y difference
-                  player.x - players[data.playerId].x // x difference
-                );
-                if (
-                  tankmeta[players[data.playerId].__type__]["cannons"][
-                    data.extracannon_
-                  ].type === "SwivelAutoCannon"
-                ) {
-                  if (
-                    tankmeta[players[data.playerId].__type__]["cannons"][
-                      data.extracannon_
-                    ]["offSet-x-multpliyer"] === -1
-                  ) {
-                    if (
-                      isTargetInSwivelRange(
-                        players[data.playerId].cannon_angle,
-                        (angle * 180) / pi,
-                        true,
-                        180
-                      )
-                    ) {
-                      maxdistance = distance;
-                      fire_at = player;
-                    }
-                  } else {
-                    if (
-                      isTargetInSwivelRange(
-                        players[data.playerId].cannon_angle,
-                        (angle * 180) / pi,
-                        true,
-                        0
-                      )
-                    ) {
-                      maxdistance = distance;
-                      fire_at = player;
-                    }
-                  }
-                } else {
-                  maxdistance = distance;
-                  fire_at = player;
-                }
-              }
+          data.cannon.playerid = data.playerId;
+          cannon._type_ = cannon.type;
+          cannon.autoindex = data.autoindex;
+          var mecannons = autocannons.find((cannons___0_0) => {
+            return data._cannon.CannonID === cannons___0_0.CannonID;
+          });
+
+          if (cannon._type_ === "SwivelAutoCannon") {
+            var offSet_x = data.tankdatacannon__[cannon.autoindex]["offSet-x"];
+            if (data.tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
+              offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
+            }
+            if (data.tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
+              offSet_x *= -1;
+            }
+            console.log("anglemangle",players[cannon.playerid].cannon_angle * (180 / Math.PI),players[cannon.playerid].cannon_angle,offSet_x)
+            var [x, y] = rotatePointAroundPlayer(
+              offSet_x,
+              0,
+              players[cannon.playerid].cannon_angle
+            );
+            cannon["x_"] = x;
+            cannon["y_"] = y;
+          } else {
+            var offSet_x = data.tankdatacannon__[cannon.autoindex]["offSet-x"];
+            if (data.tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
+              offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
+            }
+            if (data.tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
+              offSet_x *= -1;
             }
           }
-          if (maxdistance > CONFIG.playerItemSightRange) {
-            getRoomAndBounding(
-              players[data.playerId].x,
-              players[data.playerId].y
-            ).items.forEach((item) => {
-              var distance = MathHypotenuse(
-                item.x - data.playerX,
-                item.y - data.playerY
-              );
-              if (distance < maxdistance) {
-                let angle = Math.atan2(
-                  item.y - players[data.playerId].y, // y difference
-                  item.x - players[data.playerId].x // x difference
-                );
-                if (
-                  tankmeta[players[data.playerId].__type__]["cannons"][
-                    data.extracannon_
-                  ].type === "SwivelAutoCannon"
-                ) {
-                  if (
-                    tankmeta[players[data.playerId].__type__]["cannons"][
-                      data.extracannon_
-                    ]["offSet-x-multpliyer"] === -1
-                  ) {
-                    if (
-                      isTargetInSwivelRange(
-                        players[data.playerId].cannon_angle,
-                        (angle * 180) / pi,
-                        true,
-                        180
-                      )
-                    ) {
-                      maxdistance = distance;
-                      fire_at = item;
-                    }
-                  } else {
-                    if (
-                      isTargetInSwivelRange(
-                        players[data.playerId].cannon_angle,
-                        (angle * 180) / pi,
-                        true,
-                        0
-                      )
-                    ) {
-                      maxdistance = distance;
-                      fire_at = item;
-                    }
-                  }
-                } else {
-                  maxdistance = distance;
-                  fire_at = item;
-                }
-              }
-            });
-          }
+          var targetData = getTarget(cannon, data.tankdatacannon__);
+          fire_at = targetData.target;
           let speedUP = 0;
+
           if (fire_at === null) return;
 
           let cannon_life = cannon["life-time"] || 0;
@@ -4614,38 +4901,34 @@ wss.on("connection", (socket, req) => {
           }
 
           let bullet_speed__ = data.bullet_speed * cannon["bulletSpeed"];
-          if (
-            cannon["type"] === "basicCannon" ||
-            cannon["type"] === "trapezoid"
-          ) {
-            var bulletdistance = bullet_speed__ * 100 * (data.bullet_size / 6);
-            var __type = "basic";
-            var health = 8;
-          } else if (cannon["type"] === "trap") {
-            var bulletdistance = bullet_speed__ * 70 * (data.bullet_size / 20);
-            var __type = "trap";
-            var health = 10;
-          } else if (cannon["type"] === "directer") {
-            var bulletdistance = 100;
-            var __type = "directer";
-            var health = 10;
-          } else if (
-            cannon["type"] === "autoCannon" ||
-            cannon["type"] === "SwivelAutoCannon"
-          ) {
-            var bulletdistance =
-              (bullet_speed__ + speedUP) * 100 * (data.bullet_size / 6);
-            var __type = "basic";
-            var health = 8;
+
+          var bulletdistance =
+            (bullet_speed__ + speedUP) * 100 * (data.bullet_size / 6);
+          var __type = "basic";
+          var health = 8;
+          let angle = 0;
+
+          if (cannon._type_ === "SwivelAutoCannon") {
+            console.log(cannon["y_"],cannon["x_"])
+            angle = Math.atan2(
+              fire_at.y - (players[cannon.playerid].y + cannon["y_"]),
+              fire_at.x - (players[cannon.playerid].x + cannon["x_"])
+            );
+          } else {
+            angle = Math.atan2(
+              fire_at.y - players[data.playerId].y,
+              fire_at.x - (players[cannon.playerid].x + offSet_x)
+            );
           }
-          let angle = Math.atan2(
-            fire_at.y - data.playerY, // y difference
-            fire_at.x - data.playerX // x difference
-          );
+          // mecannons.angle = angle;
+
+          // emit("autoCannonUPDATE-ANGLE", {
+          //   angle: mecannons.angle,
+          //   cannon_ID: mecannons.CannonID,
+          // });
+          
 
           let bullet_size_l = data.bullet_size * cannon["bulletSize"];
-
-          let randomNumber = generateRandomNumber(-0.2, 0.2);
 
           var offSet_x = cannon["offSet-x"];
           if (cannon["offSet-x"] === "playerX") {
@@ -4653,25 +4936,9 @@ wss.on("connection", (socket, req) => {
               (players[data.playerId].size / 2) * CONFIG.playerBaseSize;
           }
 
-          if (cannon["type"] === "basicCannon" || cannon["type"] === "trap") {
-            var xxx = cannon["cannon-width"] - bullet_size_l;
-            var yyy = cannon["cannon-height"] - bullet_size_l;
-            var angle_ = angle + cannon["offset-angle"];
-          } else if (cannon["type"] === "trapezoid") {
-            var angle_ = angle + cannon["offset-angle"] + randomNumber;
-            var xxx = cannon["cannon-width-top"] - bullet_size_l;
-            var yyy =
-              cannon["cannon-height"] -
-              bullet_size_l * 2 -
-              (cannon["cannon-width-top"] / 2) * Math.random();
-          } else if (
-            cannon["type"] === "autoCannon" ||
-            cannon["type"] === "SwivelAutoCannon"
-          ) {
-            var xxx = cannon["cannon-width"] - bullet_size_l;
-            var yyy = cannon["cannon-height"] - bullet_size_l;
-            var angle_ = angle + cannon["offset-angle"];
-          }
+          var xxx = cannon["cannon-width"] - bullet_size_l;
+          var yyy = cannon["cannon-height"] - bullet_size_l;
+          var angle_ = angle + cannon["offset-angle"];
 
           let rotated_offset_x =
             (offSet_x + xxx) * Math.cos(angle_) -
@@ -4681,11 +4948,12 @@ wss.on("connection", (socket, req) => {
             (cannon["offSet-y"] + yyy) * Math.cos(angle_);
 
           if (cannon._type_ === "SwivelAutoCannon") {
-            var bullet_start_x = (players[cannon.playerid].x + cannon["x_"]) + 0;
-            var bullet_start_y = (players[cannon.playerid].y + cannon["y_"]) + 0;
+            var bullet_start_x = (players[cannon.playerid].x + cannon["x_"]) + rotated_offset_x;
+            var bullet_start_y = (players[cannon.playerid].y + cannon["y_"]) + rotated_offset_y;
           } else {
             var bullet_start_x = (players[cannon.playerid].x) + rotated_offset_x;
             var bullet_start_y = (players[cannon.playerid].y) + rotated_offset_y;
+            console.log(angle_,bullet_start_y,bullet_start_x, players[cannon.playerid].x, players[cannon.playerid].y,rotated_offset_y)
           }
 
           let identdfire = Date.now() + Math.random();
@@ -4719,8 +4987,8 @@ wss.on("connection", (socket, req) => {
             y: bullet_start_y,
             lifespan: cannon_life,
             health: health,
-            xstart: data.playerX,
-            ystart: data.playerY,
+            xstart: players[cannon.playerid].x,
+            ystart: players[cannon.playerid].y,
             id: data.playerId,
             uniqueid: identdfire,
             Zlevel: 2,
@@ -4728,14 +4996,14 @@ wss.on("connection", (socket, req) => {
 
           for (let l = 0; l < 10; l++) {
             setTimeout(() => {
-              data._cannon.cannonWidth -= 1;
+              data._cannon.cannonWidth -= 1.5;
               emit("CannonWidthUpdate", {
                 CannonID: data._cannon.CannonID,
                 cannonWidth: data._cannon.cannonWidth,
               });
             }, 10 * l);
             setTimeout(() => {
-              data._cannon.cannonWidth += 1;
+              data._cannon.cannonWidth += 1.5;
               emit("CannonWidthUpdate", {
                 CannonID: data._cannon.CannonID,
                 cannonWidth: data._cannon.cannonWidth,
@@ -4885,7 +5153,7 @@ wss.on("connection", (socket, req) => {
               );
             }
           } catch (error) {
-            console.log("4877",error);
+            console.log("4877", error);
             return;
           }
 
@@ -4948,6 +5216,7 @@ wss.on("connection", (socket, req) => {
             };
             roads.push(road);
             data.road = road;
+            console.log(road);
           } else {
             data.road = {};
           }
@@ -4980,13 +5249,11 @@ wss.on("connection", (socket, req) => {
           }
           data.lookedAt = false;
           reassignRoomBullet(data);
-          let indexbullet = bullets.indexOf(data);
-          let bullet = bullets[indexbullet];
           if (data.type === "trap") {
             setTimeout(() => {
-              // hacky soltion to remove the bullet
-              bullet.distanceTraveled = 100e10;
-            }, bullet.lifespan * 1000);
+              // hacky soltion to remove the data
+              data.distanceTraveled = 100e10;
+            }, data.lifespan * 1000);
           }
           if (data.type === "AutoBullet") {
             let autoID =
@@ -5046,10 +5313,10 @@ wss.on("connection", (socket, req) => {
                   player.team === players[data.id].team &&
                   player.team !== null &&
                   players[data.id].team !== null;
-                if (playerID !== bullet.id && !sameTeam) {
+                if (playerID !== data.id && !sameTeam) {
                   var distance = MathHypotenuse(
-                    player.x - bullet.x,
-                    player.y - bullet.y
+                    player.x - data.x,
+                    player.y - data.y
                   );
                   if (distance < maxdistance) {
                     maxdistance = distance;
@@ -5058,10 +5325,10 @@ wss.on("connection", (socket, req) => {
                 }
               }
               if (maxdistance > CONFIG.playerItemSightRange) {
-                getRoomAndBounding(bullet.x, bullet.y).items.forEach((item) => {
+                getRoomAndBounding(data.x, data.y).items.forEach((item) => {
                   var distance = MathHypotenuse(
-                    item.x - bullet.x,
-                    item.y - bullet.y
+                    item.x - data.x,
+                    item.y - data.y
                   );
                   if (distance < maxdistance) {
                     maxdistance = distance;
@@ -5072,9 +5339,9 @@ wss.on("connection", (socket, req) => {
               let speedUP = 0;
               if (fire_at === null) return;
 
-              if (players[bullet.id].statsTree["Bullet Speed"] !== 1) {
+              if (players[data.id].statsTree["Bullet Speed"] !== 1) {
                 speedUP =
-                  players[bullet.id].statsTree["Bullet Speed"] *
+                  players[data.id].statsTree["Bullet Speed"] *
                   CONFIG.levelMultiplyer;
               }
               let cannon_life = 0;
@@ -5082,48 +5349,47 @@ wss.on("connection", (socket, req) => {
               let bullet_speed__ =
                 (data.speed / 1.3) * cannon["bulletSpeed"] * 5;
               var bulletdistance =
-                (bullet_speed__ + speedUP) * 100 * (bullet.size / 6);
+                (bullet_speed__ + speedUP) * 100 * (data.size / 6);
               var __type = "basic";
               var health = 8;
 
               let angle = Math.atan2(
-                fire_at.y - bullet.y, // y difference
-                fire_at.x - bullet.x // x difference
+                fire_at.y - data.y, // y difference
+                fire_at.x - data.x // x difference
               );
 
-              let bullet_size_l = (bullet.size * cannon["bulletSize"]) / 1.8;
+              let bullet_size_l = (data.size * cannon["bulletSize"]) / 1.8;
 
               if (cannon["offSet-x"] === "playerX") {
-                offSet_x =
-                  (players[bullet.id].size / 2) * CONFIG.playerBaseSize;
+                offSet_x = (players[data.id].size / 2) * CONFIG.playerBaseSize;
               }
 
-              var xxx = bullet.size / 5 - bullet_size_l * 0.2;
-              var yyy = bullet.size / 10 - bullet_size_l * 1.2;
+              var xxx = data.size / 5 - bullet_size_l * 0.2;
+              var yyy = data.size / 10 - bullet_size_l * 1.2;
               var angle_ = angle;
 
               let rotated_offset_x =
-                (bullet.size + xxx) * Math.cos(angle_) -
-                (bullet.size / 2 + yyy) * Math.sin(angle_);
+                (data.size + xxx) * Math.cos(angle_) -
+                (data.size / 2 + yyy) * Math.sin(angle_);
               let rotated_offset_y =
-                (bullet.size + xxx) * Math.sin(angle_) +
-                (bullet.size / 2 + yyy) * Math.cos(angle_);
+                (data.size + xxx) * Math.sin(angle_) +
+                (data.size / 2 + yyy) * Math.cos(angle_);
               let bullet_start_x = data.x + rotated_offset_x;
               let bullet_start_y = data.y + rotated_offset_y;
               // lol
               let identdfire =
                 (Date.now() + Math.random()) * Date.now() * 3 * Math.random();
               let damageUP = 0;
-              if (players[bullet.id].statsTree["Bullet Damage"] !== 1) {
+              if (players[data.id].statsTree["Bullet Damage"] !== 1) {
                 damageUP =
-                  (players[bullet.id].statsTree["Bullet Damage"] *
+                  (players[data.id].statsTree["Bullet Damage"] *
                     CONFIG.levelMultiplyer) /
                   (data.bullet_damage ** 2 / (data.bullet_damage / 10));
               }
               let PentrationPluse = 0;
-              if (players[bullet.id].statsTree["Bullet Pentration"] !== 1) {
+              if (players[data.id].statsTree["Bullet Pentration"] !== 1) {
                 PentrationPluse =
-                  players[bullet.id].statsTree["Bullet Pentration"] *
+                  players[data.id].statsTree["Bullet Pentration"] *
                   CONFIG.levelMultiplyer;
               }
 
@@ -5146,7 +5412,7 @@ wss.on("connection", (socket, req) => {
                 health: health,
                 xstart: data.x,
                 ystart: data.y,
-                id: bullet.id,
+                id: data.id,
                 uniqueid: identdfire,
                 Zlevel: 3,
                 cannonIndex: data.cannonIndex,
@@ -5175,7 +5441,7 @@ wss.on("connection", (socket, req) => {
               setTimeout(() => {
                 let canfire = true;
                 bullet_intervals.forEach((intervals) => {
-                  if (intervals.id === bullet.uniqueid) {
+                  if (intervals.id === data.uniqueid) {
                     canfire = intervals.canfire;
                     interval__ = intervals;
                   }
@@ -5209,35 +5475,34 @@ wss.on("connection", (socket, req) => {
               }
               auto_bullet();
             }, 750 * tankmeta[players[data.id].__type__]["reaload-m"] * cannon["reloadM"] * __reload__ * 2);
-            bullet_intervals.push({ canfire: true, id: bullet.uniqueid });
+            bullet_intervals.push({ canfire: true, id: data.uniqueid });
           } else if (data.type === "rocketer") {
             let __reload__ = 1;
             let cannon =
               tankmeta[players[data.id].__type__]["cannons"][data.parentindex];
             function auto_bullet() {
-              if (players[bullet.id].statsTree["Bullet Speed"] !== 1) {
+              if (players[data.id].statsTree["Bullet Speed"] !== 1) {
                 speedUP =
-                  players[bullet.id].statsTree["Bullet Speed"] *
+                  players[data.id].statsTree["Bullet Speed"] *
                   CONFIG.levelMultiplyer;
               }
               let cannon_life = 0;
 
               let bullet_speed__ = (data.speed / 5) * cannon["bulletSpeed"];
               var bulletdistance =
-                (bullet_speed__ + speedUP) * 25 * (bullet.size / 7);
+                (bullet_speed__ + speedUP) * 25 * (data.size / 7);
               var __type = "basic";
               var health = 8;
 
               let angle = data.angle - pi;
 
-              let bullet_size_l = (bullet.size * cannon["bulletSize"]) / 1.2;
+              let bullet_size_l = (data.size * cannon["bulletSize"]) / 1.2;
 
               let randomNumber = generateRandomNumber(-0.2, 0.2);
 
               var offSet_x = cannon["offSet-x"];
               if (cannon["offSet-x"] === "playerX") {
-                offSet_x =
-                  (players[bullet.id].size / 2) * CONFIG.playerBaseSize;
+                offSet_x = (players[data.id].size / 2) * CONFIG.playerBaseSize;
               }
 
               var xxx = cannon["cannon-width-top"] / 5 - bullet_size_l * 1.5;
@@ -5260,16 +5525,16 @@ wss.on("connection", (socket, req) => {
               let identdfire =
                 (Date.now() + Math.random()) * Date.now() * 3 * Math.random();
               let damageUP = 0;
-              if (players[bullet.id].statsTree["Bullet Damage"] !== 1) {
+              if (players[data.id].statsTree["Bullet Damage"] !== 1) {
                 damageUP =
-                  (players[bullet.id].statsTree["Bullet Damage"] *
+                  (players[data.id].statsTree["Bullet Damage"] *
                     CONFIG.levelMultiplyer) /
                   (data.bullet_damage ** 2 / (data.bullet_damage / 10));
               }
               let PentrationPluse = 0;
-              if (players[bullet.id].statsTree["Bullet Pentration"] !== 1) {
+              if (players[data.id].statsTree["Bullet Pentration"] !== 1) {
                 PentrationPluse =
-                  players[bullet.id].statsTree["Bullet Pentration"] *
+                  players[data.id].statsTree["Bullet Pentration"] *
                   CONFIG.levelMultiplyer;
               }
 
@@ -5292,7 +5557,7 @@ wss.on("connection", (socket, req) => {
                 health: health,
                 xstart: data.x,
                 ystart: data.y,
-                id: bullet.id,
+                id: data.id,
                 uniqueid: identdfire,
                 Zlevel: 3,
                 cannonIndex: data.cannonIndex,
@@ -5303,7 +5568,7 @@ wss.on("connection", (socket, req) => {
               setTimeout(() => {
                 let canfire = true;
                 bullet_intervals.forEach((intervals) => {
-                  if (intervals.id === bullet.uniqueid) {
+                  if (intervals.id === data.uniqueid) {
                     canfire = intervals.canfire;
                     interval__ = intervals;
                   }
@@ -5337,7 +5602,7 @@ wss.on("connection", (socket, req) => {
               }
               auto_bullet();
             }, 500 * tankmeta[players[data.id].__type__]["reaload-m"] * cannon["reloadM"] * __reload__ * 2);
-            bullet_intervals.push({ canfire: true, id: bullet.uniqueid });
+            bullet_intervals.push({ canfire: true, id: data.uniqueid });
           }
           break;
         }
@@ -5374,7 +5639,7 @@ wss.on("connection", (socket, req) => {
         }
       }
     } catch (e) {
-      console.log("5366",e);
+      console.log("5366", e);
       socket.close(1003, "Invalid data received.");
       return;
     }
@@ -5389,12 +5654,12 @@ wss.on("connection", (socket, req) => {
         return true;
       });
     } catch (e) {
-      console.log("5381",e);
+      console.log("5381", e);
     }
     try {
       IPs = IPs.splice(IPs.indexOf(req.socket.remoteAddress), 1);
     } catch (e) {
-      console.log("5386",e);
+      console.log("5386", e);
     }
     try {
       hidden_broswers = hidden_broswers.filter((interval) => {
@@ -5405,7 +5670,7 @@ wss.on("connection", (socket, req) => {
         return true;
       });
     } catch (e) {
-      console.log("5397",e);
+      console.log("5397", e);
     }
     try {
       const index = () => {
@@ -5425,7 +5690,7 @@ wss.on("connection", (socket, req) => {
         connections.splice(index, 1); // Remove the connection from the list
       }
     } catch (e) {
-      console.log("5417",e);
+      console.log("5417", e);
     }
     try {
       leader_board.shown = leader_board.shown.filter(
@@ -5438,7 +5703,7 @@ wss.on("connection", (socket, req) => {
         leader_board: leader_board.shown,
       });
     } catch (e) {
-      console.log("5430",e);
+      console.log("5430", e);
     }
     try {
       var _player = userbase.find((_player_) => {
@@ -5458,15 +5723,9 @@ wss.on("connection", (socket, req) => {
       });
       _player.scores.reverse();
       _player.scores = _player.scores.slice(0, 10);
-      fs.writeFile(
-        "data/users.json",
-        JSON.stringify({ userbase: userbase }),
-        function (err, data) {
-          if (err) throw err;
-        }
-      );
+      writeToUserbase();
     } catch (e) {
-      console.log("5458",e);
+      console.log("5458", e);
     }
     try {
       clearInterval(stateupdate);
@@ -5474,7 +5733,7 @@ wss.on("connection", (socket, req) => {
         clearTimeout(players[connection.playerId]?.stateTimeout);
       }
     } catch (e) {
-      console.log("5466",e);
+      console.log("5466", e);
     }
     try {
       teamlist = teamlist.filter((team) => {
@@ -5522,7 +5781,7 @@ wss.on("connection", (socket, req) => {
         return true;
       });
     } catch (e) {
-      console.log("5514",e);
+      console.log("5514", e);
     }
     try {
       var public_teams = [];
@@ -5534,7 +5793,7 @@ wss.on("connection", (socket, req) => {
         }
       });
     } catch (e) {
-      console.log("5526",e);
+      console.log("5526", e);
     }
     try {
       emit("pubteamlist", public_teams);
@@ -5551,7 +5810,7 @@ wss.on("connection", (socket, req) => {
       emit("autoCannonUPDATE-ADD", autocannons);
       emit("playerLeft", { playerID: connection.playerId });
     } catch (e) {
-      console.log("5543",e);
+      console.log("5543", e);
     }
   });
 
@@ -5569,204 +5828,74 @@ setInterval(() => {
   frame++;
 
   autocannons.forEach((cannon) => {
-    let maxdistance = 2000;
-    let fire_at__ = null;
-    let target_enity_type = null;
     if (cannon._type_ !== "bulletAuto") {
       if (players[cannon.playerid] == undefined) return;
       var tankdatacannon__ =
         tankmeta[players[cannon.playerid].__type__]["cannons"];
     } else if (cannon._type_ === "bulletAuto") {
-      let par_ = findBullet(cannon.playerid);
+      var par_ = findBullet(cannon.playerid);
       if (par_ == null || players[par_.id] === undefined) return;
       var tankdatacannon__ = tankmeta[players[par_.id].__type__]["cannons"];
+      cannon.x = par_.x;
+      cannon.y = par_.y;
     }
 
-    for (const playerID in players) {
-      let player = players[playerID];
-      if (
-        playerID !== cannon.playerid &&
-        players[cannon.playerid] &&
-        !(
-          players[playerID].team === players[cannon.playerid].team &&
-          players[playerID].team !== null &&
-          players[cannon.playerid].team !== null
-        )
-      ) {
-        var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
-        if (tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
-          offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
-        }
-        if (tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
-          offSet_x *= -1;
-        }
-        if (cannon["x_"]) {
-          var distance = MathHypotenuse(
-            player.x - (players[cannon.playerid].x + cannon["x_"]),
-            player.y - (players[cannon.playerid].y + cannon["y_"])
-          );
-        } else if (cannon._type_ === "bulletAuto") {
-          let parentBullet = findBullet(cannon.playerid);
-          var distance = MathHypotenuse(
-            player.x - parentBullet.x,
-            player.y - parentBullet.y
-          );
-        } else {
-          var distance = MathHypotenuse(
-            player.x - (players[cannon.playerid].x + offSet_x),
-            player.y - players[cannon.playerid].y
-          );
-        }
-        if (distance < maxdistance) {
-          if (cannon._type_ === "SwivelAutoCannon") {
-            var angle = Math.atan2(
-              player.y - players[cannon.playerid].y, // y difference
-              player.x - players[cannon.playerid].x // x difference
-            );
-          } else if (cannon._type_ === "bulletAuto") {
-            let parentBullet = findBullet(cannon.playerid);
-            var angle = Math.atan2(
-              player.y - parentBullet.y,
-              player.x - parentBullet.x
-            );
-          } else {
-            var angle = Math.atan2(
-              player.y - players[cannon.playerid].y, // y difference
-              player.x - (players[cannon.playerid].x + offSet_x) // x difference
-            );
-          }
+    if (cannon._type_ === "SwivelAutoCannon") {
+      var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
+      if (tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
+        offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
+      }
+      if (tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
+        offSet_x *= -1;
+      }
+      var [x, y] = rotatePointAroundPlayer(
+        offSet_x,
+        0,
+        players[cannon.playerid].cannon_angle
+      );
+      cannon["x_"] = x;
+      cannon["y_"] = y;
+    }
+    try {
+      var targetData = getTarget(cannon,tankdatacannon__);
+    } catch {
+      console.log(cannon);
+    }
 
-          if (cannon._type_ === "SwivelAutoCannon") {
-            if (
-              tankmeta[players[cannon.playerid].__type__]["cannons"][
-                cannon.autoindex
-              ]["offSet-x-multpliyer"] === -1
-            ) {
-              if (
-                isTargetInSwivelRange(
-                  players[cannon.playerid].cannon_angle,
-                  angle * (180 / pi),
-                  true,
-                  180
-                )
-              ) {
-                maxdistance = distance;
-                fire_at__ = player;
-                target_enity_type = "player";
-              }
-            } else {
-              if (
-                isTargetInSwivelRange(
-                  players[cannon.playerid].cannon_angle,
-                  angle * (180 / pi),
-                  true,
-                  0
-                )
-              ) {
-                maxdistance = distance;
-                fire_at__ = player;
-                target_enity_type = "player";
-              }
-            }
-          } else {
-            maxdistance = distance;
-            fire_at__ = player;
-            target_enity_type = "player";
-          }
-        }
+    var fire_at__ = targetData.target;
+    var target_enity_type = targetData.type;
+
+    if (fire_at__ !== undefined && fire_at__ !== null) {
+      var angle;
+      if (cannon._type_ === "SwivelAutoCannon") {
+        angle = Math.atan2(
+          fire_at__.y - (players[cannon.playerid].y + cannon["y_"]),
+          fire_at__.x - (players[cannon.playerid].x + cannon["x_"])
+        );
+      } else if (cannon._type_ === "bulletAuto") {
+        angle = Math.atan2(
+          fire_at__.y - par_.y,
+          fire_at__.x - par_.x
+        );
+      } else {
+        angle = Math.atan2(
+          fire_at__.y - players[cannon.playerid].y,
+          fire_at__.x - players[cannon.playerid].x
+        );
+      }
+
+      cannon.targetAngle = angle;
+      cannon.targetEntity = fire_at__;
+
+      if (target_enity_type === "player") {
+        cannon.targetID = fire_at__.playerId;
+      }
+
+      if (target_enity_type === "food") {
+        cannon.targetID = fire_at__.randomID;
       }
     }
-    if (maxdistance > CONFIG.playerItemSightRange) {
-      if (cannon._type_ === "bulletAuto") {
-        var __parentBullet__ = findBullet(cannon.playerid);
-      }
-      getRoomAndBounding(
-        players[cannon.playerid].x,
-        players[cannon.playerid].y
-      ).items.forEach((item) => {
-        var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
-        if (tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
-          offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
-        }
-        if (tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
-          offSet_x *= -1;
-        }
-        if (cannon["x_"]) {
-          var distance = MathHypotenuse(
-            item.x - (players[cannon.playerid].x + cannon["x_"]),
-            item.y - (players[cannon.playerid].y + cannon["y_"])
-          );
-        } else if (cannon._type_ === "bulletAuto") {
-          let parentBullet = findBullet(cannon.playerid);
-          var distance = MathHypotenuse(
-            item.x - parentBullet.x,
-            item.y - parentBullet.y
-          );
-        } else {
-          var distance = MathHypotenuse(
-            item.x - (players[cannon.playerid].x + offSet_x),
-            item.y - players[cannon.playerid].y
-          );
-        }
-        if (distance < maxdistance) {
-          if (cannon._type_ === "SwivelAutoCannon") {
-            var angle = Math.atan2(
-              item.y - players[cannon.playerid].y, // y difference
-              item.x - players[cannon.playerid].x // x difference
-            );
-          } else if (cannon._type_ === "bulletAuto") {
-            let parentBullet = findBullet(cannon.playerid);
-            var angle = Math.atan2(
-              item.y - parentBullet.y,
-              item.x - parentBullet.x
-            );
-          } else {
-            var angle = Math.atan2(
-              item.y - players[cannon.playerid].y, // y difference
-              item.x - (players[cannon.playerid].x + offSet_x) // x difference
-            );
-          }
 
-          if (cannon._type_ === "SwivelAutoCannon") {
-            if (
-              tankmeta[players[cannon.playerid].__type__]["cannons"][
-                cannon.autoindex
-              ]["offSet-x-multpliyer"] === -1
-            ) {
-              if (
-                isTargetInSwivelRange(
-                  players[cannon.playerid].cannon_angle,
-                  angle * (180 / pi),
-                  true,
-                  180
-                )
-              ) {
-                maxdistance = distance;
-                fire_at__ = item;
-                target_enity_type = "food";
-              }
-            } else {
-              if (
-                isTargetInSwivelRange(
-                  players[cannon.playerid].cannon_angle,
-                  angle * (180 / pi),
-                  true,
-                  0
-                )
-              ) {
-                maxdistance = distance;
-                fire_at__ = item;
-                target_enity_type = "food";
-              }
-            }
-          } else {
-            maxdistance = distance;
-            fire_at__ = item;
-            target_enity_type = "food";
-          }
-        }
-      });
-    }
     if (target_enity_type === "player" && fire_at__) {
       if (cannon.targetID !== fire_at__.playerId) {
         if (cannon.angle < cannon.targetAngle) {
@@ -5780,11 +5909,12 @@ setInterval(() => {
       if (cannon._type_ !== "SwivelAutoCannon") {
         if (
           cannon.angle < cannon.targetAngle &&
-          Math.abs(cannon.angle - cannon.targetAngle) > 0.1
+          Math.abs(cannon.angle - cannon.targetAngle) > 0.05
         ) {
+          console.log(cannon.angle, cannon.targetAngle);
           if (cannon._type_ === "bulletAuto") {
             var reload_1 =
-              players[__parentBullet__.id].statsTree["Bullet Reload"] - 1;
+              players[par_.id].statsTree["Bullet Reload"] - 1;
           } else {
             var reload_1 =
               players[cannon.playerid].statsTree["Bullet Reload"] - 1;
@@ -5797,11 +5927,11 @@ setInterval(() => {
           });
         } else if (
           cannon.angle > cannon.targetAngle &&
-          Math.abs(cannon.angle - cannon.targetAngle) > 0.1
+          Math.abs(cannon.angle - cannon.targetAngle) > 0.05
         ) {
           if (cannon._type_ === "bulletAuto") {
             var reload_1 =
-              players[__parentBullet__.id].statsTree["Bullet Reload"] - 1;
+              players[par_.id].statsTree["Bullet Reload"] - 1;
           } else {
             var reload_1 =
               players[cannon.playerid].statsTree["Bullet Reload"] - 1;
@@ -5813,35 +5943,8 @@ setInterval(() => {
             cannon_ID: cannon.CannonID,
           });
         }
-      } else {
+      } else if (Math.abs(cannon.angle - cannon.targetAngle) > 0.001){
         moveCannonAngle(cannon);
-      }
-    }
-    if (fire_at__ !== undefined && fire_at__ !== null) {
-      if (cannon._type_ === "SwivelAutoCannon") {
-        var angle = Math.atan2(
-          fire_at__.y - (players[cannon.playerid].y + cannon["y_"]), // y difference
-          fire_at__.x - (players[cannon.playerid].x + cannon["x_"]) // x difference
-        );
-      } else if (cannon._type_ === "bulletAuto") {
-        var angle = Math.atan2(
-          fire_at__.y - __parentBullet__.y, // y difference
-          fire_at__.x - __parentBullet__.x // x difference
-        );
-      } else {
-        var angle = Math.atan2(
-          fire_at__.y - players[cannon.playerid].y, // y difference
-          fire_at__.x - players[cannon.playerid].x // x difference
-        );
-      }
-
-      cannon.targetAngle = angle;
-      cannon.targetEntity = fire_at__;
-      if (target_enity_type === "player") {
-        cannon.targetID = fire_at__.playerId;
-      }
-      if (target_enity_type === "food") {
-        cannon.targetID = fire_at__.randomID;
       }
     }
   });
@@ -5849,7 +5952,9 @@ setInterval(() => {
   for (const roomkey in food_squares) {
     var room = food_squares[roomkey];
     if (typeof room === "function") continue;
-    room.items = room.items.filter((item, index) => {
+    for (let i = 0; i < room.items.length; i++) {
+      let item = room.items[i];
+      let index = i;
       if (
         !(
           item.x >= room.bounds.x1 &&
@@ -5859,18 +5964,9 @@ setInterval(() => {
         )
       ) {
         reassignRoomItem(item);
+        room.items.splice(i, 1);
+        continue;
       }
-      if (
-        !(
-          item.x + item.size >= room.bounds.x1 &&
-          item.x - item.size <= room.bounds.x2 &&
-          item.y + item.size >= room.bounds.y1 &&
-          item.y - item.size <= room.bounds.y2
-        )
-      ) {
-        return false;
-      }
-      if (item.roomsIn[0] !== roomkey) return true;
       if (
         item.subtype !== "Enemyboss:Square" &&
         item.subtype !== "Enemyboss:Triangle"
@@ -5915,6 +6011,7 @@ setInterval(() => {
         item.y = newY;
         item.boss.x = item.x;
         item.boss.y = item.y;
+        item.angle = __angle;
       }
       if (item.type === "pentagon") {
         item.angle += CONFIG.rotationSpeed.pentagon;
@@ -5992,21 +6089,21 @@ setInterval(() => {
               distanceTraveled: 0,
               vertices: null,
               bullet_pentration: 1,
-              x: item.x,
-              y: item.y,
+              x: cannon.x,
+              y: cannon.y,
               lifespan: 0,
               health: 10,
-              xstart: item.x,
-              ystart: item.y,
+              xstart: cannon.x,
+              ystart: cannon.y,
               id: cannon.id,
               uniqueid: randID,
               boundtype: "square",
               wander: new Wanderer(
-                item.x,
-                item.y,
+                cannon.x,
+                cannon.y,
                 item.size,
-                item.x,
-                item.y,
+                cannon.x,
+                cannon.y,
                 3,
                 cannon.current,
                 "arc"
@@ -6057,12 +6154,12 @@ setInterval(() => {
               distanceTraveled: 0,
               vertices: null,
               bullet_pentration: 1,
-              x: item.x,
-              y: item.y,
+              x: cannon.x,
+              y: cannon.y,
               lifespan: 0,
               health: 10,
-              xstart: item.x,
-              ystart: item.y,
+              xstart: cannon.x,
+              ystart: cannon.y,
               id: cannon.id,
               uniqueid: randID,
               boundtype: "triangle",
@@ -6077,8 +6174,9 @@ setInterval(() => {
                 "arc"
               ),
               cannon: cannon,
+              boss: item.boss
             };
-            tempBulletToPush.push(bullet____);
+            reassignRoomBullet(bullet____);
             let boss = item.boss;
             for (let l = 0; l < 10; l++) {
               setTimeout(() => {
@@ -6221,7 +6319,7 @@ setInterval(() => {
                 bulletId: player.id,
                 socrepluse: reward,
               });
-              console.log(reward,"ram");
+              console.log(reward, "ram");
               leader_board.hidden.forEach((__index__) => {
                 if (__index__.id === player.id) {
                   __index__.score += reward;
@@ -6456,7 +6554,8 @@ setInterval(() => {
                 };
               }
 
-              return false;
+              room.items.splice(i, 1);
+              continue;
             } else if (player.state !== "start" && !sameteam) {
               item.health -= damageother;
             }
@@ -6605,7 +6704,7 @@ setInterval(() => {
                 bulletId: bullet.id,
                 socrepluse: reward,
               });
-              console.log(reward,"bullet");
+              console.log(reward, "bullet");
             }
 
             var randID = Math.random() * index * Date.now();
@@ -6928,11 +7027,13 @@ setInterval(() => {
           transparency: item.transparency,
           randomID: item.randomID,
         });
-        return return_;
+        continue;
       }
       if (item.isdead) {
         if (Date.now() >= item.deathtime + CONFIG.deathTime) {
-          return false;
+          console.log("deado");
+          room.items.splice(i, 1);
+          continue;
         }
       }
       if (item.isdead) {
@@ -6949,21 +7050,12 @@ setInterval(() => {
           transparency: item.transparency,
           randomID: item.randomID,
         });
-        return true;
+        continue;
       }
-    });
-    room.bullets = room.bullets.filter((bullet) => {
+    }
+    for (let i = 0; i < room.bullets.length; i++) {
+      let bullet = room.bullets[i];
       let WanderControlled = false;
-      if (
-        !(
-          bullet.x + bullet.size * 2 >= room.bounds?.x1 &&
-          bullet.x - bullet.size * 2 <= room.bounds?.x2 &&
-          bullet.y + bullet.size * 2 >= room.bounds?.y1 &&
-          bullet.y - bullet.size * 2 <= room.bounds?.y2
-        )
-      ) {
-        return false;
-      }
       if (
         !(
           bullet.x >= room.bounds?.x1 &&
@@ -6973,11 +7065,13 @@ setInterval(() => {
         )
       ) {
         reassignRoomBullet(bullet);
+        room.bullets.splice(i, 1);
+        bullets.push(bullet);
+        continue;
       }
-      if (bullet.roomsIn[0] !== roomkey) return true;
       if (bullet.type === "directer") {
         try {
-          if (!players[bullet.id].autoFiring) {
+          if (!players[bullet.id]?.autoFiring && players[bullet.id]) {
             let dx =
               players[bullet.id].x -
               players[bullet.id].canvasW / 2 +
@@ -7000,7 +7094,7 @@ setInterval(() => {
                 bullet.angle = Math.atan2(bullet.y - dy, bullet.x - dx);
               }
             }
-          } else if (players[bullet.id].autoFiring) {
+          } else if (players[bullet.id]?.autoFiring) {
             let buildframe = {
               x: players[bullet.id].canvasW / CONFIG.droneRange,
               y: players[bullet.id].canvasH / CONFIG.droneRange,
@@ -7043,7 +7137,10 @@ setInterval(() => {
               }
             }
             if (maxdistance > CONFIG.playerItemSightRange) {
-              food_squares.forEach((item_) => {
+              getRoomAndBounding(
+                bullet.x,
+                bullet.y
+              ).items.forEach((item_) => {
                 let distance = MathHypotenuse(
                   item_.x - bullet.x,
                   item_.y - bullet.y
@@ -7087,13 +7184,14 @@ setInterval(() => {
           if (players[bullet.id]) {
             emit("dronekilled", { droneID: bullet.id });
           }
-          return false;
+          room.bullets.splice(i, 1);
+          continue;
         }
       }
       let collied = false;
       if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
         // choose a player to attak
-        if (frame % 5 === 0) {
+        if (frame % 3 === 0) {
           var maxdistance = 600;
           var maxfov = 2400;
           var target = { x: bullet.x, y: bullet.y };
@@ -7134,7 +7232,7 @@ setInterval(() => {
           var newY = bullet.y;
           bullet.wander.setXY(bullet.x, bullet.y);
         } else if (bullet.target?.distance < 600) {
-          var boss = findThisBoss(bullet.id);
+          var boss = bullet.boss;
           bullet.wander.setBaseXY(boss.x, boss.y);
           var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
           var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
@@ -7144,7 +7242,7 @@ setInterval(() => {
           bullet.target?.distance > 600 &&
           bullet.target?.distance < 2400
         ) {
-          var boss = findThisBoss(bullet.id);
+          var boss = bullet.boss;
           bullet.wander.think();
           bullet.wander.setBaseXY(boss.x, boss.y);
           let tempAngle = bullet.wander.returnAngle();
@@ -7193,16 +7291,18 @@ setInterval(() => {
         (bullet.type !== "FreeNecromancer" && bullet.type !== "sheild")
       ) {
         if (
-          bullet.bullet_distance - bullet.distanceTraveled < 200 &&
-          bullet.type === "roadMap"
+          bullet.bullet_distance - bullet.distanceTraveled <
+            200 / (bullet.speed / 2) &&
+          (bullet.type === "roadMap" || bullet.type === "trap")
         ) {
           bullet.speed -=
-            (bullet.bullet_distance - bullet.distanceTraveled) / 85;
+            (bullet.bullet_distance - bullet.distanceTraveled) /
+            (85 / (bullet.speed * 2));
           if (bullet.speed <= 0) bullet.speed = 0;
         }
 
-        for (let i = 0; i < bullets.length; i++) {
-          var bullet_ = bullets[i];
+        for (let i = 0; i < room.bullets.length; i++) {
+          var bullet_ = room.bullets[i];
 
           if (
             bullet.id !== bullet_.id &&
@@ -7213,9 +7313,9 @@ setInterval(() => {
               players[bullet_?.id]?.team !== null
             ) &&
             Math.abs(bullet.x - bullet_.x) <
-              bullet.size * 2 + bullet_.size * 2 &&
+              bullet.size * 1.5 + bullet_.size * 1.5 &&
             Math.abs(bullet.y - bullet_.y) <
-              bullet.size * 2 + bullet_.size * 2 &&
+              bullet.size * 1.5 + bullet_.size * 1.5 &&
             !(
               (bullet.speed !== 0 &&
                 bullet.speed !== 0 &&
@@ -7256,7 +7356,6 @@ setInterval(() => {
             const ry2 = vy - 2 * dot2 * ny;
 
             bullet_.angle = Math.atan2(ry2, rx2);
-            collied = true;
             bullet.speed -=
               (bullet_.bullet_pentration * bullet_.size + bullet_.speed) / 1000;
             bullet.distanceTraveled +=
@@ -7269,76 +7368,54 @@ setInterval(() => {
           if (
             bullet.id === bullet_.id &&
             bullet.uniqueid !== bullet_.uniqueid &&
-            bullet.speed !== 0 &&
-            bullet_.speed !== 0 &&
             players[bullet.id] &&
             players[bullet_.id] &&
-            !(
-              players[bullet.id]?.team === players[bullet_.id]?.team &&
-              players[bullet.id]?.team !== null &&
-              players[bullet_.id]?.team !== null
-            ) &&
-            bullet.type === "trap" &&
+            bullet.type === "trap" && bullet_.type === "trap" &&
             Math.abs(bullet.x - bullet_.x) <
-              bullet.size * 2 + bullet_.size * 2 &&
-            Math.abs(bullet.y - bullet_.y) < bullet.size * 2 + bullet_.size * 2
+              bullet.size*2 + bullet_.size*2 &&
+            Math.abs(bullet.y - bullet_.y) < bullet.size*2 + bullet_.size*2
           ) {
-            const dx = bullet.x - bullet_.x;
-            const dy = bullet.y - bullet_.y;
+            if (bullet.speed > 2) {
+              const dx = bullet.x - bullet_.x;
+              const dy = bullet.y - bullet_.y;
 
-            const mag = Math.sqrt(dx * dx + dy * dy);
-            const nx = dx / mag;
-            const ny = dy / mag;
+              const mag = Math.sqrt(dx * dx + dy * dy);
+              const nx = dx / mag;
+              const ny = dy / mag;
 
-            const rx =
-              Math.cos(bullet.angle) -
-              2 * Math.cos(bullet.angle) * nx +
-              Math.sin(bullet.angle) * ny * nx;
-            const ry =
-              Math.sin(bullet.angle) -
-              2 * Math.cos(bullet.angle) * nx +
-              Math.sin(bullet.angle) * ny * ny;
+              const rx =
+                Math.cos(bullet.angle) -
+                2 * Math.cos(bullet.angle) * nx +
+                Math.sin(bullet.angle) * ny * nx;
+              const ry =
+                Math.sin(bullet.angle) -
+                2 * Math.cos(bullet.angle) * nx +
+                Math.sin(bullet.angle) * ny * ny;
 
-            bullet.angle = Math.atan2(ry, rx);
-            collied = true;
+              bullet.angle = Math.atan2(ry, rx);
+            } else {
+              var repluseAngle = Math.atan2(bullet.y - bullet_.y, bullet.x - bullet_.x);
+              collied = true;
+              newX__ = (bullet_.size / 25) * Math.cos(repluseAngle);
+              newY__ = (bullet_.size / 25) * Math.sin(repluseAngle);
+            }
           }
           if (
             bullet.id === bullet_.id &&
             bullet.uniqueid !== bullet_.uniqueid &&
             (bullet.type === "FreeNecromancer" ||
               bullet.type === "FreeSwarm" ||
-              bullet.type === "drone") &&
-            !WanderControlled &&
+              bullet.type === "directer") &&
             Math.abs(bullet.x - bullet_.x) <
               bullet.size * 2 + bullet_.size * 2 &&
             Math.abs(bullet.y - bullet_.y) < bullet.size * 2 + bullet_.size * 2
           ) {
-            const dx = bullet.x - bullet_.x;
-            const dy = bullet.y - bullet_.y;
-
-            const mag = Math.sqrt(dx * dx + dy * dy);
-            const nx = dx / mag;
-            const ny = dy / mag;
-
-            const vx = Math.cos(bullet.angle);
-            const vy = Math.sin(bullet.angle);
-
-            const dot = vx * nx + vy * ny;
-
-            const rx = vx - 2 * dot * nx;
-            const ry = vy - 2 * dot * ny;
-
-            bullet.angle = Math.atan2(ry, rx);
+            var repluseAngle = Math.atan2(bullet.y - bullet_.y, bullet.x - bullet_.x);
+            collied = true;
+            newX__ = (bullet_.size / 100) * Math.cos(repluseAngle);
+            newY__ = (bullet_.size / 100) * Math.sin(repluseAngle);
           }
         }
-
-        const rawvertices = calculateTriangleVertices(
-          bullet.x,
-          bullet.y,
-          bullet.size * 3,
-          0
-        );
-        bullet.vertices = rawvertices;
       } else if (bullet.type !== "sheild") {
         for (let i = 0; i < bullets.length; i++) {
           var bullet_ = bullets[i];
@@ -7363,12 +7440,19 @@ setInterval(() => {
       if (
         -(bullet.distanceTraveled - bullet.bullet_distance) <
           25 * bullet.speed ** 2 &&
-        bullet.type !== "sheild"
+        bullet.type !== "sheild" &&
+        bullet.type !== "trap" &&
+        bullet.type !== "roadMap"
       ) {
         bullet.transparency =
           1 - bullet.distanceTraveled / bullet.bullet_distance < 0
             ? 0.000000000000001
             : 1 - bullet.distanceTraveled / bullet.bullet_distance;
+      } else if (bullet.type === "trap" || bullet.type === "roadMap") {
+        if (bullet.fireDate + bullet.lifeSpan * 1000 - Date.now() < 1000) {
+          bullet.transparency =
+            (bullet.fireDate + bullet.lifeSpan * 1000 - Date.now()) / 1000;
+        }
       }
 
       for (const playerId in players) {
@@ -7518,7 +7602,11 @@ setInterval(() => {
                   createAnnocment(
                     `You killed ${player.username}'s ${player.__type__}`,
                     bullet.id,
-                    {color:"black", trans: 0.3, delay: CONFIG.messageIntervals.medium}
+                    {
+                      color: "black",
+                      trans: 0.3,
+                      delay: CONFIG.messageIntervals.medium,
+                    }
                   );
                 } else {
                   var boss = bosses.find(
@@ -7551,7 +7639,7 @@ setInterval(() => {
                     leader_board: leader_board.shown,
                   });
                 } catch (e) {
-                  console.log("7496",e);
+                  console.log("7496", e);
                 }
                 leader_board.hidden.forEach((__index__) => {
                   if (__index__.id === bullet.id) {
@@ -7614,7 +7702,8 @@ setInterval(() => {
       if (bullet.type === "expoled") {
         bullet.size += bullet.exspandRate;
         if (Date.now() > bullet.endTime) {
-          return false;
+          room.bullets.splice(i, 1);
+          continue;
         }
       }
       if (bullet.distanceTraveled <= bullet.bullet_distance) {
@@ -7634,7 +7723,7 @@ setInterval(() => {
         }
 
         bullets.push(bullet);
-        return true;
+        continue;
       }
 
       if (bullet.type === "directer") {
@@ -7659,8 +7748,9 @@ setInterval(() => {
           __bullet_.canfire = false;
         }
       });
-      return false;
-    });
+      room.bullets.splice(i, 1);
+      continue;
+    }
   }
 
   tempToPush.forEach((item) => {
@@ -7692,15 +7782,16 @@ setInterval(() => {
         (triroad[0].road.id === playerID || sameTeam) &&
         isPointInTriangle(
           { x: player.x, y: player.y },
-          { x: triroad[0].road.x, x: triroad[0].road.y },
-          { x: triroad[1].road.x, x: triroad[1].road.y },
-          { x: triroad[2].road.x, x: triroad[2].road.y }
+          { x: triroad[0].road.x, y: triroad[0].road.y },
+          { x: triroad[1].road.x, y: triroad[1].road.y },
+          { x: triroad[2].road.x, y: triroad[2].road.y }
         )
       ) {
-        player.speedBoost = dataRoad[0].multiplyer;
+        player.speedBoost = triroad[0].road.multiplyer;
       } else {
         player.speedBoost = 1;
       }
+      //console.log(triroad[0].road.id === playerID,)
       emit("playerSpeedBoost", {
         id: playerID,
         speedMultiplyer: player.speedBoost,

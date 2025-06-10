@@ -132,7 +132,86 @@
           >
             <div class="high-height">
               <div class="h-40-30">
-
+                <div class="spiner-con">
+                  <div class="spiner">
+                    <div class="spinerRotater" id="basicSpinner"></div>
+                    <img src="./spiners/2.webp" class="spinerOverlay">
+                  </div>
+                  <div class="leverHolder">
+                    <div class="leverInnerHolder">
+                      <div class="lever" id="basicSpinnerBuyLever"></div>  
+                      <div class="disc"></div>
+                      <div class="leverbase" id="basicSpinnerBuy">
+                        Spin!
+                        Cost: 199 gears
+                      </div> 
+                    </div>
+                  </div>
+                </div>
+                <div class="spiner-con">
+                  <div class="spiner" >
+                    <div class="spinerRotater" id="uncommonSpinner"></div>
+                    <img src="./spiners/4.webp" class="spinerOverlay">
+                  </div>
+                  <div class="leverHolder">
+                    <div class="leverInnerHolder">
+                      <div class="lever" id="uncommonSpinnerBuyLever"></div>  
+                      <div class="disc"></div>
+                      <div class="leverbase" id="uncommonSpinnerBuy">
+                        Spin!
+                        Cost: 349 gears
+                      </div> 
+                    </div>
+                  </div>
+                </div>
+                <div class="spiner-con">
+                  <div class="spiner">
+                    <div class="spinerRotater" id="rareSpinner"></div>
+                    <img src="./spiners/6.webp" class="spinerOverlay">
+                  </div>
+                  <div class="leverHolder">
+                    <div class="leverInnerHolder">
+                      <div class="lever" id="rareSpinnerBuyLever"></div>  
+                      <div class="disc"></div>
+                      <div class="leverbase" id="rareSpinnerBuy">
+                        Spin!
+                        Cost: 449 gears
+                      </div> 
+                    </div>
+                  </div>
+                </div>
+                <div class="spiner-con">
+                  <div class="spiner">
+                    <div class="spinerRotater" id="epicSpinner"></div>
+                    <img src="./spiners/8.webp" class="spinerOverlay">
+                  </div>
+                  <div class="leverHolder">
+                    <div class="leverInnerHolder">
+                      <div class="lever" id="epicSpinnerBuyLever"></div>  
+                      <div class="disc"></div>
+                      <div class="leverbase" id="epicSpinnerBuy">
+                        Spin!
+                        Cost: 899 gears
+                      </div> 
+                    </div>
+                  </div>
+                </div>
+                <div class="spiner-con">
+                  <div class="spiner">
+                    <div class="spinerRotater" id="legendarySpinner"></div>
+                    <img src="./spiners/10.webp" class="spinerOverlay">
+                  </div>
+                  <div class="leverHolder">
+                    <div class="leverInnerHolder">
+                      <div class="lever" id="legendarySpinnerBuyLever"></div>  
+                      <div class="disc"></div>
+                      <div class="leverbase" id="legendarySpinnerBuy">
+                        Spin!
+                        Cost: 999 gears
+                      </div> 
+                    </div>
+                  </div>
+                </div>
               </div>
               <button class="x-out" id="close" title="close button">X</button>
               <div class="skins-grid" id="skins-grid">
@@ -146,7 +225,7 @@
         <div class="confimation-pop-up">
           <strong
             ><span class="join-text">
-              Boost are non-refundeble <br> Cost: 100 golden gears Boosts give you 15 levels each Up to 45 levels
+              Boost are non-refundeble <br> Cost: 100 golden gears, Boosts give you 15 levels each, Up to 45 levels
               <br>
               <button class="allow-join" id="buyNo">
                 <strong>no</strong></button
@@ -417,18 +496,49 @@
           </div>
         </div>
         <div class="right-content-container">
-          <div class="leader-board" id="leaderBoard">
-            <div class="entrie-box"><p>The#1: 10838389 points</p></div>
-            <div class="entrie-box"><p>ShadowHunter: 5398345 points</p></div>
-            <div class="entrie-box"><p>BlazeFury: 4383884 points</p></div>
-            <div class="entrie-box"><p>IronClaw: 656677 points</p></div>
-            <div class="entrie-box"><p>StormBreaker: 599940 points</p></div>
-            <div class="entrie-box"><p>PhantomStrike: 586990 points</p></div>
-            <div class="entrie-box"><p>CrimsonWolf: 521883 points</p></div>
-            <div class="entrie-box"><p>FrostViper: 469790 points</p></div>
-            <div class="entrie-box"><p>ThunderHawk: 370800 points</p></div>
-            <div class="entrie-box"><p>NightRaven: 283784 points</p></div>
-            <div class="entrie-box"><p>SteelTitan: 240004 points</p></div>
+          <div class="leader-board">
+            <div class="skin-frame bubble-holder">
+              <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+            </div>
+            <div id="leaderBoard" class="skin-frame">
+              <div class="entrie-box"><p>The#1: 10838389 points</p></div>
+              <div class="entrie-box"><p>ShadowHunter: 5398345 points</p></div>
+              <div class="entrie-box"><p>BlazeFury: 4383884 points</p></div>
+              <div class="entrie-box"><p>IronClaw: 656677 points</p></div>
+              <div class="entrie-box"><p>StormBreaker: 599940 points</p></div>
+              <div class="entrie-box"><p>PhantomStrike: 586990 points</p></div>
+              <div class="entrie-box"><p>CrimsonWolf: 521883 points</p></div>
+              <div class="entrie-box"><p>FrostViper: 469790 points</p></div>
+              <div class="entrie-box"><p>ThunderHawk: 370800 points</p></div>
+              <div class="entrie-box"><p>NightRaven: 283784 points</p></div>
+              <div class="entrie-box"><p>SteelTitan: 240004 points</p></div>
+            </div>
           </div>
           <div class="player-canvas-container" id="buildBox">
             <canvas
@@ -1140,6 +1250,9 @@
       </div>
       <div class="centerleft">
         <a href="./privacy.html">privacy policy</a>
+      </div>
+      <div class="centerleft">
+        <strong><a href="./attributtions.html">Attributions</a></strong>
       </div>
     </div>
     <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>

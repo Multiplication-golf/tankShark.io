@@ -1,9 +1,9 @@
 // LOL, you little kids can't mess with my game
 (async function () {
   /* Warning! DO NOT TOUCH */
-  const isCrazyGames = document.referrer !== ''; /*window.location.origin.endsWith("crazygames.com");*/
+  const isCrazyGames = false; /*window.location.origin.endsWith("crazygames.com");*/
 
-  console.log(document.referrer)
+  console.log(document.referrer);
   if (isCrazyGames) {
     // document.getElementsByTagName("body")[0].innerHTML +=
     //   '<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>';
@@ -32,6 +32,9 @@
   console.log(token);
 
   var badgelevels = {};
+  // window.onbeforeunload = (evt) => {
+  //   evt.preventDefault();
+  // };
 
   var badgesToLoad = [
     "1.webp",
@@ -64,7 +67,20 @@
     "0.webp",
   ];
 
-  badgesToLoad.forEach((badge) => {
+  var badgesIMGToLoad = [
+    "1.webp",
+    "2.webp",
+    "3.webp",
+    "4.webp",
+    "5.webp",
+    "6.webp",
+    "7.webp",
+    "8.webp",
+    "9.webp",
+    "10.webp",
+  ];
+
+  badgesIMGToLoad.forEach((badge) => {
     var img = new Image();
     img.src =
       window.location.href !== "http://127.0.0.1:5501/public/index.html"
@@ -677,6 +693,7 @@
     var bullet_damage = 10;
     var bullet_speed = 4;
     var bullet_size = 15;
+    var swivelAngle = 0;
     var bullet_pentration = 2;
     var cannonWidth = [0];
     var drones = 0;
@@ -918,7 +935,7 @@
 
           img__.width = img__.getBoundingClientRect().height + 20;
           img__.height = img__.getBoundingClientRect().height + 20;
-          
+
           const __ctx__ = img__.getContext("2d", { willReadFrequently: false });
           __ctx__.beginPath();
           __ctx__.roundRect(
@@ -939,7 +956,7 @@
             sdfjdsj9ew8932rs89f8: {
               id: "sdfjdsj9ew8932rs89f8",
               x: img__.getBoundingClientRect().width / 2 + 5,
-              y: img__.getBoundingClientRect().width / 2  + 5,
+              y: img__.getBoundingClientRect().width / 2 + 5,
               health: 100,
               size: 1,
               cannonW: [],
@@ -956,13 +973,11 @@
             },
           };
           var canndata = tankmeta[Object.keys(tankdata["upgrades"])[i]];
-          console.log(tankmeta[Object.keys(tankdata["upgrades"])[i]]["cannons"],Object.keys(tankdata["upgrades"])[i])
-          for (
-            let i = 0;
-            i <
-            canndata["cannons"].length;
-            i++
-          ) {
+          console.log(
+            tankmeta[Object.keys(tankdata["upgrades"])[i]]["cannons"],
+            Object.keys(tankdata["upgrades"])[i]
+          );
+          for (let i = 0; i < canndata["cannons"].length; i++) {
             players_["sdfjdsj9ew8932rs89f8"].cannonW.push(0);
           }
 
@@ -984,9 +999,17 @@
             if (playerHealth > maxhealth) {
               playerHealth = maxhealth;
             }
-            if (tankdata["AutoRoting"]) {
+            if (tankdata["autoRoting"]) {
               autoRotating = true;
               lockautoRotating = true;
+              send("rotate", {
+                autoAngle: 0,
+                autoIntevals: autoIntevals,
+                playerSize: playerSize,
+                FOV: scaleFactor,
+                canvaswidth: canvas.width,
+                canvasheight: canvas.height,
+              });
             }
             if (tankdata.fov !== 0) {
               scaleby(tankdata.fov);
@@ -1024,19 +1047,24 @@
                 cannonWidth.push(0);
                 cannonFireData.push(true);
               }
-              autocannons.forEach((popcannon) => {
+              console.log(autocannons);
+              autocannons = autocannons.filter((popcannon) => {
                 if (popcannon.playerid === playerId) {
                   send("deletAuto", { CannonID: popcannon.CannonID });
                   clearInterval(popcannon);
-                  popcannon = null;
+                  return false;
                 }
+                return true;
               });
-              for (const cannon_ in tankdatacannon__) {
-                let cannon = tankdatacannon__[cannon_];
+              let i___ = 0;
+              for (let i = 0; i < Object.keys(tankdatacannon__).length; i++) {
+                let cannon = tankdatacannon__[i];
+                console.log(cannon);
                 if (
                   cannon.type === "autoCannon" ||
                   cannon.type === "SwivelAutoCannon"
                 ) {
+                  console.log("cccccc");
                   let autoID = Math.random() * 1000 + Math.random() * 1000;
                   send("autoCannonADD", {
                     CannonID: autoID,
@@ -1052,75 +1080,73 @@
                     _type_: cannon.type,
                     cannonWidth: 0,
                   };
+                  var reload =
+                    baseFireInterval *
+                    tankdata["reaload-m"] *
+                    cannon["reloadM"] *
+                    __reload__;
                   function cannonINT() {
                     var __tankdata__ = tankmeta[__type__];
-                    if (_CAN.playerid === playerId) {
-                      let cannon;
-                      let index = 0;
-                      for (const ___cannon___ in __tankdata__.cannons) {
-                        let cannon___ = __tankdata__.cannons[___cannon___];
-                        if (index === cannon__.autoindex) {
-                          cannon = cannon___;
-                        }
-                        index++;
+                    let cannon;
+                    let index = 0;
+                    for (const ___cannon___ in __tankdata__.cannons) {
+                      let cannon___ = __tankdata__.cannons[___cannon___];
+                      if (index === cannon__.autoindex) {
+                        cannon = cannon___;
                       }
-                      var offSet_x = tankdatacannon__[cannon_]["offSet-x"];
-                      if (tankdatacannon__[cannon_]["offSet-x"] === "playerX") {
-                        offSet_x = playerSize * playerBaseSize * FOV;
-                      }
-                      if (tankdatacannon__[cannon_]["offSet-x-multpliyer"]) {
-                        offSet_x *= -1;
-                      }
-                      let angle0 = getCannonAngle();
-                      if (
-                        tankdatacannon__[cannon_].type === "SwivelAutoCannon"
-                      ) {
-                        var [x, y] = rotatePointAroundPlayer(
-                          offSet_x,
-                          0,
-                          angle0 * (180 / Math.PI)
-                        );
-                      }
-
-                      //ctx.translate((canW / 2)+x,y+canH / 2);
-                      if (
-                        tankdatacannon__[cannon_].type === "SwivelAutoCannon"
-                      ) {
-                        send("Autofire", {
-                          playerX: playerX + x,
-                          playerY: playerY + y,
-                          cannon: cannon__,
-                          bullet_damage: bullet_damage,
-                          bullet_speed: bullet_speed,
-                          bullet_size: bullet_size,
-                          bullet_pentration: bullet_pentration,
-                          extracannon_: cannon_,
-                          _cannon: _CAN,
-                        });
-                      }
-                      if (tankdatacannon__[cannon_].type === "autoCannon") {
-                        send("Autofire", {
-                          playerX: playerX - offSet_x,
-                          playerY: playerY,
-                          cannon: cannon__,
-                          bullet_damage: bullet_damage,
-                          bullet_speed: bullet_speed,
-                          bullet_size: bullet_size,
-                          bullet_pentration: bullet_pentration,
-                          extracannon_: cannon_,
-                          _cannon: _CAN,
-                        });
-                      }
+                      index++;
+                    }
+                    var offSet_x = tankdatacannon__[i]["offSet-x"];
+                    if (tankdatacannon__[i]["offSet-x"] === "playerX") {
+                      offSet_x = playerSize * playerBaseSize * FOV;
+                    }
+                    if (tankdatacannon__[i]["offSet-x-multpliyer"]) {
+                      offSet_x *= -1;
+                    }
+                    if (tankdatacannon__[i].type === "SwivelAutoCannon") {
+                      send("Autofire", {
+                        playerX: playerX,
+                        playerY: playerY,
+                        cannon: cannon__,
+                        bullet_damage: bullet_damage,
+                        bullet_speed: bullet_speed,
+                        bullet_size: bullet_size,
+                        bullet_pentration: bullet_pentration,
+                        _cannon: _CAN,
+                        tankdatacannon__: tankdatacannon__,
+                        autoindex: i,
+                      });
+                    }
+                    if (tankdatacannon__[i].type === "autoCannon") {
+                      send("Autofire", {
+                        playerX: playerX - offSet_x,
+                        playerY: playerY,
+                        cannon: cannon__,
+                        bullet_damage: bullet_damage,
+                        bullet_speed: bullet_speed,
+                        bullet_size: bullet_size,
+                        bullet_pentration: bullet_pentration,
+                        _cannon: _CAN,
+                        tankdatacannon__: tankdatacannon__,
+                        autoindex: i,
+                      });
                     }
                     setTimeout(() => {
                       cannonINT();
-                    }, baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
+                    }, reload);
                   }
                   setTimeout(() => {
                     cannonINT();
-                  }, baseFireInterval * tankdata["reaload-m"] * cannon["reloadM"] * __reload__);
+                  }, reload);
+                  console.log(
+                    baseFireInterval *
+                      tankdata["reaload-m"] *
+                      cannon["reloadM"] *
+                      __reload__
+                  );
                   autoIntevals.push({ cannonINT: cannonINT, autoID: autoID });
                 }
+                i___++;
               }
             }, 100);
           });
@@ -1453,13 +1479,6 @@
       postText.value = "";
     });
 
-    window.onbeforeunload = (evt) => {
-      if (!confirm("Reloading will not save your progress!")) {
-        evt.preventDefault();
-        evt.returnValue = "";
-      }
-    };
-
     socket.onopen = function () {
       setTimeout(async () => {
         console.time("preconnect");
@@ -1472,7 +1491,6 @@
             token = await window.CrazyGames.SDK.user.getUserToken();
           }
         }
-        console.log(token);
         let resolveDraw, rejectDraw;
         let resolveDraw2, rejectDraw2;
         let resolveDraw3, rejectDraw3;
@@ -2013,9 +2031,9 @@
               break;
             }
             case "playerScore": {
-              players[data["bulletId"]].score += data["socrepluse"];
+              players[data["bulletId"]].score += data.socrepluse;
               if (data["bulletId"] === playerId) {
-                score = players[data["bulletId"]].score;
+                score += data.socrepluse;
               }
               levelHANDLER();
               if (data.kill && isCrazyGames) {
@@ -2220,7 +2238,10 @@
               break;
             }
             case "type_Change": {
-              players[data.id] = data;
+              for (const prop in data) {
+                let tempData = data[prop];
+                players[data.id][prop] = tempData;
+              }
               break;
             }
             case "postBiteMessage": {
@@ -2299,6 +2320,10 @@
               if (data.playerID === playerId) {
                 state = data.state;
               }
+              break;
+            }
+            case "autoAngle": {
+              swivelAngle = data;
               break;
             }
             case "statecycleUpdate": {
@@ -2438,7 +2463,6 @@
             messaging = !messaging;
           }
         };
-        console.log(window.outerHeight, window.outerWidth);
         if (window.outerHeight > window.outerWidth) {
           var mouseUpPress = false;
           document.getElementById("keyscontainer").style.display = "block";
@@ -2614,7 +2638,8 @@
 
               if (
                 cannon["type"] === "basicCannon" ||
-                cannon["type"] === "trap"
+                cannon["type"] === "trap" ||
+                cannon["type"] === "AutoBulletCannon"
               ) {
                 var xxx = cannon["cannon-width"] - bullet_size_l / 2;
                 var yyy = cannon["cannon-height"] - cannon["cannon-height"];
@@ -2626,10 +2651,6 @@
                   cannon["cannon-height"] -
                   bullet_size_l * 2 -
                   (cannon["cannon-width-top"] / 2) * Math.random();
-              } else if (cannon["type"] === "AutoBulletCannon") {
-                var xxx = cannon["cannon-width"] - bullet_size_l / 2;
-                var yyy = cannon["cannon-height"] - bullet_size_l / 2;
-                var angle_ = angle + cannon["offset-angle"];
               } else if (cannon["type"] === "rocketer") {
                 var xxx = cannon["cannon-width-bottom"] + bullet_size_l / 2;
                 var yyy =
@@ -2761,7 +2782,8 @@
 
                   if (
                     cannon["type"] === "basicCannon" ||
-                    cannon["type"] === "trap"
+                    cannon["type"] === "trap" ||
+                    cannon["type"] === "AutoBulletCannon"
                   ) {
                     var xxx = cannon["cannon-width"] - bullet_size_l / 2;
                     var yyy = cannon["cannon-height"] - cannon["cannon-height"];
@@ -2784,10 +2806,6 @@
                       0
                     );
                     vertices = rawvertices;
-                  } else if (cannon["type"] === "AutoBulletCannon") {
-                    var xxx = cannon["cannon-width"] - bullet_size_l * 1.5;
-                    var yyy = cannon["cannon-height"] - bullet_size_l * 2;
-                    var angle_ = angle + cannon["offset-angle"];
                   } else if (cannon["type"] === "rocketer") {
                     var xxx = cannon["cannon-width-bottom"] + bullet_size_l * 2;
                     var yyy =
@@ -3580,7 +3598,7 @@
         if (canmove) {
           if (keysPressed["]"]) {
             players[playerId].score += 50;
-            score = players[playerId].score;
+            score += 50;
             levelHANDLER();
           } else if (
             (keysPressed["ArrowLeft"] && keysPressed["ArrowUp"]) ||
@@ -3719,7 +3737,9 @@
                 canvasheight: canvas.height,
               });
             }
-            autoRotating = !autoRotating;
+            if (!lockautoRotating) {
+              autoRotating = !autoRotating;
+            }
             waitpls();
           }
         }
@@ -3731,7 +3751,7 @@
 
       let tankdatacannon = tankdata["cannons"];
 
-      let FOVplayerz = playerSize * FOV;
+      let FOVplayerz = playerSize;
 
       if (tankdata.decor) {
         tankdata.decor.forEach((decor_) => {
@@ -3892,27 +3912,17 @@
             cannonWidth[i];
           let reH = cannon_widthFOV * (1 - trapR);
           let basey = -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
-          ctx.fillRect(
-            basex * playerSize * FOV,
-            basey * playerSize * FOV,
-            cannon_widthFOV - reH,
-            cannon_heightFOV
-          );
+          ctx.fillRect(basex, basey, cannon_widthFOV - reH, cannon_heightFOV);
 
           ctx.strokeStyle = "lightgrey";
           ctx.lineWidth = 3; // Set border width
-          ctx.strokeRect(
-            basex * playerSize * FOV,
-            basey * playerSize * FOV,
-            cannon_widthFOV - reH,
-            cannon_heightFOV
-          );
+          ctx.strokeRect(basex, basey, cannon_widthFOV - reH, cannon_heightFOV);
 
           var cannonHeight = reH;
           var cannonWidth_top = cannon_heightFOV * 1.4;
           var cannonWidth_bottom = cannon_heightFOV;
 
-          basex = basex + (cannon_widthFOV - trapR);
+          basex += cannon_widthFOV - trapR;
 
           var canwB2 = cannonWidth_bottom / 2;
           var canwH2 = cannonWidth_top / 2;
@@ -3937,8 +3947,8 @@
           ctx.stroke(); // Draw the border
           ctx.restore();
           if (tankdatacannondata["type"] === "paver") {
-            cannon_widthFOV /= 2;
-            cannon_heightFOV /= 2;
+            cannon_widthFOV /= 1.5;
+            cannon_heightFOV /= 1.5;
             ctx.save();
             ctx.translate(canW / 2, canH / 2);
 
@@ -3979,12 +3989,8 @@
           if (tankdatacannondata["offSet-x-multpliyer"]) {
             offSet_x *= -1;
           }
-          let angle0 = getCannonAngle();
-          var [x, y] = rotatePointAroundPlayer(
-            offSet_x,
-            0,
-            angle0 * (180 / Math.PI)
-          );
+
+          var [x, y] = rotatePointAroundPlayer(offSet_x, 0, swivelAngle);
 
           ctx.translate(canW / 2 + x, y + canH / 2);
 
@@ -4510,17 +4516,15 @@
 
           let tankdata = tankmeta[player.__type__];
 
-          console.log(tankdata);
-
           let tankdatacannon = tankdata["cannons"];
 
           let playerX = player.x;
           let playerY = player.y;
 
           var sameTeam = !isFake
-            ? players[player.id].team === players[playerId].team &&
-              players[player.id].team !== null &&
-              players[playerId].team !== null
+            ? players[player.id]?.team === players[playerId]?.team &&
+              players[player.id]?.team !== null &&
+              players[playerId]?.team !== null
             : true;
 
           let FOVplayerz = player.size;
@@ -4595,8 +4599,6 @@
           ctx.fill();
 
           ctx.closePath();
-
-          console.log(Object.keys(tankdatacannon).length);
 
           for (let i = 0; i < Object.keys(tankdatacannon).length; i++) {
             ctx.fillStyle = "#b3b3b3";
@@ -4747,8 +4749,8 @@
               ctx.stroke(); // Draw the border
               ctx.restore();
               if (tankdatacannondata["type"] === "paver") {
-                cannon_widthFOV /= 2;
-                cannon_heightFOV /= 2;
+                cannon_widthFOV /= 1.5;
+                cannon_heightFOV /= 1.5;
                 ctx.save();
                 ctx.translate(playerX - cavansX, playerY - cavansY);
                 let angle = player.cannon_angle;
@@ -4880,6 +4882,69 @@
               );
 
               ctx.restore();
+            } else if (tankdatacannondata["type"] === "SwivelAutoCannon") {
+              ctx.save();
+              let cannonangle;
+              let cannonWidth_;
+              autocannons.forEach((cannonA) => {
+                if (cannonA.playerid === player.id && cannonA.autoindex === i) {
+                  cannonangle = cannonA.angle;
+                  cannonWidth_ = cannonA.cannonWidth;
+                }
+              });
+              if (isFake) {
+                cannonangle = i === 1 ? 0 : pi;
+                cannonWidth_ = 0;
+              }
+              var offSet_x = tankdatacannondata["offSet-x"];
+              if (tankdatacannondata["offSet-x"] === "playerX") {
+                offSet_x = playerSize * playerBaseSize;
+              }
+              if (tankdatacannondata["offSet-x-multpliyer"]) {
+                offSet_x *= -1;
+              }
+              var [x, y] = rotatePointAroundPlayer(
+                offSet_x,
+                0,
+                swivelAngle * (180 / Math.PI)
+              );
+
+              ctx.translate(playerX - cavansX + x, playerY - cavansY + y);
+
+              let angle = cannonangle;
+
+              let angle_offset = tankdatacannondata["offset-angle"];
+              ctx.rotate(angle + angle_offset);
+              // Draw the square
+
+              let basex = -cannon_widthFOV / 2 + cannon_heightFOV + 0;
+              let basey =
+                -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
+
+              ctx.beginPath();
+              ctx.fillRect(
+                basex - 5,
+                basey - 2.5,
+                cannon_widthFOV + 10 - cannonWidth_,
+                cannon_heightFOV + 5
+              );
+
+              ctx.strokeStyle = "lightgrey"; // Set border color
+              ctx.lineWidth = 3; // Set border width
+              ctx.strokeRect(
+                basex - 5,
+                basey - 2.5,
+                cannon_widthFOV + 10 - cannonWidth_,
+                cannon_heightFOV + 5
+              ); // Draw the border
+              // Restore the previous transformation matrix
+              ctx.rotate(-(angle + angle_offset));
+              ctx.arc(0, 0, cannon_widthFOV / 2, 0, 2 * Math.PI, false);
+
+              ctx.fill();
+              ctx.stroke();
+              ctx.closePath();
+              ctx.restore();
             }
           }
 
@@ -4959,33 +5024,34 @@
               ctx.restore();
             });
           }
-          ctx.beginPath();
-          ctx.fillStyle = "black";
-          ctx.roundRect(
-            playerX - cavansX - 50 * FOV,
-            playerY - cavansY + 55 * FOV,
-            90 * FOV,
-            10 * player.size * FOV,
-            5 * player.size
-          );
-          ctx.fill();
-          ctx.closePath();
+          if (!isFake) {
+            ctx.beginPath();
+            ctx.fillStyle = "black";
+            ctx.roundRect(
+              playerX - cavansX - 50,
+              playerY - cavansY + 55,
+              90,
+              10 * player.size,
+              5 * player.size
+            );
+            ctx.fill();
+            ctx.closePath();
 
-          // Draw health bar
-          ctx.beginPath();
-          const healthWidth =
-            (player.health / player.maxhealth) * 90 * player.size * FOV;
-          ctx.fillStyle = "green";
-          ctx.roundRect(
-            playerX - cavansX - 50 * FOV,
-            playerY - cavansY + 55 * FOV,
-            healthWidth,
-            10 * player.size * FOV,
-            5 * player.size
-          );
-          ctx.fill();
-          ctx.closePath();
-          // cannons on top of player
+            ctx.beginPath();
+            const healthWidth =
+              (player.health / player.maxhealth) * 90 * player.size;
+            ctx.fillStyle = "green";
+            ctx.roundRect(
+              playerX - cavansX - 50,
+              playerY - cavansY + 55,
+              healthWidth,
+              10 * player.size,
+              5 * player.size
+            );
+            ctx.fill();
+            ctx.closePath();
+          }
+
           for (let i = 0; i < Object.keys(tankdatacannon).length; i++) {
             ctx.fillStyle = "#b3b3b3";
 
@@ -5049,39 +5115,75 @@
               ctx.stroke();
               ctx.closePath();
               ctx.restore();
-            } else if (tankdatacannondata["type"] === "SwivelAutoCannon") {
+            }
+          }
+
+          ctx.strokeStyle = "black";
+          ctx.fillStyle = "white";
+          ctx.textAlign = "center";
+          ctx.font = "bold 20px Nunito";
+          if (!isFake) {
+            ctx.strokeText(
+              player.score,
+              playerX - cavansX,
+              playerY - cavansY - 55
+            );
+
+            ctx.fillText(
+              player.score,
+              playerX - cavansX,
+              playerY - cavansY - 55
+            );
+          }
+
+          if (canSeeNames) {
+            ctx.strokeText(
+              player.username,
+              playerX - cavansX,
+              playerY - cavansY - 75
+            );
+            ctx.fillText(
+              player.username,
+              playerX - cavansX,
+              playerY - cavansY - 75
+            );
+          }
+
+          for (let i = 0; i < Object.keys(tankdatacannon).length; i++) {
+            ctx.fillStyle = "#b3b3b3";
+
+            let tankdatacannondata = tankdatacannon[i];
+            let cannon_widthFOV =
+              tankdatacannondata["cannon-width"] * FOVplayerz;
+            let cannon_heightFOV =
+              tankdatacannondata["cannon-height"] * FOVplayerz;
+            var cannonangle;
+            var cannonWidth_;
+            autocannons.forEach((cannonA) => {
+              if (cannonA.playerid === playerId__ && cannonA.autoindex === i) {
+                cannonangle = cannonA.angle;
+                cannonWidth_ = cannonA.cannonWidth;
+              }
+            });
+            if (isFake) {
+              cannonangle = 0;
+              cannonWidth_ = 0;
+            }
+            if (tankdatacannondata["type"] === "autoCannon") {
               ctx.save();
-              let cannonangle;
-              let cannonWidth_;
-              autocannons.forEach((cannonA) => {
-                if (cannonA.playerid === player.id && cannonA.autoindex === i) {
-                  cannonangle = cannonA.angle;
-                  cannonWidth_ = cannonA.cannonWidth;
-                }
-              });
-              var offSet_x = tankdatacannondata["offSet-x"];
-              if (tankdatacannondata["offSet-x"] === "playerX") {
-                offSet_x = playerSize * playerBaseSize;
-              }
-              if (tankdatacannondata["offSet-x-multpliyer"]) {
-                offSet_x *= -1;
-              }
-              let angle0 = getCannonAngle();
-              var [x, y] = rotatePointAroundPlayer(
-                offSet_x,
-                0,
-                angle0 * (180 / Math.PI)
-              );
-
               ctx.translate(playerX - cavansX, playerY - cavansY);
-
               let angle = cannonangle;
 
               let angle_offset = tankdatacannondata["offset-angle"];
               ctx.rotate(angle + angle_offset);
               // Draw the square
 
-              let basex = -cannon_widthFOV / 2 + cannon_heightFOV + 0;
+              var offSet_x = tankdatacannondata["offSet-x"];
+              if (tankdatacannondata["offSet-x"] === "playerX") {
+                offSet_x = player.size * 2;
+              }
+
+              let basex = -cannon_widthFOV / 2 + cannon_heightFOV + offSet_x;
               let basey =
                 -cannon_heightFOV / 2 + tankdatacannondata["offSet-y"];
 
@@ -5111,33 +5213,6 @@
               ctx.restore();
             }
           }
-
-          ctx.strokeStyle = "black";
-          ctx.fillStyle = "white";
-          ctx.textAlign = "center";
-          ctx.font = "bold 20px Nunito";
-          ctx.strokeText(
-            player.score,
-            playerX - cavansX,
-            playerY - cavansY - 55
-          );
-          ctx.fillText(player.score, playerX - cavansX, playerY - cavansY - 55);
-
-          if (canSeeNames) {
-            ctx.strokeText(
-              player.username,
-              playerX - cavansX,
-              playerY - cavansY - 75
-            );
-            ctx.fillText(
-              player.username,
-              playerX - cavansX,
-              playerY - cavansY - 75
-            );
-          }
-
-          // Draw border
-          ctx.lineWidth = 1;
         }
       }
     }
@@ -5154,6 +5229,31 @@
       ctx.roundRect(-45, 35, healthWidth, 10, 5);
       ctx.fill();
       ctx.closePath();
+    }
+
+    function getEquilateralTriangle(cx, cy, s) {
+      const h = (Math.sqrt(3) / 2) * s;
+
+      // Top vertex
+      const A = { x: cx, y: cy - (2 / 3) * h };
+
+      // Bottom-left
+      const B = { x: cx - s / 2, y: cy + (1 / 3) * h };
+
+      // Bottom-right
+      const C = { x: cx + s / 2, y: cy + (1 / 3) * h };
+
+      return [A, B, C];
+    }
+
+    function controlFrom(p1, p2, strength) {
+      const dx = p2.y - p1.y;
+      const dy = p1.x - p2.x;
+      const len = Math.hypot(dx, dy);
+      return {
+        x: (p1.x + p2.x) / 2 + (dx / len) * strength,
+        y: (p1.y + p2.y) / 2 + (dy / len) * strength,
+      };
     }
 
     function draw(timestamp) {
@@ -5605,9 +5705,9 @@
           ctx.beginPath();
           ctx.moveTo(road[2].road.x - cavansX, road[2].road.y - cavansY);
           let sameTeam =
-            players[road[2].road.id].team === players[playerId].team &&
-            players[road[2].road.id].team !== null &&
-            players[playerId].team !== null;
+            players[road[2].road.id]?.team === players[playerId]?.team &&
+            players[road[2].road.id]?.team !== null &&
+            players[playerId]?.team !== null;
           if (road[2].road.id === playerId || sameTeam) {
             ctx.fillStyle = "#3999f9";
             ctx.strokeStyle = "#5f79f5";
@@ -5623,6 +5723,8 @@
           ctx.globalAlpha = 1;
         }
       });
+
+      ctx.lineWidth = 5;
 
       bullets.forEach((bullet) => {
         var realstartx = bullet.xstart - (bullet.xstart - cavansX);
@@ -5746,10 +5848,13 @@
             );
             ctx.restore();
           } else if (bullet.type === "trap") {
+            ctx.save();
+            ctx.translate(realx - cavansX, realy - cavansY);
+            ctx.rotate(bullet.angle);
             var sameTeam =
-              players[bullet.id].team === players[playerId].team &&
-              players[bullet.id].team !== null &&
-              players[playerId].team !== null;
+              players[bullet.id]?.team === players[playerId]?.team &&
+              players[bullet.id]?.team !== null &&
+              players[playerId]?.team !== null;
             if (bullet.id === playerId || sameTeam) {
               ctx.fillStyle = "blue";
               ctx.strokeStyle = "darkblue";
@@ -5757,59 +5862,37 @@
               ctx.fillStyle = "red";
               ctx.strokeStyle = "darkred";
             }
-            let vertices = bullet.vertices;
 
-            let x1 =
-              vertices[2].x - (bullet.xstart - (bullet.xstart - cavansX));
-            let y1 =
-              vertices[2].y - (bullet.ystart - (bullet.ystart - cavansY)); // Top point
-            let x2 =
-              vertices[1].x - (bullet.xstart - (bullet.xstart - cavansX));
-            let y2 =
-              vertices[1].y - (bullet.ystart - (bullet.ystart - cavansY)); // Bottom-left point
-            let x3 =
-              vertices[0].x - (bullet.xstart - (bullet.xstart - cavansX));
-            let y3 =
-              vertices[0].y - (bullet.ystart - (bullet.ystart - cavansY)); // Bottom-right point
+            var [A, B, C] = getEquilateralTriangle(0, 0, bullet.size * 3);
 
-            const controlOffset = 5;
+            var curve = -5;
 
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-
-            const controlPoint1 = { x: (x1 + x3) / 2, y: (y1 + y3) / 2 };
-
-            // Control point for curve from bottom-left to bottom-right
-            const controlPoint2 = {
-              x: (x2 + x1) / 2,
-              y: (y2 + y3) / 2 + controlOffset,
-            };
-
-            // Control point for curve from bottom-right to top
-            const controlPoint3 = {
-              x: (x1 + x3) / 2 + controlOffset,
-              y: (y1 + y3) / 2,
-            };
+            const ctrlAB = controlFrom(A, B, -curve);
+            const ctrlBC = controlFrom(B, C, -curve);
+            const ctrlCA = controlFrom(C, A, -curve);
 
             // Draw the curved edge from top to bottom-left
 
-            ctx.quadraticCurveTo(controlPoint1.x, controlPoint1.y, x2, y2);
+            ctx.quadraticCurveTo(ctrlAB.x, ctrlAB.y, B.x, B.y);
 
             // Draw the curved edge from bottom-left to bottom-right
-            ctx.quadraticCurveTo(controlPoint2.x, controlPoint2.y, x3, y3);
+            ctx.quadraticCurveTo(ctrlBC.x, ctrlBC.y, C.x, C.y);
 
             // Draw the curved edge from bottom-right to top
-            ctx.quadraticCurveTo(controlPoint3.x, controlPoint3.y, x1, y1);
+            ctx.quadraticCurveTo(ctrlCA.x, ctrlCA.y, A.x, A.y);
+
+            ctx.quadraticCurveTo(ctrlAB.x, ctrlAB.y, B.x, B.y);
 
             ctx.fill();
-            ctx.lineWidth = 5;
+
             ctx.stroke();
             ctx.closePath();
+            ctx.restore();
           } else if (bullet.type === "directer") {
             var sameTeam =
-              players[bullet.id].team === players[playerId].team &&
-              players[bullet.id].team !== null &&
-              players[playerId].team !== null;
+              players[bullet.id]?.team === players[playerId]?.team &&
+              players[bullet.id]?.team !== null &&
+              players[playerId]?.team !== null;
             if (bullet.id === playerId || sameTeam) {
               ctx.fillStyle = "blue";
               ctx.strokeStyle = "darkblue";
@@ -5820,7 +5903,7 @@
             ctx.save();
             ctx.translate(realx - cavansX, realy - cavansY);
             ctx.rotate(bullet.angle + 90 * (pi / 180));
-            let realitemsize = bullet.size * 3 * FOV;
+            let realitemsize = bullet.size * 3;
             const h = realitemsize * sqrt23;
 
             ctx.beginPath();
@@ -5833,9 +5916,9 @@
             ctx.stroke();
           } else if (bullet.type === "roadMap") {
             var sameTeam =
-              players[bullet.id].team === players[playerId].team &&
-              players[bullet.id].team !== null &&
-              players[playerId].team !== null;
+              players[bullet.id]?.team === players[playerId]?.team &&
+              players[bullet.id]?.team !== null &&
+              players[playerId]?.team !== null;
             if (bullet.id === playerId || sameTeam) {
               ctx.fillStyle = "blue";
               ctx.strokeStyle = "darkblue";
@@ -5843,12 +5926,12 @@
               ctx.fillStyle = "red";
               ctx.strokeStyle = "darkred";
             }
-            ctx.save();
-            ctx.translate(realx - cavansX, realy - cavansY);
             for (let i = 0; i < 2; i++) {
-              ctx.rotate(bullet.angle + i * 180 * (pi / 180));
+              ctx.save();
+              ctx.translate(realx - cavansX, realy - cavansY);
+              ctx.rotate(bullet.angle + i * pi);
               //ctx.rotate(i * 90 * pi / 180)
-              let realitemsize = bullet.size * 3 * FOV;
+              let realitemsize = bullet.size * 3;
               const h = realitemsize * sqrt23;
 
               ctx.beginPath();
@@ -5858,7 +5941,9 @@
               ctx.closePath();
 
               ctx.fill();
+
               ctx.stroke();
+              ctx.restore();
             }
           } else if (bullet.type === "FreeSwarm") {
             ctx.fillStyle = "#ff7df8";
@@ -5877,13 +5962,13 @@
             ctx.closePath();
 
             ctx.fill();
-            ctx.lineWidth = 5;
+
             ctx.stroke();
           } else if (bullet.type === "AutoBullet") {
             var sameTeam =
-              players[bullet.id].team === players[playerId].team &&
-              players[bullet.id].team !== null &&
-              players[playerId].team !== null;
+              players[bullet.id]?.team === players[playerId]?.team &&
+              players[bullet.id]?.team !== null &&
+              players[playerId]?.team !== null;
             if (bullet.id === playerId || sameTeam) {
               ctx.fillStyle = "blue";
               ctx.strokeStyle = "darkblue";
@@ -5901,7 +5986,7 @@
               2 * Math.PI
             );
             ctx.fill();
-            ctx.lineWidth = 5;
+
             ctx.stroke();
             ctx.closePath();
             let autoCAN_ = null;
@@ -5929,21 +6014,20 @@
               cannon_heightFOV + 10
             );
 
-            ctx.strokeStyle = "lightgrey"; // Set border color
-            ctx.lineWidth = 3; // Set border width
+            ctx.strokeStyle = "lightgrey";
+            ctx.lineWidth = 3;
             ctx.strokeRect(
               basex,
               basey - 5,
               cannon_widthFOV + 15,
               cannon_heightFOV + 10
-            ); // Draw the border
-            // Restore the previous transformation matrix
+            );
             ctx.rotate(-autoCAN_.angle);
             ctx.closePath();
             ctx.beginPath();
             ctx.arc(0, 0, cannon_widthFOV / 2 + 7, 0, 2 * Math.PI, false);
             ctx.fill();
-            ctx.lineWidth = 5;
+
             ctx.stroke();
             ctx.closePath();
           } else if (bullet.type === "rocketer") {
@@ -5965,28 +6049,26 @@
             var canwB2 = cannonWidth_bottom / 2;
             var canwH2 = cannonWidth_top / 2;
             ctx.beginPath();
-            ctx.moveTo(0 - cannonWidth_top, 0 - canwB2); // Move to the top-left corner
-            ctx.lineTo(0 - cannonWidth_top, 0 + canwB2); // Draw to the bottom-left corner
+            ctx.moveTo(0 - cannonWidth_top, 0 - canwB2);
+            ctx.lineTo(0 - cannonWidth_top, 0 + canwB2);
             ctx.lineTo(0, 0 + canwH2);
             ctx.lineTo(0, 0 - canwH2);
-            ctx.closePath(); // Close the path
+            ctx.closePath();
             ctx.fill();
 
-            // Add a border to the cannon
-            ctx.strokeStyle = "lightgrey"; // Set border color
-            ctx.lineWidth = 3; // Set border width
-            ctx.beginPath();
-            ctx.moveTo(0 - cannonWidth_top, 0 - canwB2); // Move to the top-left corner
-            ctx.lineTo(0 - cannonWidth_top, 0 + canwB2); // Draw to the bottom-left corner
+            ctx.strokeStyle = "lightgrey";
+            ctx.lineWidth = 3;
+            ctx.moveTo(0 - cannonWidth_top, 0 - canwB2);
+            ctx.lineTo(0 - cannonWidth_top, 0 + canwB2);
             ctx.lineTo(0, 0 + canwH2);
             ctx.lineTo(0, 0 - canwH2);
-            ctx.closePath(); // Close the path
+            ctx.closePath();
             ctx.stroke();
             ctx.restore();
             var sameTeam =
-              players[bullet.id].team === players[playerId].team &&
-              players[bullet.id].team !== null &&
-              players[playerId].team !== null;
+              players[bullet.id]?.team === players[playerId]?.team &&
+              players[bullet.id]?.team !== null &&
+              players[playerId]?.team !== null;
             if (bullet.id === playerId || sameTeam) {
               ctx.fillStyle = "blue";
               ctx.strokeStyle = "darkblue";
@@ -6005,7 +6087,7 @@
               2 * Math.PI
             );
             ctx.fill();
-            ctx.lineWidth = 5;
+
             ctx.stroke();
             ctx.closePath();
           }
@@ -6043,7 +6125,6 @@
         cavansX * scaleFactor
       }px)`;
 
-      // Call the function to draw the level bar
       drawRoundedLevelBar(
         ctx,
         canvas.width / 2 - barWidth / 2,
@@ -6176,7 +6257,7 @@
           try {
             ctx.drawImage(
               badgelevels[entre.badge],
-              canvas.width - (40 + 205 * upscaleX) * upscaleX,
+              canvas.width - (40 + 205 * upscaleX),
               52 + i * 30 * upscaleY,
               button40,
               (40 * upscaleY) / 1.8
@@ -6237,13 +6318,12 @@
     }
   }
 
-  async function loadGearData() {
-    var gearCount = await getGearData();
+  async function loadGearData(data) {
+    var gearCount = data;
     document.getElementById("gearCount").innerText = gearCount.gears;
     document.getElementById("levelProgress").value = gearCount.levelBoost
       ? gearCount.levelBoost
       : 0;
-    console.log(gearCount);
     if (gearCount.gears >= 100) {
       document.getElementById("booster").addEventListener("click", () => {
         document.getElementById("confermationScreen2").style.display = "flex";
@@ -6251,13 +6331,16 @@
       });
     } else {
       document.getElementById("booster").style.filter = "brightness(0.5)";
-      document.getElementById("booster").title = "You need at least 100 gears to buy a boost";
+      document.getElementById("booster").title =
+        "You need at least 100 gears to buy a boost";
     }
   }
   try {
-    loadGearData();
-  } catch {
-    console.log("e");
+    (async function () {
+      loadGearData(await getGearData());
+    })();
+  } catch (e) {
+    console.log(e);
   }
   document.getElementById("subfeedback").addEventListener("click", subfeedback);
 
@@ -6282,7 +6365,6 @@
       await window.CrazyGames.SDK.user.getUser().username;
   };
 
-  // add listener
   if (isCrazyGames) window.CrazyGames.SDK.user.addAuthListener(listener);
 
   async function subfeedback() {
@@ -6343,7 +6425,7 @@
   async function buildLeaderBoard() {
     var leaderboard = await getLeaderBoardData();
     var leaderBoard = document.getElementById("leaderBoard");
-    leaderBoard.innerHTML = "";
+    leaderBoard.innerHTML = "<h2>Leaderboard</h2>";
     leaderboard.leader_board.forEach((leader) => {
       var holderDiv = document.createElement("div");
       var holderName = document.createElement("p");
@@ -6370,8 +6452,6 @@
   document.getElementById("buyNo").addEventListener("click", () => {
     document.getElementById("confermationScreen2").style.display = "none";
   });
-
-
 
   async function AData() {
     const url =
@@ -6441,9 +6521,9 @@
         }
       })
     ).then(() => {
-      if (false) {
+      if (!passed) {
         window.location.href =
-          window.location.href !== "http://127.0.0.1:5501/public/index.html"
+          window.location.href === "http://127.0.0.1:5501/public/index.html"
             ? "/public/server-down.html"
             : "/server-down.html";
       }
@@ -6529,7 +6609,7 @@
           </svg>
         `;
         const fillCircle = document.getElementById("fillcircle");
-        const circumference = 45 * 2 * Math.PI; // Calculate the circumference of the circle
+        const circumference = 45 * 2 * Math.PI;
         fillCircle.style.setProperty("stroke-dasharray", `${circumference}`);
         fillCircle.style.setProperty("stroke-dashoffset", strokeDashoffset);
         imageForDiv.style.opacity = "0.1";
@@ -6666,23 +6746,22 @@
 
     profileCtx.fillStyle = "#b3b3b3";
     profileCtx.save();
-    // Translate to the center of the square
+
     profileCtx.translate(playerCanvas.width / 2, playerCanvas.height / 2);
 
     profileCtx.rotate(pointerAngle);
     let cannon_heightFOV = 30;
     let cannon_widthFOV = 120;
-    // Draw the square
+
     let basex = -cannon_widthFOV / 2 + cannon_heightFOV;
 
     let basey = -cannon_heightFOV / 2;
 
     profileCtx.fillRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
-    // Add a border to the cannon
-    profileCtx.strokeStyle = "lightgrey"; // Set border color
-    profileCtx.lineWidth = 3; // Set border width
-    profileCtx.strokeRect(basex, basey, cannon_widthFOV, cannon_heightFOV); // Draw the border
-    // Restore the previous transformation matrix
+
+    profileCtx.strokeStyle = "lightgrey";
+    profileCtx.lineWidth = 3;
+    profileCtx.strokeRect(basex, basey, cannon_widthFOV, cannon_heightFOV);
     profileCtx.restore();
     profileCtx.beginPath();
     profileCtx.arc(
@@ -6759,8 +6838,6 @@
     document.getElementById("darkcrazy").style.display = "block";
   }
 
-  // set theme on button press
-
   requestAnimationFrame(createProfile);
 
   const getProfilePointer = (evt) => {
@@ -6777,20 +6854,17 @@
       ? `url(${window.location.origin}/public/assets/cropped/hexbackground.webp)`
       : `url(${window.location.origin}/assets/cropped/hexbackground.webp)`;
 
-  var skinGrid = document.getElementById("skins-grid");
-
   const skinsTabCloser = () => {
-    document.getElementById("skinCon").style.display = "none";
+    document.getElementById("skinCon").style.visibility = "hidden";
     skinShown = false;
   };
-  document.getElementById("close").addEventListener("click", skinsTabCloser);
 
   var skin = "0.webp";
   var skinID = 0;
   var selected_ele = {};
 
   document.getElementById("skinsButton").addEventListener("click", () => {
-    document.getElementById("skinCon").style.display = "grid";
+    document.getElementById("skinCon").style.visibility = "visible";
   });
 
   async function getSkinData() {
@@ -6816,7 +6890,203 @@
       console.error(error.message);
     }
   }
-  (async function () {
+
+  var skinCounts_ = { basic: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 };
+
+  async function buySkin(skinLevel) {
+    const url =
+      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+        ? "https://websocketpointer.duckdns.org/skinpurchase"
+        : "http://localhost:4500/skinpurchase";
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: getCookie("userId"),
+          skinLevel: skinLevel,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  (async function c(hasRestart) {
+    document.getElementById("skinCon").innerHTML = `<div
+            class="scroll-holder"
+          >
+            <div class="high-height">
+              <div class="h-40-30">
+                <div class="spiner-con">
+                  <div class="spiner">
+                    <div class="spinerRotater" id="basicSpinner"></div>
+                    <img src="./spiners/2.webp" class="spinerOverlay">
+                  </div>
+                  <div class="leverHolder">
+                    <div class="leverInnerHolder">
+                      <div class="lever" id="basicSpinnerBuyLever"></div>  
+                      <div class="disc"></div>
+                      <div class="leverbase" id="basicSpinnerBuy">
+                        Spin!
+                      </div> 
+                    </div>
+                  </div>
+                </div>
+                <div class="spiner-con">
+                  <div class="spiner" >
+                    <div class="spinerRotater" id="uncommonSpinner"></div>
+                    <img src="./spiners/4.webp" class="spinerOverlay">
+                  </div>
+                  <div class="leverHolder">
+                    <div class="leverInnerHolder">
+                      <div class="lever" id="uncommonSpinnerBuyLever"></div>  
+                      <div class="disc"></div>
+                      <div class="leverbase" id="uncommonSpinnerBuy">
+                        Spin!
+                      </div> 
+                    </div>
+                  </div>
+                </div>
+                <div class="spiner-con">
+                  <div class="spiner">
+                    <div class="spinerRotater" id="rareSpinner"></div>
+                    <img src="./spiners/6.webp" class="spinerOverlay">
+                  </div>
+                  <div class="leverHolder">
+                    <div class="leverInnerHolder">
+                      <div class="lever" id="rareSpinnerBuyLever"></div>  
+                      <div class="disc"></div>
+                      <div class="leverbase" id="rareSpinnerBuy">
+                        Spin!
+                      </div> 
+                    </div>
+                  </div>
+                </div>
+                <div class="spiner-con">
+                  <div class="spiner">
+                    <div class="spinerRotater" id="epicSpinner"></div>
+                    <img src="./spiners/8.webp" class="spinerOverlay">
+                  </div>
+                  <div class="leverHolder">
+                    <div class="leverInnerHolder">
+                      <div class="lever" id="epicSpinnerBuyLever"></div>  
+                      <div class="disc"></div>
+                      <div class="leverbase" id="epicSpinnerBuy">
+                        Spin!
+                      </div> 
+                    </div>
+                  </div>
+                </div>
+                <div class="spiner-con">
+                  <div class="spiner">
+                    <div class="spinerRotater" id="legendarySpinner"></div>
+                    <img src="./spiners/10.webp" class="spinerOverlay">
+                  </div>
+                  <div class="leverHolder">
+                    <div class="leverInnerHolder">
+                      <div class="lever" id="legendarySpinnerBuyLever"></div>  
+                      <div class="disc"></div>
+                      <div class="leverbase" id="legendarySpinnerBuy">
+                        Spin!
+                      </div> 
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button class="x-out" id="close" title="close button">X</button>
+              <div class="skins-grid" id="skins-grid">
+                
+              </div>
+            </div>
+          </div>`;
+    var skinGrid = document.getElementById("skins-grid");
+    var basicSpinner_ = document.getElementById("basicSpinner");
+    var uncommonSpinner_ = document.getElementById("uncommonSpinner");
+    var rareSpinner_ = document.getElementById("rareSpinner");
+    var epicSpinner_ = document.getElementById("epicSpinner");
+    var legendarySpinner_ = document.getElementById("legendarySpinner");
+    var basicSpinner = document.getElementById("basicSpinnerBuy");
+    var uncommonSpinner = document.getElementById("uncommonSpinnerBuy");
+    var rareSpinner = document.getElementById("rareSpinnerBuy");
+    var epicSpinner = document.getElementById("epicSpinnerBuy");
+    var legendarySpinner = document.getElementById("legendarySpinnerBuy");
+    var skinCounts = { basic: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 };
+    basicSpinner.addEventListener("click", () => {
+      setTimeout(() => {
+        buyer("basic");
+        c(true);
+        (async function () {
+          loadGearData(await getGearData());
+        })();
+      }, 2000);
+      var basicSpinner__ = document.getElementById("basicSpinnerBuyLever");
+      console.log(basicSpinner__);
+      basicSpinner__.style.animation =
+        "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+      console.log(basicSpinner__.style.animation);
+    });
+    uncommonSpinner.addEventListener("click", () => {
+      setTimeout(() => {
+        buyer("uncommon");
+        c(true);
+        (async function () {
+          loadGearData(await getGearData());
+        })();
+      }, 2000);
+      var uncommonSpinner__ = document.getElementById(
+        "uncommonSpinnerBuyLever"
+      );
+      uncommonSpinner__.style.animation =
+        "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+    });
+    rareSpinner.addEventListener("click", () => {
+      setTimeout(() => {
+        buyer("rare");
+        c(true);
+        (async function () {
+          loadGearData(await getGearData());
+        })();
+      }, 2000);
+      var rareSpinner__ = document.getElementById("rareSpinnerBuyLever");
+      rareSpinner__.style.animation =
+        "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+    });
+    epicSpinner.addEventListener("click", () => {
+      setTimeout(() => {
+        buyer("epic");
+        c(true);
+        (async function () {
+          loadGearData(await getGearData());
+        })();
+      }, 2000);
+      var epicSpinner__ = document.getElementById("epicSpinnerBuyLever");
+      epicSpinner__.style.animation =
+        "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+    });
+    legendarySpinner.addEventListener("click", () => {
+      setTimeout(() => {
+        buyer("legendary");
+        c(true);
+        (async function () {
+          loadGearData(await getGearData());
+        })();
+      }, 2000);
+      var legendarySpinner__ = document.getElementById(
+        "legendarySpinnerBuyLever"
+      );
+      legendarySpinner__.style.animation =
+        "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+    });
+    document.getElementById("close").addEventListener("click", skinsTabCloser);
     var reqdata = await getSkinData();
     var skinData = reqdata.skins;
     var skinDataTeirs = reqdata.skindata;
@@ -6841,7 +7111,7 @@
         });
         document
           .getElementById("skins-grid")
-          .children[i + 1].classList.add("selected-skin");
+          .children[i].classList.add("selected-skin");
         selected_ele = skinImg;
       };
       if (skinData.includes(`${i}.webp`)) {
@@ -6853,21 +7123,204 @@
             ? `/public/assets/locked.svg`
             : `/assets/locked.svg`;
         lockedImg.classList.add("lock-img");
+
+        var spinnerImg = document.createElement("img");
+        spinnerImg.classList.add("_10per_");
+        spinnerImg.classList.add("spin-img");
+        spinnerImg.src = `./skins/${i}.webp`;
+        spinnerImg.id = `spin-img${i}`;
+        switch (skinDataTeirs[`${i}.webp`]) {
+          case "basic": {
+            basicSpinner_.appendChild(spinnerImg);
+            skinCounts.basic++;
+            break;
+          }
+          case "uncommon": {
+            uncommonSpinner_.appendChild(spinnerImg);
+            skinCounts.uncommon++;
+            break;
+          }
+          case "rare": {
+            rareSpinner_.appendChild(spinnerImg);
+            skinCounts.rare++;
+            break;
+          }
+          case "epic": {
+            epicSpinner_.appendChild(spinnerImg);
+            skinCounts.epic++;
+            break;
+          }
+          case "legendary": {
+            legendarySpinner_.appendChild(spinnerImg);
+            skinCounts.legendary++;
+            break;
+          }
+        }
+        skinCounts_ = skinCounts;
+        var cTime = reqdata.skinCounts[skinDataTeirs[`${i}.webp`]] < 3 ? 2 : 4;
+        var transformationR =
+          reqdata.skinCounts[skinDataTeirs[`${i}.webp`]] > 1
+            ? 57.1428571429 * reqdata.skinCounts[skinDataTeirs[`${i}.webp`]]
+            : 0;
+        var vTime =
+          reqdata.skinCounts[skinDataTeirs[`${i}.webp`]] < 3 ? 1 : 0.6;
+        var execTempStyle = `
+        transform: translateZ(-5900px) rotate3d(1, 0, 0, var(--rotatorerangle));
+        animation: rotater2 ${cTime}s linear infinite;
+        animation-delay: ${-skinCounts[skinDataTeirs[`${i}.webp`]] * vTime}s;
+        transform-origin: 0% 50% -${transformationR}px; 
+        `;
+        console.log(skinCounts);
+        console.log(reqdata.skinCounts);
+        console.log(reqdata.skinCounts[skinDataTeirs[`${i}.webp`]]);
+
         skinDiv.appendChild(lockedImg);
+
+        spinnerImg.style = execTempStyle;
       }
       var skinImgFrame = document.createElement("img");
       skinImgFrame.src = `./skin-background/${skinDataTeirs[`${i}.webp`]}.webp`;
       skinImgFrame.classList.add("skin-frame");
       skinDiv.append(skinImgFrame);
     }
+    document
+      .getElementById("skinButton")
+      .removeEventListener("click", skinsTabOpener);
+    if (hasRestart) {
+      if (skinShown) {
+        for (let i = 1; i < 28; i++) {
+          var skinCounts2 = {
+            basic: 0,
+            uncommon: 0,
+            rare: 0,
+            epic: 0,
+            legendary: 0,
+          };
+          switch (skinDataTeirs[`${i}.webp`]) {
+            case "basic": {
+              skinCounts2.basic++;
+              break;
+            }
+            case "uncommon": {
+              skinCounts2.uncommon++;
+              break;
+            }
+            case "rare": {
+              skinCounts2.rare++;
+              break;
+            }
+            case "epic": {
+              skinCounts2.epic++;
+              break;
+            }
+            case "legendary": {
+              skinCounts2.legendary++;
+              break;
+            }
+          }
+        }
+      }
+      skinShown = true;
+    }
+    skinsTabOpener = () => {
+      console.log("z");
+      skinShown = !skinShown;
+      console.log(skinShown);
+      document.getElementById("skinCon").style.visibility = skinShown
+        ? "visible"
+        : "hidden";
+      if (skinShown) {
+        for (let i = 1; i < 28; i++) {
+          var skinCounts2 = {
+            basic: 0,
+            uncommon: 0,
+            rare: 0,
+            epic: 0,
+            legendary: 0,
+          };
+          switch (skinDataTeirs[`${i}.webp`]) {
+            case "basic": {
+              skinCounts2.basic++;
+              break;
+            }
+            case "uncommon": {
+              skinCounts2.uncommon++;
+              break;
+            }
+            case "rare": {
+              skinCounts2.rare++;
+              break;
+            }
+            case "epic": {
+              skinCounts2.epic++;
+              break;
+            }
+            case "legendary": {
+              skinCounts2.legendary++;
+              break;
+            }
+          }
+        }
+      }
+    };
+    document
+      .getElementById("skinButton")
+      .addEventListener("click", skinsTabOpener);
   })();
 
+  function waitForProperty(element, property, targetValue, onComplete) {
+    let currentStyle = getComputedStyle(element);
+    let currentValue = currentStyle.getPropertyValue(property);
+
+    if (currentValue === targetValue) {
+      onComplete();
+    } else {
+      requestAnimationFrame(() =>
+        waitForProperty(element, property, targetValue, onComplete)
+      );
+    }
+  }
+  var buyer = async (skinLevel) => {
+    var skinBuyerLevel = await buySkin(skinLevel);
+    if (skinBuyerLevel.successful === "success") {
+      for (let i = 1; i < 28; i++) {
+        try {
+          var spinnerImg = document.getElementById(
+            `spin-img${skinBuyerLevel.i}`
+          );
+          spinnerImg.style.animationTimingFunction =
+            "cubic-bezier(0.31, 0.25, 0.09, 0.74);";
+        } catch (e) {
+          console.log(e);
+        }
+      }
+      const element = document.getElementById(`spin-img${skinBuyerLevel.i}`);
+      const property = "--rotatorerangle";
+      const targetValue = "180deg";
+
+      waitForProperty(element, property, targetValue, () => {
+        console.log("Animation property reached target value!");
+      });
+    } else if (gearCount.purchaseSuccsefull === "noAccount") {
+      alert("purchase error; You need to play a least once to by a boost");
+    } else if (gearCount.purchaseSuccsefull === "AccountError") {
+      alert(
+        "account error; Account not found; Play to refresh your token; it may be a server error"
+      );
+    } else if (gearCount.purchaseSuccsefull === "noEnoughCoins") {
+      alert(
+        "currency error; You do not have enough Golden gears; Purchase or play to get more!"
+      );
+    }
+  };
+  var buyer = (skinLevel) => {};
+
   var skinShown = false;
-  const skinsTabOpener = () => {
+  var skinsTabOpener = () => {
     skinShown = !skinShown;
-    document.getElementById("skinCon").style.display = skinShown
-      ? "grid"
-      : "none";
+    document.getElementById("skinCon").style.visibility = skinShown
+      ? "visible"
+      : "hidden";
   };
   document
     .getElementById("skinButton")
