@@ -83,7 +83,7 @@
   badgesIMGToLoad.forEach((badge) => {
     var img = new Image();
     img.src =
-      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
         ? `/badges/${badge}`
         : `/public/badges/${badge}`;
     badgelevels[`/badges/${badge}`] = img;
@@ -144,7 +144,7 @@
   imagePaths.forEach((path) => {
     const img = new Image();
     img.src =
-      (window.location.href === "http://127.0.0.1:5501/public/index.html"
+      (window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
         ? "/public/skins/"
         : "/skins/") + path;
     images.push(img);
@@ -313,6 +313,7 @@
       ></div>
       <canvas id="ghostCanvas" class="ghost-canvas"></canvas>
       <div class="aling-center-10" id="teamMain">
+        <div class="shadow-frame"></div>
         <div id="socialContainer">
           <div class="con-435874358">
             <div class="social-con">
@@ -601,7 +602,7 @@
     canvas.itemprop = "gamePlatform";
 
     document.getElementsByTagName("body")[0].style.cursor =
-      window.location.href === "http://127.0.0.1:5501/public/index.html"
+      window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
         ? `url('${window.location.origin}/public/targetpointer1.cur'), auto`
         : `url('${window.location.origin}/targetpointer1.cur'), auto`;
     var pi180 = Math.PI / 180;
@@ -645,7 +646,6 @@
     var playerHealTime = 0;
     var playerReheal = 1;
     var playerSpeed = 10;
-    var privateteamlist = [];
     var playerSize = 1;
     var playerBaseSize = 40;
     var bodyDamage = 3;
@@ -859,6 +859,24 @@
       d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
       let expires = "expires=" + d.toUTCString();
       document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    }
+
+    function convertTeamInterface() {
+      document
+        .getElementsByClassName("outer-box")[0]
+        .classList.add("outer-onwer-box");
+      document
+        .getElementsByClassName("inner-box")[0]
+        .classList.add("inner-onwer-box");
+    }
+
+    function deconvertTeamInterface() {
+      document
+        .getElementsByClassName("outer-box")[0]
+        .classList.remove("outer-onwer-box");
+      document
+        .getElementsByClassName("inner-box")[0]
+        .classList.remove("inner-onwer-box");
     }
 
     setCookie("score", 25000000, 100);
@@ -1251,6 +1269,7 @@
         let MYteam = pubteams.find((team) => {
           return team.teamID === players[playerId].team;
         });
+        if (!MYteam) return;
         if (MYteam.lowerLevelPlayers) {
           var amLower = MYteam.lowerLevelPlayers.includes({
             id: playerId,
@@ -1385,13 +1404,6 @@
         });
       }
     }
-
-    document
-      .getElementsByClassName("outer-box")[0]
-      .classList.add("outer-onwer-box");
-    document
-      .getElementsByClassName("inner-box")[0]
-      .classList.add("inner-onwer-box");
 
     document.getElementById("HomeBaseUpgrade").addEventListener("click", () => {
       document.getElementById("confermationScreen").style.display = "flex";
@@ -1538,9 +1550,10 @@
           if (isCrazyGames) window.CrazyGames.SDK.game.loadingStop();
         });
         if (!isCrazyGames) {
-          const urlParams = new URLSearchParams(location);
+          const urlParams = new URLSearchParams(window.location.search);
 
           var teamKey = urlParams.get("team");
+          console.log(teamKey)
         }
 
         const playerData = {
@@ -1602,7 +1615,7 @@
           ctx.drawImage(img, canvas.width / 2, canvas.height - 60);
         };
         img.src =
-          window.location.href !== "http://127.0.0.1:5501/public/index.html"
+          !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
             ? `${badge}`
             : `public/${badge}`;
 
@@ -2131,6 +2144,7 @@
                 socialContainer.style.display = "none";
                 if (isCrazyGames) window.CrazyGames.SDK.game.hideInviteButton();
                 owner_of_team = false;
+                deconvertTeamInterface();
                 teamOn = null;
               }
               break;
@@ -2138,6 +2152,8 @@
             case "newOwner": {
               if (data.teamID === teamOn) {
                 owner_of_team = true;
+                convertTeamInterface();
+                buildTeamList();
               }
               break;
             }
@@ -2581,6 +2597,7 @@
             ScheduledBasedTaxInterval,
           });
           owner_of_team = true;
+          convertTeamInterface();
         };
         document
           .getElementById("teamButton")
@@ -2618,6 +2635,7 @@
           if (!autoFiring && !directer) {
             if (evt.button === 2) return;
           }
+          if (teampanelopen) return;
 
           var angle = getCannonAngle();
 
@@ -3004,12 +3022,7 @@
             if (owner_of_team) {
               owner_of_team = false;
               document.getElementById("teambox").style.display = "none";
-              document
-                .getElementsByClassName("outer-box")[0]
-                .classList.remove("outer-onwer-box");
-              document
-                .getElementsByClassName("inner-box")[0]
-                .classList.remove("inner-onwer-box");
+              deconvertTeamInterface();
               document.getElementById("confermationScreen").style.display =
                 "none";
               document.getElementById("upgradesBox").style.display = "none";
@@ -3526,6 +3539,8 @@
             this.ctx.fillStyle = anoucment.color;
             this.ctx.font = "bold 20px arial";
             this.ctx.textAlign = "center";
+            this.anoucmentW = anoucment.text.length * 15;
+            this.anoucmentW2 = this.anoucmentW / 2;
             if (
               Date.now() >= anoucment.expiretime &&
               Date.now() <= anoucment.shovedowndate
@@ -3576,6 +3591,7 @@
             );
             this.ctx.fill();
             this.ctx.closePath();
+            this.ctx.fillStyle = anoucment.textcolor;
             this.ctx.fillText(
               anoucment.text,
               canvas.width / 2,
@@ -6185,10 +6201,11 @@
         I_++;
       }
       if (joinedTeam) {
-        for (let CCC = Object.keys(statsTree).length - 1; CCC >= 0; CCC -= 1) {
-          let MYteam = pubteams.find((team) => {
+        let MYteam = pubteams.find((team) => {
             return team.teamID === players[playerId].team;
           });
+        for (let CCC = Object.keys(statsTree).length - 1; CCC >= 0; CCC -= 1) {
+          if (!MYteam) break;
           let stat_ = MYteam.stats[Object.keys(MYteam.stats)[CCC]];
           let stat = Object.keys(MYteam.stats)[CCC];
           let color = teamColorUpgrades[CCC] || "red";
@@ -6272,7 +6289,7 @@
 
   async function getBagdeData() {
     const url =
-      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
         ? "https://websocketpointer.duckdns.org/currentbadge"
         : "http://localhost:4500/currentbadge";
     try {
@@ -6296,7 +6313,7 @@
 
   async function getGearData() {
     const url =
-      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
         ? "https://websocketpointer.duckdns.org/currentgears"
         : "http://localhost:4500/currentgears";
     try {
@@ -6369,7 +6386,7 @@
 
   async function subfeedback() {
     const url =
-      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
         ? "https://websocketpointer.duckdns.org/submit-feedback"
         : "http://localhost:4500/submit-feedback";
     try {
@@ -6407,7 +6424,7 @@
 
   async function getLeaderBoardData() {
     const url =
-      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
         ? "https://websocketpointer.duckdns.org/leaderboard"
         : "http://localhost:4500/leaderboard";
     try {
@@ -6422,31 +6439,82 @@
     }
   }
 
-  async function buildLeaderBoard() {
-    var leaderboard = await getLeaderBoardData();
+  async function getTeamData() {
+    const url =
+      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
+        ? "https://websocketpointer.duckdns.org/getteamdata"
+        : "http://localhost:4500/getteamdata";
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  var leaderboardSlected = 'players';
+  var playersSelect = document.getElementById("playersSelect");
+  var teamsSelect = document.getElementById("teamsSelect");
+  playersSelect.addEventListener("click", () => {
+    playersSelect.classList.add("text-highlight");
+    teamsSelect.classList.remove("text-highlight");
+    if (leaderboardSlected !== "players") {
+      leaderboardSlected = "players";
+      document.getElementById("leaderBoard").innerHTML = ``;
+      buildLeaderBoard(leaderboardSlected);
+    }
+  });
+  teamsSelect.addEventListener("click", () => {
+    playersSelect.classList.remove("text-highlight");
+    teamsSelect.classList.add("text-highlight");
+    if (leaderboardSlected !== "teams") {
+      leaderboardSlected = "teams";
+      document.getElementById("leaderBoard").innerHTML = ``;
+      buildLeaderBoard(leaderboardSlected);
+    }
+  });
+  async function buildLeaderBoard(type) {
+    var leaderboard_ = type === "players" ? await getLeaderBoardData() : await getTeamData();
     var leaderBoard = document.getElementById("leaderBoard");
-    leaderBoard.innerHTML = "<h2>Leaderboard</h2>";
-    leaderboard.leader_board.forEach((leader) => {
+    leaderBoard.innerHTML = ``;
+    console.log(leaderboard_);
+    leaderboard_.leader_board.forEach((leader) => {
       var holderDiv = document.createElement("div");
       var holderName = document.createElement("p");
-      var holderImg = document.createElement("img");
       leaderBoard.appendChild(holderDiv);
-      holderDiv.appendChild(holderImg);
-      holderImg.src =
-        window.location.href === "http://127.0.0.1:5501/public/index.html"
-          ? `/public${leader.badge.badge}`
-          : `${leader.badge.badge}`;
+      if (type === "players") {
+        var holderImg = document.createElement("img");
+        holderImg.src =
+          window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
+            ? `/public${leader.badge.badge}`
+            : `${leader.badge.badge}`;
+        holderDiv.appendChild(holderImg);
+        holderImg.style.width = "20px";
+        holderImg.style.hieght = "20px";
+        holderImg.alt = "io leaderboard badge";
+      }
       holderDiv.classList.add("entrie-box");
       holderDiv.appendChild(holderName);
-      holderName.innerHTML = `${leader.username}, ${leader.score}`;
+      
+      holderName.innerHTML = type === "teams" ? 
+      `${leader.name}, ${leader.teamScore}` : 
+      `${leader.username}, ${leader.score}`;
       holderName.classList.add("normalized-text-color");
-      holderImg.style.width = "20px";
-      holderImg.style.hieght = "20px";
-      holderImg.alt = "io leaderboard badge";
+      if (type === "teams") {
+        holderDiv.addEventListener("click", () => {
+          const currentURL = new URL(window.location.href);
+          currentURL.searchParams.set("team", leader.teamKey);
+          window.history.pushState({}, '', currentURL);
+        });
+      }
     });
   }
   try {
-    buildLeaderBoard();
+    buildLeaderBoard(leaderboardSlected);
   } catch {}
 
   document.getElementById("buyNo").addEventListener("click", () => {
@@ -6455,7 +6523,7 @@
 
   async function AData() {
     const url =
-      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
         ? "https://websocketpointer.duckdns.org/buylevels"
         : "http://localhost:4500/buylevels";
     try {
@@ -6499,7 +6567,7 @@
 
   async function ping() {
     const urls =
-      window.location.href === "http://127.0.0.1:5501/public/index.html"
+      window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
         ? [
             "http://localhost:4500/ping",
             "https://websocketpointer.duckdns.org/ping",
@@ -6523,14 +6591,14 @@
     ).then(() => {
       if (!passed) {
         window.location.href =
-          window.location.href === "http://127.0.0.1:5501/public/index.html"
+          window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
             ? "/public/server-down.html"
             : "/server-down.html";
       }
     });
   }
   try {
-    if (window.location.href !== "http://127.0.0.1:5501/public/index.html") {
+    if (!window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")) {
       document.getElementById("squareimg").src = "/how-to-imgs/square.webp";
       document.getElementById("triangleimg").src = "/how-to-imgs/triangle.webp";
       document.getElementById("pentagonimg").src = "/how-to-imgs/pentagon.webp";
@@ -6602,7 +6670,7 @@
             <circle cx="65" cy="50" r="45" stroke="black" stroke-width="8" fill="none"> </circle>
             <circle cx="65" cy="50" r="45" class="meter-1" id="fillcircle"> </circle>
             <image x="35" y="20" width="60" height="60" href='${
-              window.location.href === "http://127.0.0.1:5501/public/index.html"
+              window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
                 ? window.location.origin + "/public/" + level.badge
                 : window.location.origin + level.badge
             }'> </image>
@@ -6628,7 +6696,7 @@
       }
 
       imageForDiv.src =
-        window.location.href === "http://127.0.0.1:5501/public/index.html"
+        window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
           ? `/public${level.badge}`
           : `${level.badge}`;
       imageForDiv.alt = `badge level: ${level}`;
@@ -6850,7 +6918,7 @@
   var badgeLevelDiv = document.getElementById("badgeLevelDiv");
 
   playerCanvas.style["background-image"] =
-    window.location.href === "http://127.0.0.1:5501/public/index.html"
+    window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
       ? `url(${window.location.origin}/public/assets/cropped/hexbackground.webp)`
       : `url(${window.location.origin}/assets/cropped/hexbackground.webp)`;
 
@@ -6869,7 +6937,7 @@
 
   async function getSkinData() {
     const url =
-      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
         ? "https://websocketpointer.duckdns.org/skindata"
         : "http://localhost:4500/skindata";
     try {
@@ -6895,7 +6963,7 @@
 
   async function buySkin(skinLevel) {
     const url =
-      window.location.href !== "http://127.0.0.1:5501/public/index.html"
+      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
         ? "https://websocketpointer.duckdns.org/skinpurchase"
         : "http://localhost:4500/skinpurchase";
     try {
@@ -7097,7 +7165,7 @@
       skinGrid.appendChild(skinDiv);
       skinDiv.appendChild(skinImg);
       skinImg.src =
-        window.location.href === "http://127.0.0.1:5501/public/index.html"
+        window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
           ? `/public/skins/${i}.webp`
           : `/skins/${i}.webp`;
 
@@ -7119,7 +7187,7 @@
       } else {
         var lockedImg = document.createElement("img");
         lockedImg.src =
-          window.location.href === "http://127.0.0.1:5501/public/index.html"
+          window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
             ? `/public/assets/locked.svg`
             : `/assets/locked.svg`;
         lockedImg.classList.add("lock-img");

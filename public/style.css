@@ -407,9 +407,52 @@ spiner
   font-size: 2vw;
   font-weight: 900;
   margin: 5px;
-  margin-top: 15px;
-  margin-bottom: 15px;
+  margin-top: 7px;
+  margin-bottom: 7px;
   color: var(--text-color-100);
+  line-height: 2.1vw;
+}
+
+.flexsidebyside {
+  width: 100%;
+  border-top: 5px solid var(--border-color-100);
+  display: flex;
+  padding: 0;
+}
+
+.flexsidebyside div {
+  color: var(--text-color-100);
+  padding: 10px;
+  font-size: 1.5vw;
+  font-weight: 600;
+  border-left: 5px solid var(--border-color-100);
+  border-right: 5px solid var(--border-color-100);
+  margin: 0;
+  width: 50%;
+}
+
+.flexsidebyside div:hover {
+  background-color: var(--background-white-300);
+  cursor: pointer;
+  transition: background-color 0.4s ease-in-out;
+}
+
+.headerHolder {
+  width: 100%;
+  background-color: var(--background-white-100);
+  border-bottom: 5px solid var(--border-color-100);
+  border-radius: 1vw 1vw 0 0;
+  max-height: 6vw;
+}
+
+.text-highlight {
+  text-shadow: #1bfaf6 2px 2px 2px;
+}
+
+.rounded {
+  border-radius: 1vw;
+  overflow: hidden;
+  top: 6vw !important;
 }
 
 ::-webkit-scrollbar-track {
@@ -489,6 +532,7 @@ body {
   border: 4px solid var(--background-white-200);
   border-radius: 30px;
   margin: 0;
+  color: var(--text-color-100);
   margin-left: 10px;
   float: left;
   overflow-y: scroll;
@@ -732,6 +776,7 @@ body {
 .bubble-holder {
   overflow: hidden;
   border-radius: 2vw;
+  z-index: -1;
 }
 
 /* Generate multiple bubbles with varied timing and positions */
@@ -994,7 +1039,7 @@ button:hover {
 }
 
 .taxLable {
-  margin-top: -5%;
+  margin-top: -4%;
 }
 
 /* Scrollable Div Styles */

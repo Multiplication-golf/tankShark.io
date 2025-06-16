@@ -176,9 +176,18 @@
   height: 100vh;
 }
 
+.shadow-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.336);
+}
+
 .team-contaniner {
   text-align: center;
-  background: #fff;
+  background: var(--background-white-0);
   padding: -10px 20px 20px 20px;
   border-radius: 8px;
   z-index: 89;
@@ -188,6 +197,22 @@
   position: absolute;
   top: calc(50vh - 155px);
   left: calc(50vw - 200px);
+}
+
+.team-contaniner h1 {
+  color: var(--text-color-100);
+}
+
+.team-contaniner h2 {
+  color: var(--text-color-100);
+}
+
+.team-contaniner p {
+  color: var(--text-color-100);
+}
+
+.team-contaniner label {
+  color: var(--text-color-100);
 }
 
 .create-team-button {
