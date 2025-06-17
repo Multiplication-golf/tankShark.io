@@ -153,7 +153,7 @@
     opacity: 0;
   }
   100% {
-    transform: translateX(3vw);
+    transform: translateX(35vw);
     opacity: 1;
   }
 }
@@ -163,7 +163,7 @@
   height: 15vw;
   position: absolute;
   top: 0;
-  left: -15vw;
+  left: -35vw;
   display: none;
   z-index: 2000;
 }

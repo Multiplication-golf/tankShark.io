@@ -609,6 +609,7 @@ const tankmeta = {
       rocketer: { img: 12, level: 30 },
       smasher: { img: 13, level: 30 },
       paver: { img: 14, level: 30 },
+      sheller: { img: 15, level: 30 },
     },
     cannons: [
       {
@@ -1112,6 +1113,33 @@ const tankmeta = {
         delay: 0,
         reloadM: 1,
         bullet_pentration: 0.3,
+      },
+    ],
+  },
+  sheller: {
+    "size-m": 1.05,
+    "speed-m": 0.9,
+    "damage-m": 1,
+    "health-m": 0.95,
+    fov: 0.75,
+    "BodyDamage-m": 1,
+    "regen-m": 1,
+    "reaload-m": 1.5,
+    upgrades: {},
+    cannons: [
+      {
+        type: "sheller",
+        "cannon-width-top": 30,
+        "cannon-height": 50,
+        "cannon-width-bottom": 50,
+        "offSet-x": 0,
+        "offSet-y": 0,
+        "offset-angle": 0,
+        bulletSize: 0.8,
+        bulletSpeed: 2,
+        delay: 0,
+        reloadM: 1.3,
+        bullet_pentration: 1,
       },
     ],
   },
@@ -4600,10 +4628,14 @@ wss.on("connection", (socket, req) => {
             socket.close(999, "You hacker your IP has been permently banned");
             return false;
           }
-          for (const prop in data) {
-            let tempData = data[prop];
-            players[connection.playerId][prop] = tempData;
-          }
+          var tankdata = tankmeta[data.__type__];
+          players[connection.playerId].maxhealth *= tankdata["health-m"];
+          players[connection.playerId].speed *= tankdata["speed-m"];
+          players[connection.playerId].size *= tankdata["size-m"];
+          players[connection.playerId].bodyDamage *= tankdata["BodyDamage-m"];
+          players[connection.playerId].__type__ *= data.__type__;
+          players[connection.playerId].FOV += tankdata.fov;
+          players[connection.playerId].Regenspeed *= tankdata["regen-m"];
           emit("type_Change", data);
           break;
         }
@@ -5898,451 +5930,810 @@ wss.on("connection", (socket, req) => {
   });
 });
 
-let tempBulletToPush = [];
 let buildArray = [];
 let deadlist = [];
 
-setInterval(() => {
-  frame++;
+function gameLoop() {
+  setInterval(() => {
+    frame++;
 
-  autocannons.forEach((cannon) => {
-    if (cannon._type_ !== "bulletAuto") {
-      if (players[cannon.playerid] == undefined) return;
-      var tankdatacannon__ =
-        tankmeta[players[cannon.playerid].__type__]["cannons"];
-    } else if (cannon._type_ === "bulletAuto") {
-      var par_ = findBullet(cannon.playerid);
-      if (par_ == null || players[par_.id] === undefined) return;
-      var tankdatacannon__ = tankmeta[players[par_.id].__type__]["cannons"];
-      cannon.x = par_.x;
-      cannon.y = par_.y;
-    }
-
-    if (cannon._type_ === "SwivelAutoCannon") {
-      var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
-      if (tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
-        offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
-      }
-      if (tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
-        offSet_x *= -1;
-      }
-      var [x, y] = rotatePointAroundPlayer(
-        offSet_x,
-        0,
-        players[cannon.playerid].cannon_angle
-      );
-      cannon["x_"] = x;
-      cannon["y_"] = y;
-    }
-    try {
-      var targetData = getTarget(cannon, tankdatacannon__);
-    } catch {
-      console.log(cannon);
-    }
-
-    var fire_at__ = targetData.target;
-    var target_enity_type = targetData.type;
-
-    if (fire_at__ !== undefined && fire_at__ !== null) {
-      var angle;
-      if (cannon._type_ === "SwivelAutoCannon") {
-        angle = Math.atan2(
-          fire_at__.y - (players[cannon.playerid].y + cannon["y_"]),
-          fire_at__.x - (players[cannon.playerid].x + cannon["x_"])
-        );
+    autocannons.forEach((cannon) => {
+      if (cannon._type_ !== "bulletAuto") {
+        if (players[cannon.playerid] == undefined) return;
+        var tankdatacannon__ =
+          tankmeta[players[cannon.playerid].__type__]["cannons"];
       } else if (cannon._type_ === "bulletAuto") {
-        angle = Math.atan2(fire_at__.y - par_.y, fire_at__.x - par_.x);
-      } else {
-        angle = Math.atan2(
-          fire_at__.y - players[cannon.playerid].y,
-          fire_at__.x - players[cannon.playerid].x
+        var par_ = findBullet(cannon.playerid);
+        if (par_ == null || players[par_.id] === undefined) return;
+        var tankdatacannon__ = tankmeta[players[par_.id].__type__]["cannons"];
+        cannon.x = par_.x;
+        cannon.y = par_.y;
+      }
+
+      if (cannon._type_ === "SwivelAutoCannon") {
+        var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
+        if (tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
+          offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
+        }
+        if (tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
+          offSet_x *= -1;
+        }
+        var [x, y] = rotatePointAroundPlayer(
+          offSet_x,
+          0,
+          players[cannon.playerid].cannon_angle
         );
+        cannon["x_"] = x;
+        cannon["y_"] = y;
+      }
+      try {
+        var targetData = getTarget(cannon, tankdatacannon__);
+      } catch {
+        console.log(cannon);
       }
 
-      cannon.targetAngle = angle;
-      cannon.targetEntity = fire_at__;
+      var fire_at__ = targetData.target;
+      var target_enity_type = targetData.type;
 
-      if (target_enity_type === "player") {
-        cannon.targetID = fire_at__.playerId;
-      }
+      if (fire_at__ !== undefined && fire_at__ !== null) {
+        var angle;
+        if (cannon._type_ === "SwivelAutoCannon") {
+          angle = Math.atan2(
+            fire_at__.y - (players[cannon.playerid].y + cannon["y_"]),
+            fire_at__.x - (players[cannon.playerid].x + cannon["x_"])
+          );
+        } else if (cannon._type_ === "bulletAuto") {
+          angle = Math.atan2(fire_at__.y - par_.y, fire_at__.x - par_.x);
+        } else {
+          angle = Math.atan2(
+            fire_at__.y - players[cannon.playerid].y,
+            fire_at__.x - players[cannon.playerid].x
+          );
+        }
 
-      if (target_enity_type === "food") {
-        cannon.targetID = fire_at__.randomID;
-      }
-    }
+        cannon.targetAngle = angle;
+        cannon.targetEntity = fire_at__;
 
-    if (target_enity_type === "player" && fire_at__) {
-      if (cannon.targetID !== fire_at__.playerId) {
-        if (cannon.angle < cannon.targetAngle) {
-          cannon.angle += (cannon.targetAngle - cannon.angle) / 5;
-        } else if (cannon.angle > cannon.targetAngle) {
-          cannon.angle -= (cannon.angle - cannon.targetAngle) / 5;
+        if (target_enity_type === "player") {
+          cannon.targetID = fire_at__.playerId;
+        }
+
+        if (target_enity_type === "food") {
+          cannon.targetID = fire_at__.randomID;
         }
       }
-    }
-    if (target_enity_type === "food" && fire_at__) {
-      if (cannon._type_ !== "SwivelAutoCannon") {
+
+      if (target_enity_type === "player" && fire_at__) {
+        if (cannon.targetID !== fire_at__.playerId) {
+          if (cannon.angle < cannon.targetAngle) {
+            cannon.angle += (cannon.targetAngle - cannon.angle) / 5;
+          } else if (cannon.angle > cannon.targetAngle) {
+            cannon.angle -= (cannon.angle - cannon.targetAngle) / 5;
+          }
+        }
+      }
+      if (target_enity_type === "food" && fire_at__) {
+        if (cannon._type_ !== "SwivelAutoCannon") {
+          if (
+            cannon.angle < cannon.targetAngle &&
+            Math.abs(cannon.angle - cannon.targetAngle) > 0.05
+          ) {
+            console.log(cannon.angle, cannon.targetAngle);
+            if (cannon._type_ === "bulletAuto") {
+              var reload_1 = players[par_.id].statsTree["Bullet Reload"] - 1;
+            } else {
+              var reload_1 =
+                players[cannon.playerid].statsTree["Bullet Reload"] - 1;
+            }
+            cannon.angle +=
+              Math.abs(cannon.angle - cannon.targetAngle) /
+              (3.5 - reload_1 / 2);
+            emit("autoCannonUPDATE-ANGLE", {
+              angle: cannon.angle,
+              cannon_ID: cannon.CannonID,
+            });
+          } else if (
+            cannon.angle > cannon.targetAngle &&
+            Math.abs(cannon.angle - cannon.targetAngle) > 0.05
+          ) {
+            if (cannon._type_ === "bulletAuto") {
+              var reload_1 = players[par_.id].statsTree["Bullet Reload"] - 1;
+            } else {
+              var reload_1 =
+                players[cannon.playerid].statsTree["Bullet Reload"] - 1;
+            }
+            cannon.angle -=
+              Math.abs(cannon.angle - cannon.targetAngle) /
+              (3.5 - reload_1 / 2);
+            emit("autoCannonUPDATE-ANGLE", {
+              angle: cannon.angle,
+              cannon_ID: cannon.CannonID,
+            });
+          }
+        } else if (Math.abs(cannon.angle - cannon.targetAngle) > 0.001) {
+          moveCannonAngle(cannon);
+        }
+      }
+    });
+
+    for (const roomkey in food_squares) {
+      var room = food_squares[roomkey];
+      if (typeof room === "function") continue;
+      for (let i = 0; i < room.items.length; i++) {
+        let item = room.items[i];
+        let index = i;
         if (
-          cannon.angle < cannon.targetAngle &&
-          Math.abs(cannon.angle - cannon.targetAngle) > 0.05
+          !(
+            item.x >= room.bounds.x1 &&
+            item.x <= room.bounds.x2 &&
+            item.y >= room.bounds.y1 &&
+            item.y <= room.bounds.y2
+          )
         ) {
-          console.log(cannon.angle, cannon.targetAngle);
-          if (cannon._type_ === "bulletAuto") {
-            var reload_1 = players[par_.id].statsTree["Bullet Reload"] - 1;
-          } else {
-            var reload_1 =
-              players[cannon.playerid].statsTree["Bullet Reload"] - 1;
-          }
-          cannon.angle +=
-            Math.abs(cannon.angle - cannon.targetAngle) / (3.5 - reload_1 / 2);
-          emit("autoCannonUPDATE-ANGLE", {
-            angle: cannon.angle,
-            cannon_ID: cannon.CannonID,
-          });
+          reassignRoomItem(item);
+          room.items.splice(i, 1);
+          continue;
+        }
+        if (
+          item.subtype !== "Enemyboss:Square" &&
+          item.subtype !== "Enemyboss:Triangle"
+        ) {
+          item.x = item.centerX + item.scalarX * Math.cos(angle);
+          item.y = item.centerY + item.scalarY * Math.sin(angle);
         } else if (
-          cannon.angle > cannon.targetAngle &&
-          Math.abs(cannon.angle - cannon.targetAngle) > 0.05
+          item.subtype === "Enemyboss:Square" ||
+          item.subtype === "Enemyboss:Triangle"
         ) {
-          if (cannon._type_ === "bulletAuto") {
-            var reload_1 = players[par_.id].statsTree["Bullet Reload"] - 1;
-          } else {
-            var reload_1 =
-              players[cannon.playerid].statsTree["Bullet Reload"] - 1;
+          var target = {
+            x: null,
+            distanceX: CONFIG.bossLookUpRange,
+            y: null,
+            distanceY: CONFIG.bossLookUpRange,
+          };
+          for (const playerId in players) {
+            var player = players[playerId];
+            if (
+              target.distanceX > Math.abs(player.x - item.x) ||
+              target.distanceY > Math.abs(player.y - item.y)
+            ) {
+              target = {
+                x: player.x,
+                distanceX: Math.abs(player.x - item.x),
+                distanceY: Math.abs(player.y - item.y),
+                y: player.y,
+              };
+            }
           }
-          cannon.angle -=
-            Math.abs(cannon.angle - cannon.targetAngle) / (3.5 - reload_1 / 2);
-          emit("autoCannonUPDATE-ANGLE", {
-            angle: cannon.angle,
-            cannon_ID: cannon.CannonID,
+          let __angle = Math.atan2(target.y - item.y, target.x - item.x);
+          if (target.x && target.y) {
+            var newX = item.x + item.speed * Math.cos(__angle);
+            var newY = item.y + item.speed * Math.sin(__angle);
+          } else {
+            var newX = item.x;
+            var newY = item.y;
+          }
+          item.centerX = newX;
+          item.centerY = newY;
+          item.x = newX;
+          item.y = newY;
+          item.boss.x = item.x;
+          item.boss.y = item.y;
+          item.angle = __angle;
+        }
+        if (item.type === "pentagon") {
+          item.angle += CONFIG.rotationSpeed.pentagon;
+        } else if (
+          item.subtype !== "Enemyboss:Square" &&
+          item.subtype !== "Enemyboss:Triangle" &&
+          !/octagon/.test(item.type)
+        ) {
+          item.angle += CONFIG.rotationSpeed.triangleSquare;
+        } else if (
+          item.subtype === "Enemyboss:Square" ||
+          item.subtype === "Enemyboss:Triangle"
+        ) {
+          item.angle += CONFIG.rotationSpeed.bosses;
+        }
+        if (item.angle >= 360) {
+          item.angle = 0;
+        }
+        if (item.type === "square") {
+          const rawvertices = calculateSquareVertices(
+            item.x,
+            item.y,
+            item.size,
+            item.angle
+          );
+          item.vertices = rawvertices;
+        } else if (item.type === "triangle") {
+          const rawvertices = calculateTriangleVertices(
+            item.x,
+            item.y,
+            item.size,
+            item.angle
+          );
+          item.vertices = rawvertices;
+        } else if (item.type === "pentagon") {
+          const rawvertices = calculateRotatedPentagonVertices(
+            item.x,
+            item.y,
+            item.size,
+            item.angle
+          );
+          item.vertices = rawvertices;
+        } else if (/octagon/.test(item.type)) {
+          const rawvertices = calculateRotatedOctagonVertices(
+            item.x,
+            item.y,
+            item.size,
+            item.angle
+          );
+          item.vertices = rawvertices;
+        }
+        let realtype = item.type;
+        if (item.subtype === "Enemyboss:Square") {
+          realtype = "square:boss";
+          let points = midpointCalc(item.vertices);
+          for (let i = 0; i < 4; i++) {
+            item.cannons[i].x = points[i].x;
+            item.cannons[i].y = points[i].y;
+          }
+          item.cannons.forEach((cannon, i) => {
+            if (cannon.canfire && cannon.current < cannon.maxbullets) {
+              cannon.current += 1;
+              cannon.canfire = false;
+              setTimeout(() => {
+                cannon.canfire = true;
+              }, item.reload);
+              var randID = Math.random() * 3 * Date.now();
+              let bullet____ = {
+                type: "FreeNecromancer",
+                bullet_distance: 1000,
+                speed: 3,
+                size: 50,
+                angle: 0.1,
+                bullet_damage: 6,
+                distanceTraveled: 0,
+                vertices: null,
+                bullet_pentration: 1,
+                x: cannon.x,
+                y: cannon.y,
+                lifespan: 0,
+                health: 10,
+                xstart: cannon.x,
+                ystart: cannon.y,
+                id: cannon.id,
+                uniqueid: randID,
+                boundtype: "square",
+                wander: new Wanderer(
+                  cannon.x,
+                  cannon.y,
+                  item.size,
+                  cannon.x,
+                  cannon.y,
+                  3,
+                  cannon.current,
+                  "arc"
+                ),
+                cannon: cannon,
+              };
+
+              reassignRoomBullet(bullet____);
+              let boss = item.boss;
+              for (let l = 0; l < 10; l++) {
+                setTimeout(() => {
+                  boss.cannons[i].cannonW -= 1;
+                }, 20 * l);
+                setTimeout(() => {
+                  boss.cannons[i].cannonW += 1;
+                }, 40 * l);
+              }
+            }
+            deadlist.filter((itemx) => {
+              if (cannon.id === itemx) {
+                cannon.current -= 1;
+                return false;
+              }
+              return true;
+            });
           });
         }
-      } else if (Math.abs(cannon.angle - cannon.targetAngle) > 0.001) {
-        moveCannonAngle(cannon);
-      }
-    }
-  });
-
-  for (const roomkey in food_squares) {
-    var room = food_squares[roomkey];
-    if (typeof room === "function") continue;
-    for (let i = 0; i < room.items.length; i++) {
-      let item = room.items[i];
-      let index = i;
-      if (
-        !(
-          item.x >= room.bounds.x1 &&
-          item.x <= room.bounds.x2 &&
-          item.y >= room.bounds.y1 &&
-          item.y <= room.bounds.y2
-        )
-      ) {
-        reassignRoomItem(item);
-        room.items.splice(i, 1);
-        continue;
-      }
-      if (
-        item.subtype !== "Enemyboss:Square" &&
-        item.subtype !== "Enemyboss:Triangle"
-      ) {
-        item.x = item.centerX + item.scalarX * Math.cos(angle);
-        item.y = item.centerY + item.scalarY * Math.sin(angle);
-      } else if (
-        item.subtype === "Enemyboss:Square" ||
-        item.subtype === "Enemyboss:Triangle"
-      ) {
-        var target = {
-          x: null,
-          distanceX: CONFIG.bossLookUpRange,
-          y: null,
-          distanceY: CONFIG.bossLookUpRange,
-        };
+        if (item.subtype === "Enemyboss:Triangle") {
+          realtype = "triangle:boss";
+          let points = midpointCalc(item.vertices);
+          item.cannons[0].x = points[1].x;
+          item.cannons[0].y = points[1].y;
+          item.cannons.forEach((cannon, i) => {
+            if (cannon.canfire && cannon.current < cannon.maxbullets) {
+              cannon.current += 1;
+              cannon.canfire = false;
+              setTimeout(() => {
+                cannon.canfire = true;
+              }, item.reload);
+              var randID = Math.random() * 3 * Date.now();
+              let bullet____ = {
+                type: "FreeSwarm",
+                bullet_distance: 400,
+                speed: 4,
+                size: 5,
+                angle: 0.1,
+                bullet_damage: 4.5,
+                distanceTraveled: 0,
+                vertices: null,
+                bullet_pentration: 1,
+                x: cannon.x,
+                y: cannon.y,
+                lifespan: 0,
+                health: 10,
+                xstart: cannon.x,
+                ystart: cannon.y,
+                id: cannon.id,
+                uniqueid: randID,
+                boundtype: "triangle",
+                wander: new Wanderer(
+                  cannon.x,
+                  cannon.y,
+                  item.size,
+                  cannon.x,
+                  cannon.y,
+                  4,
+                  cannon.current,
+                  "arc"
+                ),
+                cannon: cannon,
+                boss: item.boss,
+              };
+              reassignRoomBullet(bullet____);
+              let boss = item.boss;
+              for (let l = 0; l < 10; l++) {
+                setTimeout(() => {
+                  boss.cannons[i].cannonW -= 1;
+                }, 20 * l);
+                setTimeout(() => {
+                  boss.cannons[i].cannonW += 1;
+                }, 40 * l);
+              }
+            }
+            deadlist.filter((itemx) => {
+              if (cannon.id === itemx) {
+                cannon.current -= 1;
+                return false;
+              }
+              return true;
+            });
+          });
+        }
+        let return_ = true;
+        if (item.isdead) {
+          item.transparency =
+            1 - (Date.now() - item.deathtime) / CONFIG.fadeRate;
+        }
         for (const playerId in players) {
           var player = players[playerId];
+          let size__ =
+            player.size *
+              CONFIG.playerBaseSize *
+              CONFIG.playerCollisionRangeMultiplyer +
+            item.size * CONFIG.itemCollisionRangeMultiplyer;
+
           if (
-            target.distanceX > Math.abs(player.x - item.x) ||
-            target.distanceY > Math.abs(player.y - item.y)
+            Math.abs(item.x - player.x) < size__ &&
+            Math.abs(item.y - player.y) < size__
           ) {
-            target = {
-              x: player.x,
-              distanceX: Math.abs(player.x - item.x),
-              distanceY: Math.abs(player.y - item.y),
-              y: player.y,
-            };
-          }
-        }
-        let __angle = Math.atan2(target.y - item.y, target.x - item.x);
-        if (target.x && target.y) {
-          var newX = item.x + item.speed * Math.cos(__angle);
-          var newY = item.y + item.speed * Math.sin(__angle);
-        } else {
-          var newX = item.x;
-          var newY = item.y;
-        }
-        item.centerX = newX;
-        item.centerY = newY;
-        item.x = newX;
-        item.y = newY;
-        item.boss.x = item.x;
-        item.boss.y = item.y;
-        item.angle = __angle;
-      }
-      if (item.type === "pentagon") {
-        item.angle += CONFIG.rotationSpeed.pentagon;
-      } else if (
-        item.subtype !== "Enemyboss:Square" &&
-        item.subtype !== "Enemyboss:Triangle" &&
-        !/octagon/.test(item.type)
-      ) {
-        item.angle += CONFIG.rotationSpeed.triangleSquare;
-      } else if (
-        item.subtype === "Enemyboss:Square" ||
-        item.subtype === "Enemyboss:Triangle"
-      ) {
-        item.angle += CONFIG.rotationSpeed.bosses;
-      }
-      if (item.angle >= 360) {
-        item.angle = 0;
-      }
-      if (item.type === "square") {
-        const rawvertices = calculateSquareVertices(
-          item.x,
-          item.y,
-          item.size,
-          item.angle
-        );
-        item.vertices = rawvertices;
-      } else if (item.type === "triangle") {
-        const rawvertices = calculateTriangleVertices(
-          item.x,
-          item.y,
-          item.size,
-          item.angle
-        );
-        item.vertices = rawvertices;
-      } else if (item.type === "pentagon") {
-        const rawvertices = calculateRotatedPentagonVertices(
-          item.x,
-          item.y,
-          item.size,
-          item.angle
-        );
-        item.vertices = rawvertices;
-      } else if (/octagon/.test(item.type)) {
-        const rawvertices = calculateRotatedOctagonVertices(
-          item.x,
-          item.y,
-          item.size,
-          item.angle
-        );
-        item.vertices = rawvertices;
-      }
-      let realtype = item.type;
-      if (item.subtype === "Enemyboss:Square") {
-        realtype = "square:boss";
-        let points = midpointCalc(item.vertices);
-        for (let i = 0; i < 4; i++) {
-          item.cannons[i].x = points[i].x;
-          item.cannons[i].y = points[i].y;
-        }
-        item.cannons.forEach((cannon, i) => {
-          if (cannon.canfire && cannon.current < cannon.maxbullets) {
-            cannon.current += 1;
-            cannon.canfire = false;
-            setTimeout(() => {
-              cannon.canfire = true;
-            }, item.reload);
-            var randID = Math.random() * 3 * Date.now();
-            let bullet____ = {
-              type: "FreeNecromancer",
-              bullet_distance: 1000,
-              speed: 3,
-              size: 50,
-              angle: 0.1,
-              bullet_damage: 6,
-              distanceTraveled: 0,
-              vertices: null,
-              bullet_pentration: 1,
-              x: cannon.x,
-              y: cannon.y,
-              lifespan: 0,
-              health: 10,
-              xstart: cannon.x,
-              ystart: cannon.y,
-              id: cannon.id,
-              uniqueid: randID,
-              boundtype: "square",
-              wander: new Wanderer(
-                cannon.x,
-                cannon.y,
-                item.size,
-                cannon.x,
-                cannon.y,
-                3,
-                cannon.current,
-                "arc"
-              ),
-              cannon: cannon,
-            };
+            var sameteam = false;
+            if (item.teamId) {
+              sameteam =
+                players[playerId].team === item.teamId &&
+                players[playerId].team !== null;
+            }
+            var collisionCheck = isPlayerCollidingWithPolygon(
+              player,
+              item.vertices
+            );
 
-            tempBulletToPush.push(bullet____);
-            let boss = item.boss;
-            for (let l = 0; l < 10; l++) {
-              setTimeout(() => {
-                boss.cannons[i].cannonW -= 1;
-              }, 20 * l);
-              setTimeout(() => {
-                boss.cannons[i].cannonW += 1;
-              }, 40 * l);
-            }
-          }
-          deadlist.filter((itemx) => {
-            if (cannon.id === itemx) {
-              cannon.current -= 1;
-              return false;
-            }
-            return true;
-          });
-        });
-      }
-      if (item.subtype === "Enemyboss:Triangle") {
-        realtype = "triangle:boss";
-        let points = midpointCalc(item.vertices);
-        item.cannons[0].x = points[1].x;
-        item.cannons[0].y = points[1].y;
-        item.cannons.forEach((cannon, i) => {
-          if (cannon.canfire && cannon.current < cannon.maxbullets) {
-            cannon.current += 1;
-            cannon.canfire = false;
-            setTimeout(() => {
-              cannon.canfire = true;
-            }, item.reload);
-            var randID = Math.random() * 3 * Date.now();
-            let bullet____ = {
-              type: "FreeSwarm",
-              bullet_distance: 400,
-              speed: 4,
-              size: 5,
-              angle: 0.1,
-              bullet_damage: 4.5,
-              distanceTraveled: 0,
-              vertices: null,
-              bullet_pentration: 1,
-              x: cannon.x,
-              y: cannon.y,
-              lifespan: 0,
-              health: 10,
-              xstart: cannon.x,
-              ystart: cannon.y,
-              id: cannon.id,
-              uniqueid: randID,
-              boundtype: "triangle",
-              wander: new Wanderer(
-                cannon.x,
-                cannon.y,
-                item.size,
-                cannon.x,
-                cannon.y,
-                4,
-                cannon.current,
-                "arc"
-              ),
-              cannon: cannon,
-              boss: item.boss,
-            };
-            reassignRoomBullet(bullet____);
-            let boss = item.boss;
-            for (let l = 0; l < 10; l++) {
-              setTimeout(() => {
-                boss.cannons[i].cannonW -= 1;
-              }, 20 * l);
-              setTimeout(() => {
-                boss.cannons[i].cannonW += 1;
-              }, 40 * l);
-            }
-          }
-          deadlist.filter((itemx) => {
-            if (cannon.id === itemx) {
-              cannon.current -= 1;
-              return false;
-            }
-            return true;
-          });
-        });
-      }
-      let return_ = true;
-      if (item.isdead) {
-        item.transparency = 1 - (Date.now() - item.deathtime) / CONFIG.fadeRate;
-      }
-      for (const playerId in players) {
-        var player = players[playerId];
-        let size__ =
-          player.size *
-            CONFIG.playerBaseSize *
-            CONFIG.playerCollisionRangeMultiplyer +
-          item.size * CONFIG.itemCollisionRangeMultiplyer;
-
-        if (
-          Math.abs(item.x - player.x) < size__ &&
-          Math.abs(item.y - player.y) < size__
-        ) {
-          var sameteam = false;
-          if (item.teamId) {
-            sameteam =
-              players[playerId].team === item.teamId &&
-              players[playerId].team !== null;
-          }
-          var collisionCheck = isPlayerCollidingWithPolygon(
-            player,
-            item.vertices
-          );
-
-          if (collisionCheck[0]) {
-            if (!sameteam) {
-              var damageplayer = item.body_damage;
-              var damageother = player["bodyDamage"];
-              if (player.state !== "start") {
-                player.health -= damageplayer;
+            if (collisionCheck[0]) {
+              if (!sameteam) {
+                var damageplayer = item.body_damage;
+                var damageother = player["bodyDamage"];
+                if (player.state !== "start") {
+                  player.health -= damageplayer;
+                }
+                item.lastDamaged = Date.now();
+                item.lastDamgers.push(player.id);
+                item.lastDamgers = item.lastDamgers.splice(0, 2);
               }
-              item.lastDamaged = Date.now();
-              item.lastDamgers.push(player.id);
-              item.lastDamgers = item.lastDamgers.splice(0, 2);
-            }
 
-            if (player.health < 0 && !sameteam) {
-              emit("playerDied", {
+              if (player.health < 0 && !sameteam) {
+                emit("playerDied", {
+                  playerID: player.id,
+                  rewarder: null,
+                  reward: null,
+                });
+                killplayer(player.id);
+                players = Object.entries(players).reduce(
+                  (newPlayers, [key, value]) => {
+                    if (key !== player.id) {
+                      newPlayers[key] = value;
+                    }
+                    return newPlayers;
+                  },
+                  {}
+                );
+              }
+
+              emit("bouceBack", {
+                response: collisionCheck[1].overlapV,
                 playerID: player.id,
-                rewarder: null,
-                reward: null,
               });
-              killplayer(player.id);
-              players = Object.entries(players).reduce(
-                (newPlayers, [key, value]) => {
-                  if (key !== player.id) {
-                    newPlayers[key] = value;
+              for (let i = 0; i < 10; i++) {
+                var factor = item.weight / 5 < 1 ? 1 : item.weight / 5;
+                setTimeout(() => {
+                  let recoilX = collisionCheck[1].overlapV.x / 30;
+                  let recoilY = collisionCheck[1].overlapV.y / 30;
+                  item.x += recoilX / factor;
+                  item.y += recoilY / factor;
+                  item.centerX += recoilX / factor;
+                  item.centerY += recoilY / factor;
+                }, 50 * i);
+              }
+              if (0 >= item.health && !sameteam) {
+                var reward = item.score_add;
+                if (player.team !== null) {
+                  var team = teamlist.find(
+                    (team) => team.teamID === player.team
+                  );
+                  if (team.owner.id !== player.id || team.createTeamScore) {
+                    reward -= reward * team.simpleTax;
                   }
-                  return newPlayers;
-                },
-                {}
-              );
+                  if (team.createTeamScore) {
+                    team.teamScore += (reward * team.simpleTax) / 2;
+                    public_teams = teamlist.map((team) => {
+                      if (!team.hidden) {
+                        team.taxInterval = null;
+                        return team;
+                      }
+                    });
+                    emit("pubteamlist", public_teams);
+                  } else {
+                    emit("playerScore", {
+                      bulletId: team.owner.id,
+                      socrepluse: reward * team.simpleTax,
+                    });
+                  }
+
+                  var complexTax =
+                    reward *
+                    (calculateTax(player.score, 10000000) / team.playerTax);
+                  if (team.owner.id !== player.id || team.createTeamScore) {
+                    reward -= complexTax;
+                  }
+                  if (team.createTeamScore) {
+                    team.teamScore += complexTax / 1.5;
+                    public_teams = teamlist.map((team) => {
+                      if (!team.hidden) {
+                        team.taxInterval = null;
+                        return team;
+                      }
+                    });
+                    emit("pubteamlist", public_teams);
+                  } else {
+                    emit("playerScore", {
+                      bulletId: team.owner.id,
+                      socrepluse: complexTax,
+                    });
+                    players[team.owner.id].score += complexTax;
+                  }
+                }
+                player.score += reward;
+                emit("playerScore", {
+                  bulletId: player.id,
+                  socrepluse: reward,
+                });
+                console.log(reward, "ram");
+                leader_board.hidden.forEach((__index__) => {
+                  if (__index__.id === player.id) {
+                    __index__.score += reward;
+                    let isshown = false;
+                    isshown = leader_board.shown.find((__index__) => {
+                      if (__index__.id === player.id) {
+                        return true;
+                      }
+                    });
+                    if (leader_board.shown[10]) {
+                      if (leader_board.shown[10].score < __index__.score) {
+                        leader_board.shown[10] = __index__;
+                      }
+                    } else if (!leader_board.shown[10] && !isshown) {
+                      leader_board.shown.push(__index__);
+                    }
+                  }
+                });
+                leader_board.shown.forEach((__index__) => {
+                  if (__index__.id === player.id) {
+                    __index__.score += reward;
+                  }
+                });
+                rearrange();
+                emit("boardUpdate", {
+                  leader_board: leader_board.shown,
+                });
+
+                cors_taken.filter((cor) => {
+                  if (cor.id === item.randomID) {
+                    return false;
+                  } else {
+                    return true;
+                  }
+                });
+
+                let respawnrai = item["respawn-raidis"] || CONFIG.map.innersize;
+                let x, y;
+                do {
+                  x = getRandomInt(-respawnrai, respawnrai);
+                  y = getRandomInt(-respawnrai, respawnrai);
+                } while (
+                  cors_taken.some(
+                    (c) =>
+                      between(
+                        x,
+                        c.x - CONFIG.map.boundRange,
+                        c.x + CONFIG.map.boundRange
+                      ) &&
+                      between(
+                        y,
+                        c.y - CONFIG.map.boundRange,
+                        c.y + CONFIG.map.boundRange
+                      )
+                  )
+                );
+                let randID = Math.random() * index * Date.now();
+
+                cors_taken.push({ x, y, id: randID });
+
+                var valueOp = getRandomInt(1, 15);
+                var type = "";
+                var color = "";
+                var health_max = "";
+                var score_add = 0;
+                var body_damage = 0;
+                if (item.goldenGears) {
+                  var _player = userbase.find((_player) => {
+                    return comparePasswords(_player.userid, player.userId);
+                  });
+                  if (_player) {
+                    _player.goldenGears += 1;
+                    createAnnocment(
+                      _player.username +
+                        " has collected a golden gear! Total: " +
+                        _player.goldenGears,
+                      player.id,
+                      { delay: CONFIG.messageIntervals.long, color: "gold" }
+                    );
+                  }
+                  valueOp = 16;
+                }
+                var weight = 0;
+                if (!item["respawn-raidis"]) {
+                  switch (true) {
+                    case between(valueOp, 1, 10): // Adjusted to 1-6 for square
+                      type = "square";
+                      color = "Gold";
+                      health_max = 10;
+                      score_add = 10;
+                      body_damage = 2;
+                      weight = 3;
+                      break;
+                    case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
+                      type = "triangle";
+                      color = "Red";
+                      health_max = 15;
+                      score_add = 15;
+                      body_damage = 3.5;
+                      weight = 5;
+                      break;
+                    case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
+                      type = "pentagon";
+                      color = "#579bfa";
+                      health_max = 100;
+                      score_add = 120;
+                      body_damage = 4;
+                      weight = 10;
+                      break;
+                    case 16: // Adjusted to 9-10 for pentagon
+                      type = "pentagon";
+                      color = "#C2A248";
+                      health_max = 100;
+                      score_add = 120;
+                      body_damage = 4;
+                      weight = 10;
+                      break;
+                  }
+                } else {
+                  const valueOp2 = getRandomInt(1, 10);
+
+                  type = "pentagon";
+                  color = "#579bfa";
+                  health_max = 100;
+                  score_add = 120;
+                  body_damage = 4;
+                  if (valueOp2 === 5) {
+                    var size = 150;
+                    score_add = 3000;
+                    health_max = 1000;
+                    body_damage = 9;
+                    weight = 300;
+                  } else {
+                    weight = 10;
+                    var size = 50;
+                  }
+                }
+                if (!item["respawn-raidis"]) {
+                  var goldenGears = item.goldenGears ? item.goldenGears : null;
+                  var fooditem = {
+                    type: type,
+                    health: health_max,
+                    maxhealth: health_max,
+                    size: size,
+                    angle: getRandomInt(0, 180),
+                    x: x,
+                    y: y,
+                    centerX: x,
+                    centerY: y,
+                    body_damage: body_damage,
+                    weight: weight,
+                    scalarX: getRandomInt(-100, 100),
+                    scalarY: getRandomInt(-100, 100),
+                    vertices: null,
+                    color: color,
+                    score_add: score_add,
+                    randomID: randID,
+                    lastDamaged: null,
+                    lastDamgers: [],
+                    goldenGears: goldenGears,
+                  };
+                } else {
+                  var fooditem = {
+                    type: type,
+                    health: health_max,
+                    maxhealth: health_max,
+                    size: size,
+                    angle: getRandomInt(0, 180),
+                    x: x,
+                    y: y,
+                    centerX: x,
+                    centerY: y,
+                    body_damage: body_damage,
+                    weight: weight,
+                    scalarX: getRandomInt(-100, 100),
+                    scalarY: getRandomInt(-100, 100),
+                    vertices: null,
+                    color: color,
+                    score_add: score_add,
+                    randomID: randID,
+                    "respawn-raidis": item["respawn-raidis"],
+                    lastDamaged: null,
+                    lastDamgers: [],
+                  };
+                }
+                if (type === "square") {
+                  const rawvertices = calculateSquareVertices(
+                    fooditem.x,
+                    fooditem.y,
+                    fooditem.size,
+                    fooditem.angle
+                  );
+                  fooditem.vertices = rawvertices;
+                }
+                if (type === "triangle") {
+                  const rawvertices = calculateTriangleVertices(
+                    fooditem.x,
+                    fooditem.y,
+                    fooditem.size,
+                    fooditem.angle
+                  );
+                  fooditem.vertices = rawvertices;
+                }
+                if (type === "pentagon") {
+                  const rawvertices = calculateRotatedPentagonVertices(
+                    fooditem.x,
+                    fooditem.y,
+                    fooditem.size,
+                    fooditem.angle
+                  );
+                  fooditem.vertices = rawvertices;
+                }
+
+                if (!item.isdead && !item.hasOwnProperty("respawn")) {
+                  reassignRoomItem(fooditem);
+                }
+
+                if (item.hasOwnProperty("respawn")) {
+                  var myTeam = teamlist.find(
+                    (team) => team.teamID === item.teamId
+                  );
+                  myTeam.upgrades.teamBuilding = {
+                    built: false,
+                    level: null,
+                    polygonId: null,
+                    boosts: {
+                      speed: 1,
+                      health: 1,
+                      cannons: {},
+                    },
+                    health: 2000,
+                  };
+                }
+
+                room.items.splice(i, 1);
+                continue;
+              } else if (player.state !== "start" && !sameteam) {
+                item.health -= damageother;
+              }
+
+              if (player.state !== "start" && !sameteam) {
+                emit("shapeDamage", {
+                  PlayerId: player.id,
+                  playerDamage: damageplayer,
+                  shapes: food_squares,
+                });
+              }
+            }
+          }
+        }
+        if (
+          !item.isdead &&
+          Date.now() - item.lastDamaged > 30 * 1000 &&
+          item.health < item.maxhealth
+        ) {
+          item.health += item.healrate / 40;
+        }
+        var bulletsToTest = getRoomAndBoundingForBullets(roomkey);
+        for (let i = 0; i < bulletsToTest.length; i++) {
+          var bullet = bulletsToTest[i];
+          if (
+            Math.abs(bullet.x - item.x) < item.size * 2 + bullet.size * 2 &&
+            Math.abs(bullet.y - item.y) < item.size * 2 + bullet.size * 2
+          ) {
+            let collisionCheck = isBulletCollidingWithPolygon(
+              bullet,
+              item.vertices
+            );
+
+            if (bullet.type === "trap" || bullet.type === "roadMap") {
+              var bulletSpeed = 4;
+            } else {
+              var bulletSpeed = bullet.speed || 0;
             }
 
-            emit("bouceBack", {
-              response: collisionCheck[1].overlapV,
-              playerID: player.id,
-            });
-            for (let i = 0; i < 10; i++) {
-              var factor = item.weight / 5 < 1 ? 1 : item.weight / 5;
-              setTimeout(() => {
-                let recoilX = collisionCheck[1].overlapV.x / 30;
-                let recoilY = collisionCheck[1].overlapV.y / 30;
-                item.x += recoilX / factor;
-                item.y += recoilY / factor;
-                item.centerX += recoilX / factor;
-                item.centerY += recoilY / factor;
-              }, 50 * i);
+            var sameteam = false;
+            if (item.teamId) {
+              sameteam =
+                players[bullet.id]?.team === item.teamId &&
+                players[bullet.id]?.team !== null;
             }
-            if (0 >= item.health && !sameteam) {
+
+            if (!collisionCheck || sameteam) continue;
+            const damage =
+              (bullet.bullet_damage / (item.size + bulletSpeed) +
+                bullet.bullet_pentration) /
+              5;
+
+            item.lastDamaged = Date.now();
+            item.lastDamgers.push(bullet.id);
+            item.lastDamgers = item.lastDamgers.splice(0, 2);
+
+            if (
+              damage >= item.health &&
+              bullet.type !== "FreeNecromancer" &&
+              bullet.type !== "FreeSwarm"
+            ) {
+              if (!players[bullet.id]) {
+                console.error(bullet.id);
+                console.error(players);
+                continue;
+              }
               var reward = item.score_add;
+
               if (player.team !== null) {
                 var team = teamlist.find((team) => team.teamID === player.team);
                 if (team.owner.id !== player.id || team.createTeamScore) {
@@ -6357,7 +6748,7 @@ setInterval(() => {
                     }
                   });
                   emit("pubteamlist", public_teams);
-                } else {
+                } else if (team.owner.id !== player.id) {
                   emit("playerScore", {
                     bulletId: team.owner.id,
                     socrepluse: reward * team.simpleTax,
@@ -6372,6 +6763,7 @@ setInterval(() => {
                 }
                 if (team.createTeamScore) {
                   team.teamScore += complexTax / 1.5;
+                  var public_teams = [];
                   public_teams = teamlist.map((team) => {
                     if (!team.hidden) {
                       team.taxInterval = null;
@@ -6379,7 +6771,7 @@ setInterval(() => {
                     }
                   });
                   emit("pubteamlist", public_teams);
-                } else {
+                } else if (team.owner.id !== player.id) {
                   emit("playerScore", {
                     bulletId: team.owner.id,
                     socrepluse: complexTax,
@@ -6387,41 +6779,47 @@ setInterval(() => {
                   players[team.owner.id].score += complexTax;
                 }
               }
-              player.score += reward;
-              emit("playerScore", {
-                bulletId: player.id,
-                socrepluse: reward,
-              });
-              console.log(reward, "ram");
-              leader_board.hidden.forEach((__index__) => {
-                if (__index__.id === player.id) {
-                  __index__.score += reward;
-                  let isshown = false;
-                  isshown = leader_board.shown.find((__index__) => {
-                    if (__index__.id === player.id) {
-                      return true;
-                    }
-                  });
-                  if (leader_board.shown[10]) {
-                    if (leader_board.shown[10].score < __index__.score) {
-                      leader_board.shown[10] = __index__;
-                    }
-                  } else if (!leader_board.shown[10] && !isshown) {
-                    leader_board.shown.push(__index__);
-                  }
-                }
-              });
-              leader_board.shown.forEach((__index__) => {
-                if (__index__.id === player.id) {
-                  __index__.score += reward;
-                }
-              });
-              rearrange();
-              emit("boardUpdate", {
-                leader_board: leader_board.shown,
-              });
 
-              cors_taken.filter((cor) => {
+              if (!item.isdead) {
+                players[bullet.id].score += reward;
+
+                leader_board.hidden.forEach((__index__) => {
+                  if (__index__.id === bullet.id) {
+                    __index__.score += reward;
+                    let isshown = false;
+                    isshown = leader_board.shown.find((__index__) => {
+                      if (__index__.id === bullet.id) {
+                        return true;
+                      }
+                    });
+                    if (leader_board.shown[10]) {
+                      if (leader_board.shown[10].score < __index__.score) {
+                        leader_board.shown[10] = __index__;
+                      }
+                    } else if (!leader_board.shown[10] && !isshown) {
+                      leader_board.shown.push(__index__);
+                    }
+                  }
+                });
+                leader_board.shown.forEach((__index__) => {
+                  if (__index__.id === bullet.id) {
+                    __index__.score += reward;
+                  }
+                });
+                rearrange();
+                emit("boardUpdate", {
+                  leader_board: leader_board.shown,
+                });
+                emit("playerScore", {
+                  bulletId: bullet.id,
+                  socrepluse: reward,
+                });
+                console.log(reward, "bullet");
+              }
+
+              var randID = Math.random() * index * Date.now();
+
+              cors_taken = cors_taken.filter((cor) => {
                 if (cor.id === item.randomID) {
                   return false;
                 } else {
@@ -6447,21 +6845,20 @@ setInterval(() => {
                       c.y - CONFIG.map.boundRange,
                       c.y + CONFIG.map.boundRange
                     )
-                )
+                ) ||
+                !confirmplayerradia(x, y)
               );
-              let randID = Math.random() * index * Date.now();
 
               cors_taken.push({ x, y, id: randID });
 
               var valueOp = getRandomInt(1, 15);
               var type = "";
-              var color = "";
-              var health_max = "";
-              var score_add = 0;
-              var body_damage = 0;
               if (item.goldenGears) {
                 var _player = userbase.find((_player) => {
-                  return comparePasswords(_player.userid, player.userId);
+                  return comparePasswords(
+                    _player.userid,
+                    players[bullet.id].userId
+                  );
                 });
                 if (_player) {
                   _player.goldenGears += 1;
@@ -6469,12 +6866,16 @@ setInterval(() => {
                     _player.username +
                       " has collected a golden gear! Total: " +
                       _player.goldenGears,
-                    player.id,
+                    bullet.id,
                     { delay: CONFIG.messageIntervals.long, color: "gold" }
                   );
                 }
                 valueOp = 16;
               }
+              var color = "";
+              var health_max = "";
+              var score_add = 0;
+              var body_damage = 0;
               var weight = 0;
               if (!item["respawn-raidis"]) {
                 switch (true) {
@@ -6526,24 +6927,24 @@ setInterval(() => {
                   body_damage = 9;
                   weight = 300;
                 } else {
-                  weight = 10;
                   var size = 50;
+                  weight = 10;
                 }
               }
               if (!item["respawn-raidis"]) {
                 var goldenGears = item.goldenGears ? item.goldenGears : null;
-                var fooditem = {
+                var fooditem__XX = {
                   type: type,
                   health: health_max,
                   maxhealth: health_max,
-                  size: size,
+                  size: 50,
                   angle: getRandomInt(0, 180),
                   x: x,
                   y: y,
                   centerX: x,
                   centerY: y,
-                  body_damage: body_damage,
                   weight: weight,
+                  body_damage: body_damage,
                   scalarX: getRandomInt(-100, 100),
                   scalarY: getRandomInt(-100, 100),
                   vertices: null,
@@ -6554,8 +6955,10 @@ setInterval(() => {
                   lastDamgers: [],
                   goldenGears: goldenGears,
                 };
-              } else {
-                var fooditem = {
+              }
+              if (item["respawn-raidis"]) {
+                var goldenGears = item.goldenGears ? item.goldenGears : null;
+                var fooditem__XX = {
                   type: type,
                   health: health_max,
                   maxhealth: health_max,
@@ -6565,49 +6968,67 @@ setInterval(() => {
                   y: y,
                   centerX: x,
                   centerY: y,
-                  body_damage: body_damage,
                   weight: weight,
+                  body_damage: body_damage,
                   scalarX: getRandomInt(-100, 100),
                   scalarY: getRandomInt(-100, 100),
                   vertices: null,
                   color: color,
                   score_add: score_add,
                   randomID: randID,
-                  "respawn-raidis": item["respawn-raidis"],
+                  "respawn-raidis": 1000,
                   lastDamaged: null,
                   lastDamgers: [],
+                  goldenGears: goldenGears,
                 };
+              }
+              let recoilY, recoilX;
+              if (bullet.type !== "expoled") {
+                recoilX =
+                  ((bullet.size / item.weight) *
+                    bullet.speed *
+                    Math.cos(bullet.angle)) /
+                  4;
+                recoilY =
+                  ((bullet.size / item.weight) *
+                    bullet.speed *
+                    Math.sin(bullet.angle)) /
+                  4;
+              }
+              item.x += recoilX;
+              item.y += recoilY;
+              item.centerX += recoilX;
+              item.centerY += recoilY;
+
+              if (type === "triangle") {
+                const rawvertices = calculateTriangleVertices(
+                  fooditem__XX.x,
+                  fooditem__XX.y,
+                  fooditem__XX.size,
+                  fooditem__XX.angle
+                );
+                fooditem__XX.vertices = rawvertices;
+              } //
+              if (type === "pentagon") {
+                const rawvertices = calculateRotatedPentagonVertices(
+                  fooditem__XX.x,
+                  fooditem__XX.y,
+                  fooditem__XX.size,
+                  fooditem__XX.angle
+                );
+                fooditem__XX.vertices = rawvertices;
               }
               if (type === "square") {
                 const rawvertices = calculateSquareVertices(
-                  fooditem.x,
-                  fooditem.y,
-                  fooditem.size,
-                  fooditem.angle
+                  fooditem__XX.x,
+                  fooditem__XX.y,
+                  fooditem__XX.size,
+                  fooditem__XX.angle
                 );
-                fooditem.vertices = rawvertices;
+                fooditem__XX.vertices = rawvertices;
               }
-              if (type === "triangle") {
-                const rawvertices = calculateTriangleVertices(
-                  fooditem.x,
-                  fooditem.y,
-                  fooditem.size,
-                  fooditem.angle
-                );
-                fooditem.vertices = rawvertices;
-              }
-              if (type === "pentagon") {
-                const rawvertices = calculateRotatedPentagonVertices(
-                  fooditem.x,
-                  fooditem.y,
-                  fooditem.size,
-                  fooditem.angle
-                );
-                fooditem.vertices = rawvertices;
-              }
-
               if (!item.isdead && !item.hasOwnProperty("respawn")) {
-                reassignRoomItem(fooditem);
+                reassignRoomItem(fooditem__XX);
               }
 
               if (item.hasOwnProperty("respawn")) {
@@ -6627,826 +7048,378 @@ setInterval(() => {
                 };
               }
 
-              room.items.splice(i, 1);
-              continue;
-            } else if (player.state !== "start" && !sameteam) {
-              item.health -= damageother;
-            }
+              bullet.distanceTraveled +=
+                (bullet.size * 2) / bullet.bullet_pentration +
+                bullet.size * 3 +
+                40;
 
-            if (player.state !== "start" && !sameteam) {
-              emit("shapeDamage", {
-                PlayerId: player.id,
-                playerDamage: damageplayer,
-                shapes: food_squares,
-              });
-            }
-          }
-        }
-      }
-      if (
-        !item.isdead &&
-        Date.now() - item.lastDamaged > 30 * 1000 &&
-        item.health < item.maxhealth
-      ) {
-        item.health += item.healrate / 40;
-      }
-      var bulletsToTest = getRoomAndBoundingForBullets(roomkey);
-      for (let i = 0; i < bulletsToTest.length; i++) {
-        var bullet = bulletsToTest[i];
-        if (
-          Math.abs(bullet.x - item.x) < item.size * 2 + bullet.size * 2 &&
-          Math.abs(bullet.y - item.y) < item.size * 2 + bullet.size * 2
-        ) {
-          let collisionCheck = isBulletCollidingWithPolygon(
-            bullet,
-            item.vertices
-          );
-
-          if (bullet.type === "trap" || bullet.type === "roadMap") {
-            var bulletSpeed = 4;
-          } else {
-            var bulletSpeed = bullet.speed || 0;
-          }
-
-          var sameteam = false;
-          if (item.teamId) {
-            sameteam =
-              players[bullet.id]?.team === item.teamId &&
-              players[bullet.id]?.team !== null;
-          }
-
-          if (!collisionCheck || sameteam) continue;
-          const damage =
-            (bullet.bullet_damage / (item.size + bulletSpeed) +
-              bullet.bullet_pentration) /
-            5;
-
-          item.lastDamaged = Date.now();
-          item.lastDamgers.push(bullet.id);
-          item.lastDamgers = item.lastDamgers.splice(0, 2);
-
-          if (
-            damage >= item.health &&
-            bullet.type !== "FreeNecromancer" &&
-            bullet.type !== "FreeSwarm"
-          ) {
-            if (!players[bullet.id]) {
-              console.error(bullet.id);
-              console.error(players);
-              continue;
-            }
-            var reward = item.score_add;
-
-            if (player.team !== null) {
-              var team = teamlist.find((team) => team.teamID === player.team);
-              if (team.owner.id !== player.id || team.createTeamScore) {
-                reward -= reward * team.simpleTax;
-              }
-              if (team.createTeamScore) {
-                team.teamScore += (reward * team.simpleTax) / 2;
-                public_teams = teamlist.map((team) => {
-                  if (!team.hidden) {
-                    team.taxInterval = null;
-                    return team;
-                  }
-                });
-                emit("pubteamlist", public_teams);
-              } else if (team.owner.id !== player.id) {
-                emit("playerScore", {
-                  bulletId: team.owner.id,
-                  socrepluse: reward * team.simpleTax,
-                });
-              }
-
-              var complexTax =
-                reward *
-                (calculateTax(player.score, 10000000) / team.playerTax);
-              if (team.owner.id !== player.id || team.createTeamScore) {
-                reward -= complexTax;
-              }
-              if (team.createTeamScore) {
-                team.teamScore += complexTax / 1.5;
-                var public_teams = [];
-                public_teams = teamlist.map((team) => {
-                  if (!team.hidden) {
-                    team.taxInterval = null;
-                    return team;
-                  }
-                });
-                emit("pubteamlist", public_teams);
-              } else if (team.owner.id !== player.id) {
-                emit("playerScore", {
-                  bulletId: team.owner.id,
-                  socrepluse: complexTax,
-                });
-                players[team.owner.id].score += complexTax;
-              }
-            }
-
-            if (!item.isdead) {
-              players[bullet.id].score += reward;
-
-              leader_board.hidden.forEach((__index__) => {
-                if (__index__.id === bullet.id) {
-                  __index__.score += reward;
-                  let isshown = false;
-                  isshown = leader_board.shown.find((__index__) => {
-                    if (__index__.id === bullet.id) {
-                      return true;
-                    }
-                  });
-                  if (leader_board.shown[10]) {
-                    if (leader_board.shown[10].score < __index__.score) {
-                      leader_board.shown[10] = __index__;
-                    }
-                  } else if (!leader_board.shown[10] && !isshown) {
-                    leader_board.shown.push(__index__);
-                  }
+              if (bullet.bullet_pentration > item.size) {
+                if (bullet.type === "triangle") {
+                  bullet.angle *= 5;
                 }
-              });
-              leader_board.shown.forEach((__index__) => {
-                if (__index__.id === bullet.id) {
-                  __index__.score += reward;
-                }
-              });
-              rearrange();
-              emit("boardUpdate", {
-                leader_board: leader_board.shown,
-              });
-              emit("playerScore", {
-                bulletId: bullet.id,
-                socrepluse: reward,
-              });
-              console.log(reward, "bullet");
-            }
-
-            var randID = Math.random() * index * Date.now();
-
-            cors_taken = cors_taken.filter((cor) => {
-              if (cor.id === item.randomID) {
-                return false;
-              } else {
-                return true;
               }
-            });
 
-            let respawnrai = item["respawn-raidis"] || CONFIG.map.innersize;
-            let x, y;
-            do {
-              x = getRandomInt(-respawnrai, respawnrai);
-              y = getRandomInt(-respawnrai, respawnrai);
-            } while (
-              cors_taken.some(
-                (c) =>
-                  between(
-                    x,
-                    c.x - CONFIG.map.boundRange,
-                    c.x + CONFIG.map.boundRange
-                  ) &&
-                  between(
-                    y,
-                    c.y - CONFIG.map.boundRange,
-                    c.y + CONFIG.map.boundRange
-                  )
-              ) ||
-              !confirmplayerradia(x, y)
-            );
-
-            cors_taken.push({ x, y, id: randID });
-
-            var valueOp = getRandomInt(1, 15);
-            var type = "";
-            if (item.goldenGears) {
-              var _player = userbase.find((_player) => {
-                return comparePasswords(
-                  _player.userid,
-                  players[bullet.id].userId
-                );
-              });
-              if (_player) {
-                _player.goldenGears += 1;
-                createAnnocment(
-                  _player.username +
-                    " has collected a golden gear! Total: " +
-                    _player.goldenGears,
-                  bullet.id,
-                  { delay: CONFIG.messageIntervals.long, color: "gold" }
-                );
+              if (!item.isdead) {
+                item.deathtime = Date.now();
+                item.isdead = true;
               }
-              valueOp = 16;
-            }
-            var color = "";
-            var health_max = "";
-            var score_add = 0;
-            var body_damage = 0;
-            var weight = 0;
-            if (!item["respawn-raidis"]) {
-              switch (true) {
-                case between(valueOp, 1, 10): // Adjusted to 1-6 for square
-                  type = "square";
-                  color = "Gold";
-                  health_max = 10;
-                  score_add = 10;
-                  body_damage = 2;
-                  weight = 3;
-                  break;
-                case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
-                  type = "triangle";
-                  color = "Red";
-                  health_max = 15;
-                  score_add = 15;
-                  body_damage = 3.5;
-                  weight = 5;
-                  break;
-                case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
-                  type = "pentagon";
-                  color = "#579bfa";
-                  health_max = 100;
-                  score_add = 120;
-                  body_damage = 4;
-                  weight = 10;
-                  break;
-                case 16: // Adjusted to 9-10 for pentagon
-                  type = "pentagon";
-                  color = "#C2A248";
-                  health_max = 100;
-                  score_add = 120;
-                  body_damage = 4;
-                  weight = 10;
-                  break;
+
+              return_ = false;
+            } else if (
+              bullet.type !== "FreeNecromancer" &&
+              bullet.type !== "FreeSwarm"
+            ) {
+              if (
+                bullet.type !== "FreeNecromancer" &&
+                bullet.type !== "FreeSwarm"
+              ) {
+                item.health -= damage;
               }
+              let recoilX =
+                ((bullet.size / item.weight) *
+                  bullet.speed *
+                  Math.cos(bullet.angle)) /
+                4;
+              let recoilY =
+                ((bullet.size / item.weight) *
+                  bullet.speed *
+                  Math.sin(bullet.angle)) /
+                4;
+              item.x += recoilX;
+              item.y += recoilY;
+              item.centerX += recoilX;
+              item.centerY += recoilY;
             } else {
-              const valueOp2 = getRandomInt(1, 10);
-
-              type = "pentagon";
-              color = "#579bfa";
-              health_max = 100;
-              score_add = 120;
-              body_damage = 4;
-              if (valueOp2 === 5) {
-                var size = 150;
-                score_add = 3000;
-                health_max = 1000;
-                body_damage = 9;
-                weight = 300;
-              } else {
-                var size = 50;
-                weight = 10;
-              }
+              let recoilX =
+                ((bullet.size / item.weight) *
+                  bullet.speed *
+                  Math.cos(bullet.angle)) /
+                4;
+              let recoilY =
+                ((bullet.size / item.weight) *
+                  bullet.speed *
+                  Math.sin(bullet.angle)) /
+                4;
+              item.x += recoilX;
+              item.y += recoilY;
+              item.centerX += recoilX;
+              item.centerY += recoilY;
             }
-            if (!item["respawn-raidis"]) {
-              var goldenGears = item.goldenGears ? item.goldenGears : null;
-              var fooditem__XX = {
-                type: type,
-                health: health_max,
-                maxhealth: health_max,
-                size: 50,
-                angle: getRandomInt(0, 180),
-                x: x,
-                y: y,
-                centerX: x,
-                centerY: y,
-                weight: weight,
-                body_damage: body_damage,
-                scalarX: getRandomInt(-100, 100),
-                scalarY: getRandomInt(-100, 100),
-                vertices: null,
-                color: color,
-                score_add: score_add,
-                randomID: randID,
-                lastDamaged: null,
-                lastDamgers: [],
-                goldenGears: goldenGears,
-              };
-            }
-            if (item["respawn-raidis"]) {
-              var goldenGears = item.goldenGears ? item.goldenGears : null;
-              var fooditem__XX = {
-                type: type,
-                health: health_max,
-                maxhealth: health_max,
-                size: size,
-                angle: getRandomInt(0, 180),
-                x: x,
-                y: y,
-                centerX: x,
-                centerY: y,
-                weight: weight,
-                body_damage: body_damage,
-                scalarX: getRandomInt(-100, 100),
-                scalarY: getRandomInt(-100, 100),
-                vertices: null,
-                color: color,
-                score_add: score_add,
-                randomID: randID,
-                "respawn-raidis": 1000,
-                lastDamaged: null,
-                lastDamgers: [],
-                goldenGears: goldenGears,
-              };
-            }
-            let recoilX =
-              ((bullet.size / item.weight) *
-                bullet.speed *
-                Math.cos(bullet.angle)) /
-              4;
-            let recoilY =
-              ((bullet.size / item.weight) *
-                bullet.speed *
-                Math.sin(bullet.angle)) /
-              4;
-            item.x += recoilX;
-            item.y += recoilY;
-            item.centerX += recoilX;
-            item.centerY += recoilY;
-
-            if (type === "triangle") {
-              const rawvertices = calculateTriangleVertices(
-                fooditem__XX.x,
-                fooditem__XX.y,
-                fooditem__XX.size,
-                fooditem__XX.angle
-              );
-              fooditem__XX.vertices = rawvertices;
-            } //
-            if (type === "pentagon") {
-              const rawvertices = calculateRotatedPentagonVertices(
-                fooditem__XX.x,
-                fooditem__XX.y,
-                fooditem__XX.size,
-                fooditem__XX.angle
-              );
-              fooditem__XX.vertices = rawvertices;
-            }
-            if (type === "square") {
-              const rawvertices = calculateSquareVertices(
-                fooditem__XX.x,
-                fooditem__XX.y,
-                fooditem__XX.size,
-                fooditem__XX.angle
-              );
-              fooditem__XX.vertices = rawvertices;
-            }
-            if (!item.isdead && !item.hasOwnProperty("respawn")) {
-              reassignRoomItem(fooditem__XX);
-            }
-
-            if (item.hasOwnProperty("respawn")) {
-              var myTeam = teamlist.find((team) => team.teamID === item.teamId);
-              myTeam.upgrades.teamBuilding = {
-                built: false,
-                level: null,
-                polygonId: null,
-                boosts: {
-                  speed: 1,
-                  health: 1,
-                  cannons: {},
-                },
-                health: 2000,
-              };
-            }
-
-            bullet.distanceTraveled +=
-              (bullet.size * 2) / bullet.bullet_pentration +
-              bullet.size * 3 +
-              40;
-
-            if (bullet.bullet_pentration > item.size) {
-              if (bullet.type === "triangle") {
-                bullet.angle *= 5;
-              }
-            }
-
-            if (!item.isdead) {
-              item.deathtime = Date.now();
-              item.isdead = true;
-            }
-
-            return_ = false;
-          } else if (
-            bullet.type !== "FreeNecromancer" &&
-            bullet.type !== "FreeSwarm"
-          ) {
             if (
               bullet.type !== "FreeNecromancer" &&
               bullet.type !== "FreeSwarm"
             ) {
-              item.health -= damage;
+              bullet.distanceTraveled +=
+                (bullet.size * 2) / bullet.bullet_pentration +
+                bullet.size * 3 +
+                40;
+
+              bullet.distanceTraveled += 1; // for drones
             }
-            let recoilX =
-              ((bullet.size / item.weight) *
-                bullet.speed *
-                Math.cos(bullet.angle)) /
-              4;
-            let recoilY =
-              ((bullet.size / item.weight) *
-                bullet.speed *
-                Math.sin(bullet.angle)) /
-              4;
-            item.x += recoilX;
-            item.y += recoilY;
-            item.centerX += recoilX;
-            item.centerY += recoilY;
-          } else {
-            let recoilX =
-              ((bullet.size / item.weight) *
-                bullet.speed *
-                Math.cos(bullet.angle)) /
-              4;
-            let recoilY =
-              ((bullet.size / item.weight) *
-                bullet.speed *
-                Math.sin(bullet.angle)) /
-              4;
-            item.x += recoilX;
-            item.y += recoilY;
-            item.centerX += recoilX;
-            item.centerY += recoilY;
-          }
-          if (
-            bullet.type !== "FreeNecromancer" &&
-            bullet.type !== "FreeSwarm"
-          ) {
-            bullet.distanceTraveled +=
-              (bullet.size * 2) / bullet.bullet_pentration +
-              bullet.size * 3 +
-              40;
 
-            bullet.distanceTraveled += 1; // for drones
-          }
-
-          if (
-            -(bullet.distanceTraveled - bullet.bullet_distance) <
-            25 * bullet.speed ** 2
-          ) {
-            bullet.transparency =
-              1 - (bullet.distanceTraveled / bullet.bullet_distance * 2.5) < 0.001
-                ? 0.001
-                : 1 - (bullet.distanceTraveled / bullet.bullet_distance * 2.5);
-          }
-        }
-      }
-      if (return_ === true && !item.isdead) {
-        buildArray.push({
-          angle: item.angle,
-          color: item.color,
-          health: item.health,
-          maxhealth: item.maxhealth,
-          size: item.size,
-          type: realtype,
-          weight: item.weight,
-          x: item.x,
-          y: item.y,
-          transparency: item.transparency,
-          randomID: item.randomID,
-        });
-        continue;
-      }
-      if (item.isdead) {
-        if (Date.now() >= item.deathtime + CONFIG.deathTime) {
-          console.log("deado");
-          room.items.splice(i, 1);
-          continue;
-        }
-      }
-      if (item.isdead) {
-        buildArray.push({
-          angle: item.angle,
-          color: item.color,
-          health: item.health,
-          maxhealth: item.maxhealth,
-          size: item.size,
-          type: realtype,
-          weight: item.weight,
-          x: item.x,
-          y: item.y,
-          transparency: item.transparency,
-          randomID: item.randomID,
-        });
-        continue;
-      }
-    }
-    for (let i = 0; i < room.bullets.length; i++) {
-      let bullet = room.bullets[i];
-      let WanderControlled = false;
-      if (
-        !(
-          bullet.x >= room.bounds?.x1 &&
-          bullet.x <= room.bounds?.x2 &&
-          bullet.y >= room.bounds?.y1 &&
-          bullet.y <= room.bounds?.y2
-        )
-      ) {
-        reassignRoomBullet(bullet);
-        room.bullets.splice(i, 1);
-        bullets.push(bullet);
-        continue;
-      }
-      if (bullet.type === "directer") {
-        try {
-          if (!players[bullet.id]?.autoFiring && players[bullet.id]) {
-            let dx =
-              players[bullet.id].x -
-              players[bullet.id].canvasW / 2 +
-              players[bullet.id].MouseX / players[bullet.id].FOV;
-
-            let dy =
-              players[bullet.id].y -
-              players[bullet.id].canvasH / 2 +
-              players[bullet.id].MouseY / players[bullet.id].FOV;
-
-            let angle = Math.atan2(dy - bullet.y, dx - bullet.x);
             if (
-              Math.abs(players[bullet.id].y - dy) < bullet.speed * 2 &&
-              Math.abs(players[bullet.id].x - dx) < bullet.speed * 2
+              -(bullet.distanceTraveled - bullet.bullet_distance) <
+              25 * bullet.speed ** 2
             ) {
-              bullet.angle += 0.5 * (pi / 180);
-            } else {
-              bullet.angle = angle;
-              if (players[bullet.id]?.mousestate === "held") {
-                bullet.angle = Math.atan2(bullet.y - dy, bullet.x - dx);
-              }
+              bullet.transparency =
+                1 - (bullet.distanceTraveled / bullet.bullet_distance) * 2.5 <
+                0.001
+                  ? 0.001
+                  : 1 -
+                    (bullet.distanceTraveled / bullet.bullet_distance) * 2.5;
             }
-          } else if (players[bullet.id]?.autoFiring) {
-            let buildframe = {
-              x: players[bullet.id].canvasW / CONFIG.droneRange,
-              y: players[bullet.id].canvasH / CONFIG.droneRange,
-            };
-            var pointerAngle;
-            let buildrect = {
-              v1: players[bullet.id].x - buildframe.x,
-              v2: players[bullet.id].x + buildframe.x,
-              v3: players[bullet.id].y - buildframe.y,
-              v4: players[bullet.id].y + buildframe.y,
-            };
-            let fire_at_ = null;
-            var maxdistance = 5001;
-            for (const playerID in players) {
-              let player = players[playerID];
-              var sameTeam =
-                player.team === players[bullet.id].team &&
-                player.team !== null &&
-                players[bullet.id].team !== null;
-              if (playerID !== bullet.id && !sameTeam) {
-                let distance = MathHypotenuse(
-                  player.x - bullet.x,
-                  player.y - bullet.y
-                );
-                if (
-                  player.x > buildrect.v1 &&
-                  player.x < buildrect.v2 &&
-                  player.y > buildrect.v3 &&
-                  player.y < buildrect.v4 &&
-                  distance < maxdistance
-                ) {
-                  pointerAngle = Math.atan2(
-                    player.y - bullet.y,
-                    player.x - bullet.x
-                  );
-
-                  maxdistance = distance;
-                  fire_at_ = player;
-                }
-              }
-            }
-            if (maxdistance > CONFIG.playerItemSightRange) {
-              getRoomAndBounding(bullet.x, bullet.y).items.forEach((item_) => {
-                let distance = MathHypotenuse(
-                  item_.x - bullet.x,
-                  item_.y - bullet.y
-                );
-                if (
-                  item_.x > buildrect.v1 &&
-                  item_.x < buildrect.v2 &&
-                  item_.y > buildrect.v3 &&
-                  item_.y < buildrect.v4 &&
-                  distance < maxdistance
-                ) {
-                  pointerAngle = Math.atan2(
-                    item_.y - bullet.y,
-                    item_.x - bullet.x
-                  );
-
-                  maxdistance = distance;
-                  fire_at_ = item_;
-                }
-              });
-            }
-            if (fire_at_) {
-              bullet.angle = pointerAngle;
-              var newX = bullet.x + bullet.speed * Math.cos(pointerAngle);
-              var newY = bullet.y + bullet.speed * Math.sin(pointerAngle);
-            }
-            if (!fire_at_) {
-              bullet.wander.think();
-              bullet.setBaseXY();
-              var pointerAngle_ = bullet.wander.returnAngle();
-              bullet.angle = pointerAngle_;
-              var newX = bullet.x + bullet.speed * Math.cos(pointerAngle_);
-              var newY = bullet.y + bullet.speed * Math.sin(pointerAngle_);
-            }
-          } else {
-            throw Error("dirty player state");
           }
-        } catch (e) {
-          // delet bad bullets
-          console.log("7045", e);
-          if (players[bullet.id]) {
-            emit("dronekilled", { droneID: bullet.id });
+        }
+        if (return_ === true && !item.isdead) {
+          buildArray.push({
+            angle: item.angle,
+            color: item.color,
+            health: item.health,
+            maxhealth: item.maxhealth,
+            size: item.size,
+            type: realtype,
+            weight: item.weight,
+            x: item.x,
+            y: item.y,
+            transparency: item.transparency,
+            randomID: item.randomID,
+          });
+          continue;
+        }
+        if (item.isdead) {
+          if (Date.now() >= item.deathtime + CONFIG.deathTime) {
+            console.log("deado");
+            room.items.splice(i, 1);
+            continue;
           }
-          room.bullets.splice(i, 1);
+        }
+        if (item.isdead) {
+          buildArray.push({
+            angle: item.angle,
+            color: item.color,
+            health: item.health,
+            maxhealth: item.maxhealth,
+            size: item.size,
+            type: realtype,
+            weight: item.weight,
+            x: item.x,
+            y: item.y,
+            transparency: item.transparency,
+            randomID: item.randomID,
+          });
           continue;
         }
       }
-      let collied = false;
-      if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
-        // choose a player to attak
-        if (frame % 3 === 0) {
-          var maxdistance = 600;
-          var maxfov = 2400;
-          var target = { x: bullet.x, y: bullet.y };
-          var foundTarget = false;
-          for (const playerId in players) {
-            var player = players[playerId];
-            let newdistance = MathHypotenuse(
-              player.x - bullet.x,
-              player.y - bullet.y
-            );
-            if (newdistance < maxfov) {
-              target = { x: player.x, y: player.y, distance: newdistance };
-              newdistance = maxdistance;
-              foundTarget = true;
-            }
-          }
-          if (foundTarget && target?.distance < maxdistance) {
-            bullet.target = target;
-          } else if (foundTarget) {
-            bullet.target = target;
-          } else if (!foundTarget) {
-            bullet.target = { x: 0, y: 0, distance: 4000 };
-          }
-
-          var __angle = Math.atan2(
-            bullet.target.y - bullet.y,
-            bullet.target.x - bullet.x
-          );
-
-          bullet.angle = __angle;
-        }
-        if (
-          bullet.target &&
-          bullet.target?.distance < CONFIG.playerBaseSize &&
-          __angle !== 0
-        ) {
-          var newX = bullet.x;
-          var newY = bullet.y;
-          bullet.wander.setXY(bullet.x, bullet.y);
-        } else if (bullet.target?.distance < 600) {
-          var boss = bullet.boss;
-          bullet.wander.setBaseXY(boss.x, boss.y);
-          var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
-          var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
-          bullet.wander.setXY(newX, newY);
-        } else if (
-          bullet.target &&
-          bullet.target?.distance > 600 &&
-          bullet.target?.distance < 2400
-        ) {
-          var boss = bullet.boss;
-          bullet.wander.think();
-          bullet.wander.setBaseXY(boss.x, boss.y);
-          let tempAngle = bullet.wander.returnAngle();
-          var newX = bullet.x + bullet.speed * Math.cos(tempAngle);
-          var newY = bullet.y + bullet.speed * Math.sin(tempAngle);
-          bullet.wander.setXY(newX, newY);
-        } else {
-          bullet.wander.setXY(bullet.x, bullet.y);
-          var newX = bullet.x;
-          var newY = bullet.y;
-        }
-      } else {
-        var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
-        var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
-      }
-      var newX__;
-      var newY__;
-      if (
-        bullet.type !== "directer" &&
-        bullet.type !== "FreeNecromancer" &&
-        bullet.type !== "FreeSwarm" &&
-        bullet.type !== "sheild"
-      ) {
-        bullet.distanceTraveled += MathHypotenuse(
-          newX - bullet.x,
-          newY - bullet.y
-        );
-
+      for (let i = 0; i < room.bullets.length; i++) {
+        let bullet = room.bullets[i];
+        let WanderControlled = false;
         if (
           !(
-            bullet.x >= food_squares[bullet.sedoRoomKey]?.bounds?.x1 &&
-            bullet.x <= food_squares[bullet.sedoRoomKey]?.bounds?.x2 &&
-            bullet.y >= food_squares[bullet.sedoRoomKey]?.bounds?.y1 &&
-            bullet.y <= food_squares[bullet.sedoRoomKey]?.bounds?.y2
+            bullet.x >= room.bounds?.x1 &&
+            bullet.x <= room.bounds?.x2 &&
+            bullet.y >= room.bounds?.y1 &&
+            bullet.y <= room.bounds?.y2
           )
         ) {
-          bullet.sedoRoomKey = getKeyRoom(newX, newY) ?? bullet.sedoRoomKey;
+          reassignRoomBullet(bullet);
+          room.bullets.splice(i, 1);
+          bullets.push(bullet);
+          continue;
         }
-      }
+        if (bullet.type === "directer") {
+          try {
+            if (!players[bullet.id]?.autoFiring && players[bullet.id]) {
+              let dx =
+                players[bullet.id].x -
+                players[bullet.id].canvasW / 2 +
+                players[bullet.id].MouseX / players[bullet.id].FOV;
 
-      if (
-        bullet.type === "trap" ||
-        bullet.type === "roadMap" ||
-        bullet.type === "directer" ||
-        bullet.type !== "FreeSwarm" ||
-        (bullet.type !== "FreeNecromancer" && bullet.type !== "sheild")
-      ) {
-        if (
-          bullet.bullet_distance - bullet.distanceTraveled <
-            200 / (bullet.speed / 2) &&
-          (bullet.type === "roadMap" || bullet.type === "trap")
-        ) {
-          bullet.speed -=
-            (bullet.bullet_distance - bullet.distanceTraveled) /
-            (85 / (bullet.speed * 2));
-          if (bullet.speed <= 0) bullet.speed = 0;
+              let dy =
+                players[bullet.id].y -
+                players[bullet.id].canvasH / 2 +
+                players[bullet.id].MouseY / players[bullet.id].FOV;
+
+              let angle = Math.atan2(dy - bullet.y, dx - bullet.x);
+              if (
+                Math.abs(players[bullet.id].y - dy) < bullet.speed * 2 &&
+                Math.abs(players[bullet.id].x - dx) < bullet.speed * 2
+              ) {
+                bullet.angle += 0.5 * (pi / 180);
+              } else {
+                bullet.angle = angle;
+                if (players[bullet.id]?.mousestate === "held") {
+                  bullet.angle = Math.atan2(bullet.y - dy, bullet.x - dx);
+                }
+              }
+            } else if (players[bullet.id]?.autoFiring) {
+              let buildframe = {
+                x: players[bullet.id].canvasW / CONFIG.droneRange,
+                y: players[bullet.id].canvasH / CONFIG.droneRange,
+              };
+              var pointerAngle;
+              let buildrect = {
+                v1: players[bullet.id].x - buildframe.x,
+                v2: players[bullet.id].x + buildframe.x,
+                v3: players[bullet.id].y - buildframe.y,
+                v4: players[bullet.id].y + buildframe.y,
+              };
+              let fire_at_ = null;
+              var maxdistance = 5001;
+              for (const playerID in players) {
+                let player = players[playerID];
+                var sameTeam =
+                  player.team === players[bullet.id].team &&
+                  player.team !== null &&
+                  players[bullet.id].team !== null;
+                if (playerID !== bullet.id && !sameTeam) {
+                  let distance = MathHypotenuse(
+                    player.x - bullet.x,
+                    player.y - bullet.y
+                  );
+                  if (
+                    player.x > buildrect.v1 &&
+                    player.x < buildrect.v2 &&
+                    player.y > buildrect.v3 &&
+                    player.y < buildrect.v4 &&
+                    distance < maxdistance
+                  ) {
+                    pointerAngle = Math.atan2(
+                      player.y - bullet.y,
+                      player.x - bullet.x
+                    );
+
+                    maxdistance = distance;
+                    fire_at_ = player;
+                  }
+                }
+              }
+              if (maxdistance > CONFIG.playerItemSightRange) {
+                getRoomAndBounding(bullet.x, bullet.y).items.forEach(
+                  (item_) => {
+                    let distance = MathHypotenuse(
+                      item_.x - bullet.x,
+                      item_.y - bullet.y
+                    );
+                    if (
+                      item_.x > buildrect.v1 &&
+                      item_.x < buildrect.v2 &&
+                      item_.y > buildrect.v3 &&
+                      item_.y < buildrect.v4 &&
+                      distance < maxdistance
+                    ) {
+                      pointerAngle = Math.atan2(
+                        item_.y - bullet.y,
+                        item_.x - bullet.x
+                      );
+
+                      maxdistance = distance;
+                      fire_at_ = item_;
+                    }
+                  }
+                );
+              }
+              if (fire_at_) {
+                bullet.angle = pointerAngle;
+                var newX = bullet.x + bullet.speed * Math.cos(pointerAngle);
+                var newY = bullet.y + bullet.speed * Math.sin(pointerAngle);
+              }
+              if (!fire_at_) {
+                bullet.wander.think();
+                bullet.setBaseXY();
+                var pointerAngle_ = bullet.wander.returnAngle();
+                bullet.angle = pointerAngle_;
+                var newX = bullet.x + bullet.speed * Math.cos(pointerAngle_);
+                var newY = bullet.y + bullet.speed * Math.sin(pointerAngle_);
+              }
+            } else {
+              throw Error("dirty player state");
+            }
+          } catch (e) {
+            // delet bad bullets
+            console.log("7045", e);
+            if (players[bullet.id]) {
+              emit("dronekilled", { droneID: bullet.id });
+            }
+            room.bullets.splice(i, 1);
+            continue;
+          }
         }
+        let collied = false;
+        if (bullet.type === "FreeNecromancer" || bullet.type === "FreeSwarm") {
+          // choose a player to attak
+          if (frame % 3 === 0) {
+            var maxdistance = 600;
+            var maxfov = 2400;
+            var target = { x: bullet.x, y: bullet.y, distance: undefined };
+            var foundTarget = false;
+            for (const playerId in players) {
+              var player = players[playerId];
+              let newdistance = MathHypotenuse(
+                player.x - bullet.x,
+                player.y - bullet.y
+              );
+              if (newdistance < maxfov) {
+                target = { x: player.x, y: player.y, distance: newdistance };
+                newdistance = maxdistance;
+                foundTarget = true;
+              }
+            }
+            if (foundTarget && target?.distance < maxdistance) {
+              bullet.target = target;
+            } else if (foundTarget) {
+              bullet.target = target;
+            } else if (!foundTarget) {
+              bullet.target = { x: 0, y: 0, distance: 4000 };
+            }
 
-        for (let i = 0; i < room.bullets.length; i++) {
-          var bullet_ = room.bullets[i];
+            var __angle = Math.atan2(
+              bullet.target.y - bullet.y,
+              bullet.target.x - bullet.x
+            );
 
-          if (
-            bullet.id !== bullet_.id &&
-            !WanderControlled &&
-            !(
-              players[bullet?.id]?.team === players[bullet_?.id]?.team &&
-              players[bullet?.id]?.team !== null &&
-              players[bullet_?.id]?.team !== null
-            ) &&
-            Math.abs(bullet.x - bullet_.x) <
-              bullet.size * 1.5 + bullet_.size * 1.5 &&
-            Math.abs(bullet.y - bullet_.y) <
-              bullet.size * 1.5 + bullet_.size * 1.5 &&
-            !(
-              (bullet.speed !== 0 &&
-                bullet.speed !== 0 &&
-                (!bullet_.speed || !bullet.speed) &&
-                bullet.type === "trap") ||
-              bullet.type === "roadMap"
-            )
-          ) {
-            const dx = bullet.x - bullet_.x;
-            const dy = bullet.y - bullet_.y;
-
-            const mag = Math.sqrt(dx * dx + dy * dy);
-            const nx = dx / mag;
-            const ny = dy / mag;
-
-            const vx = Math.cos(bullet.angle);
-            const vy = Math.sin(bullet.angle);
-
-            const dot = vx * nx + vy * ny;
-
-            const rx = vx - 2 * dot * nx;
-            const ry = vy - 2 * dot * ny;
-
-            bullet.angle = Math.atan2(ry, rx);
-            const dx2 = bullet_.x - bullet.x;
-            const dy2 = bullet_.y - bullet.y;
-
-            const mag2 = Math.sqrt(dx * dx + dy * dy);
-            const nx2 = dx2 / mag2;
-            const ny2 = dy2 / mag2;
-
-            const vx2 = Math.cos(bullet_.angle);
-            const vy2 = Math.sin(bullet_.angle);
-
-            const dot2 = vx2 * nx2 + vy2 * ny2;
-
-            const rx2 = vx - 2 * dot2 * nx;
-            const ry2 = vy - 2 * dot2 * ny;
-
-            bullet_.angle = Math.atan2(ry2, rx2);
-            bullet.speed -=
-              (bullet_.bullet_pentration * bullet_.size + bullet_.speed) / 1000;
-            bullet.distanceTraveled +=
-              (bullet_.bullet_pentration * bullet_.size + bullet_.speed) / 500;
-            bullet_.speed -=
-              (bullet_.bullet_pentration * bullet.size + bullet.speed) / 1000;
-            bullet_.distanceTraveled +=
-              (bullet.bullet_pentration * bullet.size + bullet.speed) / 500;
+            bullet.angle = __angle;
           }
           if (
-            bullet.id === bullet_.id &&
-            bullet.uniqueid !== bullet_.uniqueid &&
-            players[bullet.id] &&
-            players[bullet_.id] &&
-            bullet.type === "trap" &&
-            bullet_.type === "trap" &&
-            Math.abs(bullet.x - bullet_.x) <
-              bullet.size * 2 + bullet_.size * 2 &&
-            Math.abs(bullet.y - bullet_.y) < bullet.size * 2 + bullet_.size * 2
+            bullet.target &&
+            bullet.target?.distance < CONFIG.playerBaseSize &&
+            __angle !== 0
           ) {
-            if (bullet.speed > 2) {
+            var newX = bullet.x;
+            var newY = bullet.y;
+            bullet.wander.setXY(bullet.x, bullet.y);
+          } else if (bullet.target?.distance < 600 && bullet.boss) {
+            var boss = bullet.boss;
+            bullet.wander.setBaseXY(boss.x, boss.y);
+            var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
+            var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
+            bullet.wander.setXY(newX, newY);
+          } else if (
+            bullet.target &&
+            bullet.target?.distance > 600 &&
+            bullet.target?.distance < 2400 && bullet.boss
+          ) {
+            var boss = bullet.boss;
+            bullet.wander.think();
+            bullet.wander.setBaseXY(boss.x, boss.y);
+            let tempAngle = bullet.wander.returnAngle();
+            var newX = bullet.x + bullet.speed * Math.cos(tempAngle);
+            var newY = bullet.y + bullet.speed * Math.sin(tempAngle);
+            bullet.wander.setXY(newX, newY);
+          } else {
+            bullet.wander.setXY(bullet.x, bullet.y);
+            var newX = bullet.x;
+            var newY = bullet.y;
+          }
+        } else {
+          var newX = bullet.x + bullet.speed * Math.cos(bullet.angle);
+          var newY = bullet.y + bullet.speed * Math.sin(bullet.angle);
+        }
+        var newX__;
+        var newY__;
+
+        if (
+          bullet.type === "trap" ||
+          bullet.type === "roadMap" ||
+          bullet.type === "directer" ||
+          (bullet.type !== "FreeNecromancer" &&
+            bullet.type !== "sheild" &&
+            bullet.type !== "FreeSwarm" &&
+            bullet.type !== "sheller")
+        ) {
+          if (
+            bullet.bullet_distance - bullet.distanceTraveled <
+              200 / (bullet.speed / 2) &&
+            (bullet.type === "roadMap" || bullet.type === "trap")
+          ) {
+            bullet.speed -=
+              (bullet.bullet_distance - bullet.distanceTraveled) /
+              (85 / (bullet.speed * 2));
+            if (bullet.speed <= 0) bullet.speed = 0;
+          }
+
+          for (let i = 0; i < room.bullets.length; i++) {
+            var bullet_ = room.bullets[i];
+
+            if (
+              bullet.id !== bullet_.id &&
+              !WanderControlled &&
+              !(
+                players[bullet?.id]?.team === players[bullet_?.id]?.team &&
+                players[bullet?.id]?.team !== null &&
+                players[bullet_?.id]?.team !== null
+              ) &&
+              Math.abs(bullet.x - bullet_.x) <
+                bullet.size * 1.5 + bullet_.size * 1.5 &&
+              Math.abs(bullet.y - bullet_.y) <
+                bullet.size * 1.5 + bullet_.size * 1.5 &&
+              !(
+                (bullet.speed !== 0 &&
+                  bullet.speed !== 0 &&
+                  (!bullet_.speed || !bullet.speed) &&
+                  bullet.type === "trap") ||
+                bullet.type === "roadMap"
+              )
+            ) {
               const dx = bullet.x - bullet_.x;
               const dy = bullet.y - bullet_.y;
 
@@ -7454,461 +7427,564 @@ setInterval(() => {
               const nx = dx / mag;
               const ny = dy / mag;
 
-              const rx =
-                Math.cos(bullet.angle) -
-                2 * Math.cos(bullet.angle) * nx +
-                Math.sin(bullet.angle) * ny * nx;
-              const ry =
-                Math.sin(bullet.angle) -
-                2 * Math.cos(bullet.angle) * nx +
-                Math.sin(bullet.angle) * ny * ny;
+              const vx = Math.cos(bullet.angle);
+              const vy = Math.sin(bullet.angle);
+
+              const dot = vx * nx + vy * ny;
+
+              const rx = vx - 2 * dot * nx;
+              const ry = vy - 2 * dot * ny;
 
               bullet.angle = Math.atan2(ry, rx);
-            } else {
+              const dx2 = bullet_.x - bullet.x;
+              const dy2 = bullet_.y - bullet.y;
+
+              const mag2 = Math.sqrt(dx * dx + dy * dy);
+              const nx2 = dx2 / mag2;
+              const ny2 = dy2 / mag2;
+
+              const vx2 = Math.cos(bullet_.angle);
+              const vy2 = Math.sin(bullet_.angle);
+
+              const dot2 = vx2 * nx2 + vy2 * ny2;
+
+              const rx2 = vx - 2 * dot2 * nx;
+              const ry2 = vy - 2 * dot2 * ny;
+
+              bullet_.angle = Math.atan2(ry2, rx2);
+              bullet.speed -=
+                (bullet_.bullet_pentration * bullet_.size + bullet_.speed) /
+                1000;
+              bullet.distanceTraveled +=
+                (bullet_.bullet_pentration * bullet_.size + bullet_.speed) /
+                500;
+              bullet_.speed -=
+                (bullet_.bullet_pentration * bullet.size + bullet.speed) / 1000;
+              bullet_.distanceTraveled +=
+                (bullet.bullet_pentration * bullet.size + bullet.speed) / 500;
+            }
+            if (
+              bullet.id === bullet_.id &&
+              bullet.uniqueid !== bullet_.uniqueid &&
+              players[bullet.id] &&
+              players[bullet_.id] &&
+              bullet.type === "trap" &&
+              bullet_.type === "trap" &&
+              Math.abs(bullet.x - bullet_.x) <
+                bullet.size * 2 + bullet_.size * 2 &&
+              Math.abs(bullet.y - bullet_.y) <
+                bullet.size * 2 + bullet_.size * 2
+            ) {
+              if (bullet.speed > 2) {
+                const dx = bullet.x - bullet_.x;
+                const dy = bullet.y - bullet_.y;
+
+                const mag = Math.sqrt(dx * dx + dy * dy);
+                const nx = dx / mag;
+                const ny = dy / mag;
+
+                const rx =
+                  Math.cos(bullet.angle) -
+                  2 * Math.cos(bullet.angle) * nx +
+                  Math.sin(bullet.angle) * ny * nx;
+                const ry =
+                  Math.sin(bullet.angle) -
+                  2 * Math.cos(bullet.angle) * nx +
+                  Math.sin(bullet.angle) * ny * ny;
+
+                bullet.angle = Math.atan2(ry, rx);
+              } else {
+                var repluseAngle = Math.atan2(
+                  bullet.y - bullet_.y,
+                  bullet.x - bullet_.x
+                );
+                collied = true;
+                newX__ = (bullet_.size / 25) * Math.cos(repluseAngle);
+                newY__ = (bullet_.size / 25) * Math.sin(repluseAngle);
+              }
+            }
+            if (
+              bullet.id === bullet_.id &&
+              bullet.uniqueid !== bullet_.uniqueid &&
+              (bullet.type === "FreeNecromancer" ||
+                bullet.type === "FreeSwarm" ||
+                bullet.type === "directer") &&
+              Math.abs(bullet.x - bullet_.x) <
+                bullet.size * 2 + bullet_.size * 2 &&
+              Math.abs(bullet.y - bullet_.y) <
+                bullet.size * 2 + bullet_.size * 2
+            ) {
               var repluseAngle = Math.atan2(
                 bullet.y - bullet_.y,
                 bullet.x - bullet_.x
               );
               collied = true;
-              newX__ = (bullet_.size / 25) * Math.cos(repluseAngle);
-              newY__ = (bullet_.size / 25) * Math.sin(repluseAngle);
+              newX__ = (bullet_.size / 100) * Math.cos(repluseAngle);
+              newY__ = (bullet_.size / 100) * Math.sin(repluseAngle);
             }
           }
-          if (
-            bullet.id === bullet_.id &&
-            bullet.uniqueid !== bullet_.uniqueid &&
-            (bullet.type === "FreeNecromancer" ||
-              bullet.type === "FreeSwarm" ||
-              bullet.type === "directer") &&
-            Math.abs(bullet.x - bullet_.x) <
-              bullet.size * 2 + bullet_.size * 2 &&
-            Math.abs(bullet.y - bullet_.y) < bullet.size * 2 + bullet_.size * 2
-          ) {
-            var repluseAngle = Math.atan2(
-              bullet.y - bullet_.y,
-              bullet.x - bullet_.x
-            );
-            collied = true;
-            newX__ = (bullet_.size / 100) * Math.cos(repluseAngle);
-            newY__ = (bullet_.size / 100) * Math.sin(repluseAngle);
-          }
-        }
-      } else if (bullet.type !== "sheild") {
-        for (let i = 0; i < bullets.length; i++) {
-          var bullet_ = bullets[i];
-          if (WanderControlled) return;
+        } else if (bullet.type !== "sheild") {
+          for (let i = 0; i < bullets.length; i++) {
+            var bullet_ = bullets[i];
+            if (WanderControlled) return;
 
-          if (
-            bullet.id !== bullet_.id &&
-            !players[bullet.id]?.team === players[bullet_.id]?.team &&
-            players[bullet.id]?.team !== null &&
-            players[bullet_.id]?.team !== null &&
-            Math.abs(bullet.x - bullet_.x) <
-              bullet.size * 2 + bullet_.size * 2 &&
-            Math.abs(bullet.y - bullet_.y) < bullet.size * 2 + bullet_.size * 2
-          ) {
-            bullet.bullet_distance -=
-              bullet_.speed *
-              (bullet_.size / 5 +
-                Math.cos(Math.abs(bullet.angle - bullet_.angle)));
+            if (
+              bullet.id !== bullet_.id &&
+              !players[bullet.id]?.team === players[bullet_.id]?.team &&
+              players[bullet.id]?.team !== null &&
+              players[bullet_.id]?.team !== null &&
+              Math.abs(bullet.x - bullet_.x) <
+                bullet.size * 2 + bullet_.size * 2 &&
+              Math.abs(bullet.y - bullet_.y) <
+                bullet.size * 2 + bullet_.size * 2
+            ) {
+              bullet.bullet_distance -=
+                bullet_.speed *
+                (bullet_.size / 5 +
+                  Math.cos(Math.abs(bullet.angle - bullet_.angle)));
+            }
           }
         }
-      }
-      if (
-        -(bullet.distanceTraveled - bullet.bullet_distance) <
-          25 * bullet.speed ** 2 &&
-        bullet.type !== "sheild" &&
-        bullet.type !== "trap" &&
-        bullet.type !== "roadMap"
-      ) {
-        bullet.transparency =
-          1 - (bullet.distanceTraveled / (bullet.bullet_distance + 5))**3 < 0.001
-            ? 0.001
-            : 1 - (bullet.distanceTraveled / (bullet.bullet_distance + 5))**3;
-      } else if (bullet.type === "trap" || bullet.type === "roadMap") {
-        if (bullet.fireDate + bullet.lifeSpan * 1000 - Date.now() < 1000) {
+        if (
+          -(bullet.distanceTraveled - bullet.bullet_distance) <
+            25 * bullet.speed ** 2 &&
+          bullet.type !== "sheild" &&
+          bullet.type !== "trap" &&
+          bullet.type !== "roadMap"
+        ) {
           bullet.transparency =
-            (bullet.fireDate + bullet.lifeSpan * 1000 - Date.now()) / 500;
-        }
-      }
-
-      for (const playerId in players) {
-        var player = players[playerId];
-        let player40 = player.size * CONFIG.playerBaseSize;
-        if (bullet.type !== "sheild") {
-          var sameTeam =
-            players[bullet.id]?.team === players[playerId]?.team &&
-            players[bullet.id]?.team !== null &&
-            players[playerId]?.team !== null;
-        } else {
-          var sameTeam = bullet.teamID == players[playerId]?.team;
-        }
-        if (player.state !== "start") {
-          let con = false;
-          if (bullet.boundtype === "square") {
-            const rawvertices = calculateSquareVertices(
-              bullet.x,
-              bullet.y,
-              bullet.size,
-              bullet.angle
-            );
-            if (
-              Math.abs(player.x - bullet.x) < 2 * player40 + 2 * bullet.size &&
-              Math.abs(player.y - bullet.y) < 2 * player40 + 2 * bullet.size &&
-              bullet.id !== player.id
-            ) {
-              var collisionCheck = isPlayerCollidingWithPolygon(
-                player,
-                rawvertices
-              );
-              con = collisionCheck[0];
-            }
-          } else if (bullet.boundtype === "triangle") {
-            const rawvertices = calculateTriangleVertices(
-              bullet.x,
-              bullet.y,
-              bullet.size,
-              bullet.angle
-            );
-            if (
-              Math.abs(player.x - bullet.x) < 2 * player40 + 2 * bullet.size &&
-              Math.abs(player.y - bullet.y) < 2 * player40 + 2 * bullet.size &&
-              bullet.id !== player.id
-            ) {
-              var collisionCheck = isPlayerCollidingWithPolygon(
-                player,
-                rawvertices
-              );
-              con = collisionCheck[0];
-            }
-          } else {
-            con =
-              Math.abs(player.x - bullet.x) < 2 * player40 + 2 * bullet.size &&
-              Math.abs(player.y - bullet.y) < 2 * player40 + 2 * bullet.size &&
-              bullet.id !== player.id;
+            1 - (bullet.distanceTraveled / (bullet.bullet_distance + 5)) ** 3 <
+            0.001
+              ? 0.001
+              : 1 -
+                (bullet.distanceTraveled / (bullet.bullet_distance + 5)) ** 3;
+        } else if (bullet.type === "trap" || bullet.type === "roadMap") {
+          if (bullet.fireDate + bullet.lifeSpan * 1000 - Date.now() < 1000) {
+            bullet.transparency =
+              (bullet.fireDate + bullet.lifeSpan * 1000 - Date.now()) / 500;
           }
-          if (con) {
-            if (!sameTeam) {
-              if (bullet.type === "trap" || bullet.type === "roadMap") {
-                player.health -=
-                  (bullet.bullet_damage - 3.8) /
-                  (player.size + 6 / bullet.size + 3);
-                bullet.bullet_distance /=
-                  bullet.size / (bullet.bullet_pentration + 10);
-              } else if (
-                bullet.type === "directer" ||
-                bullet.type === "FreeNecromancer" ||
-                bullet.type === "FreeSwarm"
+        }
+
+        for (const playerId in players) {
+          var player = players[playerId];
+          let player40 = player.size * CONFIG.playerBaseSize;
+          if (bullet.type !== "sheild") {
+            var sameTeam =
+              players[bullet.id]?.team === players[playerId]?.team &&
+              players[bullet.id]?.team !== null &&
+              players[playerId]?.team !== null;
+          } else {
+            var sameTeam = bullet.teamID == players[playerId]?.team;
+          }
+          if (player.state !== "start") {
+            let con = false;
+            if (bullet.boundtype === "square") {
+              const rawvertices = calculateSquareVertices(
+                bullet.x,
+                bullet.y,
+                bullet.size,
+                bullet.angle
+              );
+              if (
+                Math.abs(player.x - bullet.x) <
+                  2 * player40 + 2 * bullet.size &&
+                Math.abs(player.y - bullet.y) <
+                  2 * player40 + 2 * bullet.size &&
+                bullet.id !== player.id
               ) {
-                player.health -=
-                  (bullet.bullet_damage - 4.4) /
-                  (player.size + 6 / bullet.size + 5);
-                bullet.bullet_distance -=
-                  bullet.size / (bullet.bullet_pentration + 10);
-              } else {
-                player.health -=
-                  (bullet.bullet_damage - 3.8) /
-                  ((player.size + 22) / bullet.speed);
-                bullet.bullet_distance -=
-                  bullet.size / (bullet.bullet_pentration + 10);
+                var collisionCheck = isPlayerCollidingWithPolygon(
+                  player,
+                  rawvertices
+                );
+                con = collisionCheck[0];
               }
-              emit("bulletDamage", {
-                playerID: player.id,
-                playerHealth: player.health,
-              });
-              if (player.health <= 0) {
-                try {
-                  var reward = Math.round(
-                    player.score / (20 + players[bullet.id].score / 10000)
-                  );
-                  if (player.team !== null) {
-                    var team = teamlist.find(
-                      (team) => team.teamID === player.team
-                    );
-                    if (team.owner.id !== player.id || team.createTeamScore) {
-                      reward -= reward * team.simpleTax;
-                    }
-                    if (team.createTeamScore) {
-                      team.teamScore += (reward * team.simpleTax) / 2;
-                      var public_teams = [];
-                      public_teams = teamlist.map((team) => {
-                        if (!team.hidden) {
-                          team.taxInterval = null;
-                          return team;
-                        }
-                      });
-                      emit("pubteamlist", public_teams);
-                    } else {
-                      emit("playerScore", {
-                        bulletId: team.owner.id,
-                        socrepluse: reward * team.simpleTax,
-                      });
-                    }
-                    var complexTax =
-                      reward * ((player.score / 100000) * playerTax);
-                    if (team.owner.id !== player.id || team.createTeamScore) {
-                      reward -= complexTax;
-                    }
-                    if (team.createTeamScore) {
-                      team.teamScore += complexTax / 1.5;
-                      var public_teams = [];
-                      public_teams = teamlist.map((team) => {
-                        if (!team.hidden) {
-                          team.taxInterval = null;
-                          return team;
-                        }
-                      });
-                      emit("pubteamlist", public_teams);
-                    } else {
-                      emit("playerScore", {
-                        bulletId: team.owner.id,
-                        socrepluse: complexTax,
-                      });
-                    }
-                  }
-                } catch (e) {
-                  console.log("7452", bullet.id);
-                }
-                if (players[bullet.id]) {
-                  player.score += reward;
-                  emit("playerScore", {
-                    bulletId: bullet.id,
-                    socrepluse: reward,
-                    kill: true,
-                  });
-                  createAnnocment(
-                    `You killed ${player.username}'s ${player.__type__}`,
-                    bullet.id,
-                    {
-                      color: "black",
-                      trans: 0.3,
-                      delay: CONFIG.messageIntervals.medium,
-                    }
-                  );
+            } else if (bullet.boundtype === "triangle") {
+              const rawvertices = calculateTriangleVertices(
+                bullet.x,
+                bullet.y,
+                bullet.size,
+                bullet.angle
+              );
+              if (
+                Math.abs(player.x - bullet.x) <
+                  2 * player40 + 2 * bullet.size &&
+                Math.abs(player.y - bullet.y) <
+                  2 * player40 + 2 * bullet.size &&
+                bullet.id !== player.id
+              ) {
+                var collisionCheck = isPlayerCollidingWithPolygon(
+                  player,
+                  rawvertices
+                );
+                con = collisionCheck[0];
+              }
+            } else {
+              con =
+                Math.abs(player.x - bullet.x) <
+                  2 * player40 + 2 * bullet.size &&
+                Math.abs(player.y - bullet.y) <
+                  2 * player40 + 2 * bullet.size &&
+                bullet.id !== player.id;
+            }
+            if (con) {
+              if (!sameTeam) {
+                if (bullet.type === "trap" || bullet.type === "roadMap") {
+                  player.health -=
+                    (bullet.bullet_damage - 3.8) /
+                    (player.size + 6 / bullet.size + 3);
+                  bullet.bullet_distance /=
+                    bullet.size / (bullet.bullet_pentration + 10);
+                } else if (
+                  bullet.type === "directer" ||
+                  bullet.type === "FreeNecromancer" ||
+                  bullet.type === "FreeSwarm"
+                ) {
+                  player.health -=
+                    (bullet.bullet_damage - 4.4) /
+                    (player.size + 6 / bullet.size + 5);
+                  bullet.bullet_distance -=
+                    bullet.size / (bullet.bullet_pentration + 10);
                 } else {
-                  var boss = bosses.find(
-                    (boss_) => boss_.cannons[0].id === bullet.id
-                  );
-                  boss.score += reward;
+                  player.health -=
+                    (bullet.bullet_damage - 3.8) /
+                    ((player.size + 22) / bullet.speed);
+                  bullet.bullet_distance -=
+                    bullet.size / (bullet.bullet_pentration + 10);
                 }
-                emit("playerDied", {
+                emit("bulletDamage", {
                   playerID: player.id,
-                  rewarder: bullet.id,
-                  reward: reward,
+                  playerHealth: player.health,
                 });
-                killplayer(player.id);
-                try {
-                  leader_board.shown.forEach((__index__) => {
-                    if (__index__.id === player.id) {
-                      leader_board.shown.splice(
-                        leader_board.shown.indexOf(__index__)
+                if (player.health <= 0) {
+                  try {
+                    var reward = Math.round(
+                      player.score / (20 + players[bullet.id].score / 10000)
+                    );
+                    if (player.team !== null) {
+                      var team = teamlist.find(
+                        (team) => team.teamID === player.team
                       );
+                      if (team.owner.id !== player.id || team.createTeamScore) {
+                        reward -= reward * team.simpleTax;
+                      }
+                      if (team.createTeamScore) {
+                        team.teamScore += (reward * team.simpleTax) / 2;
+                        var public_teams = [];
+                        public_teams = teamlist.map((team) => {
+                          if (!team.hidden) {
+                            team.taxInterval = null;
+                            return team;
+                          }
+                        });
+                        emit("pubteamlist", public_teams);
+                      } else {
+                        emit("playerScore", {
+                          bulletId: team.owner.id,
+                          socrepluse: reward * team.simpleTax,
+                        });
+                      }
+                      var complexTax =
+                        reward * ((player.score / 100000) * playerTax);
+                      if (team.owner.id !== player.id || team.createTeamScore) {
+                        reward -= complexTax;
+                      }
+                      if (team.createTeamScore) {
+                        team.teamScore += complexTax / 1.5;
+                        var public_teams = [];
+                        public_teams = teamlist.map((team) => {
+                          if (!team.hidden) {
+                            team.taxInterval = null;
+                            return team;
+                          }
+                        });
+                        emit("pubteamlist", public_teams);
+                      } else {
+                        emit("playerScore", {
+                          bulletId: team.owner.id,
+                          socrepluse: complexTax,
+                        });
+                      }
                     }
+                  } catch (e) {
+                    console.log("7452", bullet.id);
+                  }
+                  if (players[bullet.id]) {
+                    player.score += reward;
+                    emit("playerScore", {
+                      bulletId: bullet.id,
+                      socrepluse: reward,
+                      kill: true,
+                    });
+                    createAnnocment(
+                      `You killed ${player.username}'s ${player.__type__}`,
+                      bullet.id,
+                      {
+                        color: "black",
+                        trans: 0.3,
+                        delay: CONFIG.messageIntervals.medium,
+                      }
+                    );
+                  } else {
+                    var boss = bosses.find(
+                      (boss_) => boss_.cannons[0].id === bullet.id
+                    );
+                    boss.score += reward;
+                  }
+                  emit("playerDied", {
+                    playerID: player.id,
+                    rewarder: bullet.id,
+                    reward: reward,
                   });
+                  killplayer(player.id);
+                  try {
+                    leader_board.shown.forEach((__index__) => {
+                      if (__index__.id === player.id) {
+                        leader_board.shown.splice(
+                          leader_board.shown.indexOf(__index__)
+                        );
+                      }
+                    });
+                    leader_board.hidden.forEach((__index__) => {
+                      if (__index__.id === player.id) {
+                        leader_board.hidden.splice(
+                          leader_board.hidden.indexOf(__index__)
+                        );
+                      }
+                    });
+                    emit("boardUpdate", {
+                      leader_board: leader_board.shown,
+                    });
+                  } catch (e) {
+                    console.log("7496", e);
+                  }
                   leader_board.hidden.forEach((__index__) => {
-                    if (__index__.id === player.id) {
-                      leader_board.hidden.splice(
-                        leader_board.hidden.indexOf(__index__)
-                      );
+                    if (__index__.id === bullet.id) {
+                      __index__.score += reward;
+                      let isshown = false;
+                      isshown = leader_board.shown.find((__index__) => {
+                        if (__index__.id === bullet.id) {
+                          return true;
+                        }
+                      });
+                      if (leader_board.shown[10]) {
+                        if (leader_board.shown[10].score < __index__.score) {
+                          leader_board.shown[10] = __index__;
+                        }
+                      } else if (!leader_board.shown[10] && !isshown) {
+                        leader_board.shown.push(__index__);
+                      }
                     }
                   });
+                  leader_board.shown.forEach((__index__) => {
+                    if (__index__.id === bullet.id) {
+                      __index__.score += reward;
+                    }
+                  });
+                  rearrange();
                   emit("boardUpdate", {
                     leader_board: leader_board.shown,
                   });
-                } catch (e) {
-                  console.log("7496", e);
-                }
-                leader_board.hidden.forEach((__index__) => {
-                  if (__index__.id === bullet.id) {
-                    __index__.score += reward;
-                    let isshown = false;
-                    isshown = leader_board.shown.find((__index__) => {
-                      if (__index__.id === bullet.id) {
-                        return true;
-                      }
-                    });
-                    if (leader_board.shown[10]) {
-                      if (leader_board.shown[10].score < __index__.score) {
-                        leader_board.shown[10] = __index__;
-                      }
-                    } else if (!leader_board.shown[10] && !isshown) {
-                      leader_board.shown.push(__index__);
-                    }
-                  }
-                });
-                leader_board.shown.forEach((__index__) => {
-                  if (__index__.id === bullet.id) {
-                    __index__.score += reward;
-                  }
-                });
-                rearrange();
-                emit("boardUpdate", {
-                  leader_board: leader_board.shown,
-                });
-              } else {
-                if (bullet.type !== "expoled") {
-                  var knockBackX = bullet.speed * Math.cos(bullet.angle);
-                  var knockBackY = bullet.speed * Math.sin(bullet.angle);
                 } else {
-                  var realPushBackAngle = Math.atan2(
-                    bullet.x - player.x,
-                    bullet.y - player.y
-                  );
-                  var knockBackX =
-                    bullet.exspandRate * Math.cos(realPushBackAngle);
-                  var knockBackY =
-                    bullet.exspandRate * Math.sin(realPushBackAngle);
+                  if (bullet.type !== "expoled") {
+                    var knockBackX = bullet.speed * Math.cos(bullet.angle);
+                    var knockBackY = bullet.speed * Math.sin(bullet.angle);
+                  } else {
+                    var realPushBackAngle = Math.atan2(
+                      bullet.x - player.x,
+                      bullet.y - player.y
+                    );
+                    var knockBackX =
+                      bullet.exspandRate * Math.cos(realPushBackAngle);
+                    var knockBackY =
+                      bullet.exspandRate * Math.sin(realPushBackAngle);
+                  }
+                  emit("bouceBack", {
+                    response: { x: knockBackX, y: knockBackY },
+                    playerID: player.id,
+                  });
                 }
-                emit("bouceBack", {
-                  response: { x: knockBackX, y: knockBackY },
+              }
+              if (bullet.type === "sheild" && sameTeam) {
+                if (player.health < player.maxhealth)
+                  player.health -= bullet.bullet_damage;
+                emit("bulletHeal", {
                   playerID: player.id,
+                  playerHealth: player.health,
                 });
               }
             }
-            if (bullet.type === "sheild" && sameTeam) {
-              if (player.health < player.maxhealth)
-                player.health -= bullet.bullet_damage;
-              emit("bulletHeal", {
-                playerID: player.id,
-                playerHealth: player.health,
-              });
-            }
           }
         }
-      }
-      if (bullet.type === "expoled") {
-        bullet.size += bullet.exspandRate;
-        if (Date.now() > bullet.endTime) {
-          room.bullets.splice(i, 1);
+        if (bullet.type === "expoled") {
+          bullet.size += bullet.exspandRate;
+          if (Date.now() > bullet.endTime) {
+            room.bullets.splice(i, 1);
+            continue;
+          }
+        }
+        if (bullet.distanceTraveled <= bullet.bullet_distance) {
+          bullet.x = newX;
+          bullet.y = newY;
+          if (bullet.type === "roadMap") {
+            let road = bullet.road;
+            road.x = newX;
+            road.y = newY;
+          }
+          if (bullet.type === "directer") {
+            bullet.wander.setXY(newX, newY);
+          }
+          if (collied) {
+            bullet.x += newX__;
+            bullet.y += newY__;
+          }
+
+          bullets.push(bullet);
           continue;
         }
-      }
-      if (bullet.distanceTraveled <= bullet.bullet_distance) {
-        bullet.x = newX;
-        bullet.y = newY;
-        if (bullet.type === "roadMap") {
-          let road = bullet.road;
-          road.x = newX;
-          road.y = newY;
-        }
+
         if (bullet.type === "directer") {
-          bullet.wander.setXY(newX, newY);
-        }
-        if (collied) {
-          bullet.x += newX__;
-          bullet.y += newY__;
+          emit("dronekilled", { droneID: bullet.id });
+        } else if (bullet.type === "roadMap") {
+          let road = roads.find((road) => road.uniqueid === bullet.uniqueid);
+          roads = roads.splice(roads.indexOf(road), 1);
+        } else if (
+          bullet.type === "FreeNecromancer" ||
+          bullet.type === "FreeSwarm"
+        ) {
+          deadlist.push(bullet.id);
+        } else if (bullet.type === "AutoBullet") {
+          autocannons = autocannons.filter((cannon) => {
+            if (bullet.id === cannon.playerid) return false;
+            return true;
+          });
+        } else if (bullet.type === "sheller") {
+          createExsplosion(Math.random() * 100000, bullet.x, bullet.y, {
+            createbullet: true,
+            dealsDamgage: true,
+            id: bullet.id,
+          });
         }
 
-        bullets.push(bullet);
+        bullet_intervals.forEach((__bullet_) => {
+          if (bullet.uniqueid === __bullet_.id) {
+            __bullet_.canfire = false;
+          }
+        });
+        room.bullets.splice(i, 1);
         continue;
       }
+    }
 
-      if (bullet.type === "directer") {
-        emit("dronekilled", { droneID: bullet.id });
-      } else if (bullet.type === "roadMap") {
-        let road = roads.find((road) => road.uniqueid === bullet.uniqueid);
-        roads = roads.splice(roads.indexOf(road), 1);
-      } else if (
-        bullet.type === "FreeNecromancer" ||
-        bullet.type === "FreeSwarm"
-      ) {
-        deadlist.push(bullet.id);
-      } else if (bullet.type === "AutoBullet") {
-        autocannons = autocannons.filter((cannon) => {
-          if (bullet.id === cannon.playerid) return false;
-          return true;
+    explosions = explosions.filter((exsplosion) => {
+      exsplosion.trans -= exsplosion.fadingRate;
+      exsplosion.innerRadius += exsplosion.exspandRate;
+      exsplosion.size += exsplosion.exspandRate;
+      exsplosion.rings.forEach((item) => {
+        item.size += exsplosion.exspandRate;
+      });
+      if (Date.now() > exsplosion.endTime) {
+        return false;
+      }
+      return true;
+    });
+
+    roadsectors = buildTriArray(roads);
+    roadsectors.forEach((triroad) => {
+      for (const playerID in players) {
+        var player = players[playerID];
+        let sameTeam =
+          players[triroad[0].road.id].team === player.team &&
+          player.team !== null &&
+          player.team !== null;
+        if (
+          (triroad[0].road.id === playerID || sameTeam) &&
+          isPointInTriangle(
+            { x: player.x, y: player.y },
+            { x: triroad[0].road.x, y: triroad[0].road.y },
+            { x: triroad[1].road.x, y: triroad[1].road.y },
+            { x: triroad[2].road.x, y: triroad[2].road.y }
+          )
+        ) {
+          player.speedBoost = triroad[0].road.multiplyer;
+        } else {
+          player.speedBoost = 1;
+        }
+        //console.log(triroad[0].road.id === playerID,)
+        emit("playerSpeedBoost", {
+          id: playerID,
+          speedMultiplyer: player.speedBoost,
         });
       }
+    });
 
-      bullet_intervals.forEach((__bullet_) => {
-        if (bullet.uniqueid === __bullet_.id) {
-          __bullet_.canfire = false;
+    buildMiniMapTeams.forEach((teamId) => {
+      var miniMapSize = 150 / (CONFIG.map.size * 2);
+      var teamPlayersXY = [];
+
+      for (const playerId in players) {
+        var player = players[playerId];
+        if (teamId === player.teamId) {
+          teamPlayersXY.push({
+            x: player.x * miniMapSize,
+            y: player.y * miniMapSize,
+            id: playerId,
+          });
         }
+      }
+      emitTeam("minimapUpdate", teamPlayersXY, teamId);
+    });
+
+    announcements = announcements.filter(
+      (message) => message.killtime > Date.now()
+    );
+
+    emit("bulletUpdate", bullets);
+    emit("bossUpdate", bosses);
+    emit("roadUpdate", roadsectors);
+    emit("explosionUpdate", explosions);
+    requestEmit("requests", JoinRequests);
+    messageEmit("announcements", announcements);
+    createAndSendGameObjects(buildArray);
+    buildArray = [];
+    bullets = [];
+    deadlist = [];
+  }, CONFIG.updateInterval);
+}
+
+let fails = 0;
+
+(function game() {
+  try {
+    gameLoop();
+  } catch (e) {
+    fails++;
+    if (fails < 5) {
+      console.log("Game loop error:", e);
+      console.log("tick: ", frame);
+      console.log("Restarting game loop...");
+      game();
+      createAnnocment("Error encountered, restarting game loop...", null, {
+        color: "red",
+        delay: 45000,
       });
-      room.bullets.splice(i, 1);
-      continue;
+      messageEmit("announcements", announcements);
+    } else {
+      Object.keys(players).forEach((playerId) => {
+        createAnnocment(
+          "Fatal error encountered, server is restarting; Please report this on github",
+          playerId,
+          { color: "red", delay: 6000 }
+        );
+      });
+      messageEmit("announcements", announcements);
+      setTimeout(() => {
+        connections.forEach((connection) => {
+          connection.socket.close(999);
+        });
+      }, 5000);
     }
   }
-
-  explosions = explosions.filter((exsplosion) => {
-    exsplosion.trans -= exsplosion.fadingRate;
-    exsplosion.innerRadius += exsplosion.exspandRate;
-    exsplosion.size += exsplosion.exspandRate;
-    exsplosion.rings.forEach((item) => {
-      item.size += exsplosion.exspandRate;
-    });
-    if (Date.now() > exsplosion.endTime) {
-      return false;
-    }
-    return true;
-  });
-
-  roadsectors = buildTriArray(roads);
-  roadsectors.forEach((triroad) => {
-    for (const playerID in players) {
-      var player = players[playerID];
-      let sameTeam =
-        players[triroad[0].road.id].team === player.team &&
-        player.team !== null &&
-        player.team !== null;
-      if (
-        (triroad[0].road.id === playerID || sameTeam) &&
-        isPointInTriangle(
-          { x: player.x, y: player.y },
-          { x: triroad[0].road.x, y: triroad[0].road.y },
-          { x: triroad[1].road.x, y: triroad[1].road.y },
-          { x: triroad[2].road.x, y: triroad[2].road.y }
-        )
-      ) {
-        player.speedBoost = triroad[0].road.multiplyer;
-      } else {
-        player.speedBoost = 1;
-      }
-      //console.log(triroad[0].road.id === playerID,)
-      emit("playerSpeedBoost", {
-        id: playerID,
-        speedMultiplyer: player.speedBoost,
-      });
-    }
-  });
-
-  buildMiniMapTeams.forEach((teamId) => {
-    var miniMapSize = 150 / (CONFIG.map.size * 2);
-    var teamPlayersXY = [];
-
-    for (const playerId in players) {
-      var player = players[playerId];
-      if (teamId === player.teamId) {
-        teamPlayersXY.push({
-          x: player.x * miniMapSize,
-          y: player.y * miniMapSize,
-          id: playerId,
-        });
-      }
-    }
-    emitTeam("minimapUpdate", teamPlayersXY, teamId);
-  });
-
-  tempBulletToPush.forEach((item) => {
-    reassignRoomItem(item);
-  });
-
-  announcements = announcements.filter(
-    (message) => message.killtime > Date.now()
-  );
-
-  emit("bulletUpdate", bullets);
-  emit("bossUpdate", bosses);
-  emit("roadUpdate", roadsectors);
-  emit("explosionUpdate", explosions);
-  requestEmit("requests", JoinRequests);
-  messageEmit("announcements", announcements);
-  createAndSendGameObjects(buildArray);
-  buildArray = [];
-  bullets = [];
-  tempBulletToPush = [];
-  deadlist = [];
-}, CONFIG.updateInterval);
+})();
 
 const root = protobuf.parse(schema).root;
 const GameObjectList = root.lookupType("GameObjectList");
@@ -8076,8 +8152,10 @@ function createBoss(type_) {
 createBoss("Guardian");
 
 setInterval(() => {
-  generateRandomNumber(0, 1) === 1 ? createBoss("Guardian") : createBoss("Necromancer");
-}, 1000*60*10);
+  generateRandomNumber(0, 1) === 1
+    ? createBoss("Guardian")
+    : createBoss("Necromancer");
+}, 1000 * 60 * 10);
 
 function smartemitBinary(data) {
   connections.forEach((conn) => {
@@ -8122,16 +8200,6 @@ function emitTeam(type, data, teamId) {
   const message = JSON.stringify({ type, data });
   connections.forEach((conn) => {
     if (players[conn.playerId].team === teamId) {
-      conn.socket.send(message);
-    }
-  });
-}
-
-function smartemit(type, data) {
-  const message = JSON.stringify({ type, data });
-  connections.forEach((conn) => {
-    if (conn.playerId == null || players[conn.playerId] == undefined) return;
-    if (players[conn.playerId].visible) {
       conn.socket.send(message);
     }
   });

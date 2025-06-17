@@ -82,10 +82,11 @@
 
   badgesIMGToLoad.forEach((badge) => {
     var img = new Image();
-    img.src =
-      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-        ? `/badges/${badge}`
-        : `/public/badges/${badge}`;
+    img.src = !window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? `/badges/${badge}`
+      : `/public/badges/${badge}`;
     badgelevels[`/badges/${badge}`] = img;
   });
 
@@ -144,7 +145,9 @@
   imagePaths.forEach((path) => {
     const img = new Image();
     img.src =
-      (window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
+      (window.location.href.startsWith(
+        "http://127.0.0.1:5501/public/index.html"
+      )
         ? "/public/skins/"
         : "/skins/") + path;
     images.push(img);
@@ -882,26 +885,27 @@
     setCookie("score", 25000000, 100);
 
     var upgradeColors = [
-      "#CC0000",
-      "#00CC00",
-      "#0000CC",
-      "#CCCC00",
-      "#CC00CC",
-      "#00CCCC",
-      "#660000",
-      "#666600",
-      "#006600",
-      "#660066",
-      "#006666",
-      "#000066",
-      "#CC8400",
-      "#7F1F1F",
-      "#4C7A8A",
-      "#66CC00",
-      "#A0521E",
-      "#4A7BC5",
-      "#B01030",
-      "#00A9A9",
+      "#FF3333", // brighter red
+      "#33FF33", // brighter green
+      "#3333FF", // brighter blue
+      "#FFFF33", // brighter yellow
+      "#FF33FF", // brighter magenta
+      "#33FFFF", // brighter cyan
+      "#B22222", // brighter dark red
+      "#CCCC33", // brighter olive
+      "#33CC33", // brighter dark green
+      "#CC33CC", // brighter purple
+      "#33CCCC", // brighter teal
+      "#3333CC", // brighter navy
+      "#FFB733", // brighter orange
+      "#B22222", // brighter brownish red
+      "#5FC9F8", // brighter blue-grey
+      "#99FF33", // brighter lime green
+      "#D2691E", // brighter chocolate
+      "#7EC8E3", // brighter light blue
+      "#FF3366", // brighter crimson
+      "#33FFFF", // brighter dark cyan
+      "#DDDDDD", // brighter dark cyan
     ];
     var upgradeColorsDark = [
       "#FF0000",
@@ -924,11 +928,12 @@
       "#6495ED",
       "#DC143C",
       "#00CED1",
+      "#CCCCCC",
     ];
 
     function levelUpgrader(tankdata) {
       var out = false;
-      if (tankdata["upgrades"] == undefined) return;
+      if (tankdata["upgrades"] == undefined || !tankdata["upgrades"]) return;
       for (let i = 0; i < Object.keys(tankdata["upgrades"]).length; i++) {
         var KEY = Object.keys(tankdata["upgrades"])[i];
 
@@ -936,13 +941,15 @@
           if (out === false) {
             var tankstiles = document.getElementById("tanktiles");
             tankstiles.style.display = "block";
-            tankstiles.style.left = 0;
+            tankstiles.style.left = "-35vw";
             tankstiles.style.animation = "2s 1 move";
             tankstiles.innerHTML = "";
             out = true;
+            setTimeout(() => {
+              tankstiles.style.left = "0vw";
+              tankstiles.style.animation = "";
+            }, 1990);
           }
-
-          var upgrade = tankdata["upgrades"][KEY];
 
           var img__ = document.createElement("canvas");
 
@@ -1039,23 +1046,8 @@
               size: playerSize,
               bodyDamage: bodyDamage,
               __type__: __type__,
-              state: state,
-              statecycle: statecycle,
-              playerHealTime: playerHealTime,
-              maxhealth: maxhealth,
-              playerReheal: playerReheal,
               FOV: scaleFactor,
               Regenspeed: Regenspeed,
-              statsTree: {
-                Health: statsTree.Health,
-                "Body Damage": statsTree["Body Damage"],
-                Regen: statsTree.Regen,
-                "Bullet Pentration": statsTree["Bullet Pentration"],
-                "Bullet Speed": statsTree["Bullet Speed"],
-                "Bullet Damage": statsTree["Bullet Damage"],
-                "Bullet Reload": statsTree["Bullet Reload"],
-                Speed: statsTree.Speed,
-              },
             });
 
             setTimeout(() => {
@@ -1166,7 +1158,7 @@
                 }
                 i___++;
               }
-            }, 100);
+            }, 50);
           });
         }
       }
@@ -1553,7 +1545,7 @@
           const urlParams = new URLSearchParams(window.location.search);
 
           var teamKey = urlParams.get("team");
-          console.log(teamKey)
+          console.log(teamKey);
         }
 
         const playerData = {
@@ -1614,10 +1606,11 @@
         img.onload = function () {
           ctx.drawImage(img, canvas.width / 2, canvas.height - 60);
         };
-        img.src =
-          !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-            ? `${badge}`
-            : `public/${badge}`;
+        img.src = !window.location.href.startsWith(
+          "http://127.0.0.1:5501/public/index.html"
+        )
+          ? `${badge}`
+          : `public/${badge}`;
 
         socket.onmessage = function (event) {
           var type;
@@ -2254,10 +2247,14 @@
               break;
             }
             case "type_Change": {
-              for (const prop in data) {
-                let tempData = data[prop];
-                players[data.id][prop] = tempData;
-              }
+              var tankdata = tankmeta[data.__type__];
+              players[data.id].maxhealth *= tankdata["health-m"];
+              players[data.id].speed *= tankdata["speed-m"];
+              players[data.id].size *= tankdata["size-m"];
+              players[data.id].bodyDamage *= tankdata["BodyDamage-m"];
+              players[data.id].__type__ *= data.__type__;
+              players[data.id].FOV += tankdata.fov;
+              players[data.id].Regenspeed *= tankdata["regen-m"];
               break;
             }
             case "postBiteMessage": {
@@ -2669,7 +2666,10 @@
                   cannon["cannon-height"] -
                   bullet_size_l * 2 -
                   (cannon["cannon-width-top"] / 2) * Math.random();
-              } else if (cannon["type"] === "rocketer") {
+              } else if (
+                cannon["type"] === "rocketer" ||
+                cannon["type"] === "sheller"
+              ) {
                 var xxx = cannon["cannon-width-bottom"] + bullet_size_l / 2;
                 var yyy =
                   cannon["cannon-height"] - cannon["cannon-width-bottom"];
@@ -2730,6 +2730,10 @@
               } else if (cannon["type"] === "rocketer") {
                 var bulletdistance = bullet_speed__ * 100 * (bullet_size / 5);
                 var type = "rocketer";
+                var health = 9;
+              } else if (cannon["type"] === "sheller") {
+                var bulletdistance = bullet_speed__ * 100 * (bullet_size / 5);
+                var type = "sheller";
                 var health = 9;
               } else if (cannon["type"] === "paver") {
                 var bulletdistance = bullet_speed__ * 100 * (bullet_size / 5);
@@ -2824,7 +2828,10 @@
                       0
                     );
                     vertices = rawvertices;
-                  } else if (cannon["type"] === "rocketer") {
+                  } else if (
+                    cannon["type"] === "rocketer" ||
+                    cannon["type"] === "sheller"
+                  ) {
                     var xxx = cannon["cannon-width-bottom"] + bullet_size_l * 2;
                     var yyy =
                       cannon["cannon-height"] - cannon["cannon-width-bottom"];
@@ -2887,6 +2894,11 @@
                       bullet_speed__ * 105 * (bullet_size / 6);
                     var type = "AutoBullet";
                     var health = 8;
+                  } else if (cannon["type"] === "sheller") {
+                    var bulletdistance =
+                      bullet_speed__ * 100 * (bullet_size / 5);
+                    var type = "sheller";
+                    var health = 9;
                   } else if (cannon["type"] === "rocketer") {
                     var bulletdistance =
                       bullet_speed__ * 100 * (bullet_size / 5);
@@ -4043,7 +4055,9 @@
           ctx.stroke();
           ctx.closePath();
           ctx.restore();
-        } else if (tankdatacannondata["type"] === "AutoBulletCannon") {
+        } else if (
+          tankdatacannondata["type"] === "AutoBulletCannon"
+        ) {
           ctx.save();
           // Translate to the center of the square
           ctx.translate(canW / 2, canH / 2);
@@ -4078,7 +4092,10 @@
           ctx.stroke();
           ctx.closePath();
           ctx.restore();
-        } else if (tankdatacannondata["type"] === "rocketer") {
+        } else if (
+          tankdatacannondata["type"] === "rocketer" ||
+          tankdatacannondata["type"] === "sheller"
+        ) {
           ctx.save();
           // Translate to the center of the square
           ctx.translate(canW / 2, canH / 2);
@@ -4140,6 +4157,23 @@
             cannon_heightFOV - 40,
             cannwidthtop
           );
+
+          if (tankdatacannondata["type"] === "sheller") {
+            ctx.beginPath();
+            ctx.arc(
+              (basex - 40) + cannon_heightFOV / 3,
+              basey,
+              (playerSize * playerBaseSize) / 4,
+              0,
+              2 * Math.PI,
+              false
+            );
+            ctx.fill();
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = "lightgrey";
+            ctx.stroke();
+            ctx.closePath();
+          }
 
           ctx.restore();
         }
@@ -4791,7 +4825,9 @@
                 // Restore the previous transformation matrix
                 ctx.restore();
               }
-            } else if (tankdatacannondata["type"] === "AutoBulletCannon") {
+            } else if (
+              tankdatacannondata["type"] === "AutoBulletCannon"
+            ) {
               ctx.save();
               ctx.translate(playerX - cavansX, playerY - cavansY);
               let angle = player.cannon_angle;
@@ -4799,6 +4835,9 @@
               let angle_offset = tankdatacannondata["offset-angle"];
               ctx.rotate(angle + angle_offset);
               // Draw the square
+
+              var plusX = tankdatacannondata["type"] === "sheller" ? 30 : 0;
+              console.log(plusX)
 
               let basex =
                 -cannon_widthFOV / 2 +
@@ -4819,7 +4858,7 @@
               ctx.arc(
                 basex + 40 + cannon_widthFOV / 4,
                 basey + cannon_heightFOV / 2,
-                (playerSize * FOV * playerBaseSize) / 4,
+                (playerSize * playerBaseSize) / 4,
                 0,
                 2 * Math.PI,
                 false
@@ -4830,7 +4869,11 @@
               ctx.stroke();
               ctx.closePath();
               ctx.restore();
-            } else if (tankdatacannondata["type"] === "rocketer") {
+            }
+            if (
+              tankdatacannondata["type"] === "rocketer" ||
+              tankdatacannondata["type"] === "sheller"
+            ) {
               ctx.save();
               // Translate to the center of the square
               ctx.translate(playerX - cavansX, playerY - cavansY);
@@ -4896,6 +4939,24 @@
                 cannon_heightFOV - 40,
                 cannwidthtop
               );
+
+              if (tankdatacannondata["type"] === "sheller") {
+                ctx.beginPath();
+                ctx.arc(
+                  (basex - 40) + cannon_heightFOV / 3,
+                  basey,
+                  (playerSize * playerBaseSize) / 4,
+                  0,
+                  2 * Math.PI,
+                  false
+                );
+                console.log(basex)
+                ctx.fill();
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = "lightgrey";
+                ctx.stroke();
+                ctx.closePath();
+              }
 
               ctx.restore();
             } else if (tankdatacannondata["type"] === "SwivelAutoCannon") {
@@ -5313,7 +5374,7 @@
             ctx.lineWidth = ring.size;
             ctx.stroke();
             ctx.closePath();
-            a += ring.size;
+            //a += ring.size;
             ctx.globalAlpha = 1;
             return a;
           }, 0);
@@ -6106,6 +6167,60 @@
 
             ctx.stroke();
             ctx.closePath();
+          } else if (bullet.type === "sheller") {
+            var sameTeam =
+                players[bullet.id]?.team === players[playerId]?.team &&
+                players[bullet.id]?.team !== null &&
+                players[playerId]?.team !== null;
+            if (bullet.id === playerId || sameTeam) {
+              ctx.fillStyle = "blue";
+              ctx.strokeStyle = "darkblue";
+            } else {
+              ctx.fillStyle = "red";
+              ctx.strokeStyle = "darkred";
+            }
+            let realsize = bullet.size;
+
+            ctx.arc(
+              realx - (bullet.xstart - (bullet.xstart - cavansX)),
+              realy - (bullet.ystart - (bullet.ystart - cavansY)),
+              realsize,
+              0,
+              2 * Math.PI
+            );
+            ctx.fill();
+            ctx.lineWidth = 5;
+            ctx.stroke();
+            ctx.closePath();
+
+            ctx.save();
+            ctx.translate(realx - cavansX, realy - cavansY);
+            ctx.rotate(bullet.angle);
+
+            let s = bullet.size/3.5;
+            var vertices = [
+              { x: s, y: s},
+              { x: 3*s, y: 0},
+              { x: s, y: -s},
+              { x: 0, y: -3*s},
+              { x: -s, y: -s},
+              { x: -3*s, y: 0},
+              { x: -s, y: s},
+              { x: 0, y: 3*s},
+            ];
+
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            vertices.forEach((vertex) => {
+              ctx.lineTo(vertex.x, vertex.y);
+            });
+            ctx.lineTo(vertices[0].x, vertices[0].y);
+            ctx.fillStyle = "#b3b3b3";
+            ctx.strokeStyle = "lightgrey";
+            ctx.lineWidth = 3;
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
           }
           ctx.restore();
           ctx.globalAlpha = 1;
@@ -6202,8 +6317,8 @@
       }
       if (joinedTeam) {
         let MYteam = pubteams.find((team) => {
-            return team.teamID === players[playerId].team;
-          });
+          return team.teamID === players[playerId].team;
+        });
         for (let CCC = Object.keys(statsTree).length - 1; CCC >= 0; CCC -= 1) {
           if (!MYteam) break;
           let stat_ = MYteam.stats[Object.keys(MYteam.stats)[CCC]];
@@ -6288,10 +6403,11 @@
   }
 
   async function getBagdeData() {
-    const url =
-      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-        ? "https://websocketpointer.duckdns.org/currentbadge"
-        : "http://localhost:4500/currentbadge";
+    const url = !window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? "https://websocketpointer.duckdns.org/currentbadge"
+      : "http://localhost:4500/currentbadge";
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -6312,10 +6428,11 @@
   }
 
   async function getGearData() {
-    const url =
-      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-        ? "https://websocketpointer.duckdns.org/currentgears"
-        : "http://localhost:4500/currentgears";
+    const url = !window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? "https://websocketpointer.duckdns.org/currentgears"
+      : "http://localhost:4500/currentgears";
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -6385,10 +6502,11 @@
   if (isCrazyGames) window.CrazyGames.SDK.user.addAuthListener(listener);
 
   async function subfeedback() {
-    const url =
-      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-        ? "https://websocketpointer.duckdns.org/submit-feedback"
-        : "http://localhost:4500/submit-feedback";
+    const url = !window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? "https://websocketpointer.duckdns.org/submit-feedback"
+      : "http://localhost:4500/submit-feedback";
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -6423,10 +6541,11 @@
   settings.addEventListener("click", settingsOpener);
 
   async function getLeaderBoardData() {
-    const url =
-      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-        ? "https://websocketpointer.duckdns.org/leaderboard"
-        : "http://localhost:4500/leaderboard";
+    const url = !window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? "https://websocketpointer.duckdns.org/leaderboard"
+      : "http://localhost:4500/leaderboard";
     try {
       const response = await fetch(url);
       if (!response.ok) {
@@ -6440,10 +6559,11 @@
   }
 
   async function getTeamData() {
-    const url =
-      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-        ? "https://websocketpointer.duckdns.org/getteamdata"
-        : "http://localhost:4500/getteamdata";
+    const url = !window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? "https://websocketpointer.duckdns.org/getteamdata"
+      : "http://localhost:4500/getteamdata";
     try {
       const response = await fetch(url);
       if (!response.ok) {
@@ -6456,7 +6576,7 @@
     }
   }
 
-  var leaderboardSlected = 'players';
+  var leaderboardSlected = "players";
   var playersSelect = document.getElementById("playersSelect");
   var teamsSelect = document.getElementById("teamsSelect");
   playersSelect.addEventListener("click", () => {
@@ -6478,7 +6598,8 @@
     }
   });
   async function buildLeaderBoard(type) {
-    var leaderboard_ = type === "players" ? await getLeaderBoardData() : await getTeamData();
+    var leaderboard_ =
+      type === "players" ? await getLeaderBoardData() : await getTeamData();
     var leaderBoard = document.getElementById("leaderBoard");
     leaderBoard.innerHTML = ``;
     console.log(leaderboard_);
@@ -6488,10 +6609,11 @@
       leaderBoard.appendChild(holderDiv);
       if (type === "players") {
         var holderImg = document.createElement("img");
-        holderImg.src =
-          window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-            ? `/public${leader.badge.badge}`
-            : `${leader.badge.badge}`;
+        holderImg.src = window.location.href.startsWith(
+          "http://127.0.0.1:5501/public/index.html"
+        )
+          ? `/public${leader.badge.badge}`
+          : `${leader.badge.badge}`;
         holderDiv.appendChild(holderImg);
         holderImg.style.width = "20px";
         holderImg.style.hieght = "20px";
@@ -6499,16 +6621,17 @@
       }
       holderDiv.classList.add("entrie-box");
       holderDiv.appendChild(holderName);
-      
-      holderName.innerHTML = type === "teams" ? 
-      `${leader.name}, ${leader.teamScore}` : 
-      `${leader.username}, ${leader.score}`;
+
+      holderName.innerHTML =
+        type === "teams"
+          ? `${leader.name}, ${leader.teamScore}`
+          : `${leader.username}, ${leader.score}`;
       holderName.classList.add("normalized-text-color");
       if (type === "teams") {
         holderDiv.addEventListener("click", () => {
           const currentURL = new URL(window.location.href);
           currentURL.searchParams.set("team", leader.teamKey);
-          window.history.pushState({}, '', currentURL);
+          window.history.pushState({}, "", currentURL);
         });
       }
     });
@@ -6522,10 +6645,11 @@
   });
 
   async function AData() {
-    const url =
-      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-        ? "https://websocketpointer.duckdns.org/buylevels"
-        : "http://localhost:4500/buylevels";
+    const url = !window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? "https://websocketpointer.duckdns.org/buylevels"
+      : "http://localhost:4500/buylevels";
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -6566,15 +6690,16 @@
   });
 
   async function ping() {
-    const urls =
-      window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-        ? [
-            "http://localhost:4500/ping",
-            "https://websocketpointer.duckdns.org/ping",
-            "http://127.0.0.1:4000/ping",
-            "http://192.168.9.100:4500/ping",
-          ]
-        : ["https://websocketpointer.duckdns.org/ping"];
+    const urls = window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? [
+          "http://localhost:4500/ping",
+          "https://websocketpointer.duckdns.org/ping",
+          "http://127.0.0.1:4000/ping",
+          "http://192.168.9.100:4500/ping",
+        ]
+      : ["https://websocketpointer.duckdns.org/ping"];
     var passed = false;
     Promise.all(
       urls.map(async (url) => {
@@ -6590,15 +6715,20 @@
       })
     ).then(() => {
       if (!passed) {
-        window.location.href =
-          window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-            ? "/public/server-down.html"
-            : "/server-down.html";
+        window.location.href = window.location.href.startsWith(
+          "http://127.0.0.1:5501/public/index.html"
+        )
+          ? "/public/server-down.html"
+          : "/server-down.html";
       }
     });
   }
   try {
-    if (!window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")) {
+    if (
+      !window.location.href.startsWith(
+        "http://127.0.0.1:5501/public/index.html"
+      )
+    ) {
       document.getElementById("squareimg").src = "/how-to-imgs/square.webp";
       document.getElementById("triangleimg").src = "/how-to-imgs/triangle.webp";
       document.getElementById("pentagonimg").src = "/how-to-imgs/pentagon.webp";
@@ -6670,7 +6800,9 @@
             <circle cx="65" cy="50" r="45" stroke="black" stroke-width="8" fill="none"> </circle>
             <circle cx="65" cy="50" r="45" class="meter-1" id="fillcircle"> </circle>
             <image x="35" y="20" width="60" height="60" href='${
-              window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
+              window.location.href.startsWith(
+                "http://127.0.0.1:5501/public/index.html"
+              )
                 ? window.location.origin + "/public/" + level.badge
                 : window.location.origin + level.badge
             }'> </image>
@@ -6695,10 +6827,11 @@
         buildOutEle = imageDiv;
       }
 
-      imageForDiv.src =
-        window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-          ? `/public${level.badge}`
-          : `${level.badge}`;
+      imageForDiv.src = window.location.href.startsWith(
+        "http://127.0.0.1:5501/public/index.html"
+      )
+        ? `/public${level.badge}`
+        : `${level.badge}`;
       imageForDiv.alt = `badge level: ${level}`;
       imageDiv.appendChild(imageForDiv);
       imageForDiv.style.height = "4.5vw";
@@ -6917,10 +7050,11 @@
 
   var badgeLevelDiv = document.getElementById("badgeLevelDiv");
 
-  playerCanvas.style["background-image"] =
-    window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-      ? `url(${window.location.origin}/public/assets/cropped/hexbackground.webp)`
-      : `url(${window.location.origin}/assets/cropped/hexbackground.webp)`;
+  playerCanvas.style["background-image"] = window.location.href.startsWith(
+    "http://127.0.0.1:5501/public/index.html"
+  )
+    ? `url(${window.location.origin}/public/assets/cropped/hexbackground.webp)`
+    : `url(${window.location.origin}/assets/cropped/hexbackground.webp)`;
 
   const skinsTabCloser = () => {
     document.getElementById("skinCon").style.visibility = "hidden";
@@ -6936,10 +7070,11 @@
   });
 
   async function getSkinData() {
-    const url =
-      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-        ? "https://websocketpointer.duckdns.org/skindata"
-        : "http://localhost:4500/skindata";
+    const url = !window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? "https://websocketpointer.duckdns.org/skindata"
+      : "http://localhost:4500/skindata";
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -6962,10 +7097,11 @@
   var skinCounts_ = { basic: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 };
 
   async function buySkin(skinLevel) {
-    const url =
-      !window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-        ? "https://websocketpointer.duckdns.org/skinpurchase"
-        : "http://localhost:4500/skinpurchase";
+    const url = !window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? "https://websocketpointer.duckdns.org/skinpurchase"
+      : "http://localhost:4500/skinpurchase";
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -7164,10 +7300,11 @@
       var skinImg = document.createElement("img");
       skinGrid.appendChild(skinDiv);
       skinDiv.appendChild(skinImg);
-      skinImg.src =
-        window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-          ? `/public/skins/${i}.webp`
-          : `/skins/${i}.webp`;
+      skinImg.src = window.location.href.startsWith(
+        "http://127.0.0.1:5501/public/index.html"
+      )
+        ? `/public/skins/${i}.webp`
+        : `/skins/${i}.webp`;
 
       skinImg.classList.add("_100per_");
       skinDiv.classList.add("skin-div");
@@ -7186,10 +7323,11 @@
         skinDiv.addEventListener("click", selectSkin);
       } else {
         var lockedImg = document.createElement("img");
-        lockedImg.src =
-          window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
-            ? `/public/assets/locked.svg`
-            : `/assets/locked.svg`;
+        lockedImg.src = window.location.href.startsWith(
+          "http://127.0.0.1:5501/public/index.html"
+        )
+          ? `/public/assets/locked.svg`
+          : `/assets/locked.svg`;
         lockedImg.classList.add("lock-img");
 
         var spinnerImg = document.createElement("img");
