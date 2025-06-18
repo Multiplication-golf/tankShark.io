@@ -90,6 +90,7 @@
     margin-left: 0px !important;
     height: 15vh !important;
     margin-top: -12%;
+    min-width: 225px !important;
   }
   .botton-footer2 {
     display: none;
@@ -98,14 +99,22 @@
     font-size: 15px !important;
   }
   .container {
-    width: calc(100vw - 20px) !important;
+    width: calc(100vw - 10px) !important;
+    padding: 5px;
   }
   .flexcenter {
     width: 100%;
     align-items: baseline;
   }
   .entrie-box {
-    width: calc(100% - 10px);
+    width: calc(100% - 20px);
+    margin-top: 10px;
+  }
+  .br-boost {
+    display: none;
+  }
+  .boost-bar {
+    width: 80%;
   }
   .x-out {
     right: 4vh;
@@ -128,7 +137,27 @@
   }
   .skin-button {
     display: block;
-    height: 15vh;
+    height: 7vh;
+    margin: 1vh;
+  }
+  .mainHeader {
+    margin-top: 1vw;
+    margin-bottom: 1vw;
+  }
+  .flexsidebyside div {
+    font-size: 1.5vh;
+  }
+  .login-button2 {
+    margin: 0;
+  }
+  .leader-board h2 {
+    font-size: 2vh;
+  }
+  .rounded {
+    top: 14vw !important;
+  }
+  .moneytext {
+    margin-top: 40px;
   }
   .topcenterAD {
     height: 2.5vw;

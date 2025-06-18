@@ -1704,7 +1704,7 @@ function createExsplosion(
 
   if (createbullet) {
     var bullet = {
-      type: "expoled",
+      type: "exsplosion",
       bullet_distance: 300,
       speed: 0,
       size: size,
@@ -6503,9 +6503,7 @@ function gameLoop() {
                   if (_player) {
                     _player.goldenGears += 1;
                     createAnnocment(
-                      _player.username +
-                        " has collected a golden gear! Total: " +
-                        _player.goldenGears,
+                      `${_player.username} has collected a golden gear! Total: ${_player.goldenGears}`,
                       player.id,
                       { delay: CONFIG.messageIntervals.long, color: "gold" }
                     );
@@ -6863,9 +6861,7 @@ function gameLoop() {
                 if (_player) {
                   _player.goldenGears += 1;
                   createAnnocment(
-                    _player.username +
-                      " has collected a golden gear! Total: " +
-                      _player.goldenGears,
+                    `${_player.username} has collected a golden gear! Total: ${_player.goldenGears}`,
                     bullet.id,
                     { delay: CONFIG.messageIntervals.long, color: "gold" }
                   );
@@ -6983,7 +6979,7 @@ function gameLoop() {
                 };
               }
               let recoilY, recoilX;
-              if (bullet.type !== "expoled") {
+              if (bullet.type !== "exsplosion") {
                 recoilX =
                   ((bullet.size / item.weight) *
                     bullet.speed *
@@ -6994,6 +6990,15 @@ function gameLoop() {
                     bullet.speed *
                     Math.sin(bullet.angle)) /
                   4;
+              } else {
+                var realPushBackAngle = Math.atan2(
+                  bullet.x - player.x,
+                  bullet.y - player.y
+                );
+                recoilX =
+                  bullet.exspandRate * Math.cos(realPushBackAngle);
+                recoilY =
+                  bullet.exspandRate * Math.sin(realPushBackAngle);
               }
               item.x += recoilX;
               item.y += recoilY;
@@ -7785,7 +7790,7 @@ function gameLoop() {
                     leader_board: leader_board.shown,
                   });
                 } else {
-                  if (bullet.type !== "expoled") {
+                  if (bullet.type !== "exsplosion") {
                     var knockBackX = bullet.speed * Math.cos(bullet.angle);
                     var knockBackY = bullet.speed * Math.sin(bullet.angle);
                   } else {
@@ -7815,7 +7820,7 @@ function gameLoop() {
             }
           }
         }
-        if (bullet.type === "expoled") {
+        if (bullet.type === "exsplosion") {
           bullet.size += bullet.exspandRate;
           if (Date.now() > bullet.endTime) {
             room.bullets.splice(i, 1);

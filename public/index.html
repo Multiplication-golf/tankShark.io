@@ -278,8 +278,8 @@
             >
               <svg
                 viewBox="0 0 500 500"
-                width="5.5vw"
-                height="5vw"
+                width="6.5vh"
+                height="6vh"
                 style="
                   display: inline-block;
                   margin: -1.52576235541vw;
@@ -486,9 +486,9 @@
             </div>
           </div>
           <div class="center0">
-            <div class="login-button">
+            <div class="login-button2">
               <p>Level Boost</p>
-              <meter min="-1" max="45" value="0" id="levelProgress" class="boost-bar"></meter><br>
+              <meter min="-1" max="45" value="0" id="levelProgress" class="boost-bar"></meter><br class="br-boost">
               <div class="boost-con" id='booster'>
                 <button class="boost">Boost</button>
               </div>
@@ -617,63 +617,7 @@
         </p>
 
         <p>
-          <strong>🏰 Team Bases:</strong> Build, upgrade, and defend your own
-          team base in a new strategic layer of gameplay.
-        </p>
-        <ul>
-          <li>
-            <strong>Base Creation:</strong> Cost: 10,000 points (from the player
-            or team score). Bases start with 2,000 health, no turrets, and a
-            stationary, non-rotating structure.
-          </li>
-          <li
-            stye="list-style-type: none;
-          margin: 0;
-          padding: 0;"
-          >
-            <img
-              itemprop="gameItem"
-              class="updates-img"
-              alt="Just me with a base"
-              id="baseimg"
-              src="./assets/teambase.webp"
-              loading="lazy"
-            />
-          </li>
-          <li>
-            <strong>Base Mobility:</strong> Bases are immobile once placed. They
-            can be destroyed by enemies but cannot be moved — at least for now.
-            This may change in future updates.
-          </li>
-          <li>
-            <strong>Leadership Perks:</strong> Team leaders will gain the
-            ability to boost allied player stats (health, speed, damage). Boosts
-            cost 200 points per stat and stack with the player's current score
-            and upgrades.
-          </li>
-          <li>
-            <strong>New Base Design:</strong> Bases will take on an all-new
-            octagon shape for better spatial strategy and uniqueness.
-          </li>
-          <li>
-            <strong>Base Upgrades:</strong> Add turrets, increase health, and
-            unlock new functions. Each base will have a “boost sphere” that
-            grants stat bonuses to allied players inside. Planned upgrade paths
-            include:
-            <ul>
-              <li>Health</li>
-              <li>Movement Speed</li>
-              <li>Damage Output</li>
-              <li>Bullet Speed</li>
-              <li>Reload Time</li>
-            </ul>
-          </li>
-        </ul>
-
-        <p>
-          <strong>🗺️ Mini-Map Upgrade:</strong> Players will soon be able to
-          upgrade their mini-maps to track teammates in real time. This
-          strategic enhancement will cost 3,000 points (player or team-funded).
+          Added a new team panel: that allows you to quick join a team just by clicking on it in the team leaderboard;
         </p>
 
         <p>
@@ -691,6 +635,10 @@
             Player death animations to add polish and impact to every match.
           </li>
         </ul>
+
+        <p>
+          Added the a new tank: the sheller — a tank that can shoot shells that expoled
+        </p>
 
         <p>
           <strong>⚖️ Game Balance:</strong> Ongoing weapon and mechanic tuning
@@ -711,8 +659,7 @@
           </li>
           <li>Correcting layout issues in the team panel on mobile devices.</li>
           <li>
-            Improving screen layout for devices between 700px and 800px in
-            width.
+            Fixing the auto cannon.
           </li>
           <li>
             Resolving a bug that allows players to move while dead using cannon

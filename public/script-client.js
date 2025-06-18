@@ -5374,7 +5374,7 @@
             ctx.lineWidth = ring.size;
             ctx.stroke();
             ctx.closePath();
-            //a += ring.size;
+            a += ring.size;
             ctx.globalAlpha = 1;
             return a;
           }, 0);
