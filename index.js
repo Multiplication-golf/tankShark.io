@@ -1129,13 +1129,13 @@ const tankmeta = {
     cannons: [
       {
         type: "sheller",
-        "cannon-width-top": 30,
+        "cannon-width-top": 50,
         "cannon-height": 50,
-        "cannon-width-bottom": 50,
+        "cannon-width-bottom": 70,
         "offSet-x": 0,
         "offSet-y": 0,
         "offset-angle": 0,
-        bulletSize: 0.8,
+        bulletSize: 1.3,
         bulletSpeed: 2,
         delay: 0,
         reloadM: 1.3,
@@ -2689,6 +2689,7 @@ app.post("/skinpurchase", (req, res) => {
           skinAllowlist: skinAllowlist,
         });
       } else {
+        console.log(purchaseSuccsefull);
         res.send({
           purchaseSuccsefull: purchaseSuccsefull,
           gears: _player?.goldenGears,
@@ -2777,7 +2778,6 @@ app.post("/skindata", (req, res) => {
       if (!_player.skins.includes(ele)) allowedskins[ele] = skinDatalist[ele];
     });
     for (const skin in allowedskins) {
-      console.log(allowedskins[skin]);
       switch (allowedskins[skin]) {
         case "basic": {
           skinCounts.basic++;
@@ -5023,12 +5023,6 @@ wss.on("connection", (socket, req) => {
               fire_at.x - (players[cannon.playerid].x + offSet_x)
             );
           }
-          // mecannons.angle = angle;
-
-          // emit("autoCannonUPDATE-ANGLE", {
-          //   angle: mecannons.angle,
-          //   cannon_ID: mecannons.CannonID,
-          // });
 
           let bullet_size_l = data.bullet_size * cannon["bulletSize"];
 
@@ -5057,14 +5051,6 @@ wss.on("connection", (socket, req) => {
           } else {
             var bullet_start_x = players[cannon.playerid].x + rotated_offset_x;
             var bullet_start_y = players[cannon.playerid].y + rotated_offset_y;
-            console.log(
-              angle_,
-              bullet_start_y,
-              bullet_start_x,
-              players[cannon.playerid].x,
-              players[cannon.playerid].y,
-              rotated_offset_y
-            );
           }
 
           let identdfire = Date.now() + Math.random();
@@ -7153,7 +7139,6 @@ function gameLoop() {
         }
         if (item.isdead) {
           if (Date.now() >= item.deathtime + CONFIG.deathTime) {
-            console.log("deado");
             room.items.splice(i, 1);
             continue;
           }

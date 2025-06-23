@@ -9,3 +9,7 @@ node_modules/
 data/
 
 node_trace.1.log
+
+1264.0x/
+.vscode/
+.parcel-cache/

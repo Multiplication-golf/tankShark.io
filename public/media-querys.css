@@ -130,6 +130,11 @@
   }
   .subbmit-feedback input[type="submit"] {
     width: auto;
+    margin: 0;
+    margin-bottom: 15vh;
+    min-width: 35vw;
+    min-height: 10vh;
+    font-size: 5vh;
   }
   .skins-grid {
     width: 96%;

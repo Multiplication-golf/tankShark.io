@@ -154,7 +154,7 @@ body {
   justify-content: center;
   align-items: center;
   padding: 20px;
-  font-size: 2em;
+  font-size: 1em;
   font-weight: bolder;
 }
 
@@ -645,10 +645,13 @@ body {
   font-size: max(2vw, 1vh);
   margin-left: 0;
   text-align: center;
+  color: var(--text-color-100);
+  background-color: var(--background-white-100);
 }
 
 .subbmit-feedback input[type="submit"]:hover {
-  background-color: 4px solid var(--background-white-200);
+  background-color: var(--background-white-400);
+  transition: background-color 0.3s ease-in-out;
 }
 
 .subbmit-feedback input[type="br"] {

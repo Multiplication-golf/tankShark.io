@@ -3204,123 +3204,73 @@
       const stepX = dx / steps;
       const stepY = dy / steps;
 
-      for (let i = 0; i < steps; i++) {
-        setTimeout(() => {
-          cavansX += stepX;
-          playerY += stepY;
-          cavansY += stepY;
-          playerX += stepX;
 
-          if (i === steps - 1) {
-            send("playerMoved", {
-              x: playerX,
-              y: playerY,
-              dx: dx,
-              dy: dy,
-              last: last,
-            });
-          }
-        }, i * 16); // 16ms per step for ~60fps
+      // Use requestAnimationFrame for smoother animation
+      let currentStep = 0;
+      function animateStep() {
+        cavansX += stepX;
+        playerY += stepY;
+        cavansY += stepY;
+        playerX += stepX;
+
+        currentStep++;
+        if (currentStep < steps) {
+          requestAnimationFrame(animateStep);
+        } else {
+          send("playerMoved", {
+            x: playerX,
+            y: playerY,
+            dx: dx,
+            dy: dy,
+            last: last,
+          });
+        }
       }
+      requestAnimationFrame(animateStep);
     };
 
-    function MathHypotenuse(x, y) {
-      return Math.sqrt(x * x + y * y);
-    }
-
-    const checkCollisions = () => {
+    const checkCollisions = (dx, dy) => {
       for (let playerId_ in players) {
         let player = players[playerId_];
-        let distance = MathHypotenuse(player.x - playerX, player.y - playerY);
+        let preX = playerX + dx;
+        let preY = playerY + dy;
 
         if (
-          distance <
+          Math.abs(player.x - playerX) <
             player.size * playerBaseSize + playerSize * playerBaseSize &&
-          playerId_ !== playerId &&
-          !(
-            players[playerId_]?.team === players[playerId]?.team &&
-            players[playerId_]?.team !== null &&
-            players[playerId]?.team !== null
-          )
-        ) {
-          send("playerCollided", {
-            id_other: playerId_,
-            damagetaken: player.bodyDamage,
-            damagegiven: bodyDamage,
-            id_self: playerId,
-          });
-          playerHealTime = 0;
-          send("playerHealintterupted", {});
-          canmove = false;
-          setTimeout(() => {
-            canmove = true;
-          }, 10 * playerSpeed);
-          if (player.x < playerX /* left */) {
-            for (let c = 0; c < playerSpeed; c++) {
-              setTimeout(() => {
-                movePlayer(-2, 0, c === playerSpeed - 1, c);
-              }, 50 * c);
-            }
-          }
-          if (player.x > playerX /* right */) {
-            for (let c = 0; c < playerSpeed; c++) {
-              setTimeout(() => {
-                movePlayer(2, 0, c === playerSpeed - 1, c);
-              }, 50 * c);
-            }
-          }
-          if (player.y > playerY /* up */) {
-            for (let c = 0; c < playerSpeed; c++) {
-              setTimeout(() => {
-                movePlayer(0, -2, c === playerSpeed - 1, c);
-              }, 50 * c);
-            }
-          }
-          if (player.y < playerY /* down */) {
-            for (let c = 0; c < playerSpeed; c++) {
-              setTimeout(() => {
-                movePlayer(0, 2, c === playerSpeed - 1, c);
-              }, 50 * c);
-            }
-          }
-          // Reverse the last movement
-        } else if (
-          distance <
+          Math.abs(player.y - playerY) <
             player.size * playerBaseSize + playerSize * playerBaseSize &&
           playerId_ !== playerId
         ) {
+          if (
+            !(
+              players[playerId_]?.team === players[playerId]?.team &&
+              players[playerId_]?.team !== null &&
+              players[playerId]?.team !== null
+            )
+          ) {
+            send("playerCollided", {
+              id_other: playerId_,
+              damagetaken: player.bodyDamage,
+              damagegiven: bodyDamage,
+              id_self: playerId,
+            });
+            playerHealTime = 0;
+            send("playerHealintterupted", null);
+          }
           canmove = false;
           setTimeout(() => {
             canmove = true;
           }, 10 * playerSpeed);
-          if (player.x < playerX /* left */) {
-            for (let c = 0; c < playerSpeed; c++) {
-              setTimeout(() => {
-                movePlayer(-2, 0, c === playerSpeed - 1, c);
-              }, 50 * c);
-            }
-          }
-          if (player.x > playerX /* right */) {
-            for (let c = 0; c < playerSpeed; c++) {
-              setTimeout(() => {
-                movePlayer(2, 0, c === playerSpeed - 1, c);
-              }, 50 * c);
-            }
-          }
-          if (player.y > playerY /* up */) {
-            for (let c = 0; c < playerSpeed; c++) {
-              setTimeout(() => {
-                movePlayer(0, -2, c === playerSpeed - 1, c);
-              }, 50 * c);
-            }
-          }
-          if (player.y < playerY /* down */) {
-            for (let c = 0; c < playerSpeed; c++) {
-              setTimeout(() => {
-                movePlayer(0, 2, c === playerSpeed - 1, c);
-              }, 50 * c);
-            }
-          }
+          let angleVert = Math.atan2(player.y - preY, player.x - preX);
+
+          let cofX = Math.sign(player.x - playerX);
+          let cofY = Math.sign(player.y - playerY);
+
+          let addX = Math.cos(angleVert) * player.size * playerBaseSize * cofX;
+          let addY = Math.sin(angleVert) * player.size * playerBaseSize * cofY;
+
+          movePlayer(addX, addY, true);
         }
       }
     };
@@ -3339,7 +3289,7 @@
           movementTimeouts.push({ timeout: movement, bouceBack: true });
         }
         checkCollisions(dx, dy);
-      } else if (playerX + dx > mapLeft && dy === 0) {
+      } else if (playerX + dx > mapLeft) {
         movementTimeouts.forEach((timeout) => {
           clearTimeout(timeout.timeout);
         });
@@ -3350,7 +3300,7 @@
           }, 75 * i);
           movementTimeouts.push({ timeout: movement, bouceBack: true });
         }
-      } else if (playerX + dx < mapRight && dy === 0) {
+      } else if (playerX + dx < mapRight) {
         movementTimeouts.forEach((timeout) => {
           clearTimeout(timeout.timeout);
         });
@@ -3372,8 +3322,7 @@
           }, 75 * i);
           movementTimeouts.push({ timeout: movement, bouceBack: true });
         }
-      }
-      if (playerY < -mapBottom) {
+      } else if (playerY < -mapBottom) {
         movementTimeouts.forEach((timeout) => {
           clearTimeout(timeout.timeout);
         });
@@ -4055,9 +4004,7 @@
           ctx.stroke();
           ctx.closePath();
           ctx.restore();
-        } else if (
-          tankdatacannondata["type"] === "AutoBulletCannon"
-        ) {
+        } else if (tankdatacannondata["type"] === "AutoBulletCannon") {
           ctx.save();
           // Translate to the center of the square
           ctx.translate(canW / 2, canH / 2);
@@ -4161,7 +4108,7 @@
           if (tankdatacannondata["type"] === "sheller") {
             ctx.beginPath();
             ctx.arc(
-              (basex - 40) + cannon_heightFOV / 3,
+              basex - 40 + cannon_heightFOV / 3,
               basey,
               (playerSize * playerBaseSize) / 4,
               0,
@@ -4825,9 +4772,7 @@
                 // Restore the previous transformation matrix
                 ctx.restore();
               }
-            } else if (
-              tankdatacannondata["type"] === "AutoBulletCannon"
-            ) {
+            } else if (tankdatacannondata["type"] === "AutoBulletCannon") {
               ctx.save();
               ctx.translate(playerX - cavansX, playerY - cavansY);
               let angle = player.cannon_angle;
@@ -4837,7 +4782,7 @@
               // Draw the square
 
               var plusX = tankdatacannondata["type"] === "sheller" ? 30 : 0;
-              console.log(plusX)
+              console.log(plusX);
 
               let basex =
                 -cannon_widthFOV / 2 +
@@ -4943,14 +4888,14 @@
               if (tankdatacannondata["type"] === "sheller") {
                 ctx.beginPath();
                 ctx.arc(
-                  (basex - 40) + cannon_heightFOV / 3,
+                  basex - 40 + cannon_heightFOV / 3,
                   basey,
                   (playerSize * playerBaseSize) / 4,
                   0,
                   2 * Math.PI,
                   false
                 );
-                console.log(basex)
+                console.log(basex);
                 ctx.fill();
                 ctx.lineWidth = 5;
                 ctx.strokeStyle = "lightgrey";
@@ -6169,9 +6114,9 @@
             ctx.closePath();
           } else if (bullet.type === "sheller") {
             var sameTeam =
-                players[bullet.id]?.team === players[playerId]?.team &&
-                players[bullet.id]?.team !== null &&
-                players[playerId]?.team !== null;
+              players[bullet.id]?.team === players[playerId]?.team &&
+              players[bullet.id]?.team !== null &&
+              players[playerId]?.team !== null;
             if (bullet.id === playerId || sameTeam) {
               ctx.fillStyle = "blue";
               ctx.strokeStyle = "darkblue";
@@ -6197,16 +6142,16 @@
             ctx.translate(realx - cavansX, realy - cavansY);
             ctx.rotate(bullet.angle);
 
-            let s = bullet.size/3.5;
+            let s = bullet.size / 3.5;
             var vertices = [
-              { x: s, y: s},
-              { x: 3*s, y: 0},
-              { x: s, y: -s},
-              { x: 0, y: -3*s},
-              { x: -s, y: -s},
-              { x: -3*s, y: 0},
-              { x: -s, y: s},
-              { x: 0, y: 3*s},
+              { x: s, y: s },
+              { x: 3 * s, y: 0 },
+              { x: s, y: -s },
+              { x: 0, y: -3 * s },
+              { x: -s, y: -s },
+              { x: -3 * s, y: 0 },
+              { x: -s, y: s },
+              { x: 0, y: 3 * s },
             ];
 
             ctx.beginPath();
@@ -7141,6 +7086,7 @@
                       <div class="disc"></div>
                       <div class="leverbase" id="basicSpinnerBuy">
                         Spin!
+                        Cost: 199 gears
                       </div> 
                     </div>
                   </div>
@@ -7156,6 +7102,7 @@
                       <div class="disc"></div>
                       <div class="leverbase" id="uncommonSpinnerBuy">
                         Spin!
+                        Cost: 349 gears
                       </div> 
                     </div>
                   </div>
@@ -7171,6 +7118,7 @@
                       <div class="disc"></div>
                       <div class="leverbase" id="rareSpinnerBuy">
                         Spin!
+                        Cost: 449 gears
                       </div> 
                     </div>
                   </div>
@@ -7186,6 +7134,7 @@
                       <div class="disc"></div>
                       <div class="leverbase" id="epicSpinnerBuy">
                         Spin!
+                        Cost: 899 gears
                       </div> 
                     </div>
                   </div>
@@ -7201,6 +7150,7 @@
                       <div class="disc"></div>
                       <div class="leverbase" id="legendarySpinnerBuy">
                         Spin!
+                        Cost: 999 gears
                       </div> 
                     </div>
                   </div>
@@ -7225,70 +7175,115 @@
     var legendarySpinner = document.getElementById("legendarySpinnerBuy");
     var skinCounts = { basic: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 };
     basicSpinner.addEventListener("click", () => {
-      setTimeout(() => {
-        buyer("basic");
-        c(true);
-        (async function () {
-          loadGearData(await getGearData());
-        })();
-      }, 2000);
-      var basicSpinner__ = document.getElementById("basicSpinnerBuyLever");
-      console.log(basicSpinner__);
-      basicSpinner__.style.animation =
-        "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
-      console.log(basicSpinner__.style.animation);
+      swal({
+        title: "Are you sure?",
+        text: "Are you shore you want to spend 199 golden gears to spin the basic skin wheel? This action cannot be undone!",
+        icon: "info",
+        buttons: true,
+        dangerMode: true,
+      }).then((buy) => {
+        if (!buy) return;
+        setTimeout(() => {
+          buyer("basic");
+          c(true);
+          (async function () {
+            loadGearData(await getGearData());
+          })();
+        }, 2000);
+        var basicSpinner__ = document.getElementById("basicSpinnerBuyLever");
+        console.log(basicSpinner__);
+        basicSpinner__.style.animation =
+          "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+        console.log(basicSpinner__.style.animation);
+      });
     });
     uncommonSpinner.addEventListener("click", () => {
-      setTimeout(() => {
-        buyer("uncommon");
-        c(true);
-        (async function () {
-          loadGearData(await getGearData());
-        })();
-      }, 2000);
-      var uncommonSpinner__ = document.getElementById(
-        "uncommonSpinnerBuyLever"
-      );
-      uncommonSpinner__.style.animation =
-        "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+      swal({
+        title: "Are you sure?",
+        text: "Are you shore you want to spend 349 golden gears to spin the uncommon skin wheel? This action cannot be undone!",
+        icon: "info",
+        buttons: true,
+        dangerMode: true,
+      }).then((buy) => {
+        if (!buy) return;
+        setTimeout(() => {
+          buyer("uncommon");
+          c(true);
+          (async function () {
+            loadGearData(await getGearData());
+          })();
+        }, 2000);
+        var uncommonSpinner__ = document.getElementById(
+          "uncommonSpinnerBuyLever"
+        );
+        uncommonSpinner__.style.animation =
+          "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+      });
     });
     rareSpinner.addEventListener("click", () => {
-      setTimeout(() => {
-        buyer("rare");
-        c(true);
-        (async function () {
-          loadGearData(await getGearData());
-        })();
-      }, 2000);
-      var rareSpinner__ = document.getElementById("rareSpinnerBuyLever");
-      rareSpinner__.style.animation =
-        "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+      swal({
+        title: "Are you sure?",
+        text: "Are you shore you want to spend 449 golden gears to spin the rare skin wheel? This action cannot be undone!",
+        icon: "info",
+        buttons: true,
+        dangerMode: true,
+      }).then((buy) => {
+        if (!buy) return;
+        setTimeout(() => {
+          buyer("rare");
+          c(true);
+          (async function () {
+            loadGearData(await getGearData());
+          })();
+        }, 2000);
+        var rareSpinner__ = document.getElementById("rareSpinnerBuyLever");
+        rareSpinner__.style.animation =
+          "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+      });
     });
     epicSpinner.addEventListener("click", () => {
-      setTimeout(() => {
-        buyer("epic");
-        c(true);
-        (async function () {
-          loadGearData(await getGearData());
-        })();
-      }, 2000);
-      var epicSpinner__ = document.getElementById("epicSpinnerBuyLever");
-      epicSpinner__.style.animation =
-        "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+      swal({
+        title: "Are you sure?",
+        text: "Are you shore you want to spend 899 golden gears to spin the epic skin wheel? This action cannot be undone!",
+        icon: "info",
+        buttons: true,
+        dangerMode: true,
+      }).then((buy) => {
+        if (!buy) return;
+        setTimeout(() => {
+          buyer("epic");
+          c(true);
+          (async function () {
+            loadGearData(await getGearData());
+          })();
+        }, 2000);
+        var epicSpinner__ = document.getElementById("epicSpinnerBuyLever");
+        epicSpinner__.style.animation =
+          "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+      });
     });
     legendarySpinner.addEventListener("click", () => {
-      setTimeout(() => {
-        buyer("legendary");
-        c(true);
-        (async function () {
-          loadGearData(await getGearData());
-        })();
-      }, 2000);
-      var legendarySpinner__ = document.getElementById(
-        "legendarySpinnerBuyLever"
-      );
-      legendarySpinner__.style.animation =
-        "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+      swal({
+        title: "Are you sure?",
+        text: "Are you shore you want to spend 999 golden gears to spin the epic skin wheel? This action cannot be undone!",
+        icon: "info",
+        buttons: true,
+        dangerMode: true,
+      }).then((buy) => {
+        if (!buy) return;
+        setTimeout(() => {
+          buyer("legendary");
+          c(true);
+          (async function () {
+            loadGearData(await getGearData());
+          })();
+        }, 2000);
+        var legendarySpinner__ = document.getElementById(
+          "legendarySpinnerBuyLever"
+        );
+        legendarySpinner__.style.animation =
+          "levelmover 2s cubic-bezier(0.42, 0, 0.58, 1)";
+      });
     });
     document.getElementById("close").addEventListener("click", skinsTabCloser);
     var reqdata = await getSkinData();
@@ -7487,7 +7482,9 @@
     }
   }
   var buyer = async (skinLevel) => {
+    console.log("sdjdsfds");
     var skinBuyerLevel = await buySkin(skinLevel);
+    console.log("buyerLevel", skinBuyerLevel);
     if (skinBuyerLevel.successful === "success") {
       for (let i = 1; i < 28; i++) {
         try {
@@ -7507,19 +7504,26 @@
       waitForProperty(element, property, targetValue, () => {
         console.log("Animation property reached target value!");
       });
-    } else if (gearCount.purchaseSuccsefull === "noAccount") {
-      alert("purchase error; You need to play a least once to by a boost");
-    } else if (gearCount.purchaseSuccsefull === "AccountError") {
-      alert(
-        "account error; Account not found; Play to refresh your token; it may be a server error"
+    } else if (skinBuyerLevel.purchaseSuccsefull === "noAccount") {
+      swal(
+        "purchase error",
+        "purchase error; You need to play a least once to by a boost",
+        "error"
       );
-    } else if (gearCount.purchaseSuccsefull === "noEnoughCoins") {
-      alert(
-        "currency error; You do not have enough Golden gears; Purchase or play to get more!"
+    } else if (skinBuyerLevel.purchaseSuccsefull === "AccountError") {
+      swal(
+        "purchase error",
+        "account error; Account not found; Play to refresh your token; it may be a server error",
+        "error"
+      );
+    } else if (skinBuyerLevel.purchaseSuccsefull === "noEnoughCoins") {
+      swal(
+        "purchase error",
+        "currency error; You do not have enough Golden gears; Purchase or play to get more!",
+        "error"
       );
     }
   };
-  var buyer = (skinLevel) => {};
 
   var skinShown = false;
   var skinsTabOpener = () => {
