@@ -9,9 +9,9 @@
 }
 
 .death-screen {
-  width: 99.9vw;
+  width: 100vw;
   position: absolute;
-  height: 99.9vh;
+  height: 100vh;
   z-index: 10;
   top: 0;
   left: 0;
@@ -19,7 +19,6 @@
 }
 
 .background-grid {
-  display: grid;
   grid-template-columns: repeat(10, 1000px);
   grid-template-rows: repeat(10, 1000px);
   grid-gap: 0px;

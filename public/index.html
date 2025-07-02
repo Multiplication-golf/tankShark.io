@@ -560,6 +560,11 @@
           </div>
         </div>
       </div>
+      <div id="skinScreen" class="shaded100">
+        <div class="pop-up-square">
+
+        </div>
+      </div>
       <footer class="botton-footer" style="z-index: 3">
         <div class="surronder">
           <a
@@ -616,6 +621,11 @@
           experience. Here's a sneak peek at what's coming soon:
         </p>
 
+        <p><strong>🪖 New Tanks!</strong></p>
+        <p>
+          Added a new tank: the sheller — a tank that can shoot shells that explode!
+        </p>
+
         <p>
           Added a new team panel: that allows you to quick join a team just by clicking on it in the team leaderboard;
         </p>
@@ -634,11 +644,13 @@
           <li>
             Player death animations to add polish and impact to every match.
           </li>
+          <li>
+            Improved upgrade interface that allows the creation of tanks more speedily. It also speeds up load times becuase images are no longer needed.
+          </li>
+          <li>
+            Overhauled the movement system to allow for more fluid and responsive controls.
+          </li>
         </ul>
-
-        <p>
-          Added the a new tank: the sheller — a tank that can shoot shells that expoled
-        </p>
 
         <p>
           <strong>⚖️ Game Balance:</strong> Ongoing weapon and mechanic tuning
@@ -659,10 +671,10 @@
           </li>
           <li>Correcting layout issues in the team panel on mobile devices.</li>
           <li>
-            Fixing the auto cannon.
+            Fixed (hopefully) the auto cannon.
           </li>
           <li>
-            Resolving a bug that allows players to move while dead using cannon
+            Resolved a bug that allows players to move while dead using cannon
             knock-back.
           </li>
         </ul>
@@ -843,11 +855,11 @@
       />
       <div id="keyscontainer" class="keycontener">
         <svg width="6vh" height="6vh"></svg>
-        <div style="width: 6vh; height: 6vh; border-radius: 20px; background-color:rgba(255,255,255,0.8)" id="up">W<div>
+        <div class="boxbutton" id="up">W</div>
         <br />
-        <div style="width: 6vh; height: 6vh; border-radius: 20px; background-color:rgba(255,255,255,0.8)" id="left">A<div>
-        <div style="width: 6vh; height: 6vh; border-radius: 20px; background-color:rgba(255,255,255,0.8)" id="down">S<div>
-        <div style="width: 6vh; height: 6vh; border-radius: 20px; background-color:rgba(255,255,255,0.8)" id="right">D<div>
+        <div class="boxbutton" id="left">A</div>
+        <div class="boxbutton" id="down">S</div>
+        <div class="boxbutton" id="right">D</div>
       </div>
       <div class="background-grid" id="gridDark"></div>
       <div class="background-grid" id="gridLight"></div>

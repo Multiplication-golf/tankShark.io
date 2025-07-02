@@ -97,6 +97,14 @@
     };
   }
 
+  var webToken = null;
+  (async function() {
+    var isLog = await isLoggedIn();
+    if (!isLog.isLoggedIn) {
+      webToken = (await login()).jwt;
+    }
+  })();
+
   function getMiddleOfElement(element) {
     const rect = element.getBoundingClientRect();
     const middleX = rect.left + rect.width / 2;
@@ -223,62 +231,11 @@
       />
       <div id="keyscontainer" class="keycontener">
         <svg width="6vh" height="6vh"></svg>
-        <svg width="6vh" height="6vh" id="up">
-          <rect
-            width="6vh"
-            height="6vh"
-            rx="15"
-            fill="rgba(255,255,255,0.8)"
-            stroke="rgba(255,255,255,0.9)"
-            stroke-width="1"
-          />
-          <text
-            x="2vh"
-            y="2.5vh"
-            font-size="25"
-            text-anchor="middle"
-            alignment-baseline="middle"
-          >
-            W
-          </text>
-        </svg>
+        <div class="boxbutton" id="up">W</div>
         <br />
-        <svg width="6vh" height="6vh" id="left">
-          <rect width="6vh" height="6vh" rx="15" fill="rgba(255,255,255,0.8)" />
-          <text
-            x="2vh"
-            y="2.5vh"
-            font-size="25"
-            text-anchor="middle"
-            alignment-baseline="middle"
-          >
-            A
-          </text>
-        </svg>
-        <svg width="6vh" height="6vh" id="down">
-          <rect width="6vh" height="6vh" rx="15" fill="rgba(255,255,255,0.8)" />
-          <text
-            x="2vh"
-            y="2.5vh"
-            font-size="25"
-            text-anchor="middle"
-            alignment-baseline="middle"
-          >
-            S
-          </text>
-        </svg>
-        <svg width="6vh" height="6vh" id="right">
-          <rect width="6vh" height="6vh" rx="15" fill="rgba(255,255,255,0.8)" />
-          <text
-            x="2vh"
-            y="2.5vh"
-            font-size="25"
-            text-anchor="middle"
-            alignment-baseline="middle"
-          >
-            D
-          </text>
-        </svg>
+        <div class="boxbutton" id="left">A</div>
+        <div class="boxbutton" id="down">S</div>
+        <div class="boxbutton" id="right">D</div>
       </div>
       <div class="background-grid" id="gridDark"></div>
       <div class="background-grid" id="gridLight"></div>
@@ -587,7 +544,7 @@
     let getIP = document.getElementById("IP").value;
 
     const socket =
-      new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(getIP);
+      new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(`${getIP}?token=${webToken}`);
     socket.binaryType = "arraybuffer";
 
     let playerId = null; // Connect to the server
@@ -666,6 +623,7 @@
     var playerMessages = [];
     var messaging = false;
     var blinking = false;
+    var bodyType = "circle";
 
     // 🕹️ Movement & Controls
     var canmove = true;
@@ -755,7 +713,6 @@
     // 🏢 Teams & Multiplayer
     var pubteams = [];
     var teamOver = false;
-    var userId = getCookie("userId");
     var typedtext = "";
     var radiusConfig = {};
 
@@ -809,27 +766,31 @@
         } catch (e) {
           if (errors > 2) return;
           setTimeout(() => {
-            alert(
+            swal(
               "There is an error or socket disconnection. Please report this if the error is not related to a closing state error."
             );
             window.location.reload();
           }, 2500);
-          alert(
+          swal(
             "There is an error or socket disconnection. Please report this if the error is not related to a closing state error."
           );
-          alert("error", e);
+          swal("error", e);
         }
       } else {
         setTimeout(() => {
           window.location.reload();
-        }, 1);
+        }, 10000);
         setTimeout(() => {
-          alert(`There is a disconnection. ${socket.readyState}`);
+          swal(`There is a disconnection. Socket state ${socket.readyState} CLOSED.Sorry for the inconvenience, please try again later. If the problem persists, please report it.`);
         }, 0);
         console.log(type, data);
         errors++;
       }
     }
+
+    // socket.on('close', (code, reason) => {
+    //   swal(`Disconnected sorry :(,${code}, ${reason.toString()}`);
+    // });
 
     const getCannonAngle = () => {
       return Math.atan2(
@@ -861,7 +822,7 @@
       const d = new Date();
       d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
       let expires = "expires=" + d.toUTCString();
-      document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+      document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;";
     }
 
     function convertTeamInterface() {
@@ -1012,6 +973,7 @@
             evt.stopPropagation();
             tankstiles.style.display = "none";
             __type__ = Object.keys(tankdata["upgrades"])[i];
+            console.log(__type__);
             players[playerId].__type__ = __type__;
             tankdata = tankmeta[__type__];
             var tankdatacannon__ = tankdata["cannons"];
@@ -1579,7 +1541,6 @@
           screenHeight: canvas.height,
           visible: true,
           team: teamOn,
-          userId: userId,
           autoFiring: autoFiring,
           skin: skin,
           isCrazy: isCrazyGames,
@@ -1643,6 +1604,9 @@
               console.log("Player updated:", data); // Log the update
               break;
             }
+            case "polyUpdate": {
+              food_list = data;
+            }
             case "new_X_Y": {
               if (data.id !== playerId) return;
               cavansX = data.x;
@@ -1704,6 +1668,14 @@
                   div.appendChild(img);
                   gridDark.appendChild(div);
                 }
+              }
+              if (darkMode) {
+                document.getElementById("gridDark").style.display = "grid";
+                document.getElementById("gridLight").style.display = "none";
+              }
+              if (!darkMode) {
+                document.getElementById("gridDark").style.display = "none";
+                document.getElementById("gridLight").style.display = "grid";
               }
               resolveDraw();
               console.log("background built");
@@ -1824,6 +1796,7 @@
               autocannons.forEach((cannon_ooo) => {
                 if (cannon_ooo.CannonID === data.cannon_ID) {
                   cannon_ooo.angle = data.angle;
+                  //console.log("cannon angle updated", data.angle);
                 }
               });
               break;
@@ -1885,12 +1858,7 @@
                 send = (type, data) => {};
 
                 respawn.innerHTML = "Respawn";
-                respawn.style.position = "absolute";
-                respawn.style.top = "calc(50vh - 50px)";
-                respawn.style.left = "calc(50vw - 100px)";
-                respawn.style.width = "200px";
-                respawn.style.height = "100px";
-                respawn.style["z-index"] = "12";
+                respawn.classList.add("restart-button");
                 document.getElementsByTagName("body")[0].style.cursor = "auto";
                 document.getElementById("game").appendChild(respawn);
                 const reload_ = () => {
@@ -2026,7 +1994,6 @@
                     Speed: 1,
                   },
                   team: teamOn,
-                  userId: userId,
                 });
               }
               setTimeout(() => {
@@ -2358,17 +2325,14 @@
               break;
             }
             case "newid": {
-              resolveDraw5();
-              console.log("NewId");
-              userId = data.newid;
-              setCookie("userId", userId, 99999);
+              (async function() {
+                await login();
+                resolveDraw5();
+              })();
               break;
             }
             case "secureId": {
-              resolveDraw5();
-              console.log("NewId");
-              userId = data.newid;
-              setCookie("secureId", userId, 99999);
+              console.log("player data recived")
               break;
             }
             case "resovleID": {
@@ -2645,7 +2609,11 @@
                 cannon.type === "SwivelAutoCannon"
               )
                 return;
-              if (!directer && cannon.type === "directer") return;
+              if (
+                (!directer && cannon.type === "directer") ||
+                (directer && cannon.type !== "directer")
+              )
+                return;
 
               let bullet_size_l = bullet_size * cannon["bulletSize"];
 
@@ -2679,6 +2647,9 @@
                 var yyy = 0;
                 var angle_ = angle + cannon["offset-angle"];
               }
+
+              xxx *= playerSize;
+              yyy *= playerSize;
 
               let rotated_offset_x =
                 (cannon["offSet-x"] + xxx) * Math.cos(angle_) -
@@ -2842,6 +2813,9 @@
                     var angle_ = angle + cannon["offset-angle"];
                   }
 
+                  xxx *= playerSize;
+                  yyy *= playerSize;
+
                   let rotated_offset_x =
                     (cannon["offSet-x"] + xxx) * Math.cos(angle_) -
                     (cannon["offSet-y"] + yyy) * Math.sin(angle_);
@@ -2951,6 +2925,7 @@
           if (teampanelopen) return;
           fireOnce(evt, false);
         };
+
         document.addEventListener("mousedown", fireCannon);
 
         window.addEventListener("resize", () => {
@@ -2968,14 +2943,6 @@
 
         function autoengine() {
           __tankdata__ = tankmeta[__type__];
-          if (!tankmeta.dronetanks.includes(__type__) && autoFiring) {
-            __tankdata__ = tankmeta[__type__];
-            if (firingInterval) {
-              clearInterval(firingInterval);
-              firingInterval = null;
-            }
-            fireOnce();
-          }
           if (tankmeta.dronetanks.includes(__type__)) {
             let i = 0;
             for (var {} in tankmeta[__type__]["cannons"]) {
@@ -2998,6 +2965,25 @@
 
         setTimeout(() => {
           autoengine();
+        }, baseFireInterval * __tankdata__["reaload-m"] * __reload__);
+
+        function autoEngine2() {
+          __tankdata__ = tankmeta[__type__];
+          if (autoFiring) {
+            __tankdata__ = tankmeta[__type__];
+            if (firingInterval) {
+              clearInterval(firingInterval);
+              firingInterval = null;
+            }
+            fireOnce(null, false);
+          }
+          setTimeout(() => {
+            autoEngine2();
+          }, baseFireInterval * __tankdata__["reaload-m"] * __reload__);
+        }
+
+        setTimeout(() => {
+          autoEngine2();
         }, baseFireInterval * __tankdata__["reaload-m"] * __reload__);
 
         var Xbutton = document.getElementById("Xbutton");
@@ -3065,7 +3051,8 @@
             MouseX < window.innerWidth - 275 &&
             MouseY > 10 &&
             MouseY < 110 &&
-            !teampanelopen
+            !teampanelopen &&
+            !dead
           ) {
             teampanelopen = true;
             var teamcontainer_ = document.getElementById("teamMain");
@@ -3203,7 +3190,6 @@
       const steps = 10; // Number of interpolation steps
       const stepX = dx / steps;
       const stepY = dy / steps;
-
 
       // Use requestAnimationFrame for smoother animation
       let currentStep = 0;
@@ -3771,18 +3757,20 @@
         (playerSize * playerBaseSize) / 1.5,
         canvas.width / 2,
         canvas.height / 2,
-        radiusConfig.radius
+        playerSize * radiusConfig.radius
       );
+
+      var realColor = darkMode ? "#00000000" : "#FFFFFF00";
 
       gradient.addColorStop(radiusConfig.build[0], "#FFFFFF00");
       gradient.addColorStop(radiusConfig.build[1], "#61f7ff");
-      gradient.addColorStop(radiusConfig.build[2], "#FFFFFF00");
+      gradient.addColorStop(radiusConfig.build[2], realColor);
 
       ctx.beginPath();
       ctx.arc(
         canvas.width / 2,
         canvas.height / 2,
-        radiusConfig.radius,
+        playerSize * radiusConfig.radius,
         0,
         2 * Math.PI,
         false
@@ -3969,7 +3957,7 @@
 
           var [x, y] = rotatePointAroundPlayer(offSet_x, 0, swivelAngle);
 
-          ctx.translate(canW / 2 + x, y + canH / 2);
+          ctx.translate(canW / 2 + x, canH / 2 + y);
 
           let angle = cannonangle;
 
@@ -3997,7 +3985,6 @@
             cannon_heightFOV + 5
           ); // Draw the border
           // Restore the previous transformation matrix
-          ctx.rotate(-(angle + angle_offset));
           ctx.arc(0, 0, cannon_widthFOV / 2, 0, 2 * Math.PI, false);
 
           ctx.fill();
@@ -4162,14 +4149,16 @@
       }
 
       ctx.beginPath();
-      ctx.arc(
-        canvas.width / 2,
-        canvas.height / 2,
-        playerSize * playerBaseSize,
-        0,
-        2 * Math.PI,
-        false
-      );
+      if (bodyType === "circle") {
+        ctx.arc(
+          canvas.width / 2,
+          canvas.height / 2,
+          playerSize * playerBaseSize,
+          0,
+          2 * Math.PI,
+          false
+        );
+      }
       if (state === "start" || state === "damaged") {
         let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
         let percentage =
@@ -4222,11 +4211,11 @@
         let tankdatacannondata = tankdatacannon[i];
         let cannon_widthFOV = tankdatacannondata["cannon-width"] * FOVplayerz;
         let cannon_heightFOV = tankdatacannondata["cannon-height"] * FOVplayerz;
-        let cannonangle;
+        let cannonangle_;
         var cannonWidth_;
         autocannons.forEach((cannonA) => {
           if (cannonA.playerid === playerId && cannonA.autoindex === i) {
-            cannonangle = cannonA.angle;
+            cannonangle_ = cannonA.angle;
             cannonWidth_ = cannonA.cannonWidth;
           }
         });
@@ -4239,16 +4228,17 @@
           if (tankdatacannondata["offSet-x-multpliyer"]) {
             offSet_x *= -1;
           }
-          let angle0 = getCannonAngle();
+          let angle0 = cannonangle_;
           var [x, y] = rotatePointAroundPlayer(
             offSet_x,
             0,
             angle0 * (180 / Math.PI)
           );
+          console.log(x, y, angle0);
 
           ctx.translate(canvas.width / 2 + x, y + canvas.height / 2);
 
-          let angle = cannonangle;
+          let angle = cannonangle_;
 
           let angle_offset = tankdatacannondata["offset-angle"];
           ctx.rotate(angle + angle_offset);
@@ -4284,9 +4274,19 @@
         }
       }
       // Draw health bar
-      const healthWidth = (playerHealth / maxhealth) * 90;
-      ctx.fillStyle = "green";
+      const barX = canvas.width / 2 - 45;
+      const barY = canvas.height / 2 + 55;
+      const healthWidth = (playerHealth / maxhealth) * 90 * playerSize;
+
+      const grd2 = ctx.createLinearGradient(
+        barX, barY,           // x1, y1 (start of bar)
+        barX + healthWidth, barY // x2, y2 (end of bar, horizontally)
+      );
+      grd2.addColorStop(0.01, "#00fff2");
+      grd2.addColorStop(1, "#000dff");
+
       ctx.beginPath();
+      ctx.fillStyle = grd2;
       ctx.roundRect(
         canvas.width / 2 - 45,
         canvas.height / 2 + 55,
@@ -4568,26 +4568,28 @@
           let gradient = ctx.createRadialGradient(
             playerX - cavansX,
             playerY - cavansY,
-            (playerSize * playerBaseSize) / 1.5,
+            (player.size * playerBaseSize) / 1.5,
             playerX - cavansX,
             playerY - cavansY,
-            radiusConfig.radius
+            player.size * radiusConfig.radius
           );
 
-          gradient.addColorStop(radiusConfig.build[0], "#FFFFFF00");
+          var realColor = darkMode ? "#00000000" : "#FFFFFF00";
+
+          gradient.addColorStop(radiusConfig.build[0], realColor);
           if (sameTeam) {
             gradient.addColorStop(radiusConfig.build[1], "#61f7ff");
           } else {
             gradient.addColorStop(radiusConfig.build[1], "#ff2121");
           }
 
-          gradient.addColorStop(radiusConfig.build[2], "#FFFFFF00");
+          gradient.addColorStop(radiusConfig.build[2], realColor);
 
           ctx.beginPath();
           ctx.arc(
             playerX - cavansX,
             playerY - cavansY,
-            radiusConfig.radius,
+            radiusConfig.radius * player.size,
             0,
             2 * Math.PI,
             false
@@ -4972,14 +4974,16 @@
 
           ctx.beginPath();
 
-          ctx.arc(
-            playerX - cavansX,
-            playerY - cavansY,
-            player.size * playerBaseSize,
-            0,
-            2 * Math.PI,
-            false
-          );
+          if (player.bodyType === "circle") {
+            ctx.arc(
+              playerX - cavansX,
+              playerY - cavansY,
+              player.size * playerBaseSize,
+              0,
+              2 * Math.PI,
+              false
+            );
+          }
           if (player.state === "start" || player.state === "damaged") {
             let backwardsObj = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0.1 };
             let percentage =
@@ -5062,7 +5066,13 @@
             ctx.beginPath();
             const healthWidth =
               (player.health / player.maxhealth) * 90 * player.size;
-            ctx.fillStyle = "green";
+
+            const grd = ctx.createLinearGradient(0, 0, healthWidth / 2, 0);
+            grd.addColorStop(0, "#00fff2");
+            grd.addColorStop(0.99, "#000dff"); 
+            grd.addColorStop(1, "#000dff"); 
+            ctx.fillStyle = grd;
+
             ctx.roundRect(
               playerX - cavansX - 50,
               playerY - cavansY + 55,
@@ -5240,15 +5250,20 @@
     }
 
     function drawbar(item) {
+      const sizeFactor = (item.size / 45);
+      const size90 = 90 * sizeFactor;
+      const healthWidth = (item.health / item.maxhealth) * size90;
       ctx.fillStyle = "black";
       ctx.beginPath();
-      ctx.roundRect(-45, 35, 90, 10, 5);
+      ctx.roundRect(-(size90 / 2), item.size + 20, size90, 10, 5);
       ctx.fill();
       ctx.closePath();
-      const healthWidth = (item.health / item.maxhealth) * 90;
-      ctx.fillStyle = "green";
+      const grd = ctx.createLinearGradient(0, 0, healthWidth, 0);
+      grd.addColorStop(0, "#00fff2");
+      grd.addColorStop(1, "#000dff"); 
+      ctx.fillStyle = grd;
       ctx.beginPath();
-      ctx.roundRect(-45, 35, healthWidth, 10, 5);
+      ctx.roundRect(-(size90 / 2), item.size + 20, healthWidth, 10, 5);
       ctx.fill();
       ctx.closePath();
     }
@@ -5268,6 +5283,10 @@
       return [A, B, C];
     }
 
+    function getRandom(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
     function controlFrom(p1, p2, strength) {
       const dx = p2.y - p1.y;
       const dy = p1.x - p2.x;
@@ -5277,6 +5296,23 @@
         y: (p1.y + p2.y) / 2 + (dy / len) * strength,
       };
     }
+
+    
+    const pentagonImg = new Image();
+    pentagonImg.src = window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
+      ? "/public/shapes/pentagon.webp"
+      : "/shapes/pentagon.webp";
+
+    const squareImg = new Image();
+    squareImg.src = window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
+      ? "/public/shapes/square.webp"
+      : "/shapes/square.webp";
+
+    const triangleImg = new Image();
+    triangleImg.src = window.location.href.startsWith("http://127.0.0.1:5501/public/index.html")
+      ? "/public/shapes/triangle.webp"
+      : "/shapes/triangle.webp";
+    
 
     function draw(timestamp) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -5354,7 +5390,7 @@
           if (item.type === "square") {
             ctx.fillStyle = item.color;
             ctx.fillRect(-item.size / 2, -item.size / 2, item.size, item.size);
-            ctx.strokeStyle = "GoldenRod";
+            ctx.strokeStyle = "#004cbf";
             ctx.lineWidth = 5;
             ctx.strokeRect(
               -item.size / 2,
@@ -5382,9 +5418,10 @@
 
             ctx.fillStyle = item.color;
             ctx.fill();
-            ctx.strokeStyle = "Darkred";
+            ctx.strokeStyle = "#4000ff";
             ctx.lineWidth = 5;
             ctx.stroke();
+
             ctx.rotate(-item.angle * pi180);
 
             if (item.health < item.maxhealth) {
@@ -5393,11 +5430,10 @@
           }
 
           if (item.type === "pentagon") {
-            ctx.fillStyle = item.color;
             const centerX = 0;
             const centerY = 0;
             const radius = item.size * FOV;
-            const angle = item.angle * pi180; // Convert angle to radians
+            const angle = 0; // Convert angle to radians
             vertices = [];
 
             for (let i = 0; i < 5; i++) {
@@ -5412,6 +5448,7 @@
             for (let i = 1; i < vertices.length; i++) {
               ctx.lineTo(vertices[i].x, vertices[i].y);
             }
+            ctx.fillStyle = item.color;
             ctx.closePath();
             ctx.fill();
 
@@ -5419,8 +5456,10 @@
             if (item.color === "#C2A248") {
               ctx.strokeStyle = "#A3883B";
             } else {
-              ctx.strokeStyle = "#3976cc";
+              ctx.strokeStyle = "#00bcbf";
             }
+
+            
 
             ctx.beginPath();
             ctx.moveTo(vertices[0].x, vertices[0].y);
@@ -5436,30 +5475,7 @@
 
             // Draw health bar if health is less than 100%
             if (item.health < item.maxhealth) {
-              ctx.fillStyle = "black";
-              ctx.beginPath();
-              ctx.roundRect(
-                centerX - 60,
-                centerY + (35 + (item.size - 50)),
-                120 + (item.size - 50),
-                10,
-                5
-              );
-              ctx.fill();
-              ctx.closePath();
-              const healthWidth =
-                (item.health / item.maxhealth) * (120 + (item.size - 50));
-              ctx.fillStyle = "green";
-              ctx.beginPath();
-              ctx.roundRect(
-                centerX - 60,
-                centerY + (35 + (item.size - 50)),
-                healthWidth,
-                10,
-                5
-              );
-              ctx.fill();
-              ctx.closePath();
+              drawbar(item);
             }
           }
 
@@ -6200,20 +6216,21 @@
       gridDarkstyle.left = `calc(-${(10000 * scaleFactor) / 2}px - ${
         cavansX * scaleFactor
       }px)`;
-
-      drawRoundedLevelBar(
-        ctx,
-        canvas.width / 2 - barWidth / 2,
-        canvas.height - canvas.height * 0.03879728419,
-        barWidth,
-        barHeight,
-        borderRadius,
-        progress + 0.05,
-        "black",
-        "#00f7ff",
-        false,
-        true
-      );
+      if (!dead) {
+        drawRoundedLevelBar(
+          ctx,
+          canvas.width / 2 - barWidth / 2,
+          canvas.height - canvas.height * 0.03879728419,
+          barWidth,
+          barHeight,
+          borderRadius,
+          progress + 0.05,
+          "black",
+          "#00f7ff",
+          false,
+          true
+        );
+      }
       let I_ = 0;
       if (upgradePoints > 0) {
         ctx.font = "26px Nunito";
@@ -6233,34 +6250,36 @@
         );
       }
 
-      for (let CCC = Object.keys(statsTree).length - 1; CCC >= 0; CCC -= 1) {
-        let stat_ = statsTree[Object.keys(statsTree)[CCC]];
-        let stat = Object.keys(statsTree)[CCC];
-        let color = colorUpgrades[CCC] || "red";
-        drawRoundedLevelBar(
-          ctx,
-          20,
-          canvas.height - 34 * upscaleY * I_ - 40,
-          145 * upscaleX,
-          25 * upscaleY,
-          borderRadius,
-          stat_ / 8,
-          "black",
-          color,
-          "#242424",
-          false
-        );
-        ctx.textAlign = "center";
-        ctx.font = `bold ${15 * (1 + (1 - scaleFactor))}px Nunito`;
-        ctx.fillStyle = "white";
-        ctx.fillText(
-          `${stat}:${stat_}`,
-          20 + (145 * upscaleX) / 2,
-          canvas.height - 34 * upscaleY * I_ - 40 + 17.5 * upscaleY
-        );
-        I_++;
+      if (!dead) {
+        for (let CCC = Object.keys(statsTree).length - 1; CCC >= 0; CCC -= 1) {
+          let stat_ = statsTree[Object.keys(statsTree)[CCC]];
+          let stat = Object.keys(statsTree)[CCC];
+          let color = colorUpgrades[CCC] || "red";
+          drawRoundedLevelBar(
+            ctx,
+            20,
+            canvas.height - 34 * upscaleY * I_ - 40,
+            145 * upscaleX,
+            25 * upscaleY,
+            borderRadius,
+            stat_ / 8,
+            "black",
+            color,
+            "#242424",
+            false
+          );
+          ctx.textAlign = "center";
+          ctx.font = `bold ${15 * (1 + (1 - scaleFactor))}px Nunito`;
+          ctx.fillStyle = "white";
+          ctx.fillText(
+            `${stat}:${stat_}`,
+            20 + (145 * upscaleX) / 2,
+            canvas.height - 34 * upscaleY * I_ - 40 + 17.5 * upscaleY
+          );
+          I_++;
+        }
       }
-      if (joinedTeam) {
+      if (joinedTeam && !dead) {
         let MYteam = pubteams.find((team) => {
           return team.teamID === players[playerId].team;
         });
@@ -6360,7 +6379,6 @@
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId: getCookie("userId") }),
       });
       if (!response.ok) {
         throw new Error(`Response status: ${response.status}`);
@@ -6385,7 +6403,6 @@
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId: getCookie("userId") }),
       });
       if (!response.ok) {
         throw new Error(`Response status: ${response.status}`);
@@ -6602,7 +6619,6 @@
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId: getCookie("userId") }),
       });
       if (!response.ok) {
         throw new Error(`Response status: ${response.status}`);
@@ -6725,13 +6741,27 @@
           Math.PI *
           ((maxScore - levelData.playerScore) / (maxScore - minScore));
 
+        imageDiv.title = `Current: ${
+          levelData.playerScore
+        } percetage complete: ${
+          Math.round(
+            (1 - (maxScore - levelData.playerScore) / (maxScore - minScore)) *
+              100
+          ) / 100
+        }`;
+
         imageDiv.innerHTML = `
-          <svg width="10vh" height="10vh" viewBox="0 0 130 100">
+          <svg width="10vh" height="10vh" viewBox="0 0 130 100" title="Current: ${
+            levelData.playerScore
+          } percetage complete: ${
+          (maxScore - levelData.playerScore) / (maxScore - minScore)
+        }">
             <defs>
               <radialGradient id="grad1" x1="0%" x2="100%" y1="0%" y2="0%">
                 <stop offset="0%" stop-color="#00F7FF12" />
                 <stop offset="50%" stop-color="#00F7FF" />
-                <stop offset="100%" stop-color="#00F7FF12" />
+                <stop offset="99%" stop-color="#00F7FF12" />
+                <stop offset="100%" stop-color="#FFFFFF00" />
               </radialGradient>
               <radialGradient id="grad2" x1="0%" x2="100%" y1="0%" y2="0%">
                 <stop offset="0%" stop-color="#FFFFFF00" />
@@ -6744,13 +6774,17 @@
             </g>
             <circle cx="65" cy="50" r="45" stroke="black" stroke-width="8" fill="none"> </circle>
             <circle cx="65" cy="50" r="45" class="meter-1" id="fillcircle"> </circle>
-            <image x="35" y="20" width="60" height="60" href='${
-              window.location.href.startsWith(
-                "http://127.0.0.1:5501/public/index.html"
-              )
-                ? window.location.origin + "/public/" + level.badge
-                : window.location.origin + level.badge
-            }'> </image>
+            <image x="35" y="20" width="60" height="60" role="contentinfo" aria-label="Current: ${
+              levelData.playerScore
+            } percetage complete: ${
+          (maxScore - levelData.playerScore) / (maxScore - minScore)
+        }" href='${
+          window.location.href.startsWith(
+            "http://127.0.0.1:5501/public/index.html"
+          )
+            ? window.location.origin + "/public/" + level.badge
+            : window.location.origin + level.badge
+        }'> </image>
           </svg>
         `;
         const fillCircle = document.getElementById("fillcircle");
@@ -6971,6 +7005,7 @@
   if (canSeeLeaderBoard)
     document.getElementById("getleaderBoardShown").classList.toggle("moveee");
   document.querySelector("html").setAttribute("data-theme", newTheme);
+  console.log(newTheme);
   if (darkMode) {
     document.getElementById("gridDark").style.display = "grid";
     document.getElementById("gridLight").style.display = "none";
@@ -7027,7 +7062,6 @@
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId: getCookie("userId") }),
       });
       if (!response.ok) {
         throw new Error(`Response status: ${response.status}`);
@@ -7055,7 +7089,6 @@
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: getCookie("userId"),
           skinLevel: skinLevel,
         }),
       });
@@ -7064,6 +7097,23 @@
       }
 
       return await response.json();
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  async function login() {
+    const url = !window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? "https://websocketpointer.duckdns.org/login"
+      : "http://localhost:4500/login";
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+      return await response.json(); 
     } catch (error) {
       console.error(error.message);
     }
@@ -7364,9 +7414,9 @@
             ? 57.1428571429 * reqdata.skinCounts[skinDataTeirs[`${i}.webp`]]
             : 0;
         var vTime =
-          reqdata.skinCounts[skinDataTeirs[`${i}.webp`]] < 3 ? 1 : 0.6;
+          reqdata.skinCounts[skinDataTeirs[`${i}.webp`]] < 3 ? 1 : 0.5;
         var execTempStyle = `
-        transform: translateZ(-5900px) rotate3d(1, 0, 0, var(--rotatorerangle));
+        transform: translateZ(-6900px) rotate3d(1, 0, 0, var(--rotatorerangle));
         animation: rotater2 ${cTime}s linear infinite;
         animation-delay: ${-skinCounts[skinDataTeirs[`${i}.webp`]] * vTime}s;
         transform-origin: 0% 50% -${transformationR}px; 
@@ -7500,6 +7550,24 @@
       const element = document.getElementById(`spin-img${skinBuyerLevel.i}`);
       const property = "--rotatorerangle";
       const targetValue = "180deg";
+      var skinPopUp = document.getElementById("skinScreen");
+      skinPopUp.classList.add("blocker");
+      var CImage = spinnerImg.cloneNode(true);
+      var Bimage = document.createElement("img");
+      skinPopUp.appendChild(CImage);
+      skinPopUp.appendChild(Bimage);
+      CImage.style.width = "40vmax";
+      CImage.style.hieght = "40vmax";
+      CImage.style.position = "absolute";
+      CImage.style.top = "10vmax";
+      CImage.style.left = "10vmax";
+
+      skinPopUp.style.backgroundImage = ".assets/burst.jpg"
+
+      setTimeout(() => {
+        skinPopUp.innerHTML = "";
+        skinPopUp.classList.remove("blocker");
+      }, 16000);
 
       waitForProperty(element, property, targetValue, () => {
         console.log("Animation property reached target value!");
@@ -7524,6 +7592,26 @@
       );
     }
   };
+
+  async function isLoggedIn() {
+    const url = !window.location.href.startsWith(
+      "http://127.0.0.1:5501/public/index.html"
+    )
+      ? "https://websocketpointer.duckdns.org/islogin"
+      : "http://localhost:4500/islogin";
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
 
   var skinShown = false;
   var skinsTabOpener = () => {

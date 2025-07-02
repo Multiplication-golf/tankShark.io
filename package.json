@@ -1,5 +1,5 @@
 {
-  "name": "Tankshark",
+  "name": "tankshark",
   "version": "1.0.0",
   "description": "",
   "source": "public/index.html",
@@ -8,6 +8,7 @@
   },
   "keywords": [],
   "author": "",
+  "type": "commonjs",
   "license": "",
   "engines": {
     "node": "^22.14.0"
@@ -16,6 +17,7 @@
     "@msgpack/msgpack": "^3.1.1",
     "axios": "^1.9.0",
     "bcrypt": "^5.1.1",
+    "cookie": "^1.0.2",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "curse-filter": "^7.0.0",

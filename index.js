@@ -7,10 +7,9 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const SAT = require("sat");
-const { setTimeout } = require("timers");
 const WebSocket = require("ws");
 const cors = require("cors");
-// const DOMPurify = require("dompurify");
+const cookie = require('cookie');
 const bcrypt = require("bcrypt");
 const curse = require("curse-filter");
 const jwt = require("jsonwebtoken");
@@ -34,8 +33,11 @@ const wss = new WebSocket.Server({ noServer: true });
 function handleUpgrade(server, name) {
   server.on("upgrade", (req, socket, head) => {
     console.log(`[${name}] Upgrade request from`, req.socket.remoteAddress);
-
+    const cookies = cookie.parse(req.headers.cookie || '');
+    console.log("cookies",cookies);
+    const authToken = cookies.userId;
     wss.handleUpgrade(req, socket, head, (ws) => {
+      req.userId = authToken;
       wss.emit("connection", ws, req);
     });
   });
@@ -103,11 +105,14 @@ function getRoomAndBoundingForBullets(roomkey) {
   return baseItems;
 }
 
+const sessionStore = new Map();
+
 handleUpgrade(httpServer, "HTTP");
 handleUpgrade(serverHttps, "HTTPS");
 
 const helmet = require("helmet");
 const protobuf = require("protobufjs");
+const { randomUUID } = require("crypto");
 
 const schema = `
 syntax = "proto3";
@@ -137,7 +142,7 @@ async function runProtobufExample() {
 
   const gameObject = {
     angle: 294,
-    color: "Gold",
+    color: CONFIG.shapeColors.square,
     health: 10,
     maxhealth: 10,
     size: 50,
@@ -401,6 +406,8 @@ let explosions = [];
 
 let frame = 0;
 
+let bossIsAlive = false;
+
 var levels = {};
 fs.readFile("data/levelData.json", function (err, data) {
   levels = JSON.parse(data).levelData;
@@ -463,6 +470,7 @@ const CONFIG = {
     epic: 899,
     legendary: 999,
   },
+  shapeColors: {pentagon: "#00fff7", square: "#00bbff", triangle: "#0088ff"},
   messageIntervals: { long: 15 * 1000, short: 6 * 1000, medium: 10 * 1000 },
   badgeLevels: [
     { minScore: 50000000, maxScore: null, badge: "/badges/10.webp" },
@@ -582,571 +590,11 @@ for (let i = 0; i < 10; i++) {
   currenty += CONFIG.map.buildSize;
 }
 
+var tankmeta = {};
+
 Object.freeze(CONFIG);
 
-const tankmeta = {
-  basic: {
-    "size-m": 1,
-    "speed-m": 1,
-    "damage-m": 1,
-    "health-m": 1,
-    "regen-m": 1,
-    fov: 0,
-    "BodyDamage-m": 1,
-    "reaload-m": 1,
-    upgrades: {
-      twin: { img: 1, level: 15 },
-      flank: { img: 2, level: 15 },
-      sniper: { img: 3, level: 15 },
-      "mechiane gun": { img: 4, level: 15 },
-      spreader: { img: 5, level: 15 },
-      rammer: { img: 6, level: 15 },
-      traper: { img: 7, level: 15 },
-      directer: { img: 8, level: 15 },
-      autobasic: { img: 9, level: 15 },
-      autoduo: { img: 10, level: 15 },
-      autoShooter: { img: 11, level: 30 },
-      rocketer: { img: 12, level: 30 },
-      smasher: { img: 13, level: 30 },
-      paver: { img: 14, level: 30 },
-      sheller: { img: 15, level: 30 },
-    },
-    cannons: [
-      {
-        type: "basicCannon",
-        "cannon-width": 90,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 1,
-        bulletSpeed: 0.9,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 1,
-      },
-    ],
-  },
-  twin: {
-    "size-m": 1,
-    "speed-m": 0.95,
-    "damage-m": 1,
-    "health-m": 1,
-    fov: 0,
-    "BodyDamage-m": 1,
-    "regen-m": 1,
-    "reaload-m": 1.3,
-    upgradeLevel: 30,
-    upgrades: ["twin", "sniper"],
-    cannons: [
-      {
-        type: "basicCannon",
-        "cannon-width": 90,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": -20,
-        "offset-angle": 0,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 0.9,
-      },
-      {
-        type: "basicCannon",
-        "cannon-width": 90,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 20,
-        "offset-angle": 0,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        delay: 0.5,
-        reloadM: 1,
-        bullet_pentration: 0.9,
-      },
-    ],
-  },
-  flank: {
-    "size-m": 1,
-    "speed-m": 0.98,
-    "damage-m": 1,
-    "health-m": 1,
-    "regen-m": 1,
-    fov: 0,
-    "BodyDamage-m": 1.1,
-    "reaload-m": 1.2,
-    upgradeLevel: 30,
-    upgrades: ["twin", "sniper"],
-    cannons: [
-      {
-        type: "basicCannon",
-        "cannon-width": 90,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 0.8,
-      },
-      {
-        type: "basicCannon",
-        "cannon-width": 70,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 3.14159,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 0.8,
-      },
-    ],
-  },
-  sniper: {
-    "size-m": 1.05,
-    "speed-m": 0.9,
-    "damage-m": 1,
-    "health-m": 0.95,
-    fov: 0.2,
-    "BodyDamage-m": 1,
-    "regen-m": 1,
-    "reaload-m": 1.5,
-    upgrades: {},
-    cannons: [
-      {
-        type: "basicCannon",
-        "cannon-width": 120,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 1,
-        bulletSpeed: 1.5,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 1.6,
-      },
-    ],
-  },
-  "mechiane gun": {
-    "size-m": 1.05,
-    "speed-m": 1,
-    "damage-m": 1,
-    "health-m": 1,
-    fov: -0.01,
-    "BodyDamage-m": 1,
-    "reaload-m": 0.75,
-    "regen-m": 1,
-    upgradeLevel: 30,
-    upgrades: {
-      twin: 1,
-      sniper: 2,
-      flank: 3,
-      "mechiane gun": 4,
-    },
-    cannons: [
-      {
-        type: "trapezoid",
-        "cannon-width-top": 70,
-        "cannon-height": 50,
-        "cannon-width-bottom": 40,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 1.05,
-        bulletSpeed: 1,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 0.9,
-      },
-    ],
-  },
-  spreader: {
-    "size-m": 1.05,
-    "speed-m": 1.5,
-    "damage-m": 0.9,
-    "health-m": 1.1,
-    fov: 0,
-    "BodyDamage-m": 1,
-    "reaload-m": 0.8,
-    "regen-m": 1,
-    upgradeLevel: 30,
-    upgrades: {
-      twin: 1,
-      sniper: 2,
-      flank: 3,
-      "mechiane gun": 4,
-    },
-    cannons: [
-      {
-        type: "trapezoid",
-        "cannon-width-top": 55,
-        "cannon-height": 40,
-        "cannon-width-bottom": 50,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 1.05,
-        bulletSpeed: 0.9,
-        delay: 0.1,
-        reloadM: 1,
-        bullet_pentration: 0.9,
-      },
-      {
-        type: "basicCannon",
-        "cannon-width": 75,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 1,
-      },
-    ],
-  },
-  rammer: {
-    "size-m": 1,
-    "speed-m": 1.2,
-    "damage-m": 1,
-    "health-m": 1,
-    fov: 0,
-    "BodyDamage-m": 1,
-    "reaload-m": 0.7,
-    "regen-m": 1,
-    upgrades: {},
-    cannons: [
-      {
-        type: "basicCannon",
-        "cannon-width": 90,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": -0.785398,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 0.9,
-      },
-      {
-        type: "basicCannon",
-        "cannon-width": 90,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0.785398,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 0.9,
-      },
-    ],
-  },
-  traper: {
-    "size-m": 1,
-    "speed-m": 0.95,
-    "damage-m": 1,
-    fov: 0,
-    "health-m": 0.95,
-    "BodyDamage-m": 1,
-    "regen-m": 1.1,
-    "max-traps": 10,
-    "reaload-m": 1.5,
-    upgrades: {},
-    cannons: [
-      {
-        type: "trap",
-        "cannon-width": 70,
-        "cannon-height": 30,
-        "trap-to-cannon-ratio": 0.8,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 1,
-        bulletSpeed: 1.5,
-        delay: 0,
-        reloadM: 1,
-        "life-time": 10,
-        bullet_pentration: 1.6,
-      },
-    ],
-  },
-  directer: {
-    "size-m": 1,
-    "speed-m": 1.05,
-    "damage-m": 1,
-    "health-m": 0.9,
-    "regen-m": 1,
-    fov: 0, // change later when fov is working
-    "BodyDamage-m": 1,
-    "reaload-m": 1.5,
-    upgrades: {},
-    cannons: [
-      {
-        type: "directer",
-        "cannon-width-top": 70,
-        "cannon-height": 25,
-        "cannon-width-bottom": 50,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        "max-drones": 6,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 1,
-      },
-    ],
-  },
-  autobasic: {
-    "size-m": 1,
-    "speed-m": 1,
-    "damage-m": 1,
-    "health-m": 1,
-    "regen-m": 1,
-    fov: 0,
-    "BodyDamage-m": 1,
-    "reaload-m": 1,
-    upgrades: {},
-    cannons: [
-      {
-        type: "basicCannon",
-        "cannon-width": 90,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 1,
-      },
-      {
-        type: "autoCannon",
-        "cannon-width": 35,
-        "cannon-height": 15,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 0.8,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1.5,
-        bullet_pentration: 0.9,
-      },
-    ],
-  },
-  autoduo: {
-    "size-m": 1,
-    "speed-m": 1,
-    "damage-m": 1,
-    "health-m": 1,
-    "regen-m": 1,
-    fov: 0,
-    autoRoting: true,
-    "BodyDamage-m": 1,
-    "reaload-m": 1,
-    upgrades: {},
-    cannons: [
-      {
-        type: "SwivelAutoCannon",
-        "cannon-width": 35,
-        "cannon-height": 15,
-        "offSet-x": "playerX",
-        "offSet-x-multpliyer": -1,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 0.8,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1.5,
-        bullet_pentration: 0.9,
-      },
-      {
-        type: "SwivelAutoCannon",
-        "cannon-width": 35,
-        "cannon-height": 15,
-        "offSet-x": "playerX",
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 0.8,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1.5,
-        bullet_pentration: 0.9,
-      },
-    ],
-  },
-  autoShooter: {
-    "size-m": 1,
-    "speed-m": 1,
-    "damage-m": 1,
-    "health-m": 1,
-    "regen-m": 1,
-    fov: 0,
-    "BodyDamage-m": 1,
-    "reaload-m": 1,
-    upgrades: {},
-    cannons: [
-      {
-        type: "AutoBulletCannon",
-        "cannon-width": 110,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1.3,
-        bullet_pentration: 1,
-      },
-    ],
-  },
-  rocketer: {
-    "size-m": 1,
-    "speed-m": 1,
-    "damage-m": 1,
-    "health-m": 1,
-    "regen-m": 1,
-    fov: 0,
-    "BodyDamage-m": 1,
-    "reaload-m": 1,
-    upgradeLevel: 30,
-    upgrades: {},
-    cannons: [
-      {
-        type: "rocketer",
-        "cannon-width-top": 30,
-        "cannon-height": 50,
-        "cannon-width-bottom": 50,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 0.8,
-        bulletSpeed: 2,
-        delay: 0,
-        reloadM: 1.3,
-        bullet_pentration: 1,
-      },
-    ],
-  },
-  smasher: {
-    "size-m": 1,
-    "speed-m": 1.2,
-    "damage-m": 1.1,
-    "health-m": 1.4,
-    fov: 0,
-    AutoRoting: true,
-    "BodyDamage-m": 1.3,
-    "regen-m": 1.2,
-    "reaload-m": 0.1,
-    upgrades: {},
-    cannons: [],
-    decor: [
-      {
-        type: "octaspinner",
-        speed: 1,
-        size: 54,
-        offsetX: 0,
-        offsetY: 0,
-        offsetAngle: 0,
-      },
-      {
-        type: "octaspinner",
-        speed: 1,
-        size: 54,
-        offsetX: 0,
-        offsetY: 0,
-        offsetAngle: 0.39269908169,
-      },
-    ],
-  },
-  paver: {
-    "size-m": 1,
-    "speed-m": 1.2,
-    "damage-m": 1,
-    "health-m": 1,
-    fov: 0,
-    "BodyDamage-m": 1,
-    "reaload-m": 0.7,
-    "regen-m": 1,
-    upgrades: {},
-    cannons: [
-      {
-        type: "paver",
-        multiplyer: 1.02,
-        "trap-to-cannon-ratio": 0.8,
-        "cannon-width": 80,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": -0.785398,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 0.3,
-      },
-      {
-        type: "paver",
-        multiplyer: 1.02,
-        "trap-to-cannon-ratio": 0.8,
-        "cannon-width": 80,
-        "cannon-height": 30,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0.785398,
-        bulletSize: 1,
-        bulletSpeed: 0.5,
-        delay: 0,
-        reloadM: 1,
-        bullet_pentration: 0.3,
-      },
-    ],
-  },
-  sheller: {
-    "size-m": 1.05,
-    "speed-m": 0.9,
-    "damage-m": 1,
-    "health-m": 0.95,
-    fov: 0.75,
-    "BodyDamage-m": 1,
-    "regen-m": 1,
-    "reaload-m": 1.5,
-    upgrades: {},
-    cannons: [
-      {
-        type: "sheller",
-        "cannon-width-top": 50,
-        "cannon-height": 50,
-        "cannon-width-bottom": 70,
-        "offSet-x": 0,
-        "offSet-y": 0,
-        "offset-angle": 0,
-        bulletSize: 1.3,
-        bulletSpeed: 2,
-        delay: 0,
-        reloadM: 1.3,
-        bullet_pentration: 1,
-      },
-    ],
-  },
-  dronetanks: ["directer"],
-};
-
-Object.freeze(tankmeta);
+tankmeta = JSON.parse(fs.readFileSync("data/tanks.json"));
 
 function getRandomInt(min, max) {
   const minCeiled = Math.ceil(min);
@@ -1305,6 +753,17 @@ function buildTriArray(roads) {
   return triRoads;
 }
 
+function getOffset(cannon, tankdatacannon__) {
+  var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
+  if (tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
+    offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
+  }
+  if (tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
+    offSet_x *= -1;
+  }
+  return offSet_x;
+}
+
 function getTarget(cannon, tankdatacannon__) {
   let maxdistance = 2000;
   let fire_at__ = null;
@@ -1320,13 +779,7 @@ function getTarget(cannon, tankdatacannon__) {
         players[cannon.playerid].team !== null
       )
     ) {
-      var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
-      if (tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
-        offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
-      }
-      if (tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
-        offSet_x *= -1;
-      }
+      var offSet_x = getOffset(cannon, tankdatacannon__);
       if (cannon["x_"]) {
         var distance = MathHypotenuse(
           player.x - (players[cannon.playerid].x + cannon["x_"]),
@@ -1370,9 +823,9 @@ function getTarget(cannon, tankdatacannon__) {
           ) {
             if (
               isTargetInSwivelRange(
-                players[cannon.playerid].cannon_angle,
-                angle * (180 / pi),
-                180
+                players[cannon.playerid].cannon_angle * (pi / 180),
+                angle,
+                piby2
               )
             ) {
               maxdistance = distance;
@@ -1382,8 +835,8 @@ function getTarget(cannon, tankdatacannon__) {
           } else {
             if (
               isTargetInSwivelRange(
-                players[cannon.playerid].cannon_angle,
-                angle * (180 / pi),
+                players[cannon.playerid].cannon_angle * (pi / 180),
+                angle,
                 0
               )
             ) {
@@ -1406,13 +859,7 @@ function getTarget(cannon, tankdatacannon__) {
     var TY =
       cannon._type_ === "bulletAuto" ? cannon.y : players[cannon.playerid].y;
     getRoomAndBounding(TX, TY).items.forEach((item) => {
-      var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
-      if (tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
-        offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
-      }
-      if (tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
-        offSet_x *= -1;
-      }
+      var offSet_x = getOffset(cannon, tankdatacannon__);
       if (cannon["x_"]) {
         var distance = MathHypotenuse(
           item.x - (players[cannon.playerid].x + cannon["x_"]),
@@ -1455,9 +902,9 @@ function getTarget(cannon, tankdatacannon__) {
           ) {
             if (
               isTargetInSwivelRange(
-                players[cannon.playerid].cannon_angle,
-                angle * (180 / pi),
-                180
+                players[cannon.playerid].cannon_angle * (pi / 180),
+                angle,
+                piby2
               )
             ) {
               maxdistance = distance;
@@ -1467,8 +914,8 @@ function getTarget(cannon, tankdatacannon__) {
           } else {
             if (
               isTargetInSwivelRange(
-                players[cannon.playerid].cannon_angle,
-                angle * (180 / pi),
+                players[cannon.playerid].cannon_angle * (pi / 180),
+                angle,
                 0
               )
             ) {
@@ -1531,11 +978,6 @@ function toSATPolygon(vertices, points = []) {
   return new SAT.Polygon(new SAT.Vector(0, 0), points.slice(0, len));
 }
 
-function normalizeAngle(angle) {
-  return angle % 360;
-}
-
-// Rotates a point (cannonOffsetX, cannonOffsetY) around the origin by playerRotation (in radians)
 function rotatePointAroundPlayer(cannonOffsetX, cannonOffsetY, playerRotation) {
   // Convert player rotation to radians for math
   const playerRotationRad = playerRotation * (Math.PI / 180);
@@ -1551,17 +993,6 @@ function rotatePointAroundPlayer(cannonOffsetX, cannonOffsetY, playerRotation) {
   return [rotatedX, rotatedY];
 }
 
-function findThisBoss(id) {
-  let boss = bosses.find((boss) => {
-    let found = false;
-    boss.cannons.forEach((cannon) => {
-      found = id === cannon.id;
-    });
-    return found;
-  });
-  return boss;
-}
-
 const log = (...a) => {
   var v = JSON.stringify(a);
   v = v.slice(1, v.length - 1);
@@ -1575,10 +1006,10 @@ function isTargetInSwivelRange(playerRotation, targetAngle, offset_degress) {
 
   // Define the swivel range around the player's current rotation
   const minSwivelAngle = normalizeAngle_2(
-    playerRotation_ - 85 * (Math.PI / 180)
+    playerRotation_ - 70 * (Math.PI / 180)
   ); // 90 degrees left of player
   const maxSwivelAngle = normalizeAngle_2(
-    playerRotation_ + 85 * (Math.PI / 180)
+    playerRotation_ + 70 * (Math.PI / 180)
   ); // 90 degrees right of player
 
   // Check if the target is within the swivel range
@@ -1700,6 +1131,7 @@ function createExsplosion(
     x: x,
     y: y,
   };
+  console.log((maxsize - size) / (lifeSpan / 16));
   explosions.push(newExsposion);
 
   if (createbullet) {
@@ -1779,17 +1211,6 @@ function midpointCalc(verts) {
     returnArray.push(temp);
   });
   return returnArray;
-}
-
-function finder_(data) {
-  let index___ = autocannons.findIndex(
-    (cannon) => data._cannon.CannonID === cannon.CannonID
-  );
-  if (index___ !== -1) {
-    let cannon = autocannons[index___];
-    return [cannon, index___];
-  }
-  return undefined;
 }
 
 function generateRandomNumber(min, max) {
@@ -1908,7 +1329,7 @@ function killplayer(id) {
   emit("playerLeft", id);
   players[id].state = "dead";
   players[id].dead = true;
-  return;
+  writeToUserbase();
 }
 
 function limitedLog(message, ...optionalParams) {
@@ -1936,14 +1357,17 @@ function moveCannonAngle(cannon) {
   let reloadStat = players[cannon.playerid]?.statsTree?.["Bullet Reload"] ?? 1;
 
   // Prevent denominator from being zero or negative
-  let denominator = Math.max(0.5, 3.5 - (reloadStat - 1) / 3);
+  let denominator = Math.max(0.2, 2.0 - (reloadStat - 1) / 4);
 
   // Clamp adjustment to a reasonable maximum step to avoid overshooting
   let maxStep = 0.15; // radians per update, adjust as needed
-  let adjustment = Math.min(Math.abs(deltaAngle) / denominator, maxStep);
+  let adjustment =
+    Math.abs(deltaAngle) === 0
+      ? 0
+      : Math.min(Math.abs(deltaAngle) / denominator, maxStep);
 
-  // If the angle difference is very small, snap to target
-  if (Math.abs(deltaAngle) < 0.01) {
+  // If the angle difference is very small or zero, snap to target
+  if (Math.abs(deltaAngle) < 0.01 || adjustment === 0) {
     cannon.angle = cannon.targetAngle;
   } else {
     cannon.angle += Math.sign(deltaAngle) * adjustment;
@@ -1988,7 +1412,7 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
   switch (true) {
     case between(valueOp__A, 1, 9): // Adjusted to 1-6 for square
       type = "square";
-      color = "Gold";
+      color = CONFIG.shapeColors.square;
       health_max = 10;
       score_add = 10;
       body_damage = 2;
@@ -1996,7 +1420,7 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
       break;
     case between(valueOp__A, 10, 13): // Adjusted to 7-8 for triangle
       type = "triangle";
-      color = "Red";
+      color = CONFIG.shapeColors.triangle;
       health_max = 15;
       score_add = 15;
       body_damage = 3.5;
@@ -2004,7 +1428,7 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
       break;
     case between(valueOp__A, 14, 15): // Adjusted to 9-10 for pentagon
       type = "pentagon";
-      color = "#579bfa";
+      color = CONFIG.shapeColors.pentagon;
       health_max = 100;
       score_add = 120;
       body_damage = 4;
@@ -2101,7 +1525,7 @@ for (let i = 0; i < getRandomInt(50, 75); i++) {
   var weight = 0;
 
   type = "pentagon";
-  color = "#579bfa";
+  color = CONFIG.shapeColors.pentagon;
   health_max = 100;
   score_add = 120;
   body_damage = 4;
@@ -2451,6 +1875,11 @@ app.use(express.json({ limit: "1kb" }));
 
 app.use(cors(corsOptions));
 
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Credentials", "true");
+  next();
+});
+
 /*app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "http://127.0.0.1:5501");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -2468,8 +1897,46 @@ const LOG_LIMIT = 1300;
 
 app.use(express.json());
 
+app.get('/login', async (req, res) => {
+  var newid = await hashPassword(crypto.randomUUID());
+  userbase.push({
+    userid: newid,
+    scores: [],
+    username: undefined,
+    skins: ["0.webp"],
+    goldenGears: 0,
+    startLevels: 0,
+  });
+  var jwtToken = crypto.randomUUID();
+  sessionStore.set(jwtToken, newid);
+  res.cookie('userId', newid, {
+    httpOnly: true,
+    secure: true,     // Only over HTTPS
+    maxAge: 1000 * 60 * 60 * 24 * 365 * 2, // 2 years
+    path: '/',
+    sameSite: 'None'
+  });
+  res.send({jwt: jwtToken});
+});
+
+// app.use(cors({
+//   origin: 'http://localhost:5001', // your frontend port
+//   credentials: true
+// }));
+
+app.get('/islogin', async (req, res) => {
+  const cookies = cookie.parse(req.headers.cookie || '');
+  console.log("cookies",cookies);
+  const authToken = cookies.userId;
+  var t = false;
+  if (authToken) t = true;
+  res.send({isLoggedIn: t});
+});
+
 app.post("/currentbadge", (req, res) => {
   let badge = "";
+  req.body ??= {};
+  req.body.userId = req?.cookies?.userId;
   let playerScore = 0;
   if (req.body.userId) {
     var _player = userbase.find((_player) => {
@@ -2507,6 +1974,8 @@ app.post("/currentbadge", (req, res) => {
 
 app.post("/currentgears", (req, res) => {
   var gears = 0;
+  req.body ??= {};
+  req.body.userId = req?.cookies?.userId;
   if (req.body.userId) {
     var _player = userbase.find((_player) => {
       return comparePasswords(_player.userid, req.body.userId);
@@ -2551,6 +2020,8 @@ app.get("/getteamdata", (req, res) => {
 
 app.post("/buylevels", (req, res) => {
   var purchaseSuccsefull = "fail";
+  req.body ??= {};
+  req.body.userId = req?.cookies?.userId;
   if (req.body.userId) {
     var _player = userbase.find((_player) => {
       return comparePasswords(_player.userid, req.body.userId);
@@ -2596,6 +2067,7 @@ app.post("/skinpurchase", (req, res) => {
     epic: [],
     legendary: [],
   };
+  req.body.userId = req?.cookies?.userId;
   if (req.body.userId && req.body.skinLevel) {
     var _player = userbase.find((_player) => {
       return comparePasswords(_player.userid, req.body.userId);
@@ -2906,6 +2378,31 @@ wss.on("connection", (socket, req) => {
               configurable: false,
               enumerable: true,
             });
+            data.bodyType = "circle";
+
+            // Function to extract the "token" parameter from a URL string
+            function getTokenFromUrl(url) {
+              try {
+              const urlObj = new URL(url, "http://localhost"); // base needed for relative URLs
+              return urlObj.searchParams.get("token");
+              } catch (e) {
+              return null;
+              }
+            }
+
+            // Example usage:
+            var tokenFromUrl = getTokenFromUrl(req.url);
+            try {
+              console.log("stuff",tokenFromUrl,sessionStore,sessionStore.get(tokenFromUrl))
+              data.userId = sessionStore.get(tokenFromUrl);
+              var removed = sessionStore.delete(tokenFromUrl);
+              console.log(removed);
+            } catch (e) {
+              console.log(e);
+              data.userId = null;
+            }
+            
+            
 
             players[newId].id = newId;
             players[newId].username = await curse.filter(
@@ -3150,16 +2647,6 @@ wss.on("connection", (socket, req) => {
                 } catch (e) {
                   console.log("2699", e);
                   (async function () {
-                    var newid = await hashPassword(crypto.randomUUID());
-                    players[newId].userId = newid;
-                    userbase.push({
-                      userid: newid,
-                      scores: [],
-                      username: data.username,
-                      skins: ["0.webp"],
-                      goldenGears: 0,
-                      startLevels: 0,
-                    });
                     socket.send(
                       JSON.stringify({ type: "newid", data: { newid: newid } })
                     );
@@ -3218,16 +2705,6 @@ wss.on("connection", (socket, req) => {
                   }
                 } else {
                   (async function () {
-                    var newid = await hashPassword(crypto.randomUUID());
-                    players[newId].userId = newid;
-                    userbase.push({
-                      userid: newid,
-                      scores: [],
-                      username: data.username,
-                      skins: ["0.webp"],
-                      goldenGears: 0,
-                      startLevels: 0,
-                    });
                     if (players[newId].skin !== "0.webp") {
                       socket.close(
                         1007,
@@ -3244,7 +2721,7 @@ wss.on("connection", (socket, req) => {
                       return false;
                     }
                     socket.send(
-                      JSON.stringify({ type: "newid", data: { newid: newid } })
+                      JSON.stringify({ type: "newid", data: {} })
                     );
                     badge = "/badges/1.webp";
                   })();
@@ -3256,15 +2733,6 @@ wss.on("connection", (socket, req) => {
                 socket.send(
                   JSON.stringify({ type: "newid", data: { newid: newid } })
                 );
-                players[newId].userId = newid;
-                userbase.push({
-                  userid: newid,
-                  scores: [],
-                  username: data.username,
-                  skins: ["0.webp"],
-                  goldenGears: 0,
-                  startLevels: 0,
-                });
                 if (players[newId].skin !== "0.webp") {
                   socket.close(
                     1007,
@@ -3362,6 +2830,7 @@ wss.on("connection", (socket, req) => {
             }, CONFIG.updateInterval);
 
             players[newId].stateTimeout = setTimeout(() => {
+              if (!players[newId]) return;
               start = null;
               state = "normal";
               players[newId].state = state ?? "start";
@@ -3373,10 +2842,6 @@ wss.on("connection", (socket, req) => {
               if (players[newId]) {
                 players[newId].state = _data.state;
                 emit("statechangeUpdate", _data, socket);
-                setTimeout(() => {
-                  players[newId].state = _data.state;
-                  emit("statechangeUpdate", _data, socket);
-                }, 300);
               }
             }, 6000);
             console.log("intervals created");
@@ -4593,28 +4058,28 @@ wss.on("connection", (socket, req) => {
         case "autoCannonADD": {
           data.playerid = connection.playerId;
           autocannons.push(data);
-          let cannonsplayer = tankmeta[players[data.playerid].__type__].cannons;
-          let cannonamountplayer = Object.keys(cannonsplayer).length;
-          let find = function () {
-            let cannons = 0;
-            autocannons.forEach((cannon) => {
-              if (cannon.playerid === data.playerid) {
-                if (
-                  cannon._type_ === "autoCannon" ||
-                  cannon._type_ === "SwivelAutoCannon"
-                ) {
-                  cannons += 1;
-                }
-              }
-            });
-            return cannons;
-          };
-          let index = find();
-          let autoindex = cannonamountplayer - index;
-          let cannon__index = autocannons.indexOf(data);
-          let cannon = autocannons[cannon__index];
-          cannon.autoindex = autoindex;
+
+          // Assign autoindex based on how many cannons this player already has
+          let playerCannons = autocannons.filter(
+            (c) => c.playerid === data.playerid
+          );
+          playerCannons.sort((a, b) => (a.autoindex ?? 0) - (b.autoindex ?? 0));
+
+          // Assign autoindex in order
+          playerCannons.forEach((cannon, idx) => {
+            cannon.autoindex = idx;
+          });
+
+          // Resort autocannons so that for each player, lower autoindex cannons come first
+          autocannons.sort((a, b) => {
+            if (a.playerid === b.playerid) {
+              return (a.autoindex ?? 0) - (b.autoindex ?? 0);
+            }
+            return 0;
+          });
+
           emit("autoCannonUPDATE-ADD", autocannons);
+          console.log(autocannons);
           break;
         }
 
@@ -4628,12 +4093,12 @@ wss.on("connection", (socket, req) => {
             socket.close(999, "You hacker your IP has been permently banned");
             return false;
           }
+          players[data.id].__type__ = data.__type__;
           var tankdata = tankmeta[data.__type__];
           players[connection.playerId].maxhealth *= tankdata["health-m"];
           players[connection.playerId].speed *= tankdata["speed-m"];
           players[connection.playerId].size *= tankdata["size-m"];
           players[connection.playerId].bodyDamage *= tankdata["BodyDamage-m"];
-          players[connection.playerId].__type__ *= data.__type__;
           players[connection.playerId].FOV += tankdata.fov;
           players[connection.playerId].Regenspeed *= tankdata["regen-m"];
           emit("type_Change", data);
@@ -4820,7 +4285,7 @@ wss.on("connection", (socket, req) => {
                 switch (true) {
                   case between(valueOp, 1, 10): // Adjusted to 1-6 for square
                     type = "square";
-                    color = "Gold";
+                    color = CONFIG.shapeColors.square;
                     health_max = 10;
                     score_add = 10;
                     body_damage = 2;
@@ -4828,7 +4293,7 @@ wss.on("connection", (socket, req) => {
                     break;
                   case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
                     type = "triangle";
-                    color = "Red";
+                    color = CONFIG.shapeColors.triangle;
                     health_max = 15;
                     score_add = 15;
                     body_damage = 3.5;
@@ -4836,7 +4301,7 @@ wss.on("connection", (socket, req) => {
                     break;
                   case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
                     type = "pentagon";
-                    color = "#579bfa";
+                    color = CONFIG.shapeColors.pentagon;
                     health_max = 100;
                     score_add = 120;
                     body_damage = 4;
@@ -4847,7 +4312,7 @@ wss.on("connection", (socket, req) => {
                 const valueOp2 = getRandomInt(1, 10);
 
                 type = "pentagon";
-                color = "#579bfa";
+                color = CONFIG.shapeColors.pentagon;
                 health_max = 100;
                 score_add = 120;
                 body_damage = 4;
@@ -4948,9 +4413,6 @@ wss.on("connection", (socket, req) => {
           data.cannon.playerid = data.playerId;
           cannon._type_ = cannon.type;
           cannon.autoindex = data.autoindex;
-          var mecannons = autocannons.find((cannons___0_0) => {
-            return data._cannon.CannonID === cannons___0_0.CannonID;
-          });
 
           if (cannon._type_ === "SwivelAutoCannon") {
             var offSet_x = data.tankdatacannon__[cannon.autoindex]["offSet-x"];
@@ -4964,12 +4426,6 @@ wss.on("connection", (socket, req) => {
             ) {
               offSet_x *= -1;
             }
-            console.log(
-              "anglemangle",
-              players[cannon.playerid].cannon_angle * (180 / Math.PI),
-              players[cannon.playerid].cannon_angle,
-              offSet_x
-            );
             var [x, y] = rotatePointAroundPlayer(
               offSet_x,
               0,
@@ -5012,17 +4468,24 @@ wss.on("connection", (socket, req) => {
           let angle = 0;
 
           if (cannon._type_ === "SwivelAutoCannon") {
-            console.log(cannon["y_"], cannon["x_"]);
             angle = Math.atan2(
               fire_at.y - (players[cannon.playerid].y + cannon["y_"]),
               fire_at.x - (players[cannon.playerid].x + cannon["x_"])
             );
+            console.log(angle);
           } else {
             angle = Math.atan2(
               fire_at.y - players[data.playerId].y,
               fire_at.x - (players[cannon.playerid].x + offSet_x)
             );
           }
+
+          console.log(angle);
+          emit("autoCannonUPDATE-ANGLE", {
+            angle: angle,
+            cannon_ID: data._cannon.CannonID,
+          });
+          //console.log(data,cannon)
 
           let bullet_size_l = data.bullet_size * cannon["bulletSize"];
 
@@ -5196,10 +4659,21 @@ wss.on("connection", (socket, req) => {
         }
 
         case "playerCollided": {
+          data.id_self = connection.playerId;
+          if (
+            Math.abs(data[data.id_self].x - Math.abs(data[data.id_other].x)) >
+              players[data.id_other].size * CONFIG.playerBaseSize +
+                players[data.id_self].size * CONFIG.playerBaseSize &&
+            Math.abs(data[data.id_self].y - Math.abs(data[data.id_other].y)) >
+              players[data.id_other].size * CONFIG.playerBaseSize +
+                players[data.id_self].size * CONFIG.playerBaseSize
+          ) {
+            return;
+          }
           try {
             if (players[data.id_other].state !== "start") {
               players[data.id_other].health -= data.damagegiven;
-            } // Swap damagegiven and damagetaken
+            }
             if (players[data.id_self].state !== "start") {
               players[data.id_self].health -= data.damagetaken;
             }
@@ -5928,6 +5402,7 @@ function gameLoop() {
         if (players[cannon.playerid] == undefined) return;
         var tankdatacannon__ =
           tankmeta[players[cannon.playerid].__type__]["cannons"];
+        //console.log(tankdatacannon__, players[cannon.playerid].__type__);
       } else if (cannon._type_ === "bulletAuto") {
         var par_ = findBullet(cannon.playerid);
         if (par_ == null || players[par_.id] === undefined) return;
@@ -5937,13 +5412,7 @@ function gameLoop() {
       }
 
       if (cannon._type_ === "SwivelAutoCannon") {
-        var offSet_x = tankdatacannon__[cannon.autoindex]["offSet-x"];
-        if (tankdatacannon__[cannon.autoindex]["offSet-x"] === "playerX") {
-          offSet_x = players[cannon.playerid].size * CONFIG.playerBaseSize;
-        }
-        if (tankdatacannon__[cannon.autoindex]["offSet-x-multpliyer"]) {
-          offSet_x *= -1;
-        }
+        var offSet_x = getOffset(cannon, tankdatacannon__);
         var [x, y] = rotatePointAroundPlayer(
           offSet_x,
           0,
@@ -5952,16 +5421,19 @@ function gameLoop() {
         cannon["x_"] = x;
         cannon["y_"] = y;
       }
+      var targetData;
       try {
-        var targetData = getTarget(cannon, tankdatacannon__);
-      } catch {
-        console.log(cannon);
+        targetData = getTarget(cannon, tankdatacannon__);
+      } catch (e) {
+        console.log(cannon, e);
       }
+
+      if (targetData == undefined) return;
 
       var fire_at__ = targetData.target;
       var target_enity_type = targetData.type;
 
-      if (fire_at__ !== undefined && fire_at__ !== null) {
+      if (fire_at__ != undefined && fire_at__ != null) {
         var angle;
         if (cannon._type_ === "SwivelAutoCannon") {
           angle = Math.atan2(
@@ -5982,19 +5454,51 @@ function gameLoop() {
 
         if (target_enity_type === "player") {
           cannon.targetID = fire_at__.playerId;
-        }
-
-        if (target_enity_type === "food") {
+        } else if (target_enity_type === "food") {
           cannon.targetID = fire_at__.randomID;
         }
       }
 
       if (target_enity_type === "player" && fire_at__) {
         if (cannon.targetID !== fire_at__.playerId) {
-          if (cannon.angle < cannon.targetAngle) {
-            cannon.angle += (cannon.targetAngle - cannon.angle) / 5;
-          } else if (cannon.angle > cannon.targetAngle) {
-            cannon.angle -= (cannon.angle - cannon.targetAngle) / 5;
+          if (cannon._type_ !== "SwivelAutoCannon") {
+            if (
+              cannon.angle < cannon.targetAngle &&
+              Math.abs(cannon.angle - cannon.targetAngle) > 0.01
+            ) {
+              if (cannon._type_ === "bulletAuto") {
+                var reload_1 = players[par_.id].statsTree["Bullet Reload"] - 1;
+              } else {
+                var reload_1 =
+                  players[cannon.playerid].statsTree["Bullet Reload"] - 1;
+              }
+              cannon.angle +=
+                Math.abs(cannon.angle - cannon.targetAngle) /
+                (3.5 - reload_1 / 2);
+              emit("autoCannonUPDATE-ANGLE", {
+                angle: cannon.angle,
+                cannon_ID: cannon.CannonID,
+              });
+            } else if (
+              cannon.angle > cannon.targetAngle &&
+              Math.abs(cannon.angle - cannon.targetAngle) > 0.01
+            ) {
+              if (cannon._type_ === "bulletAuto") {
+                var reload_1 = players[par_.id].statsTree["Bullet Reload"] - 1;
+              } else {
+                var reload_1 =
+                  players[cannon.playerid].statsTree["Bullet Reload"] - 1;
+              }
+              cannon.angle -=
+                Math.abs(cannon.angle - cannon.targetAngle) /
+                (3.5 - reload_1 / 2);
+              emit("autoCannonUPDATE-ANGLE", {
+                angle: cannon.angle,
+                cannon_ID: cannon.CannonID,
+              });
+            }
+          } else if (Math.abs(cannon.angle - cannon.targetAngle) > 0.01) {
+            moveCannonAngle(cannon);
           }
         }
       }
@@ -6002,9 +5506,8 @@ function gameLoop() {
         if (cannon._type_ !== "SwivelAutoCannon") {
           if (
             cannon.angle < cannon.targetAngle &&
-            Math.abs(cannon.angle - cannon.targetAngle) > 0.05
+            Math.abs(cannon.angle - cannon.targetAngle) > 0.01
           ) {
-            console.log(cannon.angle, cannon.targetAngle);
             if (cannon._type_ === "bulletAuto") {
               var reload_1 = players[par_.id].statsTree["Bullet Reload"] - 1;
             } else {
@@ -6020,7 +5523,7 @@ function gameLoop() {
             });
           } else if (
             cannon.angle > cannon.targetAngle &&
-            Math.abs(cannon.angle - cannon.targetAngle) > 0.05
+            Math.abs(cannon.angle - cannon.targetAngle) > 0.01
           ) {
             if (cannon._type_ === "bulletAuto") {
               var reload_1 = players[par_.id].statsTree["Bullet Reload"] - 1;
@@ -6036,7 +5539,7 @@ function gameLoop() {
               cannon_ID: cannon.CannonID,
             });
           }
-        } else if (Math.abs(cannon.angle - cannon.targetAngle) > 0.001) {
+        } else if (Math.abs(cannon.angle - cannon.targetAngle) > 0.01) {
           moveCannonAngle(cannon);
         }
       }
@@ -6188,7 +5691,7 @@ function gameLoop() {
                 health: 10,
                 xstart: cannon.x,
                 ystart: cannon.y,
-                id: cannon.id,
+                id: cannon.finderID,
                 uniqueid: randID,
                 boundtype: "square",
                 wander: new Wanderer(
@@ -6202,6 +5705,7 @@ function gameLoop() {
                   "arc"
                 ),
                 cannon: cannon,
+                boss: item.boss,
               };
 
               reassignRoomBullet(bullet____);
@@ -6253,7 +5757,7 @@ function gameLoop() {
                 health: 10,
                 xstart: cannon.x,
                 ystart: cannon.y,
-                id: cannon.id,
+                id: cannon.finderID,
                 uniqueid: randID,
                 boundtype: "triangle",
                 wander: new Wanderer(
@@ -6415,6 +5919,7 @@ function gameLoop() {
                   bulletId: player.id,
                   socrepluse: reward,
                 });
+                if (/Enemyboss/.test(item.subtype)) bossIsAlive = false;
                 console.log(reward, "ram");
                 leader_board.hidden.forEach((__index__) => {
                   if (__index__.id === player.id) {
@@ -6491,7 +5996,7 @@ function gameLoop() {
                     createAnnocment(
                       `${_player.username} has collected a golden gear! Total: ${_player.goldenGears}`,
                       player.id,
-                      { delay: CONFIG.messageIntervals.long, color: "gold" }
+                      { delay: CONFIG.messageIntervals.long, color: CONFIG.shapeColors.square }
                     );
                   }
                   valueOp = 16;
@@ -6501,7 +6006,7 @@ function gameLoop() {
                   switch (true) {
                     case between(valueOp, 1, 10): // Adjusted to 1-6 for square
                       type = "square";
-                      color = "Gold";
+                      color = CONFIG.shapeColors.square;
                       health_max = 10;
                       score_add = 10;
                       body_damage = 2;
@@ -6509,7 +6014,7 @@ function gameLoop() {
                       break;
                     case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
                       type = "triangle";
-                      color = "Red";
+                      color = CONFIG.shapeColors.triangle;
                       health_max = 15;
                       score_add = 15;
                       body_damage = 3.5;
@@ -6517,7 +6022,7 @@ function gameLoop() {
                       break;
                     case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
                       type = "pentagon";
-                      color = "#579bfa";
+                      color = CONFIG.shapeColors.pentagon;
                       health_max = 100;
                       score_add = 120;
                       body_damage = 4;
@@ -6536,7 +6041,7 @@ function gameLoop() {
                   const valueOp2 = getRandomInt(1, 10);
 
                   type = "pentagon";
-                  color = "#579bfa";
+                  color = CONFIG.shapeColors.pentagon;
                   health_max = 100;
                   score_add = 120;
                   body_damage = 4;
@@ -6766,7 +6271,7 @@ function gameLoop() {
 
               if (!item.isdead) {
                 players[bullet.id].score += reward;
-
+                if (/Enemyboss/.test(item.subtype)) bossIsAlive = false;
                 leader_board.hidden.forEach((__index__) => {
                   if (__index__.id === bullet.id) {
                     __index__.score += reward;
@@ -6799,7 +6304,7 @@ function gameLoop() {
                   socrepluse: reward,
                 });
                 console.log(reward, "bullet");
-              }
+              
 
               var randID = Math.random() * index * Date.now();
 
@@ -6849,7 +6354,7 @@ function gameLoop() {
                   createAnnocment(
                     `${_player.username} has collected a golden gear! Total: ${_player.goldenGears}`,
                     bullet.id,
-                    { delay: CONFIG.messageIntervals.long, color: "gold" }
+                    { delay: CONFIG.messageIntervals.long, color: CONFIG.shapeColors.square }
                   );
                 }
                 valueOp = 16;
@@ -6863,7 +6368,7 @@ function gameLoop() {
                 switch (true) {
                   case between(valueOp, 1, 10): // Adjusted to 1-6 for square
                     type = "square";
-                    color = "Gold";
+                    color = CONFIG.shapeColors.square;
                     health_max = 10;
                     score_add = 10;
                     body_damage = 2;
@@ -6871,7 +6376,7 @@ function gameLoop() {
                     break;
                   case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
                     type = "triangle";
-                    color = "Red";
+                    color = CONFIG.shapeColors.triangle;
                     health_max = 15;
                     score_add = 15;
                     body_damage = 3.5;
@@ -6879,7 +6384,7 @@ function gameLoop() {
                     break;
                   case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
                     type = "pentagon";
-                    color = "#579bfa";
+                    color = CONFIG.shapeColors.pentagon;
                     health_max = 100;
                     score_add = 120;
                     body_damage = 4;
@@ -6898,7 +6403,7 @@ function gameLoop() {
                 const valueOp2 = getRandomInt(1, 10);
 
                 type = "pentagon";
-                color = "#579bfa";
+                color = CONFIG.shapeColors.pentagon;
                 health_max = 100;
                 score_add = 120;
                 body_damage = 4;
@@ -6981,10 +6486,8 @@ function gameLoop() {
                   bullet.x - player.x,
                   bullet.y - player.y
                 );
-                recoilX =
-                  bullet.exspandRate * Math.cos(realPushBackAngle);
-                recoilY =
-                  bullet.exspandRate * Math.sin(realPushBackAngle);
+                recoilX = bullet.exspandRate * 2 * Math.cos(realPushBackAngle);
+                recoilY = bullet.exspandRate * 2 * Math.sin(realPushBackAngle);
               }
               item.x += recoilX;
               item.y += recoilY;
@@ -7018,6 +6521,7 @@ function gameLoop() {
                 );
                 fooditem__XX.vertices = rawvertices;
               }
+              }
               if (!item.isdead && !item.hasOwnProperty("respawn")) {
                 reassignRoomItem(fooditem__XX);
               }
@@ -7038,6 +6542,8 @@ function gameLoop() {
                   health: 2000,
                 };
               }
+
+              
 
               bullet.distanceTraveled +=
                 (bullet.size * 2) / bullet.bullet_pentration +
@@ -7346,7 +6852,8 @@ function gameLoop() {
           } else if (
             bullet.target &&
             bullet.target?.distance > 600 &&
-            bullet.target?.distance < 2400 && bullet.boss
+            bullet.target?.distance < 2400 &&
+            bullet.boss
           ) {
             var boss = bullet.boss;
             bullet.wander.think();
@@ -7441,7 +6948,7 @@ function gameLoop() {
               const rx2 = vx - 2 * dot2 * nx;
               const ry2 = vy - 2 * dot2 * ny;
 
-              bullet_.angle = Math.atan2(ry2, rx2);
+              if (bullet_) bullet_.angle = Math.atan2(ry2, rx2);
               bullet.speed -=
                 (bullet_.bullet_pentration * bullet_.size + bullet_.speed) /
                 1000;
@@ -7716,7 +7223,7 @@ function gameLoop() {
                     );
                   } else {
                     var boss = bosses.find(
-                      (boss_) => boss_.cannons[0].id === bullet.id
+                      (boss_) => boss_.cannons[0].finderID === bullet.id
                     );
                     boss.score += reward;
                   }
@@ -7934,7 +7441,7 @@ function gameLoop() {
     emit("explosionUpdate", explosions);
     requestEmit("requests", JoinRequests);
     messageEmit("announcements", announcements);
-    createAndSendGameObjects(buildArray);
+    emit("polyUpdate", buildArray);
     buildArray = [];
     bullets = [];
     deadlist = [];
@@ -7988,6 +7495,7 @@ function createAndSendGameObjects(playerArray) {
 }
 
 function createBoss(type_) {
+  bossIsAlive = true
   var boss = {};
   var fooditem = {};
   switch (type_) {
@@ -7995,7 +7503,7 @@ function createBoss(type_) {
       let x = 0;
       let y = 0;
       type = "square";
-      color = "Gold";
+      color = CONFIG.shapeColors.square;
       var randID = Math.random() * 3 * Date.now();
       fooditem = {
         type: type,
@@ -8046,7 +7554,8 @@ function createBoss(type_) {
           maxbullets: 10,
           current: 0,
           canfire: true,
-          id: cannonID,
+          id: randID,
+          finderID: randID
         },
         {
           type: "necromancerDrone",
@@ -8057,6 +7566,7 @@ function createBoss(type_) {
           current: 0,
           canfire: true,
           id: cannonID * 2,
+          finderID: randID
         },
         {
           type: "necromancerDrone",
@@ -8067,6 +7577,7 @@ function createBoss(type_) {
           current: 0,
           canfire: true,
           id: cannonID * 3,
+          finderID: randID
         },
         {
           type: "necromancerDrone",
@@ -8077,6 +7588,7 @@ function createBoss(type_) {
           current: 0,
           canfire: true,
           id: cannonID * 4,
+          finderID: randID
         },
       ];
       break;
@@ -8131,6 +7643,7 @@ function createBoss(type_) {
           current: 0,
           canfire: true,
           id: cannonID,
+          finderID: randID2
         },
       ];
       break;
@@ -8142,9 +7655,11 @@ function createBoss(type_) {
 createBoss("Guardian");
 
 setInterval(() => {
-  generateRandomNumber(0, 1) === 1
-    ? createBoss("Guardian")
-    : createBoss("Necromancer");
+  if (!bossIsAlive) {
+    generateRandomNumber(0, 1) === 1
+      ? createBoss("Guardian")
+      : createBoss("Necromancer");
+  }
 }, 1000 * 60 * 10);
 
 function smartemitBinary(data) {

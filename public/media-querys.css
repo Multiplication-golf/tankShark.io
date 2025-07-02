@@ -136,6 +136,9 @@
     min-height: 10vh;
     font-size: 5vh;
   }
+  .headerHolder {
+    margin-top: 0;
+  }
   .skins-grid {
     width: 96%;
     height: 97%;

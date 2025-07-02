@@ -6,7 +6,7 @@ Suggestions welcome
 
 It is still kind of buggy. But getting better by the day
 
-# Official server has just opened ( not port fowarded yet though ): )
+# Official server has just opened to the internet
 
 
 ![img of game](https://github.com/Multiplication-golf/deip.io-3/blob/main/game.png?raw=true)
