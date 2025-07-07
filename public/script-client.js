@@ -1,7 +1,7 @@
-// LOL, you little kids can't mess with my game
+// LOL, you little kids can't mess with my gamescreen
 (async function () {
   /* Warning! DO NOT TOUCH */
-  const isCrazyGames = false; /*window.location.origin.endsWith("crazygames.com");*/
+  const isCrazyGames = true; /*window.location.origin.endsWith("crazygames.com");*/
 
   console.log(document.referrer);
   if (isCrazyGames) {
@@ -215,8 +215,12 @@
     return message;
   }
 
+  const backdropAudio = document.getElementById('backgroundmusic');
+  backdropAudio.pause();
+  backdropAudio.volume = 0.25;
+
   var canSeeChat = true;
-  var darkMode = false;
+  var darkMode = true;
   var canSeeLeaderBoard = true;
   var canSeeNames = true;
 
@@ -228,6 +232,14 @@
         itemprop="gameEvent"
         id="die"
         alt="death screen"
+      />
+      <img
+        class="settings-img"
+        src="./assets/cropped/gear.png"
+        id="settingsOpener2"
+        role="button"
+        title="settings"
+        alt="settings"
       />
       <div id="keyscontainer" class="keycontener">
         <svg width="6vh" height="6vh"></svg>
@@ -547,6 +559,8 @@
       new /*skill issus are comming to my server mohaa ha ha*/ WebSocket(`${getIP}?token=${webToken}`);
     socket.binaryType = "arraybuffer";
 
+    backdropAudio.play();
+
     let playerId = null; // Connect to the server
     var canvas = document.createElement("canvas");
     const Ghostcanvas = document.getElementById("ghostCanvas");
@@ -554,6 +568,7 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     document.getElementById("game").appendChild(canvas);
+    settings2.style.left = "0.2vw";
     canvas.id = "myCanvas";
     canvas.style["z-index"] = "5";
     canvas.style.position = "absolute";
@@ -1545,7 +1560,6 @@
           skin: skin,
           isCrazy: isCrazyGames,
           teamKey: teamKey,
-          token: token,
           statsTree: {
             Health: 1,
             "Body Damage": 1,
@@ -1840,6 +1854,7 @@
                 }, 10);
 
                 dead = true;
+                backdropAudio.pause();
 
                 clearInterval(healer);
                 autoIntevals;
@@ -3167,7 +3182,7 @@
 
       if (filllevel) {
         ctx.fillStyle = "#0228c2";
-        ctx.strokeStyle = "black";
+        ctx.strokeStyle = "#044af4";
         ctx.textAlign = "center";
         ctx.font = `bold ${40 * (1 + (1 - scaleFactor))}px Nunito`;
         ctx.strokeText(level, canvas.width / 2, canvas.height - button10 * 6);
@@ -4329,6 +4344,8 @@
       ctx.stroke();
       ctx.closePath();
 
+      ctx.fillStyle = "#57dcfa";
+      ctx.strokeStyle = "#576afa";
       ctx.textAlign = "center";
       ctx.strokeText(
         "players: " + Object.keys(players).length,
@@ -5250,6 +5267,7 @@
     }
 
     function drawbar(item) {
+      if (item.type === "triangle:boss") console.log(item);
       const sizeFactor = (item.size / 45);
       const size90 = 90 * sizeFactor;
       const healthWidth = (item.health / item.maxhealth) * size90;
@@ -6364,6 +6382,8 @@
 
       requestAnimationFrame(draw);
     }
+    var settings2 = document.getElementById("settingsOpener2");
+    settings2.addEventListener("click", settingsOpener);
   }
 
   async function getBagdeData() {
@@ -6977,12 +6997,12 @@
 
   darkMode = darkMode === "true";
 
-  if (darkMode == null) localStorage.setItem("theme", false);
+  if (darkMode == null) localStorage.setItem("theme", true);
   if (canSeeNames == null) localStorage.setItem("canSeeNames", true);
   if (canSeeChat == null) localStorage.setItem("canSeeChat", true);
   if (canSeeLeaderBoard == null)
     localStorage.setItem("canSeeLeaderBoard", true);
-  darkMode ??= false;
+  darkMode ??= true;
 
   canSeeNames = canSeeNames === "true" || canSeeNames === null;
   canSeeChat = canSeeChat === "true" || canSeeChat === null;
@@ -7599,10 +7619,21 @@
     )
       ? "https://websocketpointer.duckdns.org/islogin"
       : "http://localhost:4500/islogin";
+
+    var token = null;
+    if (isCrazyGames && window.CrazyGames.SDK.user.isUserAccountAvailable) 
+      token = await window.CrazyGames.SDK.user.getUserToken();
     try {
       const response = await fetch(url, {
-        method: "GET",
-        credentials: 'include'
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          token: token,
+        }),
       });
       if (!response.ok) {
         throw new Error(`Response status: ${response.status}`);
@@ -7633,6 +7664,7 @@
     document.removeEventListener("mousemove", (evt) => getProfilePointer(evt));
     canAnimateProfile = false;
     document.getElementById("full-screen").style.display = "flex";
+
 
     if (username) {
       setTimeout(() => {

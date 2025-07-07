@@ -24,9 +24,9 @@ async function ping() {
   return true;
 }
 
-setInterval(() => {
+setInterval(async () => {
   console.log("pinging the sever...");
-  if (ping()) {
+  if (await ping()) {
     window.location.href =
       window.location.href !==
       "https://tankshark.fun/server-down.html"

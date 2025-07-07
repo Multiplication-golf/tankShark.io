@@ -416,6 +416,16 @@ spiner
   );
 }
 
+.settings-figure {
+  width: 95%;
+  margin: 0px;
+}
+
+.audio {
+  width: 95%;
+  margin: 5px;
+}
+
 .leader-board h2 {
   font-size: 2vw;
   font-weight: 900;

@@ -9,7 +9,7 @@ const path = require("path");
 const SAT = require("sat");
 const WebSocket = require("ws");
 const cors = require("cors");
-const cookie = require('cookie');
+const cookie = require("cookie");
 const bcrypt = require("bcrypt");
 const curse = require("curse-filter");
 const jwt = require("jsonwebtoken");
@@ -33,8 +33,8 @@ const wss = new WebSocket.Server({ noServer: true });
 function handleUpgrade(server, name) {
   server.on("upgrade", (req, socket, head) => {
     console.log(`[${name}] Upgrade request from`, req.socket.remoteAddress);
-    const cookies = cookie.parse(req.headers.cookie || '');
-    console.log("cookies",cookies);
+    const cookies = cookie.parse(req.headers.cookie || "");
+    console.log("cookies", cookies);
     const authToken = cookies.userId;
     wss.handleUpgrade(req, socket, head, (ws) => {
       req.userId = authToken;
@@ -470,7 +470,12 @@ const CONFIG = {
     epic: 899,
     legendary: 999,
   },
-  shapeColors: {pentagon: "#00fff7", square: "#00bbff", triangle: "#0088ff"},
+  shapeColors: { pentagon: "#00fff7", square: "#00bbff", triangle: "#0088ff" },
+  rareShapeColors: {
+    pentagon: "#34eba4",
+    square: "#4f00d9",
+    triangle: "#00d95e",
+  },
   messageIntervals: { long: 15 * 1000, short: 6 * 1000, medium: 10 * 1000 },
   badgeLevels: [
     { minScore: 50000000, maxScore: null, badge: "/badges/10.webp" },
@@ -1342,6 +1347,37 @@ function limitedLog(message, ...optionalParams) {
   }
 }
 
+function getPolyStats(valueOp__A, rare) {
+  var type, color, health_max, score_add, body_damage, weight;
+  switch (true) {
+    case between(valueOp__A, 1, 9): // Adjusted to 1-6 for square
+      type = "square";
+      color = rare ? CONFIG.rareShapeColors.square : CONFIG.shapeColors.square;
+      health_max = 10;
+      score_add = 10;
+      body_damage = 2;
+      weight = 3;
+      break;
+    case between(valueOp__A, 10, 13): // Adjusted to 7-8 for triangle
+      type = "triangle";
+      color = rare ? CONFIG.rareShapeColors.triangle : CONFIG.shapeColors.triangle;
+      health_max = 15;
+      score_add = 15;
+      body_damage = 3.5;
+      weight = 5;
+      break;
+    case between(valueOp__A, 14, 15): // Adjusted to 9-10 for pentagon
+      type = "pentagon";
+      color = rare ? CONFIG.rareShapeColors.triangle : CONFIG.shapeColors.pentagon;
+      health_max = 100;
+      score_add = 120;
+      body_damage = 4;
+      weight = 10;
+      break;
+  }
+  return [type, color, health_max, score_add, body_damage, weight];
+}
+
 function normalizeAngle_2(angle) {
   if (typeof angle !== "number" || isNaN(angle)) {
     limitedLog("normalizeAngle received invalid input:", angle);
@@ -1403,38 +1439,15 @@ for (let i = 0; i < getRandomInt(400, 500); i++) {
   }
   cors_taken.push({ x: x, y: y, id: randID });
   const valueOp__A = getRandomInt(1, 16);
+  const rare = getRandomInt(0, 100) === 50 ? true : false;
   var type = "";
   var color = "";
   var health_max = "";
   var score_add = 0;
   var body_damage = 0;
   var weight = 0;
-  switch (true) {
-    case between(valueOp__A, 1, 9): // Adjusted to 1-6 for square
-      type = "square";
-      color = CONFIG.shapeColors.square;
-      health_max = 10;
-      score_add = 10;
-      body_damage = 2;
-      weight = 3;
-      break;
-    case between(valueOp__A, 10, 13): // Adjusted to 7-8 for triangle
-      type = "triangle";
-      color = CONFIG.shapeColors.triangle;
-      health_max = 15;
-      score_add = 15;
-      body_damage = 3.5;
-      weight = 5;
-      break;
-    case between(valueOp__A, 14, 15): // Adjusted to 9-10 for pentagon
-      type = "pentagon";
-      color = CONFIG.shapeColors.pentagon;
-      health_max = 100;
-      score_add = 120;
-      body_damage = 4;
-      weight = 10;
-      break;
-  }
+  [type, color, health_max, score_add, body_damage, weight] = getPolyStats(valueOp__A,rare);
+  if (rare) score_add *= 10;
   let fooditem = {
     type: type,
     subtype: null,
@@ -1873,10 +1886,25 @@ const corsOptions = {
 
 app.use(express.json({ limit: "1kb" }));
 
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, origin); // echo the request origin
+      } else {
+        callback(new Error("Not allowed by CORS" + origin));
+      }
+    },
+    credentials: true,
+  })
+);
 
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Credentials", "true");
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Access-Control-Allow-Credentials", "true");
+  }
   next();
 });
 
@@ -1897,7 +1925,7 @@ const LOG_LIMIT = 1300;
 
 app.use(express.json());
 
-app.get('/login', async (req, res) => {
+app.get("/login", async (req, res) => {
   var newid = await hashPassword(crypto.randomUUID());
   userbase.push({
     userid: newid,
@@ -1909,28 +1937,34 @@ app.get('/login', async (req, res) => {
   });
   var jwtToken = crypto.randomUUID();
   sessionStore.set(jwtToken, newid);
-  res.cookie('userId', newid, {
+  res.cookie("userId", newid, {
     httpOnly: true,
-    secure: true,     // Only over HTTPS
+    secure: true, // Only over HTTPS
     maxAge: 1000 * 60 * 60 * 24 * 365 * 2, // 2 years
-    path: '/',
-    sameSite: 'None'
+    path: "/",
+    sameSite: "None",
   });
-  res.send({jwt: jwtToken});
+  res.send({ jwt: jwtToken });
 });
 
-// app.use(cors({
-//   origin: 'http://localhost:5001', // your frontend port
-//   credentials: true
-// }));
-
-app.get('/islogin', async (req, res) => {
-  const cookies = cookie.parse(req.headers.cookie || '');
-  console.log("cookies",cookies);
+app.post("/islogin", async (req, res) => {
+  const cookies = cookie.parse(req.headers.cookie || "");
+  console.log("cookies", cookies);
   const authToken = cookies.userId;
   var t = false;
   if (authToken) t = true;
-  res.send({isLoggedIn: t});
+  if (req.body.token) {
+    const raw = await DecodeCGToken(req.body.token);
+    console.log("rawtoken", raw);
+    const userID_ = raw.userId;
+    const token = await hashPassword(userID_);
+    t = userbase.find((_player) => {
+      return comparePasswords(_player.userid, token);
+    })
+      ? true
+      : false;
+  }
+  res.send({ isLoggedIn: t });
 });
 
 app.post("/currentbadge", (req, res) => {
@@ -2233,6 +2267,8 @@ app.get("/leaderboard", (req, res) => {
     postLeaderBorad.push(board);
   });
 
+  postLeaderBorad = postLeaderBorad.slice(0, 9);
+
   res.send({
     leader_board: postLeaderBorad,
   });
@@ -2309,6 +2345,26 @@ app.get("/ping", (req, res) => {
   res.send("pong");
 });
 
+const DecodeCGToken = async (_token) => {
+  let key = "";
+
+  try {
+    const resp = await axios.get("https://sdk.crazygames.com/publicKey.json");
+    key = resp.data["publicKey"];
+  } catch (e) {
+    console.error("Failed to fetch CrazyGames public key", e);
+  }
+
+  if (!key) {
+    throw new Error("Key is empty when decoding CrazyGames token");
+  }
+
+  const payload = jwt.verify(_token, key, {
+    algorithms: ["RS256"],
+  });
+  return payload;
+};
+
 wss.on("connection", (socket, req) => {
   let connection = {
     socket: socket,
@@ -2383,17 +2439,22 @@ wss.on("connection", (socket, req) => {
             // Function to extract the "token" parameter from a URL string
             function getTokenFromUrl(url) {
               try {
-              const urlObj = new URL(url, "http://localhost"); // base needed for relative URLs
-              return urlObj.searchParams.get("token");
+                const urlObj = new URL(url, "http://localhost"); // base needed for relative URLs
+                return urlObj.searchParams.get("token");
               } catch (e) {
-              return null;
+                return null;
               }
             }
 
             // Example usage:
             var tokenFromUrl = getTokenFromUrl(req.url);
             try {
-              console.log("stuff",tokenFromUrl,sessionStore,sessionStore.get(tokenFromUrl))
+              console.log(
+                "stuff",
+                tokenFromUrl,
+                sessionStore,
+                sessionStore.get(tokenFromUrl)
+              );
               data.userId = sessionStore.get(tokenFromUrl);
               var removed = sessionStore.delete(tokenFromUrl);
               console.log(removed);
@@ -2401,8 +2462,6 @@ wss.on("connection", (socket, req) => {
               console.log(e);
               data.userId = null;
             }
-            
-            
 
             players[newId].id = newId;
             players[newId].username = await curse.filter(
@@ -2549,32 +2608,6 @@ wss.on("connection", (socket, req) => {
                     data.token != null &&
                     data.token !== undefined
                   ) {
-                    const DecodeCGToken = async (_token) => {
-                      let key = "";
-
-                      try {
-                        const resp = await axios.get(
-                          "https://sdk.crazygames.com/publicKey.json"
-                        );
-                        key = resp.data["publicKey"];
-                      } catch (e) {
-                        console.error(
-                          "Failed to fetch CrazyGames public key",
-                          e
-                        );
-                      }
-
-                      if (!key) {
-                        throw new Error(
-                          "Key is empty when decoding CrazyGames token"
-                        );
-                      }
-
-                      const payload = jwt.verify(_token, key, {
-                        algorithms: ["RS256"],
-                      });
-                      return payload;
-                    };
                     console.log("token", data.token);
                     const raw = await DecodeCGToken(data.token);
                     console.log("rawtoken", raw);
@@ -2720,9 +2753,7 @@ wss.on("connection", (socket, req) => {
                       );
                       return false;
                     }
-                    socket.send(
-                      JSON.stringify({ type: "newid", data: {} })
-                    );
+                    socket.send(JSON.stringify({ type: "newid", data: {} }));
                     badge = "/badges/1.webp";
                   })();
                 }
@@ -5617,11 +5648,6 @@ function gameLoop() {
           !/octagon/.test(item.type)
         ) {
           item.angle += CONFIG.rotationSpeed.triangleSquare;
-        } else if (
-          item.subtype === "Enemyboss:Square" ||
-          item.subtype === "Enemyboss:Triangle"
-        ) {
-          item.angle += CONFIG.rotationSpeed.bosses;
         }
         if (item.angle >= 360) {
           item.angle = 0;
@@ -5996,47 +6022,18 @@ function gameLoop() {
                     createAnnocment(
                       `${_player.username} has collected a golden gear! Total: ${_player.goldenGears}`,
                       player.id,
-                      { delay: CONFIG.messageIntervals.long, color: CONFIG.shapeColors.square }
+                      {
+                        delay: CONFIG.messageIntervals.long,
+                        color: CONFIG.shapeColors.square,
+                      }
                     );
                   }
                   valueOp = 16;
                 }
                 var weight = 0;
                 if (!item["respawn-raidis"]) {
-                  switch (true) {
-                    case between(valueOp, 1, 10): // Adjusted to 1-6 for square
-                      type = "square";
-                      color = CONFIG.shapeColors.square;
-                      health_max = 10;
-                      score_add = 10;
-                      body_damage = 2;
-                      weight = 3;
-                      break;
-                    case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
-                      type = "triangle";
-                      color = CONFIG.shapeColors.triangle;
-                      health_max = 15;
-                      score_add = 15;
-                      body_damage = 3.5;
-                      weight = 5;
-                      break;
-                    case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
-                      type = "pentagon";
-                      color = CONFIG.shapeColors.pentagon;
-                      health_max = 100;
-                      score_add = 120;
-                      body_damage = 4;
-                      weight = 10;
-                      break;
-                    case 16: // Adjusted to 9-10 for pentagon
-                      type = "pentagon";
-                      color = "#C2A248";
-                      health_max = 100;
-                      score_add = 120;
-                      body_damage = 4;
-                      weight = 10;
-                      break;
-                  }
+                  const rare = getRandomInt(0, 100) === 50 ? true : false;
+                  [type, color, health_max, score_add, body_damage, weight] = getPolyStats(valueOp,rare);
                 } else {
                   const valueOp2 = getRandomInt(1, 10);
 
@@ -6303,224 +6300,203 @@ function gameLoop() {
                   bulletId: bullet.id,
                   socrepluse: reward,
                 });
-                console.log(reward, "bullet");
-              
 
-              var randID = Math.random() * index * Date.now();
-
-              cors_taken = cors_taken.filter((cor) => {
-                if (cor.id === item.randomID) {
-                  return false;
-                } else {
-                  return true;
-                }
-              });
-
-              let respawnrai = item["respawn-raidis"] || CONFIG.map.innersize;
-              let x, y;
-              do {
-                x = getRandomInt(-respawnrai, respawnrai);
-                y = getRandomInt(-respawnrai, respawnrai);
-              } while (
-                cors_taken.some(
-                  (c) =>
-                    between(
-                      x,
-                      c.x - CONFIG.map.boundRange,
-                      c.x + CONFIG.map.boundRange
-                    ) &&
-                    between(
-                      y,
-                      c.y - CONFIG.map.boundRange,
-                      c.y + CONFIG.map.boundRange
-                    )
-                ) ||
-                !confirmplayerradia(x, y)
-              );
-
-              cors_taken.push({ x, y, id: randID });
-
-              var valueOp = getRandomInt(1, 15);
-              var type = "";
-              if (item.goldenGears) {
-                var _player = userbase.find((_player) => {
-                  return comparePasswords(
-                    _player.userid,
-                    players[bullet.id].userId
-                  );
+                emit("playerScore", {
+                  bulletId: fooditem?.lastDamgers[1],
+                  socrepluse: reward / 4,
                 });
-                if (_player) {
-                  _player.goldenGears += 1;
-                  createAnnocment(
-                    `${_player.username} has collected a golden gear! Total: ${_player.goldenGears}`,
-                    bullet.id,
-                    { delay: CONFIG.messageIntervals.long, color: CONFIG.shapeColors.square }
-                  );
-                }
-                valueOp = 16;
-              }
-              var color = "";
-              var health_max = "";
-              var score_add = 0;
-              var body_damage = 0;
-              var weight = 0;
-              if (!item["respawn-raidis"]) {
-                switch (true) {
-                  case between(valueOp, 1, 10): // Adjusted to 1-6 for square
-                    type = "square";
-                    color = CONFIG.shapeColors.square;
-                    health_max = 10;
-                    score_add = 10;
-                    body_damage = 2;
-                    weight = 3;
-                    break;
-                  case between(valueOp, 11, 13): // Adjusted to 7-8 for triangle
-                    type = "triangle";
-                    color = CONFIG.shapeColors.triangle;
-                    health_max = 15;
-                    score_add = 15;
-                    body_damage = 3.5;
-                    weight = 5;
-                    break;
-                  case between(valueOp, 14, 15): // Adjusted to 9-10 for pentagon
-                    type = "pentagon";
-                    color = CONFIG.shapeColors.pentagon;
-                    health_max = 100;
-                    score_add = 120;
-                    body_damage = 4;
-                    weight = 10;
-                    break;
-                  case 16: // Adjusted to 9-10 for pentagon
-                    type = "pentagon";
-                    color = "#C2A248";
-                    health_max = 100;
-                    score_add = 120;
-                    body_damage = 4;
-                    weight = 10;
-                    break;
-                }
-              } else {
-                const valueOp2 = getRandomInt(1, 10);
+                console.log(reward, "bullet");
 
-                type = "pentagon";
-                color = CONFIG.shapeColors.pentagon;
-                health_max = 100;
-                score_add = 120;
-                body_damage = 4;
-                if (valueOp2 === 5) {
-                  var size = 150;
-                  score_add = 3000;
-                  health_max = 1000;
-                  body_damage = 9;
-                  weight = 300;
+                var randID = Math.random() * index * Date.now();
+
+                cors_taken = cors_taken.filter((cor) => {
+                  if (cor.id === item.randomID) {
+                    return false;
+                  } else {
+                    return true;
+                  }
+                });
+
+                let respawnrai = item["respawn-raidis"] || CONFIG.map.innersize;
+                let x, y;
+                do {
+                  x = getRandomInt(-respawnrai, respawnrai);
+                  y = getRandomInt(-respawnrai, respawnrai);
+                } while (
+                  cors_taken.some(
+                    (c) =>
+                      between(
+                        x,
+                        c.x - CONFIG.map.boundRange,
+                        c.x + CONFIG.map.boundRange
+                      ) &&
+                      between(
+                        y,
+                        c.y - CONFIG.map.boundRange,
+                        c.y + CONFIG.map.boundRange
+                      )
+                  ) ||
+                  !confirmplayerradia(x, y)
+                );
+
+                cors_taken.push({ x, y, id: randID });
+
+                var valueOp = getRandomInt(1, 15);
+                var type = "";
+                if (item.goldenGears) {
+                  var _player = userbase.find((_player) => {
+                    return comparePasswords(
+                      _player.userid,
+                      players[bullet.id].userId
+                    );
+                  });
+                  if (_player) {
+                    _player.goldenGears += 1;
+                    createAnnocment(
+                      `${_player.username} has collected a golden gear! Total: ${_player.goldenGears}`,
+                      bullet.id,
+                      {
+                        delay: CONFIG.messageIntervals.long,
+                        color: CONFIG.shapeColors.square,
+                      }
+                    );
+                  }
+                  valueOp = 16;
+                }
+                var color = "";
+                var health_max = "";
+                var score_add = 0;
+                var body_damage = 0;
+                var weight = 0;
+                if (!item["respawn-raidis"]) {
+                  const rare = getRandomInt(0, 100) === 50 ? true : false;
+                  [type, color, health_max, score_add, body_damage, weight] = getPolyStats(valueOp,rare);
                 } else {
-                  var size = 50;
-                  weight = 10;
-                }
-              }
-              if (!item["respawn-raidis"]) {
-                var goldenGears = item.goldenGears ? item.goldenGears : null;
-                var fooditem__XX = {
-                  type: type,
-                  health: health_max,
-                  maxhealth: health_max,
-                  size: 50,
-                  angle: getRandomInt(0, 180),
-                  x: x,
-                  y: y,
-                  centerX: x,
-                  centerY: y,
-                  weight: weight,
-                  body_damage: body_damage,
-                  scalarX: getRandomInt(-100, 100),
-                  scalarY: getRandomInt(-100, 100),
-                  vertices: null,
-                  color: color,
-                  score_add: score_add,
-                  randomID: randID,
-                  lastDamaged: null,
-                  lastDamgers: [],
-                  goldenGears: goldenGears,
-                };
-              }
-              if (item["respawn-raidis"]) {
-                var goldenGears = item.goldenGears ? item.goldenGears : null;
-                var fooditem__XX = {
-                  type: type,
-                  health: health_max,
-                  maxhealth: health_max,
-                  size: size,
-                  angle: getRandomInt(0, 180),
-                  x: x,
-                  y: y,
-                  centerX: x,
-                  centerY: y,
-                  weight: weight,
-                  body_damage: body_damage,
-                  scalarX: getRandomInt(-100, 100),
-                  scalarY: getRandomInt(-100, 100),
-                  vertices: null,
-                  color: color,
-                  score_add: score_add,
-                  randomID: randID,
-                  "respawn-raidis": 1000,
-                  lastDamaged: null,
-                  lastDamgers: [],
-                  goldenGears: goldenGears,
-                };
-              }
-              let recoilY, recoilX;
-              if (bullet.type !== "exsplosion") {
-                recoilX =
-                  ((bullet.size / item.weight) *
-                    bullet.speed *
-                    Math.cos(bullet.angle)) /
-                  4;
-                recoilY =
-                  ((bullet.size / item.weight) *
-                    bullet.speed *
-                    Math.sin(bullet.angle)) /
-                  4;
-              } else {
-                var realPushBackAngle = Math.atan2(
-                  bullet.x - player.x,
-                  bullet.y - player.y
-                );
-                recoilX = bullet.exspandRate * 2 * Math.cos(realPushBackAngle);
-                recoilY = bullet.exspandRate * 2 * Math.sin(realPushBackAngle);
-              }
-              item.x += recoilX;
-              item.y += recoilY;
-              item.centerX += recoilX;
-              item.centerY += recoilY;
+                  const valueOp2 = getRandomInt(1, 10);
 
-              if (type === "triangle") {
-                const rawvertices = calculateTriangleVertices(
-                  fooditem__XX.x,
-                  fooditem__XX.y,
-                  fooditem__XX.size,
-                  fooditem__XX.angle
-                );
-                fooditem__XX.vertices = rawvertices;
-              } //
-              if (type === "pentagon") {
-                const rawvertices = calculateRotatedPentagonVertices(
-                  fooditem__XX.x,
-                  fooditem__XX.y,
-                  fooditem__XX.size,
-                  fooditem__XX.angle
-                );
-                fooditem__XX.vertices = rawvertices;
-              }
-              if (type === "square") {
-                const rawvertices = calculateSquareVertices(
-                  fooditem__XX.x,
-                  fooditem__XX.y,
-                  fooditem__XX.size,
-                  fooditem__XX.angle
-                );
-                fooditem__XX.vertices = rawvertices;
-              }
+                  type = "pentagon";
+                  color = CONFIG.shapeColors.pentagon;
+                  health_max = 100;
+                  score_add = 120;
+                  body_damage = 4;
+                  if (valueOp2 === 5) {
+                    var size = 150;
+                    score_add = 3000;
+                    health_max = 1000;
+                    body_damage = 9;
+                    weight = 300;
+                  } else {
+                    var size = 50;
+                    weight = 10;
+                  }
+                }
+                if (!item["respawn-raidis"]) {
+                  var goldenGears = item.goldenGears ? item.goldenGears : null;
+                  var fooditem__XX = {
+                    type: type,
+                    health: health_max,
+                    maxhealth: health_max,
+                    size: 50,
+                    angle: getRandomInt(0, 180),
+                    x: x,
+                    y: y,
+                    healrate: 1,
+                    centerX: x,
+                    centerY: y,
+                    weight: weight,
+                    body_damage: body_damage,
+                    scalarX: getRandomInt(-100, 100),
+                    scalarY: getRandomInt(-100, 100),
+                    vertices: null,
+                    color: color,
+                    score_add: score_add,
+                    randomID: randID,
+                    lastDamaged: null,
+                    lastDamgers: [],
+                    goldenGears: goldenGears,
+                  };
+                }
+                if (item["respawn-raidis"]) {
+                  var goldenGears = item.goldenGears ? item.goldenGears : null;
+                  var fooditem__XX = {
+                    type: type,
+                    health: health_max,
+                    maxhealth: health_max,
+                    size: size,
+                    angle: getRandomInt(0, 180),
+                    healrate: 1,
+                    x: x,
+                    y: y,
+                    centerX: x,
+                    centerY: y,
+                    weight: weight,
+                    body_damage: body_damage,
+                    scalarX: getRandomInt(-100, 100),
+                    scalarY: getRandomInt(-100, 100),
+                    vertices: null,
+                    color: color,
+                    score_add: score_add,
+                    randomID: randID,
+                    "respawn-raidis": 1000,
+                    lastDamaged: null,
+                    lastDamgers: [],
+                    goldenGears: goldenGears,
+                  };
+                }
+                let recoilY, recoilX;
+                if (bullet.type !== "exsplosion") {
+                  recoilX =
+                    ((bullet.size / item.weight) *
+                      bullet.speed *
+                      Math.cos(bullet.angle)) /
+                    4;
+                  recoilY =
+                    ((bullet.size / item.weight) *
+                      bullet.speed *
+                      Math.sin(bullet.angle)) /
+                    4;
+                } else {
+                  var realPushBackAngle = Math.atan2(
+                    bullet.x - player.x,
+                    bullet.y - player.y
+                  );
+                  recoilX =
+                    bullet.exspandRate * 2 * Math.cos(realPushBackAngle);
+                  recoilY =
+                    bullet.exspandRate * 2 * Math.sin(realPushBackAngle);
+                }
+                item.x += recoilX;
+                item.y += recoilY;
+                item.centerX += recoilX;
+                item.centerY += recoilY;
+
+                if (type === "triangle") {
+                  const rawvertices = calculateTriangleVertices(
+                    fooditem__XX.x,
+                    fooditem__XX.y,
+                    fooditem__XX.size,
+                    fooditem__XX.angle
+                  );
+                  fooditem__XX.vertices = rawvertices;
+                } //
+                if (type === "pentagon") {
+                  const rawvertices = calculateRotatedPentagonVertices(
+                    fooditem__XX.x,
+                    fooditem__XX.y,
+                    fooditem__XX.size,
+                    fooditem__XX.angle
+                  );
+                  fooditem__XX.vertices = rawvertices;
+                }
+                if (type === "square") {
+                  const rawvertices = calculateSquareVertices(
+                    fooditem__XX.x,
+                    fooditem__XX.y,
+                    fooditem__XX.size,
+                    fooditem__XX.angle
+                  );
+                  fooditem__XX.vertices = rawvertices;
+                }
               }
               if (!item.isdead && !item.hasOwnProperty("respawn")) {
                 reassignRoomItem(fooditem__XX);
@@ -6542,8 +6518,6 @@ function gameLoop() {
                   health: 2000,
                 };
               }
-
-              
 
               bullet.distanceTraveled +=
                 (bullet.size * 2) / bullet.bullet_pentration +
@@ -7129,8 +7103,10 @@ function gameLoop() {
                   player.health -=
                     (bullet.bullet_damage - 3.8) /
                     (player.size + 6 / bullet.size + 3);
-                  bullet.bullet_distance /=
-                    bullet.size / (bullet.bullet_pentration + 10);
+                  bullet.bullet_distance -=
+                    bullet.size / (bullet.bullet_pentration + 10) +
+                    player.size -
+                    bullet.size;
                 } else if (
                   bullet.type === "directer" ||
                   bullet.type === "FreeNecromancer" ||
@@ -7140,13 +7116,17 @@ function gameLoop() {
                     (bullet.bullet_damage - 4.4) /
                     (player.size + 6 / bullet.size + 5);
                   bullet.bullet_distance -=
-                    bullet.size / (bullet.bullet_pentration + 10);
+                    bullet.size / (bullet.bullet_pentration + 10) +
+                    player.size -
+                    bullet.size;
                 } else {
                   player.health -=
                     (bullet.bullet_damage - 3.8) /
                     ((player.size + 22) / bullet.speed);
                   bullet.bullet_distance -=
-                    bullet.size / (bullet.bullet_pentration + 10);
+                    bullet.size / (bullet.bullet_pentration + 10) +
+                    player.size -
+                    bullet.size;
                 }
                 emit("bulletDamage", {
                   playerID: player.id,
@@ -7495,7 +7475,7 @@ function createAndSendGameObjects(playerArray) {
 }
 
 function createBoss(type_) {
-  bossIsAlive = true
+  bossIsAlive = true;
   var boss = {};
   var fooditem = {};
   switch (type_) {
@@ -7508,7 +7488,7 @@ function createBoss(type_) {
       fooditem = {
         type: type,
         subtype: "Enemyboss:Square",
-        health: 1500,
+        health: 1499,
         maxhealth: 1500,
         size: 300,
         angle: getRandomInt(0, 180),
@@ -7518,6 +7498,7 @@ function createBoss(type_) {
         centerY: y,
         speed: 0.2,
         body_damage: 7,
+        healrate: 3,
         cannons: [{}, {}, {}, {}],
         weight: 1000,
         scalarX: getRandomInt(-100, 100),
@@ -7555,7 +7536,7 @@ function createBoss(type_) {
           current: 0,
           canfire: true,
           id: randID,
-          finderID: randID
+          finderID: randID,
         },
         {
           type: "necromancerDrone",
@@ -7566,7 +7547,7 @@ function createBoss(type_) {
           current: 0,
           canfire: true,
           id: cannonID * 2,
-          finderID: randID
+          finderID: randID,
         },
         {
           type: "necromancerDrone",
@@ -7577,7 +7558,7 @@ function createBoss(type_) {
           current: 0,
           canfire: true,
           id: cannonID * 3,
-          finderID: randID
+          finderID: randID,
         },
         {
           type: "necromancerDrone",
@@ -7588,7 +7569,7 @@ function createBoss(type_) {
           current: 0,
           canfire: true,
           id: cannonID * 4,
-          finderID: randID
+          finderID: randID,
         },
       ];
       break;
@@ -7601,7 +7582,8 @@ function createBoss(type_) {
       fooditem = {
         type: type,
         subtype: "Enemyboss:Triangle",
-        health: 1250,
+        health: 1249,
+        healrate: 3,
         maxhealth: 1250,
         size: 300,
         angle: getRandomInt(0, 180),
@@ -7643,7 +7625,7 @@ function createBoss(type_) {
           current: 0,
           canfire: true,
           id: cannonID,
-          finderID: randID2
+          finderID: randID2,
         },
       ];
       break;

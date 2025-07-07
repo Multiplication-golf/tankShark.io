@@ -8,6 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <meta name="twitter:title" content="TankShark.IO" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "TankShark",
+      "url": "https://tankshark.fun"
+    }
+    </script>
     <meta
       name="google-site-verification"
       content="v4LjyJ6spsXmQJwHFU__CcDiJmY5kflfJYLuGNiaV6E"
@@ -106,11 +114,22 @@
     <section
       itemscope
       itemtype="https://schema.org/Game"
-      class="full-screen"
+      style="position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  font-size: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 250;
+  color: black;"
       id="full-screen"
       itemprop="status"
     >
-      <p>Loading</p>
+      <p style="font-size: 10vw;">Loading</p>
     </section>
     <header class="landing-page" id="landing-page">
       <img
@@ -1166,6 +1185,9 @@
       </div>
     </main>
     <div id="settingsBox" class="settings-box">
+      <figure class="settings-figure">
+        <audio title="toggel audio" controls loop src="./assets/backdrop.mp3" id="backgroundmusic" class="audio"></audio>
+      </figure>
       <div class="centerleft">
         <label class="label labelspace" for="chat">Show Chat Messages:</label>
         <label class="switch" id="chat">
