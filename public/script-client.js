@@ -1,7 +1,7 @@
 // LOL, you little kids can't mess with my gamescreen
 (async function () {
   /* Warning! DO NOT TOUCH */
-  const isCrazyGames = true; /*window.location.origin.endsWith("crazygames.com");*/
+  const isCrazyGames = false; /*window.location.origin.endsWith("crazygames.com");*/
 
   console.log(document.referrer);
   if (isCrazyGames) {
@@ -7359,7 +7359,7 @@
     var reqdata = await getSkinData();
     var skinData = reqdata.skins;
     var skinDataTeirs = reqdata.skindata;
-    console.log(reqdata);
+    console.log("reqdata",reqdata);
     for (let i = 0; i < 28; i++) {
       var skinDiv = document.createElement("div");
       var skinImg = document.createElement("img");

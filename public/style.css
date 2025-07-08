@@ -581,7 +581,7 @@ body {
 }
 
 .boxbutton {
-  width: 6vh; height: 6vh; border-radius: 20px; background-color:rgba(255,255,255,0.8); display: flex; justify-content: center; text-align: center; align-content: center;
+  width: 6vh; height: 6vh; border-radius: 20px; background-color:rgba(255,255,255,0.8); display: flex; justify-content: center; text-align: center; align-content: center; font-size: 2rem;
 }
 
 .moneytext {
